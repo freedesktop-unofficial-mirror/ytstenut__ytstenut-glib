@@ -18,6 +18,7 @@ source_h =					\
 		$(srcdir)/ytsg-contact.h	\
 		$(srcdir)/ytsg-debug.h		\
 		$(srcdir)/ytsg-main.h		\
+		$(srcdir)/ytsg-message.h	\
 		$(srcdir)/ytsg-metadata.h	\
 		$(srcdir)/ytsg-roster.h		\
 		$(srcdir)/ytsg-service.h	\
@@ -29,6 +30,7 @@ source_c =					\
 		$(srcdir)/ytsg-contact.c	\
 		$(srcdir)/ytsg-enum-types.c	\
 		$(srcdir)/ytsg-main.c		\
+		$(srcdir)/ytsg-message.c	\
 		$(srcdir)/ytsg-metadata.c	\
 		$(srcdir)/ytsg-roster.c		\
 		$(srcdir)/ytsg-service.c	\
