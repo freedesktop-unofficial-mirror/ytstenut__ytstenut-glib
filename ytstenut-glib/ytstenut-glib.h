@@ -12,6 +12,7 @@
 #include <ytstenut-glib/ytsg-client.h>
 #include <ytstenut-glib/ytsg-debug.h>
 #include <ytstenut-glib/ytsg-main.h>
+#include <ytstenut-glib/ytsg-roster.h>
 #include <ytstenut-glib/ytsg-version.h>
 
 #include <ytstenut-glib/ytsg-marshal.h>
