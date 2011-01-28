@@ -22,6 +22,7 @@ source_h =					\
 		$(srcdir)/ytsg-metadata.h	\
 		$(srcdir)/ytsg-roster.h		\
 		$(srcdir)/ytsg-service.h	\
+		$(srcdir)/ytsg-status.h		\
 		$(srcdir)/ytsg-version.h	\
 		$(NULL)
 
@@ -34,6 +35,7 @@ source_c =					\
 		$(srcdir)/ytsg-metadata.c	\
 		$(srcdir)/ytsg-roster.c		\
 		$(srcdir)/ytsg-service.c	\
+		$(srcdir)/ytsg-status.c		\
 		$(NULL)
 
 

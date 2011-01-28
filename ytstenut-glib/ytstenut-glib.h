@@ -17,6 +17,7 @@
 #include <ytstenut-glib/ytsg-metadata.h>
 #include <ytstenut-glib/ytsg-roster.h>
 #include <ytstenut-glib/ytsg-service.h>
+#include <ytstenut-glib/ytsg-status.h>
 #include <ytstenut-glib/ytsg-version.h>
 
 #include <ytstenut-glib/ytsg-marshal.h>
