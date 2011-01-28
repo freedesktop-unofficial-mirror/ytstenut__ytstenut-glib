@@ -19,6 +19,7 @@ source_h =					\
 		$(srcdir)/ytsg-debug.h		\
 		$(srcdir)/ytsg-main.h		\
 		$(srcdir)/ytsg-roster.h		\
+		$(srcdir)/ytsg-service.h	\
 		$(srcdir)/ytsg-version.h	\
 		$(NULL)
 
@@ -28,6 +29,7 @@ source_c =					\
 		$(srcdir)/ytsg-enum-types.c	\
 		$(srcdir)/ytsg-main.c		\
 		$(srcdir)/ytsg-roster.c		\
+		$(srcdir)/ytsg-service.c	\
 		$(NULL)
 
 
