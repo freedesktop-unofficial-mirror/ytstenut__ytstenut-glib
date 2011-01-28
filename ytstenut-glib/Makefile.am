@@ -15,6 +15,7 @@ AM_CFLAGS = $(YTSG_CFLAGS)
 
 source_h =					\
 		$(srcdir)/ytsg-client.h		\
+		$(srcdir)/ytsg-contact.h	\
 		$(srcdir)/ytsg-debug.h		\
 		$(srcdir)/ytsg-main.h		\
 		$(srcdir)/ytsg-roster.h		\
@@ -23,6 +24,7 @@ source_h =					\
 
 source_c =					\
 		$(srcdir)/ytsg-client.c		\
+		$(srcdir)/ytsg-contact.c	\
 		$(srcdir)/ytsg-enum-types.c	\
 		$(srcdir)/ytsg-main.c		\
 		$(srcdir)/ytsg-roster.c		\
