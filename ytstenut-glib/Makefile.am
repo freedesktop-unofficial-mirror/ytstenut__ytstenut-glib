@@ -14,12 +14,14 @@ AM_CPPFLAGS = 					\
 AM_CFLAGS = $(YTSG_CFLAGS)
 
 source_h =					\
+		$(srcdir)/ytsg-client.h		\
 		$(srcdir)/ytsg-debug.h		\
 		$(srcdir)/ytsg-main.h		\
 		$(srcdir)/ytsg-version.h	\
 		$(NULL)
 
 source_c =					\
+		$(srcdir)/ytsg-client.c		\
 		$(srcdir)/ytsg-enum-types.c	\
 		$(srcdir)/ytsg-main.c		\
 		$(NULL)

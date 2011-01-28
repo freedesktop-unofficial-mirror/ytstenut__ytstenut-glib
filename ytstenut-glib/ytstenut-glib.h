@@ -9,6 +9,7 @@
 #ifndef _YTSG_H
 #define _YTSG_H
 
+#include <ytstenut-glib/ytsg-client.h>
 #include <ytstenut-glib/ytsg-debug.h>
 #include <ytstenut-glib/ytsg-main.h>
 #include <ytstenut-glib/ytsg-version.h>
