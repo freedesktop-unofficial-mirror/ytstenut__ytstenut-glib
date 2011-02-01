@@ -23,6 +23,7 @@
 #define _YTSG_METADATA_H
 
 #include <glib-object.h>
+#include <rest/rest-xml-node.h>
 
 G_BEGIN_DECLS
 
@@ -65,6 +66,8 @@ struct _YtsgMetadata
 };
 
 GType ytsg_metadata_get_type (void) G_GNUC_CONST;
+
+RestXmlNode *ytsg_metadata_get_top_node (YtsgMetadata *self);
 
 G_END_DECLS
 
