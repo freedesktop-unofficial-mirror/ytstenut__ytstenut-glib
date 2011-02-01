@@ -66,6 +66,8 @@ struct _YtsgStatus
 
 GType ytsg_status_get_type (void) G_GNUC_CONST;
 
+gboolean ytsg_status_equal (YtsgStatus *self, YtsgStatus *other);
+
 G_END_DECLS
 
 #endif /* _YTSG_STATUS_H */

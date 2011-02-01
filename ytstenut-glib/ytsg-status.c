@@ -19,6 +19,9 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
+#include <rest/rest-xml-node.h>
+
 #include "ytsg-status.h"
 
 
@@ -54,7 +57,7 @@ enum
   PROP_0,
 };
 
-static guint signals[N_SIGNALS] = {0};
+/*static guint signals[N_SIGNALS] = {0};*/
 
 static void
 ytsg_status_class_init (YtsgStatusClass *klass)
@@ -73,8 +76,6 @@ ytsg_status_class_init (YtsgStatusClass *klass)
 static void
 ytsg_status_constructed (GObject *object)
 {
-  YtsgStatus *self = (YtsgStatus*) object;
-
   if (G_OBJECT_CLASS (ytsg_status_parent_class)->constructed)
     G_OBJECT_CLASS (ytsg_status_parent_class)->constructed (object);
 }
@@ -85,9 +86,6 @@ ytsg_status_get_property (GObject    *object,
                           GValue     *value,
                           GParamSpec *pspec)
 {
-  YtsgStatus        *self = (YtsgStatus*) object;
-  YtsgStatusPrivate *priv = self->priv;
-
   switch (property_id)
     {
     default:
@@ -101,9 +99,6 @@ ytsg_status_set_property (GObject      *object,
                           const GValue *value,
                           GParamSpec   *pspec)
 {
-  YtsgStatus        *self = (YtsgStatus*) object;
-  YtsgStatusPrivate *priv = self->priv;
-
   switch (property_id)
     {
     default:
@@ -134,9 +129,114 @@ ytsg_status_dispose (GObject *object)
 static void
 ytsg_status_finalize (GObject *object)
 {
-  YtsgStatus        *self = (YtsgStatus*) object;
-  YtsgStatusPrivate *priv = self->priv;
-
   G_OBJECT_CLASS (ytsg_status_parent_class)->finalize (object);
+}
+
+static gboolean
+ytsg_rest_xml_node_check_attrs (RestXmlNode *node0, RestXmlNode *node1)
+{
+  GHashTableIter iter;
+  gpointer       key, value;
+
+  g_hash_table_iter_init (&iter, node0->attrs);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      const char *at1 = rest_xml_node_get_attr (node1, key);
+
+      if ((!at1 && value) || (at1 && !value) || strcmp (value, at1))
+        return FALSE;
+    }
+
+  return TRUE;
+}
+
+static gboolean ytsg_rest_xml_node_check_children (RestXmlNode*, RestXmlNode*);
+
+/*
+ * NB: this function is somewhat simplistic; it assumes that if two nodes have
+ *     siblings, the corresponding siblings must be in identical order. But
+ *     can we define equaly in any other way?
+ */
+static gboolean
+ytsg_rest_xml_node_check_siblings (RestXmlNode *node0, RestXmlNode *node1)
+{
+  RestXmlNode *sib0 = node0->next;
+  RestXmlNode *sib1 = node1->next;
+
+  do
+    {
+      if ((!sib0 && sib1) || (sib0 && !sib1))
+        return FALSE;
+
+      if (!ytsg_rest_xml_node_check_attrs (sib0, sib1))
+        return FALSE;
+
+      if (!ytsg_rest_xml_node_check_children (sib0, sib1))
+        return FALSE;
+
+      sib0 = sib0->next;
+      sib1 = sib1->next;
+    } while (1);
+
+  return TRUE;
+}
+
+static gboolean
+ytsg_rest_xml_node_check_children (RestXmlNode *node0, RestXmlNode *node1)
+{
+  GHashTableIter iter;
+  gpointer       key, value;
+
+  g_hash_table_iter_init (&iter, node0->children);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      const char  *name0  = key;
+      RestXmlNode *child0 = value;
+      RestXmlNode *child1 = rest_xml_node_find (node1, name0);
+
+      if (!child1 ||
+          (child0->next && !child1->next) || (!child0->next && child1->next))
+        return FALSE;
+
+      if (!ytsg_rest_xml_node_check_attrs (child0, child1))
+        return FALSE;
+
+      if (!ytsg_rest_xml_node_check_siblings (child0, child1))
+        return FALSE;
+
+      if (!ytsg_rest_xml_node_check_children (child0, child1))
+        return FALSE;
+    }
+
+  return TRUE;
+}
+
+/**
+ * ytsg_status_equal:
+ * @self: #YtsgStatus,
+ * @other: #YtsgStatus
+ *
+ * Compares two statuses and returns %TRUE if they are equal.
+ *
+ * Return value: %TRUE if equal, %FALSE otherwise.
+ */
+gboolean
+ytsg_status_equal (YtsgStatus *self, YtsgStatus *other)
+{
+  RestXmlNode *node0;
+  RestXmlNode *node1;
+
+  g_return_val_if_fail (YTSG_IS_STATUS (self) && YTSG_IS_STATUS (other), FALSE);
+
+  node0 = ytsg_metadata_get_top_node ((YtsgMetadata*) self);
+  node1 = ytsg_metadata_get_top_node ((YtsgMetadata*) other);
+
+  if (!ytsg_rest_xml_node_check_attrs (node0, node1))
+    return FALSE;
+
+  if (!ytsg_rest_xml_node_check_children (node0, node1))
+    return FALSE;
+
+  return TRUE;
 }
 
