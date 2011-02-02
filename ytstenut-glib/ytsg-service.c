@@ -34,13 +34,15 @@ static void ytsg_service_set_property (GObject      *object,
                                        const GValue *value,
                                        GParamSpec   *pspec);
 
-G_DEFINE_TYPE (YtsgService, ytsg_service, G_TYPE_OBJECT);
+G_DEFINE_ABSTRACT_TYPE (YtsgService, ytsg_service, G_TYPE_OBJECT);
 
 #define YTSG_SERVICE_GET_PRIVATE(o) \
 (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTSG_TYPE_SERVICE, YtsgServicePrivate))
 
 struct _YtsgServicePrivate
 {
+  char *uid;
+
   guint disposed : 1;
 };
 
@@ -52,6 +54,7 @@ enum
 enum
 {
   PROP_0,
+  PROP_UID,
 };
 
 /* static guint signals[N_SIGNALS] = {0}; */
@@ -59,6 +62,7 @@ enum
 static void
 ytsg_service_class_init (YtsgServiceClass *klass)
 {
+  GParamSpec   *pspec;
   GObjectClass *object_class = (GObjectClass *)klass;
 
   g_type_class_add_private (klass, sizeof (YtsgServicePrivate));
@@ -68,15 +72,30 @@ ytsg_service_class_init (YtsgServiceClass *klass)
   object_class->constructed  = ytsg_service_constructed;
   object_class->get_property = ytsg_service_get_property;
   object_class->set_property = ytsg_service_set_property;
+
+  /**
+   * YtsgService:uid:
+   *
+   * The uid of this service
+   */
+  pspec = g_param_spec_string ("uid",
+                               "uid",
+                               "uid",
+                               NULL,
+                               G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
+  g_object_class_install_property (object_class, PROP_UID, pspec);
 }
 
 static void
 ytsg_service_constructed (GObject *object)
 {
-  YtsgService *self = (YtsgService*) object;
+  YtsgService        *self = (YtsgService*) object;
+  YtsgServicePrivate *priv = self->priv;
 
   if (G_OBJECT_CLASS (ytsg_service_parent_class)->constructed)
     G_OBJECT_CLASS (ytsg_service_parent_class)->constructed (object);
+
+  g_assert (priv->uid);
 }
 
 static void
@@ -90,6 +109,9 @@ ytsg_service_get_property (GObject    *object,
 
   switch (property_id)
     {
+    case PROP_UID:
+      g_value_set_string (value, priv->uid);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -106,6 +128,10 @@ ytsg_service_set_property (GObject      *object,
 
   switch (property_id)
     {
+    case PROP_UID:
+      g_free (priv->uid);
+      priv->uid = g_value_dup_string (value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -137,5 +163,24 @@ ytsg_service_finalize (GObject *object)
   YtsgService        *self = (YtsgService*) object;
   YtsgServicePrivate *priv = self->priv;
 
+  g_free (priv->uid);
+
   G_OBJECT_CLASS (ytsg_service_parent_class)->finalize (object);
 }
+
+/**
+ * ytsg_service_get_uid:
+ * @service: #YtsgService
+ *
+ * Returns the uid of the the given service.
+ *
+ * Return value: (transfer none): the uid.
+ */
+const char *
+ytsg_service_get_uid (YtsgService *service)
+{
+  g_return_val_if_fail (YTSG_IS_SERVICE (service), NULL);
+
+  return service->priv->uid;
+}
+
