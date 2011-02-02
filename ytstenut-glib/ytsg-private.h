@@ -28,7 +28,8 @@
 G_BEGIN_DECLS
 
 YtsgMetadata *_ytsg_metadata_new_from_xml (const char *xml);
-YtsgMetadata *_ytsg_metadata_new_from_node (RestXmlNode *node);
+YtsgMetadata *_ytsg_metadata_new_from_node (RestXmlNode  *node,
+                                            const char  **attributes);
 
 G_END_DECLS
 

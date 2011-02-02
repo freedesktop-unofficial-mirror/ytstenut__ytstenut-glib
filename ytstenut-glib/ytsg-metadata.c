@@ -46,8 +46,9 @@ G_DEFINE_TYPE (YtsgMetadata, ytsg_metadata, G_TYPE_OBJECT);
 
 struct _YtsgMetadataPrivate
 {
-  RestXmlNode *top_level_node;
-  char        *xml;
+  RestXmlNode  *top_level_node;
+  char         *xml;
+  char        **attributes;
 
   guint disposed : 1;
 };
@@ -62,6 +63,7 @@ enum
   PROP_0,
   PROP_XML,
   PROP_TOP_LEVEL_NODE,
+  PROP_ATTRIBUTES,
 };
 
 static void
@@ -81,9 +83,9 @@ ytsg_metadata_class_init (YtsgMetadataClass *klass)
   /**
    * YtsgMetadata:xml:
    *
-   * The XML node this #YtsgMetadata object represents
+   * The XML node this #YtsgMetadata object is to represent
    *
-   * Since: 0.1
+   * This property is only valid during construction, as no copies are made.
    */
   pspec = g_param_spec_string ("xml",
                                "Metadata XML",
@@ -103,6 +105,19 @@ ytsg_metadata_class_init (YtsgMetadataClass *klass)
                               REST_TYPE_XML_NODE,
                               G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY);
   g_object_class_install_property (object_class, PROP_TOP_LEVEL_NODE, pspec);
+
+  /**
+   * YtsgMetadata:attributes:
+   *
+   * Top level attributes; this property is only valid during the construction
+   * of the object, as no copies of the supplied value are made!
+   */
+  pspec = g_param_spec_boxed ("attributes",
+                              "Top-level attributes",
+                              "Top-level attributes",
+                              G_TYPE_STRV,
+                              G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY);
+  g_object_class_install_property (object_class, PROP_ATTRIBUTES, pspec);
 }
 
 static void
@@ -127,6 +142,29 @@ ytsg_metadata_constructed (GObject *object)
       g_object_unref (parser);
 
       g_assert (priv->top_level_node);
+
+      g_free (priv->xml);
+      priv->xml = NULL;
+    }
+
+  if (priv->attributes)
+    {
+      char  **p;
+
+      for (p = priv->attributes; *p && *(p + 1); p += 2)
+        {
+          const char *a = *p;
+          const char *v = *(p + 1);
+
+          rest_xml_node_add_attr (priv->top_level_node, a, v);
+        }
+
+      /*
+       * the stored pointer is only valid during construction during the
+       * construction
+       */
+      g_strfreev (priv->attributes);
+      priv->attributes = NULL;
     }
 }
 
@@ -155,7 +193,6 @@ ytsg_metadata_set_property (GObject      *object,
   switch (property_id)
     {
     case PROP_XML:
-      g_free (priv->xml);
       priv->xml = g_value_dup_string (value);
       break;
     case PROP_TOP_LEVEL_NODE:
@@ -163,6 +200,10 @@ ytsg_metadata_set_property (GObject      *object,
         rest_xml_node_unref (priv->top_level_node);
 
       priv->top_level_node = g_value_get_boxed (value);
+      break;
+    case PROP_ATTRIBUTES:
+      priv->attributes = g_value_dup_boxed (value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -194,11 +235,6 @@ ytsg_metadata_dispose (GObject *object)
 static void
 ytsg_metadata_finalize (GObject *object)
 {
-  YtsgMetadata        *self = (YtsgMetadata*) object;
-  YtsgMetadataPrivate *priv = self->priv;
-
-  g_free (priv->xml);
-
   G_OBJECT_CLASS (ytsg_metadata_parent_class)->finalize (object);
 }
 
@@ -247,12 +283,14 @@ _ytsg_metadata_new_from_xml (const char *xml)
 
   /* We do not unref the node, the object takes over the reference */
 
-  return _ytsg_metadata_new_from_node (node);
+  return _ytsg_metadata_new_from_node (node, NULL);
 }
 
 /*
  * _ytsg_metadata_new_from_node:
  * @node: #RestXmlNode
+ * @attributes: %NULL terminated array of name/value pairs for additional
+ * attributes, can be %NULL
  *
  * Private constructor.
  *
@@ -260,16 +298,32 @@ _ytsg_metadata_new_from_xml (const char *xml)
  * #YtsgMessage or #YtsgStatus, depending on the top level node.
  */
 YtsgMetadata *
-_ytsg_metadata_new_from_node (RestXmlNode *node)
+_ytsg_metadata_new_from_node (RestXmlNode *node, const char **attributes)
 {
   YtsgMetadata  *mdata = NULL;
 
   g_return_val_if_fail (node && node->name, NULL);
 
   if (!strcmp (node->name, "message"))
-    mdata = g_object_new (YTSG_TYPE_MESSAGE, "top-level-node", node, NULL);
+    {
+      if (attributes)
+        mdata = g_object_new (YTSG_TYPE_MESSAGE,
+                              "top-level-node", node,
+                              "attributes",     attributes,
+                              NULL);
+      else
+        mdata = g_object_new (YTSG_TYPE_MESSAGE, "top-level-node", node, NULL);
+    }
   else if (!strcmp (node->name, "status"))
-    mdata = g_object_new (YTSG_TYPE_STATUS, "top-level-node", node, NULL);
+    {
+      if (attributes)
+        mdata = g_object_new (YTSG_TYPE_STATUS,
+                              "top-level-node", node,
+                              "attributes",     attributes,
+                              NULL);
+      else
+        mdata = g_object_new (YTSG_TYPE_STATUS, "top-level-node", node, NULL);
+    }
   else
     g_warning ("Unknown top level node '%s'", node->name);
 

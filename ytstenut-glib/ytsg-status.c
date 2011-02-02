@@ -256,20 +256,7 @@ ytsg_status_new (const char ** attributes)
 
   g_return_val_if_fail (top, NULL);
 
-  if (attributes)
-    {
-      const char  **p;
-
-      for (p = attributes; *p && *(p + 1); p += 2)
-        {
-          const char *a = *p;
-          const char *v = *(p + 1);
-
-          rest_xml_node_add_attr (top, a, v);
-        }
-    }
-
-  mdata = _ytsg_metadata_new_from_node (top);
+  mdata = _ytsg_metadata_new_from_node (top, attributes);
 
   g_return_val_if_fail (YTSG_IS_STATUS (mdata), NULL);
 
