@@ -13,29 +13,31 @@ AM_CPPFLAGS = 					\
 
 AM_CFLAGS = $(YTSG_CFLAGS)
 
-source_h =					\
-		$(srcdir)/ytsg-client.h		\
-		$(srcdir)/ytsg-contact.h	\
-		$(srcdir)/ytsg-debug.h		\
-		$(srcdir)/ytsg-main.h		\
-		$(srcdir)/ytsg-message.h	\
-		$(srcdir)/ytsg-metadata.h	\
-		$(srcdir)/ytsg-roster.h		\
-		$(srcdir)/ytsg-service.h	\
-		$(srcdir)/ytsg-status.h		\
-		$(srcdir)/ytsg-version.h	\
+source_h =						\
+		$(srcdir)/ytsg-client.h			\
+		$(srcdir)/ytsg-contact.h		\
+		$(srcdir)/ytsg-debug.h			\
+		$(srcdir)/ytsg-main.h			\
+		$(srcdir)/ytsg-message.h		\
+		$(srcdir)/ytsg-metadata.h		\
+		$(srcdir)/ytsg-metadata-service.h	\
+		$(srcdir)/ytsg-roster.h			\
+		$(srcdir)/ytsg-service.h		\
+		$(srcdir)/ytsg-status.h			\
+		$(srcdir)/ytsg-version.h		\
 		$(NULL)
 
-source_c =					\
-		$(srcdir)/ytsg-client.c		\
-		$(srcdir)/ytsg-contact.c	\
-		$(srcdir)/ytsg-enum-types.c	\
-		$(srcdir)/ytsg-main.c		\
-		$(srcdir)/ytsg-message.c	\
-		$(srcdir)/ytsg-metadata.c	\
-		$(srcdir)/ytsg-roster.c		\
-		$(srcdir)/ytsg-service.c	\
-		$(srcdir)/ytsg-status.c		\
+source_c =						\
+		$(srcdir)/ytsg-client.c			\
+		$(srcdir)/ytsg-contact.c		\
+		$(srcdir)/ytsg-enum-types.c		\
+		$(srcdir)/ytsg-main.c			\
+		$(srcdir)/ytsg-message.c		\
+		$(srcdir)/ytsg-metadata.c		\
+		$(srcdir)/ytsg-metadata-service.c	\
+		$(srcdir)/ytsg-roster.c			\
+		$(srcdir)/ytsg-service.c		\
+		$(srcdir)/ytsg-status.c			\
 		$(NULL)
 
 

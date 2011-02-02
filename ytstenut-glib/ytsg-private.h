@@ -23,13 +23,23 @@
 #define _YTSG_PRIVATE_H
 
 #include <ytstenut-glib/ytsg-metadata.h>
+#include <ytstenut-glib/ytsg-metadata-service.h>
 #include <rest/rest-xml-node.h>
+
+#define I_(str) (g_intern_static_string ((str)))
 
 G_BEGIN_DECLS
 
 YtsgMetadata *_ytsg_metadata_new_from_xml (const char *xml);
 YtsgMetadata *_ytsg_metadata_new_from_node (RestXmlNode  *node,
                                             const char  **attributes);
+
+YtsgService  *_ytsg_metadata_service_new (const char *uid);
+void _ytsg_metadata_service_received_status (YtsgMetadataService *service,
+                                             const char          *xml);
+void _ytsg_metadata_service_received_message (YtsgMetadataService *service,
+                                              const char          *xml);
+
 
 G_END_DECLS
 
