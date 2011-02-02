@@ -21,12 +21,14 @@
  */
 
 #include <ytstenut-glib/ytsg-status.h>
+#include <ytstenut-glib/ytsg-message.h>
 #include <string.h>
 
 int
 main (int argc, char **argv)
 {
   YtsgStatus  *status1, *status2;
+  YtsgMessage *message;
   const char  *attrs[] = {"a1", "v1", "a2", "v2", NULL};
   const char  *a1, *a2, *a3;
   RestXmlNode *top1, *top2, *child11, *child12, *child21, *child22;
@@ -77,6 +79,11 @@ main (int argc, char **argv)
 
   g_assert (!ytsg_metadata_equal ((YtsgMetadata*)status1,
                                   (YtsgMetadata*)status2));
+
+  message = ytsg_message_new (NULL);
+
+  g_assert (!ytsg_metadata_equal ((YtsgMetadata*)status1,
+                                  (YtsgMetadata*)message));
 
   return 0;
 }
