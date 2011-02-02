@@ -227,7 +227,7 @@ ytsg_metadata_get_top_node (YtsgMetadata *self)
 }
 
 /*
- * _ytsg_metadata_new:
+ * _ytsg_metadata_new_from_xml:
  * @xml: the xml the metatdata object is to represent
  *
  * Constructs a new #YtsgMetadata object from the xml snippet; depending on the
@@ -252,6 +252,15 @@ _ytsg_metadata_new_from_xml (const char *xml)
   return _ytsg_metadata_new_from_node (node);
 }
 
+/*
+ * _ytsg_metadata_new_from_node:
+ * @node: #RestXmlNode
+ *
+ * Private constructor.
+ *
+ * Return value: (transfer full): newly allocated #YtsgMetadata subclass, either
+ * #YtsgMessage or #YtsgStatus, depending on the top level node.
+ */
 YtsgMetadata *
 _ytsg_metadata_new_from_node (RestXmlNode *node)
 {
@@ -269,5 +278,59 @@ _ytsg_metadata_new_from_node (RestXmlNode *node)
   /* We do not unref the node, the object takes over the reference */
 
   return mdata;
+}
+
+/**
+ * ytsg_metadata_get_attribute:
+ * @self: #YtsgMetadata
+ * @name: name of the attribute to look up
+ *
+ * Retrieves the value of an attribute of the given name on the top level node
+ * of the #YtsgMetadata object (to query attributes on children of the top level
+ * node, you need to use ytsg_metadata_get_top_node() and the librest API to
+ * locate and query the appropriate node).
+ *
+ * Return value: (transfer none): the attribute value or %NULL if attribute
+ * does not exist.
+ */
+const char *
+ytsg_metadata_get_attribute (YtsgMetadata *self, const char *name)
+{
+  YtsgMetadataPrivate *priv;
+
+  g_return_val_if_fail (YTSG_IS_METADATA (self), NULL);
+
+  priv = self->priv;
+
+  g_return_val_if_fail (priv->top_level_node, NULL);
+
+  return rest_xml_node_get_attr (priv->top_level_node, name);
+}
+
+/**
+ * ytsg_metadata_add_attribute:
+ * @self: #YtsgMetadata
+ * @name: name of the attribute to add
+ * @value: value of the attribute to add
+ *
+ * Adds an attribute of the given name on the top level node
+ * of the #YtsgMetadata object (to add attributes to children of the top level
+ * node, you need to use ytsg_metadata_get_top_node() and the librest API to
+ * construct the metadata tree).
+ */
+void
+ytsg_metadata_add_attribute (YtsgMetadata *self,
+                             const char   *name,
+                             const char   *value)
+{
+  YtsgMetadataPrivate *priv;
+
+  g_return_if_fail (YTSG_IS_METADATA (self) && name && *name && value);
+
+  priv = self->priv;
+
+  g_return_if_fail (priv->top_level_node);
+
+  rest_xml_node_add_attr (priv->top_level_node, name, value);
 }
 

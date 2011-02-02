@@ -67,6 +67,11 @@ struct _YtsgMetadata
 
 GType ytsg_metadata_get_type (void) G_GNUC_CONST;
 
+const char  *ytsg_metadata_get_attribute (YtsgMetadata *self, const char *name);
+void         ytsg_metadata_add_attribute (YtsgMetadata *self,
+                                          const char   *name,
+                                          const char   *value);
+
 RestXmlNode *ytsg_metadata_get_top_node (YtsgMetadata *self);
 
 G_END_DECLS
