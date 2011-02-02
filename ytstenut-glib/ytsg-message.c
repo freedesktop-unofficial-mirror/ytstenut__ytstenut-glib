@@ -26,13 +26,13 @@ static void ytsg_message_dispose (GObject *object);
 static void ytsg_message_finalize (GObject *object);
 static void ytsg_message_constructed (GObject *object);
 static void ytsg_message_get_property (GObject    *object,
-                                         guint       property_id,
-                                         GValue     *value,
-                                         GParamSpec *pspec);
+                                       guint       property_id,
+                                       GValue     *value,
+                                       GParamSpec *pspec);
 static void ytsg_message_set_property (GObject      *object,
-                                         guint         property_id,
-                                         const GValue *value,
-                                         GParamSpec   *pspec);
+                                       guint         property_id,
+                                       const GValue *value,
+                                       GParamSpec   *pspec);
 
 G_DEFINE_TYPE (YtsgMessage, ytsg_message, YTSG_TYPE_METADATA);
 
@@ -54,7 +54,7 @@ enum
   PROP_0,
 };
 
-static guint signals[N_SIGNALS] = {0};
+/*static guint signals[N_SIGNALS] = {0};*/
 
 static void
 ytsg_message_class_init (YtsgMessageClass *klass)
@@ -73,21 +73,16 @@ ytsg_message_class_init (YtsgMessageClass *klass)
 static void
 ytsg_message_constructed (GObject *object)
 {
-  YtsgMessage *self = (YtsgMessage*) object;
-
   if (G_OBJECT_CLASS (ytsg_message_parent_class)->constructed)
     G_OBJECT_CLASS (ytsg_message_parent_class)->constructed (object);
 }
 
 static void
 ytsg_message_get_property (GObject    *object,
-                          guint       property_id,
-                          GValue     *value,
-                          GParamSpec *pspec)
+                           guint       property_id,
+                           GValue     *value,
+                           GParamSpec *pspec)
 {
-  YtsgMessage        *self = (YtsgMessage*) object;
-  YtsgMessagePrivate *priv = self->priv;
-
   switch (property_id)
     {
     default:
@@ -97,13 +92,10 @@ ytsg_message_get_property (GObject    *object,
 
 static void
 ytsg_message_set_property (GObject      *object,
-                          guint         property_id,
-                          const GValue *value,
-                          GParamSpec   *pspec)
+                           guint         property_id,
+                           const GValue *value,
+                           GParamSpec   *pspec)
 {
-  YtsgMessage        *self = (YtsgMessage*) object;
-  YtsgMessagePrivate *priv = self->priv;
-
   switch (property_id)
     {
     default:
@@ -134,9 +126,6 @@ ytsg_message_dispose (GObject *object)
 static void
 ytsg_message_finalize (GObject *object)
 {
-  YtsgMessage        *self = (YtsgMessage*) object;
-  YtsgMessagePrivate *priv = self->priv;
-
   G_OBJECT_CLASS (ytsg_message_parent_class)->finalize (object);
 }
 
