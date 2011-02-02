@@ -20,19 +20,19 @@
  */
 
 #include "ytsg-service.h"
-
+#include "ytsg-metadata-service.h"
 
 static void ytsg_service_dispose (GObject *object);
 static void ytsg_service_finalize (GObject *object);
 static void ytsg_service_constructed (GObject *object);
 static void ytsg_service_get_property (GObject    *object,
-                                         guint       property_id,
-                                         GValue     *value,
-                                         GParamSpec *pspec);
+                                       guint       property_id,
+                                       GValue     *value,
+                                       GParamSpec *pspec);
 static void ytsg_service_set_property (GObject      *object,
-                                         guint         property_id,
-                                         const GValue *value,
-                                         GParamSpec   *pspec);
+                                       guint         property_id,
+                                       const GValue *value,
+                                       GParamSpec   *pspec);
 
 G_DEFINE_TYPE (YtsgService, ytsg_service, G_TYPE_OBJECT);
 
@@ -54,7 +54,7 @@ enum
   PROP_0,
 };
 
-static guint signals[N_SIGNALS] = {0};
+/* static guint signals[N_SIGNALS] = {0}; */
 
 static void
 ytsg_service_class_init (YtsgServiceClass *klass)
@@ -81,9 +81,9 @@ ytsg_service_constructed (GObject *object)
 
 static void
 ytsg_service_get_property (GObject    *object,
-                          guint       property_id,
-                          GValue     *value,
-                          GParamSpec *pspec)
+                           guint       property_id,
+                           GValue     *value,
+                           GParamSpec *pspec)
 {
   YtsgService        *self = (YtsgService*) object;
   YtsgServicePrivate *priv = self->priv;
@@ -97,9 +97,9 @@ ytsg_service_get_property (GObject    *object,
 
 static void
 ytsg_service_set_property (GObject      *object,
-                          guint         property_id,
-                          const GValue *value,
-                          GParamSpec   *pspec)
+                           guint         property_id,
+                           const GValue *value,
+                           GParamSpec   *pspec)
 {
   YtsgService        *self = (YtsgService*) object;
   YtsgServicePrivate *priv = self->priv;
@@ -139,4 +139,3 @@ ytsg_service_finalize (GObject *object)
 
   G_OBJECT_CLASS (ytsg_service_parent_class)->finalize (object);
 }
-
