@@ -162,6 +162,7 @@ docs/reference/ytstenut-glib/ytstenut-glib-docs.xml
 ytstenut-glib/Makefile
 ytstenut-glib/ytsg-version.h
 ytstenut-glib/ytstenut-glib.pc
+tests/Makefile
 ])
 
 echo "
