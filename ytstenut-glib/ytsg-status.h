@@ -68,8 +68,6 @@ GType ytsg_status_get_type (void) G_GNUC_CONST;
 
 YtsgStatus *ytsg_status_new (const char **attributes);
 
-gboolean    ytsg_status_equal (YtsgStatus *self, YtsgStatus *other);
-
 G_END_DECLS
 
 #endif /* _YTSG_STATUS_H */

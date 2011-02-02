@@ -409,3 +409,128 @@ ytsg_metadata_print (YtsgMetadata *self)
   return rest_xml_node_print (priv->top_level_node);
 }
 
+static gboolean
+ytsg_rest_xml_node_check_attrs (RestXmlNode *node0, RestXmlNode *node1)
+{
+  GHashTableIter iter;
+  gpointer       key, value;
+
+  if (g_hash_table_size (node0->attrs) != g_hash_table_size (node1->attrs))
+    return FALSE;
+
+  g_hash_table_iter_init (&iter, node0->attrs);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      const char *at1 = rest_xml_node_get_attr (node1, key);
+
+      if (!value && !at1)
+        continue;
+
+      if ((!at1 && value) || (at1 && !value) || strcmp (value, at1))
+        return FALSE;
+    }
+
+  return TRUE;
+}
+
+static gboolean ytsg_rest_xml_node_check_children (RestXmlNode*, RestXmlNode*);
+
+/*
+ * NB: this function is somewhat simplistic; it assumes that if two nodes have
+ *     siblings, the corresponding siblings must be in identical order. But
+ *     can we define equaly in any other way?
+ */
+static gboolean
+ytsg_rest_xml_node_check_siblings (RestXmlNode *node0, RestXmlNode *node1)
+{
+  RestXmlNode *sib0 = node0->next;
+  RestXmlNode *sib1 = node1->next;
+
+  if (!sib0 && !sib1)
+    return TRUE;
+
+  do
+    {
+      if ((!sib0 && sib1) || (sib0 && !sib1))
+        return FALSE;
+
+      if (!ytsg_rest_xml_node_check_attrs (sib0, sib1))
+        return FALSE;
+
+      if (!ytsg_rest_xml_node_check_children (sib0, sib1))
+        return FALSE;
+
+      sib0 = sib0->next;
+      sib1 = sib1->next;
+    } while (sib0 || sib1);
+
+  return TRUE;
+}
+
+static gboolean
+ytsg_rest_xml_node_check_children (RestXmlNode *node0, RestXmlNode *node1)
+{
+  GHashTableIter iter;
+  gpointer       key, value;
+
+  if (g_hash_table_size (node0->attrs) != g_hash_table_size (node1->attrs))
+    return FALSE;
+
+  g_hash_table_iter_init (&iter, node0->children);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      const char  *name0  = key;
+      RestXmlNode *child0 = value;
+      RestXmlNode *child1 = rest_xml_node_find (node1, name0);
+
+      if (!child1 ||
+          (child0->next && !child1->next) || (!child0->next && child1->next))
+        return FALSE;
+
+      if (!ytsg_rest_xml_node_check_attrs (child0, child1))
+        return FALSE;
+
+      if (!ytsg_rest_xml_node_check_siblings (child0, child1))
+        return FALSE;
+
+      if (!ytsg_rest_xml_node_check_children (child0, child1))
+        return FALSE;
+    }
+
+  return TRUE;
+}
+
+/**
+ * ytsg_metadata_equal:
+ * @self: #YtsgMetadata,
+ * @other: #YtsgMetadata
+ *
+ * Compares two metadata instances and returns %TRUE if they are equal.
+ * NB: equality implies identity of type, i.e., #YtsgMessage and #YtsgStatus
+ * can be compared, but will always be unequal.
+ *
+ * Return value: %TRUE if equal, %FALSE otherwise.
+ */
+gboolean
+ytsg_metadata_equal (YtsgMetadata *self, YtsgMetadata *other)
+{
+  RestXmlNode *node0;
+  RestXmlNode *node1;
+
+  g_return_val_if_fail (YTSG_IS_METADATA (self) && YTSG_IS_METADATA (other),
+                        FALSE);
+
+  if (G_OBJECT_TYPE (self) != G_OBJECT_TYPE (other))
+    return FALSE;
+
+  node0 = ytsg_metadata_get_top_node ((YtsgMetadata*) self);
+  node1 = ytsg_metadata_get_top_node ((YtsgMetadata*) other);
+
+  if (!ytsg_rest_xml_node_check_attrs (node0, node1))
+    return FALSE;
+
+  if (!ytsg_rest_xml_node_check_children (node0, node1))
+    return FALSE;
+
+  return TRUE;
+}

@@ -72,6 +72,7 @@ void         ytsg_metadata_add_attribute (YtsgMetadata *self,
                                           const char   *name,
                                           const char   *value);
 char        *ytsg_metadata_print (YtsgMetadata *self);
+gboolean     ytsg_metadata_equal (YtsgMetadata *self, YtsgMetadata *other);
 RestXmlNode *ytsg_metadata_get_top_node (YtsgMetadata *self);
 
 G_END_DECLS
