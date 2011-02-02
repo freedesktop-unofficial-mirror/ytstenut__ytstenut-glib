@@ -334,3 +334,26 @@ ytsg_metadata_add_attribute (YtsgMetadata *self,
   rest_xml_node_add_attr (priv->top_level_node, name, value);
 }
 
+/**
+ * ytsg_metadata_print:
+ * @self: #YtsgMetadata
+ *
+ * Converts the #YtsgMetada object in XML representation.
+ *
+ * Return value: (transfer full): xml string; the caller must free the string
+ * with g_free() when no longer needed.
+ */
+char *
+ytsg_metadata_print (YtsgMetadata *self)
+{
+  YtsgMetadataPrivate *priv;
+
+  g_return_val_if_fail (YTSG_IS_METADATA (self), NULL);
+
+  priv = self->priv;
+
+  g_return_val_if_fail (priv->top_level_node, NULL);
+
+  return rest_xml_node_print (priv->top_level_node);
+}
+
