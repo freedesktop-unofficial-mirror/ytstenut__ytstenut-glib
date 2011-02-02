@@ -138,10 +138,16 @@ ytsg_rest_xml_node_check_attrs (RestXmlNode *node0, RestXmlNode *node1)
   GHashTableIter iter;
   gpointer       key, value;
 
+  if (g_hash_table_size (node0->attrs) != g_hash_table_size (node1->attrs))
+    return FALSE;
+
   g_hash_table_iter_init (&iter, node0->attrs);
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
       const char *at1 = rest_xml_node_get_attr (node1, key);
+
+      if (!value && !at1)
+        continue;
 
       if ((!at1 && value) || (at1 && !value) || strcmp (value, at1))
         return FALSE;
@@ -163,6 +169,9 @@ ytsg_rest_xml_node_check_siblings (RestXmlNode *node0, RestXmlNode *node1)
   RestXmlNode *sib0 = node0->next;
   RestXmlNode *sib1 = node1->next;
 
+  if (!sib0 && !sib1)
+    return TRUE;
+
   do
     {
       if ((!sib0 && sib1) || (sib0 && !sib1))
@@ -176,7 +185,7 @@ ytsg_rest_xml_node_check_siblings (RestXmlNode *node0, RestXmlNode *node1)
 
       sib0 = sib0->next;
       sib1 = sib1->next;
-    } while (1);
+    } while (sib0 || sib1);
 
   return TRUE;
 }
@@ -186,6 +195,9 @@ ytsg_rest_xml_node_check_children (RestXmlNode *node0, RestXmlNode *node1)
 {
   GHashTableIter iter;
   gpointer       key, value;
+
+  if (g_hash_table_size (node0->attrs) != g_hash_table_size (node1->attrs))
+    return FALSE;
 
   g_hash_table_iter_init (&iter, node0->children);
   while (g_hash_table_iter_next (&iter, &key, &value))
