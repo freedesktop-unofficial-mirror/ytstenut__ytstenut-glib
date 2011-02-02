@@ -23,7 +23,7 @@
 #include <rest/rest-xml-node.h>
 
 #include "ytsg-status.h"
-
+#include "ytsg-private.h"
 
 static void ytsg_status_dispose (GObject *object);
 static void ytsg_status_finalize (GObject *object);
@@ -238,5 +238,41 @@ ytsg_status_equal (YtsgStatus *self, YtsgStatus *other)
     return FALSE;
 
   return TRUE;
+}
+
+/**
+ * ytsg_status_new:
+ * @attributes: NULL terminated array of name/value pairs; can be %NULL
+ *
+ * Constructs a new #YtsgStatus object, setting the top level attributes.
+ *
+ * Return value: (transfer full): newly allocated #YtsgStatus object.
+ */
+YtsgStatus *
+ytsg_status_new (const char ** attributes)
+{
+  RestXmlNode  *top = rest_xml_node_add_child (NULL, "status");
+  YtsgMetadata *mdata;
+
+  g_return_val_if_fail (top, NULL);
+
+  if (attributes)
+    {
+      const char  **p;
+
+      for (p = attributes; *p && *(p + 1); p += 2)
+        {
+          const char *a = *p;
+          const char *v = *(p + 1);
+
+          rest_xml_node_add_attr (top, a, v);
+        }
+    }
+
+  mdata = _ytsg_metadata_new_from_node (top);
+
+  g_return_val_if_fail (YTSG_IS_STATUS (mdata), NULL);
+
+  return (YtsgStatus*) mdata;
 }
 
