@@ -25,6 +25,7 @@
 #include "ytsg-status.h"
 
 #include <rest/rest-xml-parser.h>
+#include <string.h>
 
 static void ytsg_metadata_dispose (GObject *object);
 static void ytsg_metadata_finalize (GObject *object);
@@ -135,9 +136,6 @@ ytsg_metadata_get_property (GObject    *object,
                             GValue     *value,
                             GParamSpec *pspec)
 {
-  YtsgMetadata        *self = (YtsgMetadata*) object;
-  YtsgMetadataPrivate *priv = self->priv;
-
   switch (property_id)
     {
     default:
