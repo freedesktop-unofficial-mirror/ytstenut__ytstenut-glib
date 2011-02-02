@@ -66,6 +66,8 @@ struct _YtsgMessage
 
 GType ytsg_message_get_type (void) G_GNUC_CONST;
 
+YtsgMessage *ytsg_message_new (const char ** attributes);
+
 G_END_DECLS
 
 #endif /* _YTSG_MESSAGE_H */

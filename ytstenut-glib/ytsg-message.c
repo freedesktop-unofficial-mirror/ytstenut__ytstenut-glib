@@ -20,7 +20,7 @@
  */
 
 #include "ytsg-message.h"
-
+#include "ytsg-private.h"
 
 static void ytsg_message_dispose (GObject *object);
 static void ytsg_message_finalize (GObject *object);
@@ -138,5 +138,41 @@ ytsg_message_finalize (GObject *object)
   YtsgMessagePrivate *priv = self->priv;
 
   G_OBJECT_CLASS (ytsg_message_parent_class)->finalize (object);
+}
+
+/**
+ * ytsg_message_new:
+ * @attributes: NULL terminated array of name/value pairs; can be %NULL
+ *
+ * Constructs a new #YtsgMessage object, setting the top level attributes.
+ *
+ * Return value: (transfer full): newly allocated #YtsgMessage object.
+ */
+YtsgMessage *
+ytsg_message_new (const char ** attributes)
+{
+  RestXmlNode  *top = rest_xml_node_add_child (NULL, "message");
+  YtsgMetadata *mdata;
+
+  g_return_val_if_fail (top, NULL);
+
+  if (attributes)
+    {
+      const char  **p;
+
+      for (p = attributes; *p && *(p + 1); p += 2)
+        {
+          const char *a = *p;
+          const char *v = *(p + 1);
+
+          rest_xml_node_add_attr (top, a, v);
+        }
+    }
+
+  mdata = _ytsg_metadata_new_from_node (top);
+
+  g_return_val_if_fail (YTSG_IS_MESSAGE (mdata), NULL);
+
+  return (YtsgMessage*) mdata;
 }
 
