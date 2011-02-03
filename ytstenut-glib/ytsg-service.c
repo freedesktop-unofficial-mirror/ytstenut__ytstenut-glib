@@ -41,7 +41,7 @@ G_DEFINE_ABSTRACT_TYPE (YtsgService, ytsg_service, G_TYPE_OBJECT);
 
 struct _YtsgServicePrivate
 {
-  char *uid;
+  const char *uid;
 
   guint disposed : 1;
 };
@@ -129,8 +129,7 @@ ytsg_service_set_property (GObject      *object,
   switch (property_id)
     {
     case PROP_UID:
-      g_free (priv->uid);
-      priv->uid = g_value_dup_string (value);
+      priv->uid = g_intern_string (g_value_get_string (value));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -163,8 +162,6 @@ ytsg_service_finalize (GObject *object)
   YtsgService        *self = (YtsgService*) object;
   YtsgServicePrivate *priv = self->priv;
 
-  g_free (priv->uid);
-
   G_OBJECT_CLASS (ytsg_service_parent_class)->finalize (object);
 }
 
@@ -172,7 +169,8 @@ ytsg_service_finalize (GObject *object)
  * ytsg_service_get_uid:
  * @service: #YtsgService
  *
- * Returns the uid of the the given service.
+ * Returns the uid of the the given service. The returned pointer is to a
+ * canonical representation created with g_intern_string().
  *
  * Return value: (transfer none): the uid.
  */
