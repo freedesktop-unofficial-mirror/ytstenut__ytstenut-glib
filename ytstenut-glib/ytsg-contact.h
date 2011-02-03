@@ -23,6 +23,7 @@
 #define _YTSG_CONTACT_H
 
 #include <glib-object.h>
+#include <ytstenut-glib/ytsg-service.h>
 
 G_BEGIN_DECLS
 
@@ -54,6 +55,9 @@ typedef struct _YtsgContactPrivate YtsgContactPrivate;
 struct _YtsgContactClass
 {
   GObjectClass parent_class;
+
+  void (*service_added)   (YtsgContact *contact, YtsgService *service);
+  void (*service_removed) (YtsgContact *contact, YtsgService *service);
 };
 
 struct _YtsgContact
