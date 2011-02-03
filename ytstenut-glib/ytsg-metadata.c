@@ -51,6 +51,7 @@ struct _YtsgMetadataPrivate
   char        **attributes;
 
   guint disposed : 1;
+  guint readonly : 1;
 };
 
 enum
@@ -270,6 +271,7 @@ ytsg_metadata_get_top_node (YtsgMetadata *self)
 YtsgMetadata *
 _ytsg_metadata_new_from_xml (const char *xml)
 {
+  YtsgMetadata  *mdata;
   RestXmlParser *parser;
   RestXmlNode   *node;
 
@@ -283,7 +285,10 @@ _ytsg_metadata_new_from_xml (const char *xml)
 
   /* We do not unref the node, the object takes over the reference */
 
-  return _ytsg_metadata_new_from_node (node, NULL);
+  mdata = _ytsg_metadata_new_from_node (node, NULL);
+  mdata->priv->readonly = TRUE;
+
+  return mdata;
 }
 
 /*
@@ -382,6 +387,7 @@ ytsg_metadata_add_attribute (YtsgMetadata *self,
   priv = self->priv;
 
   g_return_if_fail (priv->top_level_node);
+  g_return_if_fail (!priv->readonly);
 
   rest_xml_node_add_attr (priv->top_level_node, name, value);
 }
