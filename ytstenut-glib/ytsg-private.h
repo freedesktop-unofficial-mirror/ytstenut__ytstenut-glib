@@ -24,11 +24,17 @@
 
 #include <ytstenut-glib/ytsg-metadata.h>
 #include <ytstenut-glib/ytsg-metadata-service.h>
+#include <ytstenut-glib/ytsg-contact.h>
+#include <ytstenut-glib/ytsg-client.h>
+
 #include <rest/rest-xml-node.h>
+#include <telepathy-glib/contact.h>
 
 #define I_(str) (g_intern_static_string ((str)))
 
 G_BEGIN_DECLS
+
+YtsgContact *_ytsg_contact_new (YtsgClient *client, TpContact *tp_contact);
 
 YtsgMetadata *_ytsg_metadata_new_from_xml (const char *xml);
 YtsgMetadata *_ytsg_metadata_new_from_node (RestXmlNode  *node,

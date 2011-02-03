@@ -19,9 +19,20 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
+#include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/connection.h>
+#include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/channel.h>
+#include <telepathy-glib/util.h>
+#include <telepathy-glib/dbus.h>
+#include <telepathy-glib/contact.h>
+#include <telepathy-glib/channel.h>
+
 #include "ytsg-contact.h"
 #include "ytsg-private.h"
 #include "ytsg-marshal.h"
+#include "ytsg-client.h"
 
 static void ytsg_contact_dispose (GObject *object);
 static void ytsg_contact_finalize (GObject *object);
@@ -44,6 +55,12 @@ struct _YtsgContactPrivate
 {
   GHashTable *services;
 
+  TpContact  *tp_contact;
+
+  char       *icon_token;
+
+  YtsgClient *client; /* client that owns us */
+
   guint disposed : 1;
 };
 
@@ -58,6 +75,9 @@ enum
 enum
 {
   PROP_0,
+  PROP_TP_CONTACT,
+  PROP_ICON,
+  PROP_CLIENT,
 };
 
 static guint signals[N_SIGNALS] = {0};
@@ -89,6 +109,7 @@ ytsg_contact_service_removed (YtsgContact *contact, YtsgService *service)
 static void
 ytsg_contact_class_init (YtsgContactClass *klass)
 {
+  GParamSpec   *pspec;
   GObjectClass *object_class = (GObjectClass *)klass;
 
   g_type_class_add_private (klass, sizeof (YtsgContactPrivate));
@@ -101,6 +122,47 @@ ytsg_contact_class_init (YtsgContactClass *klass)
 
   klass->service_added       = ytsg_contact_service_added;
   klass->service_removed     = ytsg_contact_service_removed;
+
+  /**
+   * YtsgContact:tp-contact:
+   *
+   * TpContact of this item.
+   */
+  pspec = g_param_spec_object ("tp-contact",
+                               "TpContact",
+                               "TpContact",
+                               TP_TYPE_CONTACT,
+                               G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY);
+  g_object_class_install_property (object_class, PROP_TP_CONTACT, pspec);
+
+  /**
+   * YtsgContact:icon:
+   *
+   * Icon for this item.
+   *
+   * The property holds a GFile* pointing to the latest
+   * cached image.
+   *
+   * Since: 0.1
+   */
+  pspec = g_param_spec_object ("icon",
+                               "Icon",
+                               "Icon",
+                               G_TYPE_FILE,
+                               G_PARAM_READABLE);
+  g_object_class_install_property (object_class, PROP_ICON, pspec);
+
+  /**
+   * YtsgContact:client:
+   *
+   * #YtsgClient that owns the roster
+   */
+  pspec = g_param_spec_object ("client",
+                               "Client",
+                               "Client",
+                               YTSG_TYPE_CLIENT,
+                               G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY);
+  g_object_class_install_property (object_class, PROP_CLIENT, pspec);
 
   /**
    * YtsgContact::service-added:
@@ -154,31 +216,73 @@ ytsg_contact_constructed (GObject *object)
 
 static void
 ytsg_contact_get_property (GObject    *object,
-                          guint       property_id,
-                          GValue     *value,
-                          GParamSpec *pspec)
+                           guint       property_id,
+                           GValue     *value,
+                           GParamSpec *pspec)
 {
   YtsgContact        *self = (YtsgContact*) object;
   YtsgContactPrivate *priv = self->priv;
 
   switch (property_id)
     {
+    case PROP_ICON:
+      {
+        GFile *file = ytsg_contact_get_icon (self, NULL);
+        g_value_take_object (value, file);
+
+        g_warning ("Should use ytst_contact_get_icon() instead of querying "
+                   "YstgContact:icon");
+      }
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
 }
 
 static void
+ytsg_contact_avatar_file_cb (TpContact   *contact,
+                             GParamSpec  *param,
+                             YtsgContact *ycontact)
+{
+  YtsgContactPrivate *priv  = ycontact->priv;
+  const char         *token = tp_contact_get_avatar_token (contact);
+
+  if ((priv->icon_token && token && !strcmp (priv->icon_token, token)) ||
+      (!priv->icon_token && !token))
+    {
+      return;
+    }
+
+  g_free (priv->icon_token);
+  priv->icon_token = g_strdup (token);
+
+  g_object_notify ((GObject*)ycontact, "icon");
+}
+
+static void
 ytsg_contact_set_property (GObject      *object,
-                          guint         property_id,
-                          const GValue *value,
-                          GParamSpec   *pspec)
+                           guint         property_id,
+                           const GValue *value,
+                           GParamSpec   *pspec)
 {
   YtsgContact        *self = (YtsgContact*) object;
   YtsgContactPrivate *priv = self->priv;
 
   switch (property_id)
     {
+    case PROP_TP_CONTACT:
+      {
+        priv->tp_contact = g_value_dup_object (value);
+
+        g_signal_connect (priv->tp_contact, "notify::avatar-file",
+                          G_CALLBACK (ytsg_contact_avatar_file_cb),
+                          self);
+      }
+      break;
+    case PROP_CLIENT:
+      priv->client = g_value_get_object (value);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -206,8 +310,16 @@ ytsg_contact_dispose (GObject *object)
 
   priv->disposed = TRUE;
 
+  priv->client = NULL;
+
   g_hash_table_destroy (priv->services);
   priv->services = NULL;
+
+  if (priv->tp_contact)
+    {
+      g_object_unref (priv->tp_contact);
+      priv->tp_contact = NULL;
+    }
 
   G_OBJECT_CLASS (ytsg_contact_parent_class)->dispose (object);
 }
@@ -218,6 +330,90 @@ ytsg_contact_finalize (GObject *object)
   YtsgContact        *self = (YtsgContact*) object;
   YtsgContactPrivate *priv = self->priv;
 
+  g_free (priv->icon_token);
+
   G_OBJECT_CLASS (ytsg_contact_parent_class)->finalize (object);
 }
 
+/**
+ * ytsg_contact_get_jid:
+ * @contact: #YtsgContact
+ *
+ * Retrieves the jabber identifier of this contact.
+ *
+ * Return value: (transfer none): The jid of this contact.
+ */
+const char *
+ytsg_contact_get_jid (const YtsgContact *contact)
+{
+  YtsgContactPrivate *priv;
+
+  g_return_val_if_fail (YTSG_IS_CONTACT (contact), NULL);
+
+  priv = contact->priv;
+
+  g_return_val_if_fail (!priv->disposed, NULL);
+  g_return_val_if_fail (priv->tp_contact, NULL);
+
+  return tp_contact_get_identifier (priv->tp_contact);
+}
+
+/**
+ * ytsg_contact_get_name:
+ * @contact: #YtsgContact
+ *
+ * Retrieves human readable name of this client
+ *
+ * Return value: (transfer none): The name of this contact.
+ */
+const char *
+ytsg_contact_get_name (const YtsgContact *contact)
+{
+  g_warning (G_STRLOC ": %s is not implemented", __FUNCTION__);
+  return NULL;
+}
+
+/**
+ * ytsg_contact_get_icon:
+ * @contact: #YtsgContact
+ * @mime: (transfer none): location to store a pointer to the icon mime type
+ *
+ * Retrieves icon of this contact. If the mime parameter is provided, on return
+ * it will contain the mime type of the icon, this pointer must not be modified
+ * or freed by the caller.
+ *
+ * Return value: (transfer full): #GFile pointing to the icon image, can be
+ * %NULL. The caller owns a reference on the returned object, and must release
+ * it when no longer needed with g_object_unref().
+ */
+GFile *
+ytsg_contact_get_icon (const YtsgContact  *contact, const char **mime)
+{
+  YtsgContactPrivate  *priv;
+  GFile               *file;
+
+  g_return_val_if_fail (YTSG_IS_CONTACT (contact), NULL);
+
+  priv = contact->priv;
+
+  g_return_val_if_fail (!priv->disposed, NULL);
+
+  if (!(file = tp_contact_get_avatar_file (priv->tp_contact)))
+    return NULL;
+
+  if (mime)
+    *mime = tp_contact_get_avatar_mime_type (priv->tp_contact);
+  return g_object_ref (file);
+}
+
+YtsgContact *
+_ytsg_contact_new (YtsgClient *client, TpContact *tp_contact)
+{
+  g_return_val_if_fail (YTSG_IS_CLIENT (client), NULL);
+  g_return_val_if_fail ( TP_IS_CONTACT (tp_contact), NULL);
+
+  return g_object_new (YTSG_TYPE_CONTACT,
+                       "client",       client,
+                       "tp-contact",   tp_contact,
+                       NULL);
+}

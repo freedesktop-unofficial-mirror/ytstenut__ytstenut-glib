@@ -23,6 +23,7 @@
 #define _YTSG_CONTACT_H
 
 #include <glib-object.h>
+#include <gio/gio.h>
 #include <ytstenut-glib/ytsg-service.h>
 
 G_BEGIN_DECLS
@@ -69,6 +70,11 @@ struct _YtsgContact
 };
 
 GType ytsg_contact_get_type (void) G_GNUC_CONST;
+
+const char *ytsg_contact_get_jid            (const YtsgContact  *contact);
+const char *ytsg_contact_get_name           (const YtsgContact  *contact);
+GFile      *ytsg_contact_get_icon           (const YtsgContact  *contact,
+                                             const char        **mime);
 
 G_END_DECLS
 
