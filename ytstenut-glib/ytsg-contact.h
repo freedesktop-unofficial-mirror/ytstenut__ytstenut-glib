@@ -25,6 +25,7 @@
 #include <glib-object.h>
 #include <gio/gio.h>
 #include <ytstenut-glib/ytsg-service.h>
+#include <telepathy-glib/contact.h>
 
 G_BEGIN_DECLS
 
@@ -73,6 +74,7 @@ GType ytsg_contact_get_type (void) G_GNUC_CONST;
 
 const char *ytsg_contact_get_jid            (const YtsgContact  *contact);
 const char *ytsg_contact_get_name           (const YtsgContact  *contact);
+TpContact  *ytsg_contact_get_tp_contact     (const YtsgContact  *contact);
 GFile      *ytsg_contact_get_icon           (const YtsgContact  *contact,
                                              const char        **mime);
 

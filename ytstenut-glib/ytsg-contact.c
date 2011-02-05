@@ -26,7 +26,6 @@
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/dbus.h>
-#include <telepathy-glib/contact.h>
 #include <telepathy-glib/channel.h>
 
 #include "ytsg-contact.h"
@@ -417,3 +416,18 @@ _ytsg_contact_new (YtsgClient *client, TpContact *tp_contact)
                        "tp-contact",   tp_contact,
                        NULL);
 }
+
+TpContact *
+ytsg_contact_get_tp_contact (const YtsgContact  *contact)
+{
+  YtsgContactPrivate  *priv;
+
+  g_return_val_if_fail (YTSG_IS_CONTACT (contact), NULL);
+
+  priv = contact->priv;
+
+  g_return_val_if_fail (!priv->disposed, NULL);
+
+  return priv->tp_contact;
+}
+
