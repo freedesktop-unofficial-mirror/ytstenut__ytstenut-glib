@@ -26,6 +26,7 @@
 #include <ytstenut-glib/ytsg-metadata-service.h>
 #include <ytstenut-glib/ytsg-contact.h>
 #include <ytstenut-glib/ytsg-client.h>
+#include <ytstenut-glib/ytsg-roster.h>
 
 #include <rest/rest-xml-node.h>
 #include <telepathy-glib/contact.h>
@@ -46,6 +47,19 @@ void _ytsg_metadata_service_received_status (YtsgMetadataService *service,
 void _ytsg_metadata_service_received_message (YtsgMetadataService *service,
                                               const char          *xml);
 
+YtsgRoster   *_ytsg_roster_new (void);
+void          _ytsg_roster_add_contact (YtsgRoster  *roster,
+                                        YtsgContact *contact);
+void          _ytsg_roster_remove_contact (YtsgRoster  *roster,
+                                           YtsgContact *contact,
+                                           gboolean     dispose);
+void          _ytsg_roster_clear (YtsgRoster *roster);
+void          _ytsg_roster_remove_contact_by_handle (YtsgRoster *roster,
+                                                     guint       handle);
+YtsgContact  *_ytsg_roster_find_contact_by_handle (YtsgRoster *roster,
+                                                   guint       handle);
+gboolean      _ytsg_roster_contaiytsg_contact (YtsgRoster        *roster,
+                                               const YtsgContact *contact);
 
 G_END_DECLS
 
