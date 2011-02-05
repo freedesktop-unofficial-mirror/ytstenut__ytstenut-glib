@@ -431,3 +431,20 @@ ytsg_contact_get_tp_contact (const YtsgContact  *contact)
   return priv->tp_contact;
 }
 
+/**
+ * ytsg_contact_has_capability:
+ * @item: #YtsgContact,
+ * @cap: #YtsgCaps, capability to check for.
+ *
+ * Checks whether the contact has the given capability.
+ *
+ * Return value: returns %TRUE if the item advertises the capability, %FALSE
+ * otherwise.
+ */
+gboolean
+ytsg_contact_has_capability (const YtsgContact *item, YtsgCaps cap)
+{
+  g_critical (G_STRLOC ": NOT IMPLEMENTED!!!");
+
+  return FALSE;
+}

@@ -26,6 +26,7 @@
 #include <gio/gio.h>
 #include <ytstenut-glib/ytsg-service.h>
 #include <telepathy-glib/contact.h>
+#include <ytstenut-glib/ytsg-caps.h>
 
 G_BEGIN_DECLS
 
@@ -77,6 +78,8 @@ const char *ytsg_contact_get_name           (const YtsgContact  *contact);
 TpContact  *ytsg_contact_get_tp_contact     (const YtsgContact  *contact);
 GFile      *ytsg_contact_get_icon           (const YtsgContact  *contact,
                                              const char        **mime);
+gboolean    ytsg_contact_has_capability     (const YtsgContact  *item,
+                                             YtsgCaps            cap);
 
 G_END_DECLS
 
