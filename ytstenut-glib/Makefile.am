@@ -14,6 +14,7 @@ AM_CPPFLAGS = 					\
 AM_CFLAGS = $(YTSG_CFLAGS)
 
 source_h =						\
+		$(srcdir)/ytsg-caps.h			\
 		$(srcdir)/ytsg-client.h			\
 		$(srcdir)/ytsg-contact.h		\
 		$(srcdir)/ytsg-debug.h			\
