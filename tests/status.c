@@ -49,16 +49,16 @@ main (int argc, char **argv)
 
   status2 = ytsg_status_new (attrs);
 
-  g_assert (!ytsg_metadata_equal ((YtsgMetadata*)status1,
-                                  (YtsgMetadata*)status2));
+  g_assert (!ytsg_metadata_is_equal ((YtsgMetadata*)status1,
+                                     (YtsgMetadata*)status2));
 
   ytsg_metadata_add_attribute ((YtsgMetadata*)status2, "a3", "v3");
 
-  g_assert (ytsg_metadata_equal ((YtsgMetadata*)status1,
-                                 (YtsgMetadata*)status2));
+  g_assert (ytsg_metadata_is_equal ((YtsgMetadata*)status1,
+                                    (YtsgMetadata*)status2));
 
-  top1 = ytsg_metadata_get_top_node ((YtsgMetadata*)status1);
-  top2 = ytsg_metadata_get_top_node ((YtsgMetadata*)status2);
+  top1 = ytsg_metadata_get_root_node ((YtsgMetadata*)status1);
+  top2 = ytsg_metadata_get_root_node ((YtsgMetadata*)status2);
 
   child11 = rest_xml_node_add_child (top1, "t");
   child12 = rest_xml_node_add_child (top1, "t");
@@ -66,24 +66,24 @@ main (int argc, char **argv)
   child21 = rest_xml_node_add_child (top2, "t");
   child22 = rest_xml_node_add_child (top2, "t");
 
-  g_assert (ytsg_metadata_equal ((YtsgMetadata*)status1,
-                                 (YtsgMetadata*)status2));
+  g_assert (ytsg_metadata_is_equal ((YtsgMetadata*)status1,
+                                    (YtsgMetadata*)status2));
 
   rest_xml_node_add_attr (child11, "a4", "v4");
   rest_xml_node_add_attr (child21, "a4", "v4");
 
-  g_assert (ytsg_metadata_equal ((YtsgMetadata*)status1,
-                                 (YtsgMetadata*)status2));
+  g_assert (ytsg_metadata_is_equal ((YtsgMetadata*)status1,
+                                    (YtsgMetadata*)status2));
 
   rest_xml_node_add_attr (child21, "a5", "v5");
 
-  g_assert (!ytsg_metadata_equal ((YtsgMetadata*)status1,
-                                  (YtsgMetadata*)status2));
+  g_assert (!ytsg_metadata_is_equal ((YtsgMetadata*)status1,
+                                     (YtsgMetadata*)status2));
 
   message = ytsg_message_new (NULL);
 
-  g_assert (!ytsg_metadata_equal ((YtsgMetadata*)status1,
-                                  (YtsgMetadata*)message));
+  g_assert (!ytsg_metadata_is_equal ((YtsgMetadata*)status1,
+                                     (YtsgMetadata*)message));
 
   return 0;
 }

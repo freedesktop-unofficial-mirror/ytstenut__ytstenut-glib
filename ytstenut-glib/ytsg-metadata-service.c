@@ -207,15 +207,15 @@ ytsg_service_metadata_send_message (YtsgMetadataService *service,
 }
 
 /**
- * ytsg_metadata_service_send:
+ * ytsg_metadata_service_send_metadata:
  * @service: #YtsgMetadataService
  * @metadata: #YtsgMetadata that was received
  *
  *  Sends the provided metadata via the service.
  */
 void
-ytsg_metadata_service_send (YtsgMetadataService *service,
-                            YtsgMetadata        *metadata)
+ytsg_metadata_service_send_metadata (YtsgMetadataService *service,
+                                     YtsgMetadata        *metadata)
 {
   g_return_if_fail (YTSG_IS_METADATA_SERVICE (service));
   g_return_if_fail (YTSG_IS_METADATA (metadata));

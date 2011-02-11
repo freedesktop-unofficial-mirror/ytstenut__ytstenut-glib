@@ -52,8 +52,8 @@ struct _YtsgMetadataService
 
 GType ytsg_metadata_service_get_type (void) G_GNUC_CONST;
 
-void ytsg_metadata_service_send (YtsgMetadataService *service,
-                                 YtsgMetadata        *metadata);
+void ytsg_metadata_service_send_metadata (YtsgMetadataService *service,
+                                          YtsgMetadata        *metadata);
 
 G_END_DECLS
 

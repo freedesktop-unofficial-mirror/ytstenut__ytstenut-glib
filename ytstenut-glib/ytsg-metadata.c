@@ -240,17 +240,17 @@ ytsg_metadata_finalize (GObject *object)
 }
 
 /**
- * ytsg_metadata_get_top_node:
+ * ytsg_metadata_get_root_node:
  * @self: #YtsgMetadata
  *
  * Returns pointer to the top-level node of the metadata, that can be used
  * with the #RestXmlNode API.
  *
- * Return value: (transfer none): #RestXmlNode representing the top level node
+ * Return value: (transfer none): #RestXmlNode representing the top-level node
  * of the metadata xml.
  */
 RestXmlNode *
-ytsg_metadata_get_top_node (YtsgMetadata *self)
+ytsg_metadata_get_root_node (YtsgMetadata *self)
 {
   YtsgMetadataPrivate *priv;
 
@@ -344,7 +344,7 @@ _ytsg_metadata_new_from_node (RestXmlNode *node, const char **attributes)
  *
  * Retrieves the value of an attribute of the given name on the top level node
  * of the #YtsgMetadata object (to query attributes on children of the top level
- * node, you need to use ytsg_metadata_get_top_node() and the librest API to
+ * node, you need to use ytsg_metadata_get_root_node() and the librest API to
  * locate and query the appropriate node).
  *
  * Return value: (transfer none): the attribute value or %NULL if attribute
@@ -372,7 +372,7 @@ ytsg_metadata_get_attribute (YtsgMetadata *self, const char *name)
  *
  * Adds an attribute of the given name on the top level node
  * of the #YtsgMetadata object (to add attributes to children of the top level
- * node, you need to use ytsg_metadata_get_top_node() and the librest API to
+ * node, you need to use ytsg_metadata_get_root_node() and the librest API to
  * construct the metadata tree).
  */
 void
@@ -393,7 +393,7 @@ ytsg_metadata_add_attribute (YtsgMetadata *self,
 }
 
 /**
- * ytsg_metadata_print:
+ * ytsg_metadata_to_string:
  * @self: #YtsgMetadata
  *
  * Converts the #YtsgMetada object in XML representation.
@@ -402,7 +402,7 @@ ytsg_metadata_add_attribute (YtsgMetadata *self,
  * with g_free() when no longer needed.
  */
 char *
-ytsg_metadata_print (YtsgMetadata *self)
+ytsg_metadata_to_string (YtsgMetadata *self)
 {
   YtsgMetadataPrivate *priv;
 
@@ -507,7 +507,7 @@ ytsg_rest_xml_node_check_children (RestXmlNode *node0, RestXmlNode *node1)
 }
 
 /**
- * ytsg_metadata_equal:
+ * ytsg_metadata_is_equal:
  * @self: #YtsgMetadata,
  * @other: #YtsgMetadata
  *
@@ -518,7 +518,7 @@ ytsg_rest_xml_node_check_children (RestXmlNode *node0, RestXmlNode *node1)
  * Return value: %TRUE if equal, %FALSE otherwise.
  */
 gboolean
-ytsg_metadata_equal (YtsgMetadata *self, YtsgMetadata *other)
+ytsg_metadata_is_equal (YtsgMetadata *self, YtsgMetadata *other)
 {
   RestXmlNode *node0;
   RestXmlNode *node1;
@@ -529,8 +529,8 @@ ytsg_metadata_equal (YtsgMetadata *self, YtsgMetadata *other)
   if (G_OBJECT_TYPE (self) != G_OBJECT_TYPE (other))
     return FALSE;
 
-  node0 = ytsg_metadata_get_top_node ((YtsgMetadata*) self);
-  node1 = ytsg_metadata_get_top_node ((YtsgMetadata*) other);
+  node0 = ytsg_metadata_get_root_node ((YtsgMetadata*) self);
+  node1 = ytsg_metadata_get_root_node ((YtsgMetadata*) other);
 
   if (!ytsg_rest_xml_node_check_attrs (node0, node1))
     return FALSE;

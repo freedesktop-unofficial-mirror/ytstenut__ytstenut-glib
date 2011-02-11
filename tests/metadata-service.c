@@ -39,7 +39,7 @@ status_cb (YtsgMetadataService *service, YtsgStatus *status, gpointer data)
 
   got_status_signal = TRUE;
 
-  g_assert (ytsg_metadata_equal ((YtsgMetadata*)status, (YtsgMetadata*)s2));
+  g_assert (ytsg_metadata_is_equal ((YtsgMetadata*)status, (YtsgMetadata*)s2));
 }
 
 static void
@@ -49,7 +49,7 @@ message_cb (YtsgMetadataService *service, YtsgMessage *message, gpointer data)
 
   got_message_signal = TRUE;
 
-  g_assert (ytsg_metadata_equal ((YtsgMetadata*)message, (YtsgMetadata*)m2));
+  g_assert (ytsg_metadata_is_equal ((YtsgMetadata*)message, (YtsgMetadata*)m2));
 }
 
 int
