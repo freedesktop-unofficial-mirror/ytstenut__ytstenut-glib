@@ -246,6 +246,8 @@ ytsg_metadata_finalize (GObject *object)
  * Returns pointer to the top-level node of the metadata, that can be used
  * with the #RestXmlNode API.
  *
+ * NB: Any strings set directly through librest API must be in utf-8 encoding.
+ *
  * Return value: (transfer none): #RestXmlNode representing the top-level node
  * of the metadata xml.
  */
@@ -374,6 +376,8 @@ ytsg_metadata_get_attribute (YtsgMetadata *self, const char *name)
  * of the #YtsgMetadata object (to add attributes to children of the top level
  * node, you need to use ytsg_metadata_get_root_node() and the librest API to
  * construct the metadata tree).
+ *
+ * NB: Both attribute names and values must be in utf-8 encoding.
  */
 void
 ytsg_metadata_add_attribute (YtsgMetadata *self,
