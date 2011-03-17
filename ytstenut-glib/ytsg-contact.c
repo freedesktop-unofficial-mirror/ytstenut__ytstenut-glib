@@ -32,6 +32,7 @@
 #include "ytsg-private.h"
 #include "ytsg-marshal.h"
 #include "ytsg-client.h"
+#include "ytsg-debug.h"
 
 static void ytsg_contact_dispose (GObject *object);
 static void ytsg_contact_finalize (GObject *object);
@@ -59,6 +60,8 @@ struct _YtsgContactPrivate
   char       *icon_token;
 
   YtsgClient *client; /* client that owns us */
+
+  YtsgSubscription  subscription; /* subscription state of this item */
 
   guint disposed : 1;
 };
@@ -448,3 +451,43 @@ ytsg_contact_has_capability (const YtsgContact *item, YtsgCaps cap)
 
   return FALSE;
 }
+
+
+/*
+ * ytsg_roster_item_set_subscription:
+ * @item: #YtsgRosterItem
+ * @subscription: #YtsgSubscription
+ *
+ * Sets #YtsgSubscription state of this item.
+ */
+void
+_ytsg_contact_set_subscription (const YtsgContact *contact,
+                                YtsgSubscription   subscription)
+{
+  YtsgContactPrivate  *priv;
+  YtsgSubscription     or_with = subscription;
+
+  g_return_if_fail (YTSG_CONTACT (contact));
+
+  priv = contact->priv;
+
+  g_return_if_fail (!priv->disposed);
+
+  if (priv->subscription & subscription)
+    return;
+
+  YTSG_NOTE (ROSTER, "Contact %s: subscription status %d",
+           ytsg_contact_get_jid (contact), subscription);
+
+  if (subscription == YTSG_SUBSCRIPTION_APPROVED)
+    {
+      priv->subscription &= ~YTSG_SUBSCRIPTION_PENDING_IN;
+      priv->subscription &= ~YTSG_SUBSCRIPTION_PENDING_OUT;
+    }
+
+  priv->subscription |= or_with;
+
+  g_object_notify ((GObject*) contact, "subscription");
+}
+
+

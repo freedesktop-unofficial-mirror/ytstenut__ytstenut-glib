@@ -25,6 +25,7 @@ source_h =						\
 		$(srcdir)/ytsg-roster.h			\
 		$(srcdir)/ytsg-service.h		\
 		$(srcdir)/ytsg-status.h			\
+		$(srcdir)/ytsg-types.h			\
 		$(srcdir)/ytsg-version.h		\
 		$(NULL)
 

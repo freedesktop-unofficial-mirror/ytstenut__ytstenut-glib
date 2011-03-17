@@ -66,6 +66,9 @@ struct _YtsgClient
 
 GType ytsg_client_get_type (void) G_GNUC_CONST;
 
+void ytsg_client_disconnect_from_mesh (YtsgClient *client);
+void ytsg_client_connect_to_mesh (YtsgClient *client);
+
 G_END_DECLS
 
 #endif /* _YTSG_CLIENT_H */

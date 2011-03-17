@@ -19,11 +19,12 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
 #include "ytsg-private.h"
 #include "ytsg-marshal.h"
 #include "ytsg-roster.h"
 #include "ytsg-contact.h"
+
+#include <string.h>
 
 static void ytsg_roster_dispose (GObject *object);
 static void ytsg_roster_finalize (GObject *object);

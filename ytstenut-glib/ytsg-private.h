@@ -22,6 +22,7 @@
 #ifndef _YTSG_PRIVATE_H
 #define _YTSG_PRIVATE_H
 
+#include <ytstenut-glib/ytsg-types.h>
 #include <ytstenut-glib/ytsg-metadata.h>
 #include <ytstenut-glib/ytsg-metadata-service.h>
 #include <ytstenut-glib/ytsg-contact.h>
@@ -58,8 +59,12 @@ void          _ytsg_roster_remove_contact_by_handle (YtsgRoster *roster,
                                                      guint       handle);
 YtsgContact  *_ytsg_roster_find_contact_by_handle (YtsgRoster *roster,
                                                    guint       handle);
-gboolean      _ytsg_roster_contaiytsg_contact (YtsgRoster        *roster,
-                                               const YtsgContact *contact);
+gboolean      _ytsg_roster_contains_contact (YtsgRoster        *roster,
+                                             const YtsgContact *contact);
+void          _ytsg_contact_set_subscription  (const YtsgContact *contact,
+                                               YtsgSubscription   subscription);
+void          _ytsg_client_reconnect_after (YtsgClient *client,
+                                            guint after_seconds);
 
 G_END_DECLS
 
