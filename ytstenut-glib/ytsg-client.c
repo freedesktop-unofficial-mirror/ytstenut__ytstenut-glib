@@ -24,6 +24,8 @@
 #include "ytsg-types.h"
 #include "ytsg-debug.h"
 #include "ytsg-private.h"
+#include "ytsg-marshal.h"
+#include "ytsg-enum-types.h"
 
 #include <string.h>
 #include <telepathy-glib/telepathy-glib.h>
@@ -31,7 +33,6 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/interfaces.h>
-#include <telepathy-glib/channel.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/debug.h>
@@ -64,10 +65,9 @@ struct _YtsgClientPrivate
   GArray     *caps;
 
   char       *jid;
-
+  char       *resource;
   char       *mgr_name;
-  guint       port;
-  guint       port_manual;
+  char       *incoming_dir;
 
   YtsgProtocol  protocol;
 
@@ -110,11 +110,11 @@ enum
 enum
 {
   PROP_0,
-  PROP_ROSTER,
   PROP_JID,
   PROP_RESOURCE,
+  PROP_PROTOCOL,
+  PROP_CAPABILITIES,
   PROP_ICON_TOKEN,
-  PROP_PROTOCOL
 };
 
 static guint signals[N_SIGNALS] = {0};
@@ -665,8 +665,156 @@ ytsg_client_channel_cb (TpConnection *proxy,
 }
 
 static void
+ytsg_client_authenticated (YtsgClient *client)
+{
+  YtsgClientPrivate *priv = client->priv;
+
+  priv->authenticated = TRUE;
+
+  YTSG_NOTE (CLIENT, "Authenticated");
+}
+
+static void
+ytsg_client_ready (YtsgClient *client)
+{
+  YtsgClientPrivate *priv = client->priv;
+
+  priv->ready = TRUE;
+
+  YTSG_NOTE (CLIENT, "TP Channel is ready");
+
+  /* FIXME */
+#if 0
+  if (priv->status)
+    ytsg_client_dispatch_status (client);
+#endif
+}
+
+static void
+ytsg_client_cleanup_connection_resources (YtsgClient *client)
+{
+  YtsgClientPrivate *priv = client->priv;
+
+  /*
+   * Clean up items associated with this connection.
+   */
+
+  priv->ready    = FALSE;
+  priv->prepared = FALSE;
+
+  if (priv->mydevices)
+    {
+      g_object_unref (priv->mydevices);
+      priv->mydevices = NULL;
+    }
+
+  if (priv->subscriptions)
+    {
+      g_object_unref (priv->subscriptions);
+      priv->subscriptions = NULL;
+    }
+
+  /*
+   * Empty roster
+   */
+  if (priv->roster)
+    _ytsg_roster_clear (priv->roster);
+
+  if (priv->connection)
+    {
+      g_object_unref (priv->connection);
+      priv->connection = NULL;
+    }
+}
+
+static void
+ytsg_client_disconnected (YtsgClient *client)
+{
+  YtsgClientPrivate *priv = client->priv;
+
+  ytsg_client_cleanup_connection_resources (client);
+
+  if (priv->reconnect)
+    _ytsg_client_reconnect_after (client, RECONNECT_DELAY);
+}
+
+static void
+ytsg_client_message (YtsgClient *client, YtsgMessage *msg)
+{
+  g_signal_emit (client, signals[MESSAGE], 0, msg);
+}
+
+static gboolean
+ytsg_client_incoming_file (YtsgClient *client,
+                           const char *from,
+                           const char *name,
+                           guint64     size,
+                           guint64     offset,
+                           TpChannel  *proxy)
+{
+  /* FIXME */
+#if 0
+  YtsgClientPrivate *priv = client->priv;
+  char            *path;
+  GFile           *gfile;
+  EmpathyTpFile   *tp_file;
+  GCancellable    *cancellable;
+
+  YTSG_NOTE (FILE_TRANSFER, "Incoming file from %s", from);
+
+  if (g_mkdir_with_parents (priv->incoming_dir, 0700))
+    {
+      g_warning ("Unable to create directory %s", priv->incoming_dir);
+
+      tp_cli_channel_call_close (proxy,
+                                 -1,
+                                 NULL,
+                                 NULL,
+                                 NULL,
+                                 NULL);
+
+      return FALSE;
+    }
+
+  path = g_build_filename (priv->incoming_dir, name, NULL);
+
+  gfile = g_file_new_for_path (path);
+
+  tp_file = empathy_tp_file_new ((TpChannel*)proxy, TRUE);
+
+  cancellable = g_cancellable_new ();
+
+  empathy_tp_file_accept (tp_file, offset, gfile,
+                          cancellable,
+                          NULL /*progress_callback*/,
+                          NULL /*progress_user_data*/,
+                          ytsg_client_ft_op_cb,
+                          client);
+
+  g_free (path);
+  g_object_unref (gfile);
+  g_object_unref (cancellable);
+#endif
+  return TRUE;
+}
+
+static gboolean
+ytsg_client_stop_accumulator (GSignalInvocationHint *ihint,
+                              GValue                *accumulated,
+                              const GValue          *returned,
+                              gpointer               data)
+{
+  gboolean cont = g_value_get_boolean (returned);
+
+  g_value_set_boolean (accumulated, cont);
+
+  return cont;
+}
+
+static void
 ytsg_client_class_init (YtsgClientClass *klass)
 {
+  GParamSpec   *pspec;
   GObjectClass *object_class = (GObjectClass *)klass;
 
   g_type_class_add_private (klass, sizeof (YtsgClientPrivate));
@@ -676,15 +824,501 @@ ytsg_client_class_init (YtsgClientClass *klass)
   object_class->constructed  = ytsg_client_constructed;
   object_class->get_property = ytsg_client_get_property;
   object_class->set_property = ytsg_client_set_property;
+
+  klass->authenticated       = ytsg_client_authenticated;
+  klass->ready               = ytsg_client_ready;
+  klass->disconnected        = ytsg_client_disconnected;
+  klass->message             = ytsg_client_message;
+  klass->incoming_file       = ytsg_client_incoming_file;
+
+  /**
+   * YtsgClient:jid:
+   *
+   * The jid of this client
+   *
+   * Since: 0.1
+   */
+  pspec = g_param_spec_string ("jid",
+                               "Jabber ID",
+                               "Jabber ID",
+                               NULL,
+                               G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
+  g_object_class_install_property (object_class, PROP_JID, pspec);
+
+  /**
+   * YtsgClient:resource:
+   *
+   * The resource of this client
+   *
+   * Since: 0.1
+   */
+  pspec = g_param_spec_string ("resource",
+                               "Jabber resource",
+                               "Jabber resource",
+                               NULL,
+                               G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
+  g_object_class_install_property (object_class, PROP_RESOURCE, pspec);
+
+  pspec = g_param_spec_enum ("protocol",
+                             "Protocol",
+                             "Protocol",
+                             YTSG_TYPE_PROTOCOL,
+                             0,
+                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
+  g_object_class_install_property (object_class, PROP_PROTOCOL, pspec);
+
+  /**
+   * YtsgClient:capabilites:
+   *
+   * Capabilities of this client, used to filter roster.
+   */
+  pspec = g_param_spec_boxed ("capabilities",
+                              "Capabilities",
+                              "Capabilities of this client",
+                              G_TYPE_ARRAY,
+                              G_PARAM_READWRITE);
+  g_object_class_install_property (object_class, PROP_CAPABILITIES, pspec);
+
+
+  /**
+   * YtsgClient::authenticated
+   * @client: object which emitted the signal,
+   *
+   * The authenticated signal is emited when connection to the nScreen server
+   * is successfully established.
+   *
+   * Since: 0.1
+   */
+  signals[AUTHENTICATED] =
+    g_signal_new (I_("authenticated"),
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_FIRST,
+                  G_STRUCT_OFFSET (YtsgClientClass, authenticated),
+                  NULL, NULL,
+                  ytsg_marshal_VOID__VOID,
+                  G_TYPE_NONE, 0);
+
+  /**
+   * YtsgClient::ready
+   * @client: object which emitted the signal,
+   *
+   * The ready signal is emited when the initial Telepathy set up is ready.
+   * (In practical terms this means the subscription channels are prepared.)
+   *
+   * Since: 0.1
+   */
+  signals[READY] =
+    g_signal_new (I_("ready"),
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_FIRST,
+                  G_STRUCT_OFFSET (YtsgClientClass, ready),
+                  NULL, NULL,
+                  ytsg_marshal_VOID__VOID,
+                  G_TYPE_NONE, 0);
+
+  /**
+   * YtsgClient::disconnected
+   * @client: object which emitted the signal,
+   *
+   * The disconnected signal is emited when connection to the nScreen server
+   * is successfully established.
+   *
+   * Since: 0.1
+   */
+  signals[DISCONNECTED] =
+    g_signal_new (I_("disconnected"),
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_FIRST,
+                  G_STRUCT_OFFSET (YtsgClientClass, disconnected),
+                  NULL, NULL,
+                  ytsg_marshal_VOID__VOID,
+                  G_TYPE_NONE, 0);
+
+  /**
+   * YtsgClient::message
+   * @client: object which emitted the signal,
+   * @message: #YtsgMessage, the message
+   *
+   * The message signal is emitted when message is received from one of the
+   * contacts.
+   *
+   * Since: 0.1
+   */
+  signals[MESSAGE] =
+    g_signal_new (I_("message"),
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  G_STRUCT_OFFSET (YtsgClientClass, message),
+                  NULL, NULL,
+                  ytsg_marshal_VOID__OBJECT,
+                  G_TYPE_NONE, 1,
+                  YTSG_TYPE_MESSAGE);
+
+  /**
+   * YtsgClient::error
+   * @client: object which emitted the signal,
+   * @error: #YtsgError
+   *
+   * The error signal is emitted to indicate an error (or eventual success)
+   * during the handling of an operation for which the nScreen API initially
+   * returned %YTSG_ERROR_PENDING. The original operation can be determined
+   * using the atom part of the #YtsgError parameter.
+   *
+   * Since: 0.1
+   */
+  signals[ERROR] =
+    g_signal_new (I_("error"),
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  0,
+                  NULL, NULL,
+                  ytsg_marshal_VOID__UINT,
+                  G_TYPE_NONE, 1,
+                  G_TYPE_UINT);
+
+  /**
+   * YtsgClient::incoming-file
+   * @client: object which emitted the signal,
+   * @from: jid of the originator
+   * @name: name of the file
+   * @size: size of the file
+   * @offset: offset into the file,
+   * @channel: #TpChannel
+   *
+   * The ::incoming-file signal is emitted when the client receives
+   * incoming request for a file transfer. The signal closure will
+   * kickstart the transfer -- this can be prevented by a connected handler
+   * returning %FALSE.
+   *
+   * Since: 0.1
+   */
+  signals[INCOMING_FILE] =
+    g_signal_new (I_("incoming-file"),
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  G_STRUCT_OFFSET (YtsgClientClass, incoming_file),
+                  ytsg_client_stop_accumulator, NULL,
+                  ytsg_marshal_BOOLEAN__STRING_STRING_UINT64_UINT64_OBJECT,
+                  G_TYPE_BOOLEAN, 5,
+                  G_TYPE_STRING,
+                  G_TYPE_STRING,
+                  G_TYPE_UINT64,
+                  G_TYPE_UINT64,
+                  TP_TYPE_CHANNEL);
+
+  /**
+   * YtsgClient::incoming-file-finished
+   * @client: object which emitted the signal,
+   * @from: jid of the originator
+   * @name: name of the file
+   * @success: %TRUE if the transfer was completed successfully.
+   *
+   * The ::incoming-file-finished signal is emitted when a file tranfers is
+   * completed.
+   *
+   * Since: 0.1
+   */
+  signals[INCOMING_FILE_FINISHED] =
+    g_signal_new (I_("incoming-file-finished"),
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  0,
+                  NULL, NULL,
+                  ytsg_marshal_VOID__STRING_STRING_BOOLEAN,
+                  G_TYPE_NONE, 3,
+                  G_TYPE_STRING,
+                  G_TYPE_STRING,
+                  G_TYPE_BOOLEAN);
+
+}
+
+/*
+ * Handler for Mgr debug output.
+ */
+static void
+ytsg_client_mgr_debug_msg_cb (TpProxy    *proxy,
+                            gdouble     timestamp,
+                            const char *domain,
+                            guint       level,
+                            const char *msg,
+                            gpointer    data,
+                            GObject    *weak_object)
+{
+  switch (level)
+    {
+    case 0:
+      g_error ("%s: %s", domain, msg);
+      break;
+    case 1:
+      g_critical ("%s: %s", domain, msg);
+      break;
+    case 2:
+      g_warning ("%s: %s", domain, msg);
+      break;
+    default:
+    case 3:
+    case 4:
+      g_message ("%s: %s", domain, msg);
+      break;
+    case 5:
+      YTSG_NOTE (MANAGER, "%s: %s", domain, msg);
+    }
+}
+
+/*
+ * The machinery for adding the NewDebugMessage signal; this is PITA, and can
+ * probably be autogenerated from somewhere, but no documentation.
+ *
+ * TODO - check we cannot connect directly to the dbus proxy avoiding all
+ * this unsightly marshaling.
+ *
+ * First, the collect function
+ */
+static void
+ytsg_client_mgr_debug_msg_collect (DBusGProxy              *proxy,
+                                 gdouble                  timestamp,
+                                 const char              *domain,
+                                 guint                    level,
+                                 const char              *msg,
+                                 TpProxySignalConnection *signal)
+{
+  GValueArray *args = g_value_array_new (4);
+  GValue t = { 0 };
+
+  g_value_init (&t, G_TYPE_DOUBLE);
+  g_value_set_double (&t, timestamp);
+  g_value_array_append (args, &t);
+  g_value_unset (&t);
+
+  g_value_init (&t, G_TYPE_STRING);
+  g_value_set_string (&t, domain);
+  g_value_array_append (args, &t);
+  g_value_unset (&t);
+
+  g_value_init (&t, G_TYPE_UINT);
+  g_value_set_uint (&t, level);
+  g_value_array_append (args, &t);
+  g_value_unset (&t);
+
+  g_value_init (&t, G_TYPE_STRING);
+  g_value_set_string (&t, msg);
+  g_value_array_append (args, &t);
+
+  tp_proxy_signal_connection_v0_take_results (signal, args);
+}
+
+typedef void (*YtsgClientMgrNewDebugMsg)(TpProxy *,
+                                       gdouble,
+                                       const char *,
+                                       guint,
+                                       const char *,
+                                       gpointer, GObject *);
+
+/*
+ * The callback invoker
+ */
+static void
+ytsg_client_mgr_debug_msg_invoke (TpProxy     *proxy,
+                                GError      *error,
+                                GValueArray *args,
+                                GCallback    callback,
+                                gpointer     data,
+                                GObject     *weak_object)
+{
+  YtsgClientMgrNewDebugMsg cb = (YtsgClientMgrNewDebugMsg) callback;
+
+  if (cb)
+    {
+      cb (g_object_ref (proxy),
+          g_value_get_double (args->values),
+          g_value_get_string (args->values + 1),
+          g_value_get_uint (args->values + 2),
+          g_value_get_string (args->values + 3),
+          data,
+          weak_object);
+
+      g_object_unref (proxy);
+    }
+
+  g_value_array_free (args);
+}
+
+/*
+ * Connects to the signal(s) and enable debugging output.
+ */
+static void
+ytsg_client_mgr_connect_debug_signals (YtsgClient *client, TpProxy *proxy)
+{
+  GError   *error = NULL;
+  GValue    v = {0};
+  GType     expected[] =
+    {
+      G_TYPE_DOUBLE, G_TYPE_STRING, G_TYPE_UINT, G_TYPE_STRING,
+      G_TYPE_INVALID
+    };
+
+  g_value_init (&v, G_TYPE_BOOLEAN);
+  g_value_set_boolean (&v, TRUE);
+
+  tp_proxy_signal_connection_v0_new (proxy,
+                                     TP_IFACE_QUARK_DEBUG,
+                                     "NewDebugMessage",
+                                     &expected[0],
+                                     G_CALLBACK (ytsg_client_mgr_debug_msg_collect),
+                                     ytsg_client_mgr_debug_msg_invoke,
+                                     G_CALLBACK (ytsg_client_mgr_debug_msg_cb),
+                                     client,
+                                     NULL,
+                                     (GObject*)client,
+                                     &error);
+
+  if (error)
+    {
+      YTSG_NOTE (CLIENT, "%s", error->message);
+      g_clear_error (&error);
+    }
+
+  tp_cli_dbus_properties_call_set (proxy, -1, TP_IFACE_DEBUG,
+                                   "Enabled", &v, NULL, NULL, NULL, NULL);
+}
+
+/*
+ * Callback for TpProxy::interface-added: we need to add the signals we
+ * care for here.
+ *
+ * TODO -- should we not be able to connect directly to the signal bypassing
+ * the unsightly TP machinery ?
+ */
+static void
+ytsg_client_debug_iface_added_cb (TpProxy    *tproxy,
+                                guint       id,
+                                DBusGProxy *proxy,
+                                gpointer    data)
+{
+  if (id != TP_IFACE_QUARK_DEBUG)
+    return;
+
+  dbus_g_proxy_add_signal (proxy, "NewDebugMessage",
+                           G_TYPE_DOUBLE,
+                           G_TYPE_STRING,
+                           G_TYPE_UINT,
+                           G_TYPE_STRING,
+                           G_TYPE_INVALID);
+}
+
+static void
+ytsg_client_mgr_setup_debug  (YtsgClient *client)
+{
+  YtsgClientPrivate *priv = client->priv;
+  TpDBusDaemon    *dbus;
+  GError          *error = NULL;
+  TpProxy         *proxy;
+  char            *busname;
+
+  dbus = tp_dbus_daemon_dup (&error);
+
+  if (error != NULL)
+    {
+      g_warning (error->message);
+      g_clear_error (&error);
+      return;
+    }
+
+  busname = g_strdup_printf ("org.freedesktop.Telepathy.ConnectionManager.%s",
+                             priv->mgr_name);
+  proxy =
+    g_object_new (TP_TYPE_PROXY,
+                  "bus-name", busname,
+                  "dbus-daemon", dbus,
+                  "object-path", "/org/freedesktop/Telepathy/debug",
+                  NULL);
+
+  priv->debug_proxy = proxy;
+
+  g_signal_connect (proxy, "interface-added",
+                    G_CALLBACK (ytsg_client_debug_iface_added_cb), client);
+
+  tp_proxy_add_interface_by_id (proxy, TP_IFACE_QUARK_DEBUG);
+
+  /*
+   * Connecting to the signals triggers the interface-added signal
+   */
+  ytsg_client_mgr_connect_debug_signals (client, proxy);
+
+  g_object_unref (dbus);
+  g_free (busname);
+}
+
+static void
+ytsg_client_mgr_ready_cb (TpConnectionManager *cm,
+                        const GError        *error,
+                        gpointer             data,
+                        GObject             *weak_object)
+{
+  YtsgClient *client = data;
+
+  if (error)
+    g_error (error->message);
+
+  YTSG_NOTE (CLIENT, "Manager (%s) ready", client->priv->mgr_name);
+
+  if (ytsg_debug_flags & YTSG_DEBUG_TP)
+    tp_debug_set_flags ("all");
+
+  if (ytsg_debug_flags & YTSG_DEBUG_MANAGER)
+    ytsg_client_mgr_setup_debug (client);
 }
 
 static void
 ytsg_client_constructed (GObject *object)
 {
-  YtsgClient *self = (YtsgClient*) object;
+  YtsgClient        *self = (YtsgClient*) object;
+  YtsgClientPrivate *priv = self->priv;
+  GError            *error = NULL;
 
   if (G_OBJECT_CLASS (ytsg_client_parent_class)->constructed)
     G_OBJECT_CLASS (ytsg_client_parent_class)->constructed (object);
+
+  priv->roster   = ytsg_roster_new ();
+  priv->unwanted = ytsg_roster_new ();
+
+  if (!priv->jid || !*priv->jid)
+    g_error ("JID must be set at construction time.");
+
+  if (priv->protocol == YTSG_PROTOCOL_XMPP)
+    priv->mgr_name = g_strdup ("gabble");
+  else if (priv->protocol == YTSG_PROTOCOL_LOCAL_XMPP)
+    priv->mgr_name = g_strdup ("salut");
+  else
+    g_error ("Unknown protocol requested");
+
+  priv->dbus = tp_dbus_daemon_dup (&error);
+
+  if (error)
+    {
+      g_critical (G_STRLOC ": %s: %s; no nScreen functionality will be "
+                  "available", __FUNCTION__, error->message);
+      g_clear_error (&error);
+      return;
+    }
+
+  priv->mgr = tp_connection_manager_new (priv->dbus,
+                                         priv->mgr_name, NULL,
+                                         &error);
+
+  if (error)
+    {
+      g_critical (G_STRLOC ": %s: %s; no nScreen functionality will be "
+                  "available", __FUNCTION__, error->message);
+      g_clear_error (&error);
+      return;
+    }
+
+  tp_connection_manager_call_when_ready (priv->mgr,
+                                         ytsg_client_mgr_ready_cb,
+                                         self,
+                                         NULL,
+                                         (GObject*)self);
 }
 
 static void
@@ -698,6 +1332,22 @@ ytsg_client_get_property (GObject    *object,
 
   switch (property_id)
     {
+    case PROP_JID:
+      g_value_set_string (value, priv->jid);
+      break;
+    case PROP_ICON_TOKEN:
+      g_value_set_string (value, priv->icon_token);
+      break;
+    case PROP_RESOURCE:
+      g_value_set_string (value, priv->resource);
+      break;
+    case PROP_CAPABILITIES:
+      g_value_set_boxed (value, priv->caps);
+      break;
+    case PROP_PROTOCOL:
+      g_value_set_enum (value, priv->protocol);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -714,6 +1364,25 @@ ytsg_client_set_property (GObject      *object,
 
   switch (property_id)
     {
+    case PROP_JID:
+      {
+        g_free (priv->jid);
+        priv->jid = g_value_dup_string (value);
+      }
+      break;
+    case PROP_RESOURCE:
+      {
+        g_free (priv->resource);
+        priv->resource = g_value_dup_string (value);
+      }
+      break;
+    case PROP_CAPABILITIES:
+      ytsg_client_set_capabilities (self, g_value_get_uint (value));
+      break;
+    case PROP_PROTOCOL:
+      priv->protocol = g_value_get_enum (value);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -736,6 +1405,51 @@ ytsg_client_dispose (GObject *object)
 
   priv->disposed = TRUE;
 
+  if (priv->roster)
+    {
+      g_object_unref (priv->roster);
+      priv->roster = NULL;
+    }
+
+  if (priv->unwanted)
+    {
+      g_object_unref (priv->unwanted);
+      priv->unwanted = NULL;
+    }
+
+  if (priv->mydevices)
+    {
+      g_object_unref (priv->mydevices);
+      priv->mydevices = NULL;
+    }
+
+  if (priv->subscriptions)
+    {
+      g_object_unref (priv->subscriptions);
+      priv->subscriptions = NULL;
+    }
+
+  if (priv->connection)
+    {
+      tp_cli_connection_call_disconnect  (priv->connection,
+                                          -1,
+                                          NULL, NULL, NULL, NULL);
+      g_object_unref (priv->connection);
+      priv->connection = NULL;
+    }
+
+  if (priv->mgr)
+    {
+      g_object_unref (priv->mgr);
+      priv->mgr = NULL;
+    }
+
+  if (priv->debug_proxy)
+    {
+      g_object_unref (priv->debug_proxy);
+      priv->debug_proxy = NULL;
+    }
+
   G_OBJECT_CLASS (ytsg_client_parent_class)->dispose (object);
 }
 
@@ -744,6 +1458,19 @@ ytsg_client_finalize (GObject *object)
 {
   YtsgClient        *self = (YtsgClient*) object;
   YtsgClientPrivate *priv = self->priv;
+
+  g_free (priv->jid);
+  g_free (priv->resource);
+  g_free (priv->icon_token);
+  g_free (priv->icon_mime_type);
+  g_free (priv->mgr_name);
+  g_free (priv->incoming_dir);
+
+  if (priv->caps)
+    g_array_free (priv->caps, TRUE);
+
+  if (priv->icon_data)
+    g_array_free (priv->icon_data, TRUE);
 
   G_OBJECT_CLASS (ytsg_client_parent_class)->finalize (object);
 }
@@ -1264,4 +1991,172 @@ ytsg_client_connect_to_mesh (YtsgClient *client)
     }
   else if (!priv->dialing)
     ytsg_client_make_connection (client);
+}
+
+/**
+ * ytsg_client_new:
+ * @protocol: #YtsgProtocol
+ * @jid: jid to connect with
+ * @resource: string containing the name of the jabber resource, can be %NULL
+ *
+ * Creates a new #YtsgClient object connected to the provided roster
+ *
+ * Return value: #YtsgClient object.
+ */
+YtsgClient *
+ytsg_client_new (YtsgProtocol protocol, const char *jid, const char *resource)
+{
+  if (!jid)
+    g_error ("JID must be specified at construction time.");
+
+  return g_object_new (YTSG_TYPE_CLIENT,
+                       "protocol", protocol,
+                       "jid",      jid,
+                       "resource", resource,
+                       NULL);
+}
+
+static gboolean
+ytsg_client_has_capability (YtsgClient *client, YtsgCaps cap)
+{
+  YtsgClientPrivate *priv = client->priv;
+  int              i;
+
+  if (!priv->caps)
+    return FALSE;
+
+  for (i = 0; i < priv->caps->len; ++i)
+    {
+      YtsgCaps c = g_array_index (priv->caps, YtsgCaps, i);
+
+      if (c == cap || c == YTSG_CAPS_CONTROL)
+        return TRUE;
+    }
+
+  return FALSE;
+}
+
+static void
+ytsg_client_refresh_roster (YtsgClient *client)
+{
+  /* FIXME */
+#if 0
+  YtsgClientPrivate *priv = client->priv;
+  GList           *l;
+
+  if (!priv->caps)
+    return;
+
+  l = g_list_copy (ytsg_roster_get_items (priv->roster));
+
+  for (; l; l = l->next)
+    {
+      YtsgRosterItem   *item = l->data;
+      gboolean        wanted = FALSE;
+      const YtsgStatus *status;
+
+      if ((status = ytsg_roster_item_get_status (item)) && status->caps)
+        {
+          int j;
+
+          for (j = 0; j < status->caps->len; ++j)
+            {
+              YtsgCapsTupple *t = g_array_index (status->caps, YtsgCapsTupple*, j);
+
+              if (t && ((t->capability == YTSG_CAPS_CONTROL) ||
+                        ytsg_client_has_capability (client, t->capability)))
+                {
+                  wanted = TRUE;
+                  break;
+                }
+            }
+        }
+
+      if (!wanted)
+        {
+          g_object_ref (item);
+          _ytsg_roster_remove_item (priv->roster, item, FALSE);
+          _ytsg_roster_add_item (priv->unwanted, item);
+        }
+    }
+
+  l = g_list_copy (ytsg_roster_get_items (priv->unwanted));
+
+  for (; l; l = l->next)
+    {
+      YtsgRosterItem   *item = l->data;
+      gboolean        wanted = FALSE;
+      const YtsgStatus *status;
+
+      if ((status = ytsg_roster_item_get_status (item)) && status->caps)
+        {
+          int j;
+
+          for (j = 0; j < status->caps->len; ++j)
+            {
+              YtsgCapsTupple *t = g_array_index (status->caps, YtsgCapsTupple*, j);
+
+              if (t && ((t->capability == YTSG_CAPS_CONTROL) ||
+                        ytsg_client_has_capability (client, t->capability)))
+                {
+                  wanted = TRUE;
+                  break;
+                }
+            }
+        }
+
+      if (wanted)
+        {
+          g_object_ref (item);
+          _ytsg_roster_remove_item (priv->unwanted, item, FALSE);
+          _ytsg_roster_add_item (priv->roster, item);
+        }
+    }
+
+  g_list_free (l);
+#endif
+}
+
+/**
+ * ytsg_client_set_capabilities:
+ * @client: #YtsgClient,
+ * @caps: #YtsgCaps
+ *
+ * Adds a capability to the capability set of this client; multiple capabilities
+ * can be added by making mulitiple calls to this function.
+ *
+ * The capability set is used to filter roster items to match.
+ */
+void
+ytsg_client_set_capabilities (YtsgClient *client, YtsgCaps caps)
+{
+  YtsgClientPrivate *priv;
+
+  g_return_if_fail (YTSG_IS_CLIENT (client));
+
+  priv = client->priv;
+
+  if (ytsg_client_has_capability (client, caps))
+    return;
+
+  if (!priv->caps)
+    priv->caps = g_array_sized_new (FALSE, FALSE, sizeof (YtsgCaps), 1);
+
+  g_array_append_val (priv->caps, caps);
+
+  ytsg_client_refresh_roster (client);
+
+  g_object_notify ((GObject*)client, "capabilities");
+}
+
+YtsgRoster *
+ytsg_client_get_roster (YtsgClient *client)
+{
+  YtsgClientPrivate *priv;
+
+  g_return_val_if_fail (YTSG_IS_CLIENT (client), NULL);
+
+  priv = client->priv;
+
+  return priv->roster;
 }

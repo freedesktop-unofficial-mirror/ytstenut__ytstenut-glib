@@ -1,4 +1,4 @@
-TESTS = message status metadata-service
+TESTS = message status metadata-service local-connection
 
 AM_CPPFLAGS = 					\
 	-DG_DISABLE_DEPRECATED 			\
@@ -14,5 +14,13 @@ AM_LDFLAGS = ../ytstenut-glib/libytstenut-glib-@YTSG_API_VERSION@.la
 check_PROGRAMS = $(TESTS)
 
 message_SOURCES          = message.c
+message_LDADD            = $(YTSG_LIBS)
+
 status_SOURCES           = status.c
+status_LDADD             = $(YTSG_LIBS)
+
 metadata_service_SOURCES = metadata-service.c
+metadata_service_LDADD   = $(YTSG_LIBS)
+
+local_connection_SOURCES = local-connection.c
+local_connection_LDADD   = $(YTSG_LIBS)

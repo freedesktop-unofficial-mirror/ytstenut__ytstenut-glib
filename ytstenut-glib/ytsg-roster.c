@@ -507,3 +507,9 @@ ytsg_roster_find_contact_by_capability (YtsgRoster *roster,
 
   return NULL;
 }
+
+YtsgRoster*
+ytsg_roster_new (void)
+{
+  return g_object_new (YTSG_TYPE_ROSTER, NULL);
+}

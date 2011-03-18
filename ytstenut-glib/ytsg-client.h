@@ -23,6 +23,11 @@
 #define _YTSG_CLIENT_H
 
 #include <glib-object.h>
+#include <ytstenut-glib/ytsg-message.h>
+#include <ytstenut-glib/ytsg-types.h>
+#include <ytstenut-glib/ytsg-caps.h>
+#include <telepathy-glib/channel.h>
+#include <ytstenut-glib/ytsg-roster.h>
 
 G_BEGIN_DECLS
 
@@ -54,6 +59,18 @@ typedef struct _YtsgClientPrivate YtsgClientPrivate;
 struct _YtsgClientClass
 {
   GObjectClass parent_class;
+
+  void     (*authenticated) (YtsgClient *client);
+  void     (*ready)         (YtsgClient *client);
+  void     (*disconnected)  (YtsgClient *client);
+  void     (*message)       (YtsgClient *client, YtsgMessage *msg);
+  gboolean (*incoming_file) (YtsgClient   *client,
+                             const char *from,
+                             const char *name,
+                             guint64     size,
+                             guint64     offset,
+                             TpChannel  *channel);
+
 };
 
 struct _YtsgClient
@@ -66,8 +83,14 @@ struct _YtsgClient
 
 GType ytsg_client_get_type (void) G_GNUC_CONST;
 
-void ytsg_client_disconnect_from_mesh (YtsgClient *client);
-void ytsg_client_connect_to_mesh (YtsgClient *client);
+YtsgClient *ytsg_client_new (YtsgProtocol  protocol,
+                             const char   *jid,
+                             const char   *resource);
+
+void        ytsg_client_disconnect_from_mesh (YtsgClient *client);
+void        ytsg_client_connect_to_mesh (YtsgClient *client);
+void        ytsg_client_set_capabilities (YtsgClient *client, YtsgCaps caps);
+YtsgRoster *ytsg_client_get_roster (YtsgClient *client);
 
 G_END_DECLS
 
