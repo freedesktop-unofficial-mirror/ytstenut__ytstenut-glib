@@ -60,6 +60,7 @@ struct _YtsgContactPrivate
   char       *icon_token;
 
   YtsgClient *client; /* client that owns us */
+  YtsgStatus *status;
 
   YtsgSubscription  subscription; /* subscription state of this item */
 
@@ -80,6 +81,8 @@ enum
   PROP_TP_CONTACT,
   PROP_ICON,
   PROP_CLIENT,
+  PROP_STATUS,
+  PROP_SUBSCRIPTION,
 };
 
 static guint signals[N_SIGNALS] = {0};
@@ -138,6 +141,19 @@ ytsg_contact_class_init (YtsgContactClass *klass)
   g_object_class_install_property (object_class, PROP_TP_CONTACT, pspec);
 
   /**
+   * YtsgContact:tp-contact:
+   *
+   * TpContact of this item.
+   */
+  pspec = g_param_spec_object ("status",
+                               "YtsgStatus",
+                               "YtsgStatus",
+                               YTSG_TYPE_STATUS,
+                               G_PARAM_WRITABLE);
+  g_object_class_install_property (object_class, PROP_STATUS, pspec);
+
+
+  /**
    * YtsgContact:icon:
    *
    * Icon for this item.
@@ -165,6 +181,20 @@ ytsg_contact_class_init (YtsgContactClass *klass)
                                YTSG_TYPE_CLIENT,
                                G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY);
   g_object_class_install_property (object_class, PROP_CLIENT, pspec);
+
+  /**
+   * YtsgContact:subscription:
+   *
+   * Subscription state of the item, #YtsgSubscription
+   */
+  pspec = g_param_spec_uint ("subscription",
+                             "Subscription",
+                             "Subscription to connect on",
+                             0,
+                             G_MAXUINT,
+                             0,
+                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT);
+  g_object_class_install_property (object_class, PROP_SUBSCRIPTION, pspec);
 
   /**
    * YtsgContact::service-added:
@@ -284,6 +314,17 @@ ytsg_contact_set_property (GObject      *object,
     case PROP_CLIENT:
       priv->client = g_value_get_object (value);
       break;
+    case PROP_STATUS:
+      {
+        if (priv->status)
+          g_object_unref (priv->status);
+
+        priv->status = g_value_dup_object (value);
+      }
+      break;
+    case PROP_SUBSCRIPTION:
+      _ytsg_contact_set_subscription (self, g_value_get_uint (value));
+      break;
 
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -321,6 +362,12 @@ ytsg_contact_dispose (GObject *object)
     {
       g_object_unref (priv->tp_contact);
       priv->tp_contact = NULL;
+    }
+
+  if (priv->status)
+    {
+      g_object_unref (priv->status);
+      priv->status = NULL;
     }
 
   G_OBJECT_CLASS (ytsg_contact_parent_class)->dispose (object);

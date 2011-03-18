@@ -346,8 +346,7 @@ ytsg_client_contacts_cb (TpConnection      *connection,
 
           item = g_object_new (YTSG_TYPE_CONTACT,
                                "client",       client,
-                               "contact",      cont,
-                               "group",        "MyDevices",
+                               "tp-contact",   cont,
                                "status",       stat,
                                "subscription", (guint)subs,
                                NULL);

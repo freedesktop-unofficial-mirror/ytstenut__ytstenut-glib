@@ -24,7 +24,23 @@
 #include <ytstenut-glib/ytsg-private.h>
 #include <ytstenut-glib/ytsg-client.h>
 #include <ytstenut-glib/ytsg-status.h>
+#include <ytstenut-glib/ytsg-main.h>
+
 #include <string.h>
+
+#define TEST_LENGTH 20
+
+static gboolean
+timeout_test_cb (gpointer data)
+{
+  GMainLoop *loop = data;
+
+  g_message ("Quiting local connection test");
+
+  g_main_loop_quit (loop);
+
+  return FALSE;
+}
 
 static gboolean
 timeout_presence_cb (gpointer data)
@@ -211,6 +227,8 @@ main (int argc, char **argv)
    * Initiate network connection.
    */
   ytsg_client_connect_to_mesh (client);
+
+  g_timeout_add_seconds (TEST_LENGTH, timeout_test_cb, loop);
 
   /*
    * Run the main loop.
