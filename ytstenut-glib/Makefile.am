@@ -21,7 +21,6 @@ source_h =						\
 		$(srcdir)/ytsg-debug.h			\
 		$(srcdir)/ytsg-error.h			\
 		$(srcdir)/ytsg-main.h			\
-		$(srcdir)/ytsg-marshal.h		\
 		$(srcdir)/ytsg-message.h		\
 		$(srcdir)/ytsg-metadata.h		\
 		$(srcdir)/ytsg-metadata-service.h	\
