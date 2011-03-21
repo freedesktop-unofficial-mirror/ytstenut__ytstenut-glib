@@ -24,9 +24,11 @@
 
 #include <glib-object.h>
 #include <gio/gio.h>
-#include <ytstenut-glib/ytsg-service.h>
 #include <telepathy-glib/contact.h>
+
 #include <ytstenut-glib/ytsg-caps.h>
+#include <ytstenut-glib/ytsg-error.h>
+#include <ytstenut-glib/ytsg-service.h>
 
 G_BEGIN_DECLS
 
@@ -80,6 +82,11 @@ GFile      *ytsg_contact_get_icon           (const YtsgContact  *contact,
                                              const char        **mime);
 gboolean    ytsg_contact_has_capability     (const YtsgContact  *item,
                                              YtsgCaps            cap);
+
+YtsgError   ytsg_contact_send_file          (const YtsgContact *item,
+                                             GFile *gfile);
+gboolean    ytsg_contact_cancel_file        (const YtsgContact *item,
+                                             GFile             *gfile);
 
 G_END_DECLS
 

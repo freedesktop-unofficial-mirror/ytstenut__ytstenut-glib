@@ -23,11 +23,14 @@
 #define _YTSG_CLIENT_H
 
 #include <glib-object.h>
-#include <ytstenut-glib/ytsg-message.h>
-#include <ytstenut-glib/ytsg-types.h>
-#include <ytstenut-glib/ytsg-caps.h>
 #include <telepathy-glib/channel.h>
+
+#include <ytstenut-glib/ytsg-caps.h>
+#include <ytstenut-glib/ytsg-error.h>
+#include <ytstenut-glib/ytsg-message.h>
 #include <ytstenut-glib/ytsg-roster.h>
+#include <ytstenut-glib/ytsg-types.h>
+
 
 G_BEGIN_DECLS
 
@@ -91,6 +94,10 @@ void        ytsg_client_disconnect_from_mesh (YtsgClient *client);
 void        ytsg_client_connect_to_mesh (YtsgClient *client);
 void        ytsg_client_set_capabilities (YtsgClient *client, YtsgCaps caps);
 YtsgRoster *ytsg_client_get_roster (YtsgClient *client);
+void        ytsg_client_emit_error (YtsgClient *client, YtsgError error);
+void        ytsg_client_set_incoming_file_directory (YtsgClient *client,
+                                                     const char *directory);
+const char *ytsg_client_get_incoming_file_directory (YtsgClient *client);
 
 G_END_DECLS
 

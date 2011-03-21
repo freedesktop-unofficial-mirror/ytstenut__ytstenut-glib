@@ -20,12 +20,15 @@
  */
 
 #include "ytsg-client.h"
+#include "ytsg-debug.h"
+#include "ytsg-enum-types.h"
+#include "ytsg-error.h"
+#include "ytsg-marshal.h"
+#include "ytsg-private.h"
 #include "ytsg-roster.h"
 #include "ytsg-types.h"
-#include "ytsg-debug.h"
-#include "ytsg-private.h"
-#include "ytsg-marshal.h"
-#include "ytsg-enum-types.h"
+
+#include "empathy-tp-file.h"
 
 #include <string.h>
 #include <telepathy-glib/telepathy-glib.h>
@@ -527,6 +530,208 @@ ytsg_client_group_members_cb (TpChannel *self,
     }
 }
 
+static gboolean
+ytsg_client_channel_requested (TpChannel *proxy)
+{
+  GHashTable *props;
+  gboolean    requested;
+
+  props = tp_channel_borrow_immutable_properties ((TpChannel*)proxy);
+
+  requested = tp_asv_get_boolean (props, TP_PROP_CHANNEL_REQUESTED, NULL);
+
+  return requested;
+}
+
+static void
+ytsg_client_ft_op_cb (EmpathyTpFile *tp_file,
+                    const GError  *error,
+                    gpointer       data)
+{
+  if (error)
+    {
+      g_warning ("Incoming file transfer failed: %s", error->message);
+    }
+}
+
+static void
+ytsg_client_ft_accept_cb (TpProxy      *proxy,
+                        GHashTable   *props,
+                        const GError *error,
+                        gpointer      data,
+                        GObject      *weak_object)
+{
+  YtsgClient        *client = data;
+  YtsgClientPrivate *priv   = client->priv;
+  const char      *name;
+  const char      *jid;
+  guint64          offset;
+  guint64          size;
+  GHashTable      *iprops;
+  YtsgContact    *item;
+  guint32          ihandle;
+
+  iprops = tp_channel_borrow_immutable_properties ((TpChannel*)proxy);
+
+  ihandle = tp_asv_get_uint32 (iprops,
+                               TP_PROP_CHANNEL_INITIATOR_HANDLE,
+                               NULL);
+
+  if ((item = _ytsg_roster_find_contact_by_handle (priv->roster, ihandle)))
+    {
+      jid = ytsg_contact_get_jid (item);
+    }
+  else
+    {
+      g_warning ("Unknown originator with handle %d", ihandle);
+
+      tp_cli_channel_call_close ((TpChannel*)proxy,
+                                 -1,
+                                 NULL,
+                                 NULL,
+                                 NULL,
+                                 NULL);
+
+      return;
+    }
+
+  tp_asv_dump (props);
+
+  name   = tp_asv_get_string (props, "Filename");
+  offset = tp_asv_get_uint64 (props, "InitialOffset", NULL);
+  size   = tp_asv_get_uint64 (props, "Size", NULL);
+
+  if (!size || size < offset)
+    {
+      g_warning ("Meaningless file size");
+
+      tp_cli_channel_call_close ((TpChannel*)proxy,
+                                 -1,
+                                 NULL,
+                                 NULL,
+                                 NULL,
+                                 NULL);
+
+      return;
+    }
+
+  g_signal_emit (client, signals[INCOMING_FILE], 0, jid, name, size, offset,
+                 proxy);
+}
+
+static void
+ytsg_client_ft_handle_state (YtsgClient *client, TpChannel *proxy, guint state)
+{
+  YtsgClientPrivate *priv   = client->priv;
+  GHashTable      *props;
+  gboolean         requested;
+
+  props = tp_channel_borrow_immutable_properties ((TpChannel*)proxy);
+  if (!(requested = tp_asv_get_boolean (props, TP_PROP_CHANNEL_REQUESTED,NULL)))
+    {
+      YtsgContact *item;
+      guint32       ihandle;
+
+      ihandle = tp_asv_get_uint32 (props,
+                                   TP_PROP_CHANNEL_INITIATOR_HANDLE,
+                                   NULL);
+      item = _ytsg_roster_find_contact_by_handle (priv->roster, ihandle);
+
+      switch (state)
+        {
+        case 1:
+          {
+            if (item)
+              YTSG_NOTE (FILE_TRANSFER, "Got request for FT channel from %s (%s)",
+                       ytsg_contact_get_jid (item),
+                       tp_proxy_get_bus_name (proxy));
+            else
+              YTSG_NOTE (FILE_TRANSFER,
+                       "Got request for FT channel from handle %d",
+                       ihandle);
+
+            tp_cli_dbus_properties_call_get_all (proxy,
+                                           -1,
+                                           TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
+                                           ytsg_client_ft_accept_cb,
+                                           client,
+                                           NULL,
+                                           (GObject*) client);
+          }
+          break;
+        case 2:
+          YTSG_NOTE (FILE_TRANSFER, "Incoming stream state (%s) --> 'accepted'",
+                   tp_proxy_get_bus_name (proxy));
+          break;
+        case 3:
+          YTSG_NOTE (FILE_TRANSFER, "Incoming stream state (%s) --> 'open'",
+                   tp_proxy_get_bus_name (proxy));
+          break;
+        case 4:
+        case 5:
+          YTSG_NOTE (FILE_TRANSFER, "Incoming stream state (%s) --> '%s'",
+                   tp_proxy_get_bus_name (proxy),
+                   state == 4 ? "completed" : "cancelled");
+          {
+            const char *name;
+            const char *jid;
+
+            if (item)
+              {
+                jid = ytsg_contact_get_jid (item);
+
+                name   = tp_asv_get_string (props, "Filename");
+
+                g_signal_emit (client, signals[INCOMING_FILE_FINISHED], 0,
+                               jid, name, state == 4 ? TRUE : FALSE);
+              }
+          }
+          break;
+        default:
+          YTSG_NOTE (FILE_TRANSFER, "Invalid value of stream state: %d", state);
+        }
+    }
+  else
+    YTSG_NOTE (FILE_TRANSFER, "The FT channel was requested by us ... (%s)",
+             tp_proxy_get_bus_name (proxy));
+}
+
+static void
+ytsg_client_ft_state_cb (TpChannel *proxy,
+                       guint      state,
+                       guint      reason,
+                       gpointer   data,
+                       GObject   *object)
+{
+  YtsgClient *client = data;
+
+  YTSG_NOTE (FILE_TRANSFER,
+           "FT channel changed status to %d (reason %d)", state, reason);
+
+  ytsg_client_ft_handle_state (client, proxy, state);
+}
+
+static void
+ytsg_client_ft_core_cb (GObject *proxy, GAsyncResult *res, gpointer data)
+{
+  YtsgClient  *client = data;
+  TpChannel *channel = (TpChannel*) proxy;
+  GError    *error = NULL;
+
+  YTSG_NOTE (FILE_TRANSFER, "FT channel ready");
+
+  tp_cli_channel_type_file_transfer_connect_to_file_transfer_state_changed
+    (channel,
+     ytsg_client_ft_state_cb,
+     client,
+     NULL,
+     (GObject*)client,
+     &error);
+
+  if (!ytsg_client_channel_requested (channel))
+    ytsg_client_ft_handle_state (client, channel, 1);
+}
+
 static void
 ytsg_client_channel_prepare_cb (GObject      *channel,
                                 GAsyncResult *res,
@@ -579,6 +784,29 @@ ytsg_client_channel_cb (TpConnection *proxy,
     {
     case TP_HANDLE_TYPE_CONTACT:
       /* FIXME -- this is where the messaging channel will go */
+      if (!strcmp (type, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER))
+        {
+          GError    *error = NULL;
+          TpChannel *ch;
+          GQuark     features[] = { TP_CHANNEL_FEATURE_CORE, 0};
+          YtsgContact *item;
+
+          ch = tp_channel_new (proxy, path, type, handle_type, handle, &error);
+
+          if ((item = _ytsg_roster_find_contact_by_handle (priv->roster,
+                                                           handle)))
+            {
+              _ytsg_contact_set_ft_channel (item, ch);
+
+              tp_proxy_prepare_async (ch, features,
+                                      ytsg_client_ft_core_cb, client);
+            }
+          else
+            {
+              g_warning (G_STRLOC ": orphaned channel ?");
+              g_object_unref (ch);
+            }
+        }
       break;
     case TP_HANDLE_TYPE_LIST:
       /*
@@ -751,8 +979,6 @@ ytsg_client_incoming_file (YtsgClient *client,
                            guint64     offset,
                            TpChannel  *proxy)
 {
-  /* FIXME */
-#if 0
   YtsgClientPrivate *priv = client->priv;
   char            *path;
   GFile           *gfile;
@@ -793,7 +1019,7 @@ ytsg_client_incoming_file (YtsgClient *client,
   g_free (path);
   g_object_unref (gfile);
   g_object_unref (cancellable);
-#endif
+
   return TRUE;
 }
 
@@ -1391,6 +1617,8 @@ static void
 ytsg_client_init (YtsgClient *self)
 {
   self->priv = YTSG_CLIENT_GET_PRIVATE (self);
+
+  ytsg_client_set_incoming_file_directory (self, NULL);
 }
 
 static void
@@ -2050,11 +2278,11 @@ ytsg_client_refresh_roster (YtsgClient *client)
 
   for (; l; l = l->next)
     {
-      YtsgRosterItem   *item = l->data;
+      YtsgContact   *item = l->data;
       gboolean        wanted = FALSE;
       const YtsgStatus *status;
 
-      if ((status = ytsg_roster_item_get_status (item)) && status->caps)
+      if ((status = ytsg_contact_get_status (item)) && status->caps)
         {
           int j;
 
@@ -2083,11 +2311,11 @@ ytsg_client_refresh_roster (YtsgClient *client)
 
   for (; l; l = l->next)
     {
-      YtsgRosterItem   *item = l->data;
+      YtsgContact   *item = l->data;
       gboolean        wanted = FALSE;
       const YtsgStatus *status;
 
-      if ((status = ytsg_roster_item_get_status (item)) && status->caps)
+      if ((status = ytsg_contact_get_status (item)) && status->caps)
         {
           int j;
 
@@ -2158,4 +2386,80 @@ ytsg_client_get_roster (YtsgClient *client)
   priv = client->priv;
 
   return priv->roster;
+}
+
+/**
+ * ytsg_client_emit_error:
+ * @client: #YtsgClient,
+ * @error: #YtsgError
+ *
+ * Emits the #YtsgClient::error signal with the suplied error parameter.
+ *
+ * This function is intened primarily for internal use, but can be also used by
+ * toolkit libraries that need to generate asynchronous errors. Any function
+ * call that returns the %YTSG_ERROR_PENDING code to the caller should
+ * eventually lead to emission of the ::error signal with either an appropriate
+ * error code or %YTSG_ERROR_SUCCESS to indicate the operation successfully
+ * completed.
+ */
+void
+ytsg_client_emit_error (YtsgClient *client, YtsgError error)
+{
+  g_return_if_fail (YTSG_IS_CLIENT (client));
+
+  /*
+   * There is no point in throwing an error that has no atom specified.
+   */
+  g_return_if_fail (ytsg_error_get_atom (error));
+
+  g_signal_emit (client, signals[ERROR], 0, error);
+}
+
+/**
+ * ytsg_client_set_incoming_file_directory:
+ * @client: #YtsgClient
+ * @directory: path to a directory or %NULL.
+ *
+ * Sets the directory where incoming files will be stored; if the provided path
+ * is %NULL, the directory will be reset to the default (~/.nscreen/). This
+ * function does not do any checks regarding validity of the path provided,
+ * though an attempt to create the directory before it is used, with permissions
+ * of 0700.
+ *
+ * To change the directory for a specific file call this function from a
+ * callback to the YtsgClient::incoming-file signal.
+ */
+void
+ytsg_client_set_incoming_file_directory (YtsgClient *client,
+                                         const char *directory)
+{
+  YtsgClientPrivate *priv;
+
+  g_return_if_fail (YTSG_IS_CLIENT (client));
+
+  priv = client->priv;
+
+  if (!directory || !*directory)
+    priv->incoming_dir =
+      g_build_filename (g_get_home_dir (), ".ytstenut", NULL);
+  else
+    priv->incoming_dir = g_strdup (directory);
+}
+
+/**
+ * ytsg_client_get_incoming_file_directory:
+ * @client: #YtsgClient
+ *
+ * Return value: (tranfer none): directory where incoming files are stored.
+ */
+const char *
+ytsg_client_get_incoming_file_directory (YtsgClient *client)
+{
+  YtsgClientPrivate *priv;
+
+  g_return_val_if_fail (YTSG_IS_CLIENT (client), NULL);
+
+  priv = client->priv;
+
+  return priv->incoming_dir;
 }

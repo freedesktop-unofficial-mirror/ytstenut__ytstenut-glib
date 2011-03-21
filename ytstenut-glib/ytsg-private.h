@@ -22,12 +22,13 @@
 #ifndef _YTSG_PRIVATE_H
 #define _YTSG_PRIVATE_H
 
-#include <ytstenut-glib/ytsg-types.h>
+#include <ytstenut-glib/ytsg-client.h>
+#include <ytstenut-glib/ytsg-contact.h>
+#include <ytstenut-glib/ytsg-error.h>
 #include <ytstenut-glib/ytsg-metadata.h>
 #include <ytstenut-glib/ytsg-metadata-service.h>
-#include <ytstenut-glib/ytsg-contact.h>
-#include <ytstenut-glib/ytsg-client.h>
 #include <ytstenut-glib/ytsg-roster.h>
+#include <ytstenut-glib/ytsg-types.h>
 
 #include <rest/rest-xml-node.h>
 #include <telepathy-glib/contact.h>
@@ -63,6 +64,9 @@ gboolean      _ytsg_roster_contains_contact (YtsgRoster        *roster,
                                              const YtsgContact *contact);
 void          _ytsg_contact_set_subscription  (const YtsgContact *contact,
                                                YtsgSubscription   subscription);
+void           _ytsg_contact_set_ft_channel (YtsgContact *item,
+                                             TpChannel *channel);
+
 void          _ytsg_client_reconnect_after (YtsgClient *client,
                                             guint after_seconds);
 
