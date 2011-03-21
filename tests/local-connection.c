@@ -28,7 +28,9 @@
 
 #include <string.h>
 
-#define TEST_LENGTH 20
+#define TEST_LENGTH 5
+
+static int retval = 1;
 
 static gboolean
 timeout_test_cb (gpointer data)
@@ -72,7 +74,9 @@ timeout_presence_cb (gpointer data)
 static void
 authenticated_cb (YtsgClient *client, gpointer data)
 {
-  g_message ("Client authenticated");
+  g_message ("Client %s authenticated", ytsg_client_get_jid (client));
+
+  retval = 0;
 
   g_timeout_add_seconds (15, timeout_presence_cb, client);
 }
@@ -245,5 +249,5 @@ main (int argc, char **argv)
 
   g_main_loop_unref (loop);
 
-  return 0;
+  return retval;
 }
