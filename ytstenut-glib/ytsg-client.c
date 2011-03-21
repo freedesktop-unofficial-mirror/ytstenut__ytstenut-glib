@@ -1504,8 +1504,8 @@ ytsg_client_constructed (GObject *object)
   if (G_OBJECT_CLASS (ytsg_client_parent_class)->constructed)
     G_OBJECT_CLASS (ytsg_client_parent_class)->constructed (object);
 
-  priv->roster   = ytsg_roster_new ();
-  priv->unwanted = ytsg_roster_new ();
+  priv->roster   = ytsg_roster_new (self);
+  priv->unwanted = ytsg_roster_new (self);
 
   if (!priv->jid || !*priv->jid)
     g_error ("JID must be set at construction time.");
@@ -2125,10 +2125,6 @@ ytsg_client_make_connection (YtsgClient *client)
   GHashTable      *hash;
   const char      *proto = "jabber";
 
-  /* FIXME */
-  priv->jid =
-    g_strdup_printf ("random-jid");
-
   if (priv->protocol == YTSG_PROTOCOL_LOCAL_XMPP)
     {
       proto = "local-xmpp";
@@ -2462,4 +2458,16 @@ ytsg_client_get_incoming_file_directory (YtsgClient *client)
   priv = client->priv;
 
   return priv->incoming_dir;
+}
+
+const char *
+ytsg_client_get_jid (const YtsgClient *client)
+{
+  YtsgClientPrivate *priv;
+
+  g_return_val_if_fail (YTSG_IS_CLIENT (client), NULL);
+
+  priv = client->priv;
+
+  return priv->jid;
 }

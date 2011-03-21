@@ -55,7 +55,6 @@ G_BEGIN_DECLS
                                YTSG_TYPE_CLIENT,                        \
                                YtsgClientClass))
 
-typedef struct _YtsgClient        YtsgClient;
 typedef struct _YtsgClientClass   YtsgClientClass;
 typedef struct _YtsgClientPrivate YtsgClientPrivate;
 
@@ -98,6 +97,7 @@ void        ytsg_client_emit_error (YtsgClient *client, YtsgError error);
 void        ytsg_client_set_incoming_file_directory (YtsgClient *client,
                                                      const char *directory);
 const char *ytsg_client_get_incoming_file_directory (YtsgClient *client);
+const char *ytsg_client_get_jid (const YtsgClient *client);
 
 G_END_DECLS
 

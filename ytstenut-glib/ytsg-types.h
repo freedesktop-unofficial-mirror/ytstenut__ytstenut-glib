@@ -26,6 +26,11 @@
 
 G_BEGIN_DECLS
 
+/*
+ * Forward declarations
+ */
+typedef struct _YtsgClient        YtsgClient;
+
 /**
  * YtsgProtocol:
  * @YTSG_PROTOCOL_XMPP: Jabber

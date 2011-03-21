@@ -19,10 +19,11 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ytsg-private.h"
-#include "ytsg-marshal.h"
-#include "ytsg-roster.h"
+#include "ytsg-client.h"
 #include "ytsg-contact.h"
+#include "ytsg-marshal.h"
+#include "ytsg-private.h"
+#include "ytsg-roster.h"
 
 #include <string.h>
 
@@ -47,6 +48,8 @@ struct _YtsgRosterPrivate
 {
   GHashTable *contacts;
 
+  YtsgClient *client;
+
   guint disposed : 1;
 };
 
@@ -61,6 +64,7 @@ enum
 enum
 {
   PROP_0,
+  PROP_CLIENT,
 };
 
 static guint signals[N_SIGNALS] = {0};
@@ -68,6 +72,7 @@ static guint signals[N_SIGNALS] = {0};
 static void
 ytsg_roster_class_init (YtsgRosterClass *klass)
 {
+  GParamSpec   *pspec;
   GObjectClass *object_class = (GObjectClass *)klass;
 
   g_type_class_add_private (klass, sizeof (YtsgRosterPrivate));
@@ -77,6 +82,18 @@ ytsg_roster_class_init (YtsgRosterClass *klass)
   object_class->constructed  = ytsg_roster_constructed;
   object_class->get_property = ytsg_roster_get_property;
   object_class->set_property = ytsg_roster_set_property;
+
+  /**
+   * YtsgRoster:client:
+   *
+   * #YtsgClient this roster represents
+   */
+  pspec = g_param_spec_object ("client",
+                               "YtsgClient",
+                               "YtsgClient",
+                               YTSG_TYPE_CLIENT,
+                               G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY);
+  g_object_class_install_property (object_class, PROP_CLIENT, pspec);
 
   /**
    * NsRoster::item-added
@@ -152,6 +169,9 @@ ytsg_roster_set_property (GObject      *object,
 
   switch (property_id)
     {
+    case PROP_CLIENT:
+      priv->client = g_value_get_object (value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -176,6 +196,8 @@ ytsg_roster_dispose (GObject *object)
     return;
 
   priv->disposed = TRUE;
+
+  priv->client = NULL;
 
   g_hash_table_destroy (priv->contacts);
 
@@ -509,7 +531,21 @@ ytsg_roster_find_contact_by_capability (YtsgRoster *roster,
 }
 
 YtsgRoster*
-ytsg_roster_new (void)
+ytsg_roster_new (YtsgClient *client)
 {
-  return g_object_new (YTSG_TYPE_ROSTER, NULL);
+  return g_object_new (YTSG_TYPE_ROSTER,
+                       "client", client,
+                       NULL);
+}
+
+YtsgClient*
+ytsg_roster_get_client (YtsgRoster *roster)
+{
+  YtsgRosterPrivate *priv;
+
+  g_return_val_if_fail (YTSG_IS_ROSTER (roster), NULL);
+
+  priv = roster->priv;
+
+  return priv->client;
 }
