@@ -46,9 +46,8 @@ G_DEFINE_TYPE (YtsgRoster, ytsg_roster, G_TYPE_OBJECT);
 
 struct _YtsgRosterPrivate
 {
-  GHashTable *contacts;
-
-  YtsgClient *client;
+  GHashTable *contacts; /* hash of YtsgContact this roster holds */
+  YtsgClient *client;   /* back-reference to the client object that owns us */
 
   guint disposed : 1;
 };

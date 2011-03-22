@@ -10,13 +10,13 @@ static void ytsg_metadata_service_dispose (GObject *object);
 static void ytsg_metadata_service_finalize (GObject *object);
 static void ytsg_metadata_service_constructed (GObject *object);
 static void ytsg_metadata_service_get_property (GObject    *object,
-                                         guint       property_id,
-                                         GValue     *value,
-                                         GParamSpec *pspec);
+                                                guint       property_id,
+                                                GValue     *value,
+                                                GParamSpec *pspec);
 static void ytsg_metadata_service_set_property (GObject      *object,
-                                         guint         property_id,
-                                         const GValue *value,
-                                         GParamSpec   *pspec);
+                                                guint         property_id,
+                                                const GValue *value,
+                                                GParamSpec   *pspec);
 
 G_DEFINE_TYPE (YtsgMetadataService, ytsg_metadata_service, YTSG_TYPE_SERVICE);
 

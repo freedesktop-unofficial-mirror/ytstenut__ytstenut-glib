@@ -58,14 +58,15 @@ G_DEFINE_TYPE (YtsgContact, ytsg_contact, G_TYPE_OBJECT);
 
 struct _YtsgContactPrivate
 {
-  GHashTable *services;
+  GHashTable *services;   /* hash of YtsgService instances */
 
-  TpContact  *tp_contact;
+  TpContact  *tp_contact; /* TpContact associated with YtsgContact */
 
-  char       *icon_token;
+  char       *icon_token; /* token identifying this contacts avatar */
 
-  YtsgClient *client; /* client that owns us */
-  YtsgStatus *status;
+  YtsgClient *client;     /* back-reference to the client that owns us */
+  YtsgStatus *status;     /* status of this contact -- FIXME -- status is
+                             per-service, not contact */
 
   GQueue     *pending_files;    /* files dispatched before channel open */
   GHashTable *ft_cancellables;
@@ -490,7 +491,7 @@ _ytsg_contact_new (YtsgClient *client, TpContact *tp_contact)
 TpContact *
 ytsg_contact_get_tp_contact (const YtsgContact  *contact)
 {
-  YtsgContactPrivate  *priv;
+  YtsgContactPrivate *priv;
 
   g_return_val_if_fail (YTSG_IS_CONTACT (contact), NULL);
 
@@ -586,7 +587,7 @@ ytsg_c_ft_op_new (YtsgContact *item, guint32 atom)
 {
   YtsgCFtOp *o = g_slice_new (YtsgCFtOp);
 
-  o->item  = item;
+  o->item = item;
   o->atom = atom;
 
   return o;
@@ -605,13 +606,13 @@ ytsg_contact_ft_op_cb (EmpathyTpFile *tp_file,
                        const GError  *error,
                        gpointer       data)
 {
-  YtsgCFtOp          *op = data;
-  YtsgContact        *item = op->item;
-  YtsgContactPrivate *priv = item->priv;
   GCancellable       *cancellable;
+  YtsgError           e;
+  YtsgCFtOp          *op     = data;
+  YtsgContact        *item   = op->item;
+  YtsgContactPrivate *priv   = item->priv;
   YtsgClient         *client = priv->client;
   guint32             atom   = op->atom;
-  YtsgError   e;
 
   if (error)
     {
@@ -641,10 +642,10 @@ ytsg_contact_ft_op_cb (EmpathyTpFile *tp_file,
 typedef struct
 {
   const YtsgContact *item;
-  TpChannel          *ft_channel;
-  GFile              *file;
-  char               *name;
-  guint32             atom;
+  TpChannel         *ft_channel;
+  GFile             *file;
+  char              *name;
+  guint32            atom;
 
 } YtsgCPendingFile;
 
@@ -656,10 +657,10 @@ ytsg_c_pending_file_new (const YtsgContact *item,
 {
   YtsgCPendingFile *m = g_slice_new (YtsgCPendingFile);
 
-  m->item = item;
-  m->name = g_strdup (name);
-  m->file  = g_object_ref (gfile);
-  m->atom = atom;
+  m->item       = item;
+  m->name       = g_strdup (name);
+  m->file       = g_object_ref (gfile);
+  m->atom       = atom;
   m->ft_channel = NULL;
 
   return m;
@@ -748,8 +749,8 @@ ytsg_contact_do_set_ft_channel (YtsgContact *item,
                                 const char   *name)
 {
   YtsgContactPrivate *priv = item->priv;
-  YtsgCPendingFile     *file;
-  GList               *l;
+  YtsgCPendingFile   *file;
+  GList              *l;
 
   g_return_if_fail (!priv->disposed);
 
@@ -784,13 +785,13 @@ ytsg_contact_do_set_ft_channel (YtsgContact *item,
 
 static void
 ytsg_contact_ft_filename_cb (TpProxy      *proxy,
-                                 const GValue *value,
-                                 const GError *error,
-                                 gpointer      data,
-                                 GObject      *weak_object)
+                             const GValue *value,
+                             const GError *error,
+                             gpointer      data,
+                             GObject      *weak_object)
 {
   YtsgContact *item = data;
-  const char   *name;
+  const char  *name;
 
   if (error)
     {
@@ -852,13 +853,14 @@ ytsg_contact_create_ft_channel_cb (TpConnection *proxy,
  * @item: #YtsgContact,
  * @gfile: #GFile to send
  *
- * Sends file to the contact represented by this item.
+ * Sends file to the contact represented by this item. The caller can safely
+ * release reference on the supplied #GFile after calling this function.
  *
  * Return value: Returns %YTSG_ERROR_SUCCESS on success, return value
  * %YTSG_ERROR_NOT_ALLOWED indicates that the current client is not mutually
  * approved to exchange files with the item. %YTSG_ERROR_PENDING is returned if
  * the execution of the command has to be deferred until the communication
- * channel is ready; in this case the command will be automatically send at the
+ * channel is ready; in this case the file will be automatically send at the
  * appropriate time, and any errors, or eventaul success, will be indicated by
  * emitting the #YtsgClient::error signal at that time.
  */
@@ -871,9 +873,9 @@ ytsg_contact_send_file (const YtsgContact *item, GFile *gfile)
   GFileInfo          *finfo;
   GError             *error = NULL;
   YtsgCPendingFile   *file;
-  GHashTable          *request;
-  TpConnection        *conn;
-  guint                handle;
+  GHashTable         *request;
+  TpConnection       *conn;
+  guint               handle;
 
   g_return_val_if_fail (YTSG_IS_CONTACT (item) && gfile,
                         YTSG_ERROR_INVALID_PARAMETER);
@@ -962,8 +964,8 @@ gboolean
 ytsg_contact_cancel_file (const YtsgContact *item, GFile *gfile)
 {
   YtsgContactPrivate *priv;
-  GCancellable        *cancellable;
-  char                *path;
+  GCancellable       *cancellable;
+  char               *path;
 
   g_return_val_if_fail (YTSG_IS_CONTACT (item) && gfile, FALSE);
 

@@ -62,22 +62,25 @@ G_DEFINE_TYPE (YtsgClient, ytsg_client, G_TYPE_OBJECT);
 
 struct _YtsgClientPrivate
 {
-  YtsgRoster *roster;    /* the roster of this client */
-  YtsgRoster *unwanted;  /* roster of unwanted items */
-  YtsgStatus *status;    /* the nScreen status of this client */
-  GArray     *caps;
+  YtsgRoster   *roster;    /* the roster of this client */
+  YtsgRoster   *unwanted;  /* roster of unwanted items */
+  YtsgStatus   *status;    /* the nScreen status of this client */
+  GArray       *caps;
 
-  char       *jid;
-  char       *resource;
-  char       *mgr_name;
-  char       *incoming_dir;
-
+  /* connection parameters */
+  char         *jid;
+  char         *resource;
+  char         *mgr_name;
   YtsgProtocol  protocol;
 
-  char       *icon_token;
-  char       *icon_mime_type;
-  GArray     *icon_data;
+  char         *incoming_dir; /* destination directory for incoming files */
 
+  /* avatar-related stuff */
+  char         *icon_token;
+  char         *icon_mime_type;
+  GArray       *icon_data;
+
+  /* Telepathy bits */
   TpDBusDaemon         *dbus;
   TpConnectionManager  *mgr;
   TpConnection         *connection;
@@ -88,13 +91,13 @@ struct _YtsgClientPrivate
   /* callback ids */
   guint reconnect_id;
 
-  guint authenticated   : 1; /* set once authenticated */
-  guint ready           : 1; /* set once TP set up is done */
-  guint connect         : 1; /* whether we should connect once we get our conn */
-  guint reconnect       : 1; /* whether we should attempt to reconnect */
-  guint dialing         : 1; /* whether in process of acquiring connection */
-  guint members_pending : 1; /* whether we need to query when ready */
-  guint prepared        : 1; /* whether connection features are set up */
+  guint authenticated   : 1; /* are we authenticated ? */
+  guint ready           : 1; /* is TP setup done ? */
+  guint connect         : 1; /* connect once we get our connection ? */
+  guint reconnect       : 1; /* should we attempt to reconnect ? */
+  guint dialing         : 1; /* are we currently acquiring connection ? */
+  guint members_pending : 1; /* requery members when TP set up completed ? */
+  guint prepared        : 1; /* are connection features set up ? */
   guint disposed        : 1; /* dispose guard */
 };
 
@@ -149,7 +152,7 @@ ytsg_client_contact_status_cb (YtsgContact *item,
                                GParamSpec  *pspec,
                                YtsgClient  *client)
 {
-  YtsgClientPrivate *priv = client->priv;
+  YtsgClientPrivate *priv   = client->priv;
   gboolean           wanted = TRUE;
   gboolean           in_r;
   gboolean           in_u;
@@ -158,10 +161,15 @@ ytsg_client_contact_status_cb (YtsgContact *item,
   if (!priv->caps)
     return;
 
+  /*
+   * Separate the grain from the chaff (i.e., split known contacts into the
+   * normal and unwanted rosters)
+   */
   wanted = FALSE;
 
-  /* FIXME -- this is tied to caps being advertised via status, which is not
-   *  the case ... hook into new API.
+  /*
+   * FIXME -- this is tied to caps being advertised via status, which is not
+   * the case ... hook into new API.
    */
 #if 0
   if ((status = ytsg_contact_get_status (item)) && status->caps)
@@ -224,9 +232,9 @@ ytsg_client_contacts_cb (TpConnection      *connection,
                          GObject           *weak_object)
 {
   YtsgClient        *client = data;
-  YtsgClientPrivate *priv = client->priv;
+  YtsgClientPrivate *priv   = client->priv;
   YtsgRoster        *roster = priv->roster;
-  int              i;
+  int                i;
 
   if (error)
     {
@@ -236,15 +244,15 @@ ytsg_client_contacts_cb (TpConnection      *connection,
 
   for (i = 0; i < n_contacts; ++i)
     {
-      TpContact    *cont = contacts[i];
+      TpContact   *cont    = contacts[i];
       YtsgContact *found_r = NULL;
       YtsgContact *found_u = NULL;
-      YtsgStatus  *stat = NULL; /* FIXME */
+      YtsgStatus  *stat    = NULL; /* FIXME */
 
-      const char   *msg = tp_contact_get_presence_message (cont);
-      TpHandle      h = tp_contact_get_handle (cont);
-      YtsgPresence    presence;
+      const char   *msg    = tp_contact_get_presence_message (cont);
+      TpHandle      h      = tp_contact_get_handle (cont);
       gboolean      wanted = TRUE;
+      YtsgPresence  presence;
 
       if (tp_contact_get_presence_type (cont) ==
           TP_CONNECTION_PRESENCE_TYPE_AVAILABLE)
@@ -295,10 +303,11 @@ ytsg_client_contacts_cb (TpConnection      *connection,
 
       if (found_r && !wanted)
         {
-          YTSG_NOTE (CLIENT, "Removing unwanted contact %s from roster: %s [%s]",
-                   tp_contact_get_identifier (cont),
-                   tp_contact_get_presence_status (cont),
-                   msg);
+          YTSG_NOTE (CLIENT,
+                     "Removing unwanted contact %s from roster: %s [%s]",
+                     tp_contact_get_identifier (cont),
+                     tp_contact_get_presence_status (cont),
+                     msg);
 
           g_object_ref (found_r);
           _ytsg_roster_remove_contact (roster, found_r, FALSE);
@@ -310,10 +319,10 @@ ytsg_client_contacts_cb (TpConnection      *connection,
           YtsgSubscription  subs = YTSG_SUBSCRIPTION_NONE;
 
           YTSG_NOTE (CLIENT, "Adding contact %s to roster %s: %s [%s]",
-                   tp_contact_get_identifier (cont),
-                   wanted ? "wanted" : "unwanted",
-                   tp_contact_get_presence_status (cont),
-                   msg);
+                     tp_contact_get_identifier (cont),
+                     wanted ? "wanted" : "unwanted",
+                     tp_contact_get_presence_status (cont),
+                     msg);
 
           /*
            * The subscription status has to be worked out from the membership
@@ -378,23 +387,23 @@ ytsg_client_contacts_cb (TpConnection      *connection,
 
 static void
 ytsg_client_group_members_cb (TpChannel *self,
-                            gchar     *message,
-                            GArray    *added,          /* guint */
-                            GArray    *removed,        /* guint */
-                            GArray    *local_pending,  /* guint */
-                            GArray    *remote_pending, /* guint */
-                            guint      actor,
-                            guint      reason,
-                            gpointer   data)
+                              gchar     *message,
+                              GArray    *added,          /* guint */
+                              GArray    *removed,        /* guint */
+                              GArray    *local_pending,  /* guint */
+                              GArray    *remote_pending, /* guint */
+                              guint      actor,
+                              guint      reason,
+                              gpointer   data)
 {
-  YtsgClient        *client = data;
-  YtsgClientPrivate *priv = client->priv;
+  int                i;
   YtsgRoster        *roster;
-  int              i;
-  TpContactFeature features[] = { TP_CONTACT_FEATURE_PRESENCE,
-                                  TP_CONTACT_FEATURE_CONTACT_INFO,
-                                  TP_CONTACT_FEATURE_AVATAR_DATA,
-                                  TP_CONTACT_FEATURE_CAPABILITIES};
+  YtsgClient        *client     = data;
+  YtsgClientPrivate *priv       = client->priv;
+  TpContactFeature   features[] = { TP_CONTACT_FEATURE_PRESENCE,
+                                    TP_CONTACT_FEATURE_CONTACT_INFO,
+                                    TP_CONTACT_FEATURE_AVATAR_DATA,
+                                    TP_CONTACT_FEATURE_CAPABILITIES};
 
   /*
    * NB: this function can be called with no changes at all if the roster is
@@ -409,8 +418,8 @@ ytsg_client_group_members_cb (TpChannel *self,
     }
 
   YTSG_NOTE (CLIENT, "Members changed on channel %s",
-           self == priv->mydevices ? "MyDevices" :
-           (self == priv->subscriptions ? "subscriptions" : "unknown"));
+             self == priv->mydevices ? "MyDevices" :
+             (self == priv->subscriptions ? "subscriptions" : "unknown"));
 
   if (priv->protocol == YTSG_PROTOCOL_XMPP)
     {
@@ -429,7 +438,8 @@ ytsg_client_group_members_cb (TpChannel *self,
               if (!tp_connection_is_ready (priv->connection))
                 {
                   priv->members_pending = TRUE;
-                  YTSG_NOTE (CLIENT, "Connection not ready, postponing members");
+                  YTSG_NOTE (CLIENT,
+                             "Connection not ready, postponing members");
                 }
               else
                 tp_connection_get_contacts_by_handle (priv->connection,
@@ -454,20 +464,22 @@ ytsg_client_group_members_cb (TpChannel *self,
           if (removed)
             for (i = 0; i < removed->len; ++i)
               {
-                guint         handle = g_array_index (removed, guint, i);
+                guint        handle = g_array_index (removed, guint, i);
                 YtsgContact *item;
 
-                if ((item = _ytsg_roster_find_contact_by_handle (roster, handle)))
+                if ((item = _ytsg_roster_find_contact_by_handle (roster,
+                                                                 handle)))
                   _ytsg_contact_set_subscription (item, YTSG_SUBSCRIPTION_NONE);
               }
 
           if (added)
             for (i = 0; i < added->len; ++i)
               {
-                guint         handle = g_array_index (added, guint, i);
+                guint        handle = g_array_index (added, guint, i);
                 YtsgContact *item;
 
-                if ((item = _ytsg_roster_find_contact_by_handle (roster, handle)))
+                if ((item = _ytsg_roster_find_contact_by_handle (roster,
+                                                                 handle)))
                   _ytsg_contact_set_subscription (item,
                                                   YTSG_SUBSCRIPTION_APPROVED);
               }
@@ -475,10 +487,11 @@ ytsg_client_group_members_cb (TpChannel *self,
           if (remote_pending)
             for (i = 0; i < remote_pending->len; ++i)
               {
-                guint         handle = g_array_index (remote_pending, guint, i);
+                guint        handle = g_array_index (remote_pending, guint, i);
                 YtsgContact *item;
 
-                if ((item = _ytsg_roster_find_contact_by_handle (roster, handle)))
+                if ((item = _ytsg_roster_find_contact_by_handle (roster,
+                                                                 handle)))
                   _ytsg_contact_set_subscription (item,
                                                   YTSG_SUBSCRIPTION_PENDING_OUT);
               }
@@ -486,7 +499,7 @@ ytsg_client_group_members_cb (TpChannel *self,
           if (local_pending)
             for (i = 0; i < local_pending->len; ++i)
               {
-                guint         handle = g_array_index (local_pending, guint, i);
+                guint        handle = g_array_index (local_pending, guint, i);
                 YtsgContact *item;
 
                 if ((item = _ytsg_roster_find_contact_by_handle (roster, handle)))
@@ -545,8 +558,8 @@ ytsg_client_channel_requested (TpChannel *proxy)
 
 static void
 ytsg_client_ft_op_cb (EmpathyTpFile *tp_file,
-                    const GError  *error,
-                    gpointer       data)
+                      const GError  *error,
+                      gpointer       data)
 {
   if (error)
     {
@@ -556,20 +569,20 @@ ytsg_client_ft_op_cb (EmpathyTpFile *tp_file,
 
 static void
 ytsg_client_ft_accept_cb (TpProxy      *proxy,
-                        GHashTable   *props,
-                        const GError *error,
-                        gpointer      data,
-                        GObject      *weak_object)
+                          GHashTable   *props,
+                          const GError *error,
+                          gpointer      data,
+                          GObject      *weak_object)
 {
   YtsgClient        *client = data;
   YtsgClientPrivate *priv   = client->priv;
-  const char      *name;
-  const char      *jid;
-  guint64          offset;
-  guint64          size;
-  GHashTable      *iprops;
-  YtsgContact    *item;
-  guint32          ihandle;
+  const char        *name;
+  const char        *jid;
+  guint64            offset;
+  guint64            size;
+  GHashTable        *iprops;
+  YtsgContact       *item;
+  guint32            ihandle;
 
   iprops = tp_channel_borrow_immutable_properties ((TpChannel*)proxy);
 
@@ -623,14 +636,14 @@ static void
 ytsg_client_ft_handle_state (YtsgClient *client, TpChannel *proxy, guint state)
 {
   YtsgClientPrivate *priv   = client->priv;
-  GHashTable      *props;
-  gboolean         requested;
+  GHashTable        *props;
+  gboolean           requested;
 
   props = tp_channel_borrow_immutable_properties ((TpChannel*)proxy);
   if (!(requested = tp_asv_get_boolean (props, TP_PROP_CHANNEL_REQUESTED,NULL)))
     {
       YtsgContact *item;
-      guint32       ihandle;
+      guint32      ihandle;
 
       ihandle = tp_asv_get_uint32 (props,
                                    TP_PROP_CHANNEL_INITIATOR_HANDLE,
@@ -642,13 +655,14 @@ ytsg_client_ft_handle_state (YtsgClient *client, TpChannel *proxy, guint state)
         case 1:
           {
             if (item)
-              YTSG_NOTE (FILE_TRANSFER, "Got request for FT channel from %s (%s)",
-                       ytsg_contact_get_jid (item),
-                       tp_proxy_get_bus_name (proxy));
+              YTSG_NOTE (FILE_TRANSFER,
+                         "Got request for FT channel from %s (%s)",
+                         ytsg_contact_get_jid (item),
+                         tp_proxy_get_bus_name (proxy));
             else
               YTSG_NOTE (FILE_TRANSFER,
-                       "Got request for FT channel from handle %d",
-                       ihandle);
+                         "Got request for FT channel from handle %d",
+                         ihandle);
 
             tp_cli_dbus_properties_call_get_all (proxy,
                                            -1,
@@ -661,17 +675,17 @@ ytsg_client_ft_handle_state (YtsgClient *client, TpChannel *proxy, guint state)
           break;
         case 2:
           YTSG_NOTE (FILE_TRANSFER, "Incoming stream state (%s) --> 'accepted'",
-                   tp_proxy_get_bus_name (proxy));
+                     tp_proxy_get_bus_name (proxy));
           break;
         case 3:
           YTSG_NOTE (FILE_TRANSFER, "Incoming stream state (%s) --> 'open'",
-                   tp_proxy_get_bus_name (proxy));
+                     tp_proxy_get_bus_name (proxy));
           break;
         case 4:
         case 5:
           YTSG_NOTE (FILE_TRANSFER, "Incoming stream state (%s) --> '%s'",
-                   tp_proxy_get_bus_name (proxy),
-                   state == 4 ? "completed" : "cancelled");
+                     tp_proxy_get_bus_name (proxy),
+                     state == 4 ? "completed" : "cancelled");
           {
             const char *name;
             const char *jid;
@@ -698,15 +712,15 @@ ytsg_client_ft_handle_state (YtsgClient *client, TpChannel *proxy, guint state)
 
 static void
 ytsg_client_ft_state_cb (TpChannel *proxy,
-                       guint      state,
-                       guint      reason,
-                       gpointer   data,
-                       GObject   *object)
+                         guint      state,
+                         guint      reason,
+                         gpointer   data,
+                         GObject   *object)
 {
   YtsgClient *client = data;
 
   YTSG_NOTE (FILE_TRANSFER,
-           "FT channel changed status to %d (reason %d)", state, reason);
+             "FT channel changed status to %d (reason %d)", state, reason);
 
   ytsg_client_ft_handle_state (client, proxy, state);
 }
@@ -714,9 +728,9 @@ ytsg_client_ft_state_cb (TpChannel *proxy,
 static void
 ytsg_client_ft_core_cb (GObject *proxy, GAsyncResult *res, gpointer data)
 {
-  YtsgClient  *client = data;
-  TpChannel *channel = (TpChannel*) proxy;
-  GError    *error = NULL;
+  YtsgClient *client  = data;
+  TpChannel  *channel = (TpChannel*) proxy;
+  GError     *error   = NULL;
 
   YTSG_NOTE (FILE_TRANSFER, "FT channel ready");
 
@@ -760,13 +774,13 @@ ytsg_client_channel_prepare_cb (GObject      *channel,
 
 static void
 ytsg_client_channel_cb (TpConnection *proxy,
-                        const gchar *path,
-                        const gchar *type,
-                        guint handle_type,
-                        guint handle,
-                        gboolean suppress_handle,
-                        gpointer data,
-                        GObject *weak_object)
+                        const gchar  *path,
+                        const gchar  *type,
+                        guint         handle_type,
+                        guint         handle,
+                        gboolean      suppress_handle,
+                        gpointer      data,
+                        GObject      *weak_object)
 {
   YtsgClient        *client = data;
   YtsgClientPrivate *priv = client->priv;
@@ -786,9 +800,9 @@ ytsg_client_channel_cb (TpConnection *proxy,
       /* FIXME -- this is where the messaging channel will go */
       if (!strcmp (type, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER))
         {
-          GError    *error = NULL;
-          TpChannel *ch;
-          GQuark     features[] = { TP_CHANNEL_FEATURE_CORE, 0};
+          GError      *error = NULL;
+          TpChannel   *ch;
+          GQuark       features[] = { TP_CHANNEL_FEATURE_CORE, 0};
           YtsgContact *item;
 
           ch = tp_channel_new (proxy, path, type, handle_type, handle, &error);
@@ -980,10 +994,10 @@ ytsg_client_incoming_file (YtsgClient *client,
                            TpChannel  *proxy)
 {
   YtsgClientPrivate *priv = client->priv;
-  char            *path;
-  GFile           *gfile;
-  EmpathyTpFile   *tp_file;
-  GCancellable    *cancellable;
+  char              *path;
+  GFile             *gfile;
+  EmpathyTpFile     *tp_file;
+  GCancellable      *cancellable;
 
   YTSG_NOTE (FILE_TRANSFER, "Incoming file from %s", from);
 
@@ -1262,12 +1276,12 @@ ytsg_client_class_init (YtsgClientClass *klass)
  */
 static void
 ytsg_client_mgr_debug_msg_cb (TpProxy    *proxy,
-                            gdouble     timestamp,
-                            const char *domain,
-                            guint       level,
-                            const char *msg,
-                            gpointer    data,
-                            GObject    *weak_object)
+                              gdouble     timestamp,
+                              const char *domain,
+                              guint       level,
+                              const char *msg,
+                              gpointer    data,
+                              GObject    *weak_object)
 {
   switch (level)
     {
@@ -1301,11 +1315,11 @@ ytsg_client_mgr_debug_msg_cb (TpProxy    *proxy,
  */
 static void
 ytsg_client_mgr_debug_msg_collect (DBusGProxy              *proxy,
-                                 gdouble                  timestamp,
-                                 const char              *domain,
-                                 guint                    level,
-                                 const char              *msg,
-                                 TpProxySignalConnection *signal)
+                                   gdouble                  timestamp,
+                                   const char              *domain,
+                                   guint                    level,
+                                   const char              *msg,
+                                   TpProxySignalConnection *signal)
 {
   GValueArray *args = g_value_array_new (4);
   GValue t = { 0 };
@@ -1333,22 +1347,22 @@ ytsg_client_mgr_debug_msg_collect (DBusGProxy              *proxy,
 }
 
 typedef void (*YtsgClientMgrNewDebugMsg)(TpProxy *,
-                                       gdouble,
-                                       const char *,
-                                       guint,
-                                       const char *,
-                                       gpointer, GObject *);
+                                         gdouble,
+                                         const char *,
+                                         guint,
+                                         const char *,
+                                         gpointer, GObject *);
 
 /*
  * The callback invoker
  */
 static void
 ytsg_client_mgr_debug_msg_invoke (TpProxy     *proxy,
-                                GError      *error,
-                                GValueArray *args,
-                                GCallback    callback,
-                                gpointer     data,
-                                GObject     *weak_object)
+                                  GError      *error,
+                                  GValueArray *args,
+                                  GCallback    callback,
+                                  gpointer     data,
+                                  GObject     *weak_object)
 {
   YtsgClientMgrNewDebugMsg cb = (YtsgClientMgrNewDebugMsg) callback;
 
@@ -1416,9 +1430,9 @@ ytsg_client_mgr_connect_debug_signals (YtsgClient *client, TpProxy *proxy)
  */
 static void
 ytsg_client_debug_iface_added_cb (TpProxy    *tproxy,
-                                guint       id,
-                                DBusGProxy *proxy,
-                                gpointer    data)
+                                  guint       id,
+                                  DBusGProxy *proxy,
+                                  gpointer    data)
 {
   if (id != TP_IFACE_QUARK_DEBUG)
     return;
@@ -1476,9 +1490,9 @@ ytsg_client_mgr_setup_debug  (YtsgClient *client)
 
 static void
 ytsg_client_mgr_ready_cb (TpConnectionManager *cm,
-                        const GError        *error,
-                        gpointer             data,
-                        GObject             *weak_object)
+                          const GError        *error,
+                          gpointer             data,
+                          GObject             *weak_object)
 {
   YtsgClient *client = data;
 
@@ -1497,8 +1511,8 @@ ytsg_client_mgr_ready_cb (TpConnectionManager *cm,
 static void
 ytsg_client_constructed (GObject *object)
 {
-  YtsgClient        *self = (YtsgClient*) object;
-  YtsgClientPrivate *priv = self->priv;
+  YtsgClient        *self  = (YtsgClient*) object;
+  YtsgClientPrivate *priv  = self->priv;
   GError            *error = NULL;
 
   if (G_OBJECT_CLASS (ytsg_client_parent_class)->constructed)
@@ -1793,20 +1807,20 @@ ytsg_client_connected_cb (TpConnection *proxy,
 
 static void
 ytsg_client_error_cb (TpConnection *proxy,
-                      const gchar *arg_Error,
-                      GHashTable *arg_Details,
-                      gpointer user_data,
-                      GObject *weak_object)
+                      const gchar  *arg_Error,
+                      GHashTable   *arg_Details,
+                      gpointer      user_data,
+                      GObject      *weak_object)
 {
   YTSG_NOTE (CLIENT, "Error: %s", arg_Error);
 }
 
 static void
 ytsg_client_status_cb (TpConnection *proxy,
-                       guint arg_Status,
-                       guint arg_Reason,
-                       gpointer data,
-                       GObject *weak_object)
+                       guint         arg_Status,
+                       guint         arg_Reason,
+                       gpointer      data,
+                       GObject      *weak_object)
 {
   YtsgClient   *client = data;
   const char *status[] = {"'connected'   ",
@@ -1845,7 +1859,7 @@ ytsg_client_status_cb (TpConnection *proxy,
 static void
 ytsg_client_connection_ready_cb (TpConnection *conn,
                                  GParamSpec   *par,
-                                 YtsgClient     *client)
+                                 YtsgClient   *client)
 {
   YtsgClientPrivate *priv = client->priv;
 
@@ -1893,7 +1907,7 @@ ytsg_client_set_avatar_cb (TpConnection *proxy,
                            GObject      *weak_object)
 {
   YtsgClient        *client = data;
-  YtsgClientPrivate *priv = client->priv;
+  YtsgClientPrivate *priv   = client->priv;
 
   if (error)
     {
@@ -1909,7 +1923,7 @@ ytsg_client_set_avatar_cb (TpConnection *proxy,
  * check whether the given avatar mime type is supported.
  */
 static gboolean
-ytsg_client_is_avatar_type_supported (YtsgClient   *client,
+ytsg_client_is_avatar_type_supported (YtsgClient *client,
                                       const char *mime_type,
                                       guint       bytes)
 {
@@ -1969,7 +1983,7 @@ ytsg_client_connection_prepare_cb (GObject      *connection,
 {
   YtsgClient        *client = data;
   YtsgClientPrivate *priv   = client->priv;
-  GError          *error  = NULL;
+  GError            *error  = NULL;
 
   if (!tp_proxy_prepare_finish (connection, res, &error))
     {
@@ -2019,13 +2033,13 @@ ytsg_client_connection_cb (TpConnectionManager *proxy,
                            gpointer             data,
                            GObject             *weak_object)
 {
-  YtsgClient        *client  = data;
-  YtsgClientPrivate *priv    = client->priv;
-  GError          *myerror = NULL;
-  GQuark           features[] = { TP_CONNECTION_FEATURE_CONTACT_INFO,
-                                  TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS,
-                                  TP_CONNECTION_FEATURE_CAPABILITIES,
-                                  0 };
+  YtsgClient        *client     = data;
+  YtsgClientPrivate *priv       = client->priv;
+  GError            *myerror    = NULL;
+  GQuark             features[] = { TP_CONNECTION_FEATURE_CONTACT_INFO,
+                                    TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS,
+                                    TP_CONNECTION_FEATURE_CAPABILITIES,
+                                    0 };
 
   priv->dialing = FALSE;
 
@@ -2122,8 +2136,8 @@ static void
 ytsg_client_make_connection (YtsgClient *client)
 {
   YtsgClientPrivate *priv  = client->priv;
-  GHashTable      *hash;
-  const char      *proto = "jabber";
+  const char        *proto = "jabber";
+  GHashTable        *hash;
 
   if (priv->protocol == YTSG_PROTOCOL_LOCAL_XMPP)
     {
@@ -2243,7 +2257,7 @@ static gboolean
 ytsg_client_has_capability (YtsgClient *client, YtsgCaps cap)
 {
   YtsgClientPrivate *priv = client->priv;
-  int              i;
+  int                i;
 
   if (!priv->caps)
     return FALSE;
@@ -2265,7 +2279,7 @@ ytsg_client_refresh_roster (YtsgClient *client)
   /* FIXME */
 #if 0
   YtsgClientPrivate *priv = client->priv;
-  GList           *l;
+  GList             *l;
 
   if (!priv->caps)
     return;
@@ -2274,8 +2288,8 @@ ytsg_client_refresh_roster (YtsgClient *client)
 
   for (; l; l = l->next)
     {
-      YtsgContact   *item = l->data;
-      gboolean        wanted = FALSE;
+      YtsgContact      *item = l->data;
+      gboolean          wanted = FALSE;
       const YtsgStatus *status;
 
       if ((status = ytsg_contact_get_status (item)) && status->caps)
@@ -2284,7 +2298,8 @@ ytsg_client_refresh_roster (YtsgClient *client)
 
           for (j = 0; j < status->caps->len; ++j)
             {
-              YtsgCapsTupple *t = g_array_index (status->caps, YtsgCapsTupple*, j);
+              YtsgCapsTupple *t = g_array_index (status->caps,
+                                                 YtsgCapsTupple*, j);
 
               if (t && ((t->capability == YTSG_CAPS_CONTROL) ||
                         ytsg_client_has_capability (client, t->capability)))
@@ -2317,7 +2332,8 @@ ytsg_client_refresh_roster (YtsgClient *client)
 
           for (j = 0; j < status->caps->len; ++j)
             {
-              YtsgCapsTupple *t = g_array_index (status->caps, YtsgCapsTupple*, j);
+              YtsgCapsTupple *t = g_array_index (status->caps,
+                                                 YtsgCapsTupple*, j);
 
               if (t && ((t->capability == YTSG_CAPS_CONTROL) ||
                         ytsg_client_has_capability (client, t->capability)))

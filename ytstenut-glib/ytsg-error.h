@@ -14,18 +14,20 @@
 G_BEGIN_DECLS
 
 /**
- * YtsgError: @YTSG_ERROR_SUCCESS: Operation succeeded, @YTSG_ERROR_PENDING: The
- * operation will be completed at a later stage, subject to completing
- * intermediate asynchronous operations (implies success up to the point the
- * asynchronous operation began). The operation to which it pertains can be
- * retrieved from the #YtsgError value using ytsg_error_get_atom().  Operations
- * that return this error code must emit #YtsgClient::error signal at a later
- * stage to indicate either subsequent errors or eventual success.
+ * YtsgError:
+ * @YTSG_ERROR_SUCCESS: Operation succeeded,
+ * @YTSG_ERROR_PENDING: The operation will be completed at a later stage,
+ * subject to completing intermediate asynchronous operations (implies success
+ * up to the point the asynchronous operation began). The operation to which
+ * it pertains can be retrieved from the #YtsgError value using
+ * ytsg_error_get_atom().  Operations that return this error code must emit
+ * #YtsgClient::error signal at a later stage to indicate either subsequent
+ * errors or eventual success.
  * @YTSG_ERROR_OBJECT_DISPOSED: the object is in process of being destroyed
  * @YTSG_ERROR_INVALID_PARAMETER: Invalid parameter supplied to function
- * @YTSG_ERROR_NOT_ALLOWED: the operation is not allowed.  @YTSG_ERROR_NO_ROUTE:
- * no route to complete the operation @YTSG_ERROR_UNKNOWN: some other,
- * unspecified, error condition.
+ * @YTSG_ERROR_NOT_ALLOWED: the operation is not allowed.
+ * @YTSG_ERROR_NO_ROUTE: no route to complete the operation
+ * @YTSG_ERROR_UNKNOWN: some other,unspecified, error condition.
  *
  * @YTSG_ERROR_CUSTOM_START: custom error codes can start at this value
  * @YTSG_ERROR_CUSTOM_END: custom error code must not exceed this value
