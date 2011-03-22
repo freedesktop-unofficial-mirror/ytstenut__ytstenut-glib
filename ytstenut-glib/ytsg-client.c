@@ -35,6 +35,7 @@
 #include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/connection.h>
+#include <telepathy-glib/account.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/contact.h>
@@ -83,6 +84,7 @@ struct _YtsgClientPrivate
   /* Telepathy bits */
   TpDBusDaemon         *dbus;
   TpConnectionManager  *mgr;
+  TpAccount            *account;
   TpConnection         *connection;
   TpChannel            *mydevices;
   TpChannel            *subscriptions;
@@ -1991,8 +1993,6 @@ ytsg_client_connection_prepare_cb (GObject      *connection,
     }
   else
     {
-      TpContactInfoFlags flags;
-
       if (priv->icon_data &&
           ytsg_client_is_avatar_type_supported (client,
                                               priv->icon_mime_type,
@@ -2025,6 +2025,10 @@ ytsg_client_connection_prepare_cb (GObject      *connection,
     }
 }
 
+/*
+ * TODO -- THIS FUNCTION belongs to the old order; once the connection via
+ * TpAccount is enable, it should be removed.
+ */
 static void
 ytsg_client_connection_cb (TpConnectionManager *proxy,
                            const gchar         *bus_name,
@@ -2132,9 +2136,174 @@ ytsg_client_connection_cb (TpConnectionManager *proxy,
                                     (GObject*)client);
 }
 
+/*
+ * Sets up required features on the connection, and connects callbacks to
+ * signals that we care about.
+ */
+static void
+ytsg_client_setup_account_connection (YtsgClient *client)
+{
+  YtsgClientPrivate *priv  = client->priv;
+  GError            *error = NULL;
+  GQuark             features[] = { TP_CONNECTION_FEATURE_CONTACT_INFO,
+                                    TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS,
+                                    TP_CONNECTION_FEATURE_CAPABILITIES,
+                                    0 };
+
+  priv->connection = tp_account_get_connection (priv->account);
+
+  g_assert (priv->connection);
+
+  priv->dialing = FALSE;
+
+  YTSG_NOTE (CLIENT, "Connection ready ?: %d",
+             tp_connection_is_ready (priv->connection));
+
+  tp_g_signal_connect_object (priv->connection, "notify::connection-ready",
+                              G_CALLBACK (ytsg_client_connection_ready_cb),
+                              client, 0);
+
+  tp_cli_connection_connect_to_connection_error (priv->connection,
+                                                 ytsg_client_error_cb,
+                                                 client,
+                                                 NULL,
+                                                 (GObject*)client,
+                                                 &error);
+
+  if (error)
+    {
+      g_critical (G_STRLOC ": %s: %s; no nScreen functionality will be "
+                  "available", __FUNCTION__, error->message);
+      g_clear_error (&error);
+      return;
+    }
+
+  tp_cli_connection_connect_to_status_changed (priv->connection,
+                                               ytsg_client_status_cb,
+                                               client,
+                                               NULL,
+                                               (GObject*) client,
+                                               &error);
+
+  if (error)
+    {
+      g_critical (G_STRLOC ": %s: %s; no nScreen functionality will be "
+                  "available", __FUNCTION__, error->message);
+      g_clear_error (&error);
+      return;
+    }
+
+  tp_cli_connection_connect_to_new_channel (priv->connection,
+                                            ytsg_client_channel_cb,
+                                            client,
+                                            NULL,
+                                            (GObject*)client,
+                                            &error);
+
+  if (error)
+    {
+      g_critical (G_STRLOC ": %s: %s; no nScreen functionality will be "
+                  "available", __FUNCTION__, error->message);
+      g_clear_error (&error);
+      return;
+    }
+
+  tp_proxy_prepare_async (priv->connection,
+                          features,
+                          ytsg_client_connection_prepare_cb,
+                          client);
+}
+
+/*
+ * Callback for the async request to change presence ... not that we don't
+ * do anything with it, except when it fails.
+ */
+static void
+ytsg_client_account_online_cb (GObject      *acc,
+                               GAsyncResult *res,
+                               gpointer      data)
+{
+  GError    *error   = NULL;
+  TpAccount *account = (TpAccount*)acc;
+
+  if (!tp_account_request_presence_finish (account, res, &error))
+    {
+      g_error ("Failed to change presence to online");
+    }
+
+  YTSG_NOTE (CLIENT, "Request to change presence to 'online' succeeded");
+}
+
+/*
+ * One off handler for connection coming online
+ */
+static void
+ytsg_client_account_connection_notify_cb (TpAccount  *account,
+                                          GParamSpec *pspec,
+                                          YtsgClient *client)
+{
+  YTSG_NOTE (CLIENT, "We got connection!");
+
+  g_signal_handlers_disconnect_by_func (account,
+                                   ytsg_client_account_connection_notify_cb,
+                                   client);
+
+  ytsg_client_setup_account_connection (client);
+}
+
+/*
+ * Callback from the async tp_account_prepare_async() call
+ *
+ * This function is ready for the New World Order according to Ytstenut ...
+ */
+static void
+ytsg_client_account_prepared_cb (GObject      *acc,
+                                 GAsyncResult *res,
+                                 gpointer      data)
+{
+  YtsgClient *client  = data;
+  GError     *error   = NULL;
+  TpAccount  *account = (TpAccount*)acc;
+
+  if (!tp_account_prepare_finish (account, res, &error))
+    {
+      g_error ("Account unprepared: %s", error->message);
+    }
+
+  YTSG_NOTE (CLIENT, "Account successfully opened");
+
+  /*
+   * At this point the account is prepared, but that does not mean we have a
+   * connection (i.e., the current presence could 'off line' -- if we do not
+   * have a connection, we request that the presence changes to 'on line' and
+   * listen for when the :connection property changes.
+   */
+  if (!tp_account_get_connection (account))
+    {
+      YTSG_NOTE (CLIENT, "Currently off line, changing ...");
+
+      g_signal_connect (account, "notify::connection",
+                        G_CALLBACK (ytsg_client_account_connection_notify_cb),
+                        client);
+
+      tp_account_request_presence_async (account,
+                                         TP_CONNECTION_PRESENCE_TYPE_AVAILABLE,
+                                         "online",
+                                         "online",
+                                         ytsg_client_account_online_cb,
+                                         client);
+    }
+  else
+    ytsg_client_setup_account_connection (client);
+}
+
 static void
 ytsg_client_make_connection (YtsgClient *client)
 {
+#if 1
+  /*
+   * This is the old nscreen way of constructing the connection manually ...
+   */
   YtsgClientPrivate *priv  = client->priv;
   const char        *proto = "jabber";
   GHashTable        *hash;
@@ -2181,6 +2350,32 @@ ytsg_client_make_connection (YtsgClient *client)
                                                      (GObject*)client);
 
   g_hash_table_destroy (hash);
+
+#else
+  /*
+   * This is the new-order way; we will get the account path from the Ytstenut
+   * dbus API and used that to establish the connection instead ...
+   */
+  YtsgClientPrivate *priv  = client->priv;
+  GError            *error = NULL;
+  const char        *account_path = /* FIXME */
+    "/org/freedesktop/Telepathy/Account/salut/local_xmpp/account1";
+  const GQuark features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
+
+  priv->account = tp_account_new (priv->dbus,
+                                  account_path,
+                                  &error);
+
+  if (error)
+    {
+      g_error ("Account error: %s", error->message);
+    }
+
+  tp_account_prepare_async (priv->account,
+                            &features[0],
+                            ytsg_client_account_prepared_cb,
+                            client);
+#endif
 }
 
 
