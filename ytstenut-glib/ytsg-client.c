@@ -41,6 +41,7 @@
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
 
 #define RECONNECT_DELAY 20 /* in seconds */
 
