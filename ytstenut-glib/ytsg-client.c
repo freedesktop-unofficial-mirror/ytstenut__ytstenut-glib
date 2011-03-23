@@ -787,7 +787,7 @@ ytsg_client_channel_cb (TpConnection *proxy,
                         GObject      *weak_object)
 {
   YtsgClient        *client = data;
-  YtsgClientPrivate *priv = client->priv;
+  YtsgClientPrivate *priv   = client->priv;
 
   if (!path)
     {
@@ -1526,9 +1526,9 @@ ytsg_client_account_prepared_cb (GObject      *acc,
 static void
 ytsg_client_account_cb (GObject *object, GAsyncResult *res, gpointer data)
 {
-  YtsgClient        *self  = (YtsgClient*) data;
-  YtsgClientPrivate *priv  = self->priv;
-  GError            *error = NULL;
+  YtsgClient        *client     = (YtsgClient*) data;
+  YtsgClientPrivate *priv       = client->priv;
+  GError            *error      = NULL;
   const GQuark       features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
 
   g_assert (TP_IS_YTS_ACCOUNT_MANAGER (object));
@@ -1545,26 +1545,26 @@ ytsg_client_account_cb (GObject *object, GAsyncResult *res, gpointer data)
     tp_debug_set_flags ("all");
 
   if (ytsg_debug_flags & YTSG_DEBUG_MANAGER)
-    ytsg_client_setup_debug (self);
+    ytsg_client_setup_debug (client);
 
   tp_account_prepare_async (priv->account,
                             &features[0],
                             ytsg_client_account_prepared_cb,
-                            self);
+                            client);
 }
 
 static void
 ytsg_client_constructed (GObject *object)
 {
-  YtsgClient          *self  = (YtsgClient*) object;
-  YtsgClientPrivate   *priv  = self->priv;
-  GError              *error = NULL;
+  YtsgClient          *client = (YtsgClient*) object;
+  YtsgClientPrivate   *priv   = client->priv;
+  GError              *error  = NULL;
 
   if (G_OBJECT_CLASS (ytsg_client_parent_class)->constructed)
     G_OBJECT_CLASS (ytsg_client_parent_class)->constructed (object);
 
-  priv->roster   = ytsg_roster_new (self);
-  priv->unwanted = ytsg_roster_new (self);
+  priv->roster   = ytsg_roster_new (client);
+  priv->unwanted = ytsg_roster_new (client);
 
   if (!priv->jid || !*priv->jid)
     g_error ("JID must be set at construction time.");
@@ -1592,7 +1592,7 @@ ytsg_client_constructed (GObject *object)
 
   tp_yts_account_manager_get_account_async (priv->mgr, NULL,
                                             ytsg_client_account_cb,
-                                            self);
+                                            client);
 }
 
 static void
@@ -1601,8 +1601,8 @@ ytsg_client_get_property (GObject    *object,
                           GValue     *value,
                           GParamSpec *pspec)
 {
-  YtsgClient        *self = (YtsgClient*) object;
-  YtsgClientPrivate *priv = self->priv;
+  YtsgClient        *client = (YtsgClient*) object;
+  YtsgClientPrivate *priv   = client->priv;
 
   switch (property_id)
     {
@@ -1633,8 +1633,8 @@ ytsg_client_set_property (GObject      *object,
                           const GValue *value,
                           GParamSpec   *pspec)
 {
-  YtsgClient        *self = (YtsgClient*) object;
-  YtsgClientPrivate *priv = self->priv;
+  YtsgClient        *client = (YtsgClient*) object;
+  YtsgClientPrivate *priv   = client->priv;
 
   switch (property_id)
     {
@@ -1651,7 +1651,7 @@ ytsg_client_set_property (GObject      *object,
       }
       break;
     case PROP_CAPABILITIES:
-      ytsg_client_set_capabilities (self, g_value_get_uint (value));
+      ytsg_client_set_capabilities (client, g_value_get_uint (value));
       break;
     case PROP_PROTOCOL:
       priv->protocol = g_value_get_enum (value);
@@ -1663,18 +1663,18 @@ ytsg_client_set_property (GObject      *object,
 }
 
 static void
-ytsg_client_init (YtsgClient *self)
+ytsg_client_init (YtsgClient *client)
 {
-  self->priv = YTSG_CLIENT_GET_PRIVATE (self);
+  client->priv = YTSG_CLIENT_GET_PRIVATE (client);
 
-  ytsg_client_set_incoming_file_directory (self, NULL);
+  ytsg_client_set_incoming_file_directory (client, NULL);
 }
 
 static void
 ytsg_client_dispose (GObject *object)
 {
-  YtsgClient        *self = (YtsgClient*) object;
-  YtsgClientPrivate *priv = self->priv;
+  YtsgClient        *client = (YtsgClient*) object;
+  YtsgClientPrivate *priv   = client->priv;
 
   if (priv->disposed)
     return;
@@ -1734,8 +1734,8 @@ ytsg_client_dispose (GObject *object)
 static void
 ytsg_client_finalize (GObject *object)
 {
-  YtsgClient        *self = (YtsgClient*) object;
-  YtsgClientPrivate *priv = self->priv;
+  YtsgClient        *client = (YtsgClient*) object;
+  YtsgClientPrivate *priv   = client->priv;
 
   g_free (priv->jid);
   g_free (priv->resource);
