@@ -56,6 +56,7 @@ static void ytsg_client_set_property (GObject      *object,
                                       guint         property_id,
                                       const GValue *value,
                                       GParamSpec   *pspec);
+static void ytsg_client_make_connection (YtsgClient *client);
 
 G_DEFINE_TYPE (YtsgClient, ytsg_client, G_TYPE_OBJECT);
 
@@ -84,7 +85,7 @@ struct _YtsgClientPrivate
 
   /* Telepathy bits */
   TpDBusDaemon         *dbus;
-  TpConnectionManager  *mgr;
+  TpYtsAccountManager  *mgr;
   TpAccount            *account;
   TpConnection         *connection;
   TpChannel            *mydevices;
@@ -1278,13 +1279,13 @@ ytsg_client_class_init (YtsgClientClass *klass)
  * Handler for Mgr debug output.
  */
 static void
-ytsg_client_mgr_debug_msg_cb (TpProxy    *proxy,
-                              gdouble     timestamp,
-                              const char *domain,
-                              guint       level,
-                              const char *msg,
-                              gpointer    data,
-                              GObject    *weak_object)
+ytsg_client_debug_msg_cb (TpProxy    *proxy,
+                          gdouble     timestamp,
+                          const char *domain,
+                          guint       level,
+                          const char *msg,
+                          gpointer    data,
+                          GObject    *weak_object)
 {
   switch (level)
     {
@@ -1317,12 +1318,12 @@ ytsg_client_mgr_debug_msg_cb (TpProxy    *proxy,
  * First, the collect function
  */
 static void
-ytsg_client_mgr_debug_msg_collect (DBusGProxy              *proxy,
-                                   gdouble                  timestamp,
-                                   const char              *domain,
-                                   guint                    level,
-                                   const char              *msg,
-                                   TpProxySignalConnection *signal)
+ytsg_client_debug_msg_collect (DBusGProxy              *proxy,
+                               gdouble                  timestamp,
+                               const char              *domain,
+                               guint                    level,
+                               const char              *msg,
+                               TpProxySignalConnection *signal)
 {
   GValueArray *args = g_value_array_new (4);
   GValue t = { 0 };
@@ -1360,12 +1361,12 @@ typedef void (*YtsgClientMgrNewDebugMsg)(TpProxy *,
  * The callback invoker
  */
 static void
-ytsg_client_mgr_debug_msg_invoke (TpProxy     *proxy,
-                                  GError      *error,
-                                  GValueArray *args,
-                                  GCallback    callback,
-                                  gpointer     data,
-                                  GObject     *weak_object)
+ytsg_client_debug_msg_invoke (TpProxy     *proxy,
+                              GError      *error,
+                              GValueArray *args,
+                              GCallback    callback,
+                              gpointer     data,
+                              GObject     *weak_object)
 {
   YtsgClientMgrNewDebugMsg cb = (YtsgClientMgrNewDebugMsg) callback;
 
@@ -1389,7 +1390,7 @@ ytsg_client_mgr_debug_msg_invoke (TpProxy     *proxy,
  * Connects to the signal(s) and enable debugging output.
  */
 static void
-ytsg_client_mgr_connect_debug_signals (YtsgClient *client, TpProxy *proxy)
+ytsg_client_connect_debug_signals (YtsgClient *client, TpProxy *proxy)
 {
   GError   *error = NULL;
   GValue    v = {0};
@@ -1406,9 +1407,9 @@ ytsg_client_mgr_connect_debug_signals (YtsgClient *client, TpProxy *proxy)
                                      TP_IFACE_QUARK_DEBUG,
                                      "NewDebugMessage",
                                      &expected[0],
-                                     G_CALLBACK (ytsg_client_mgr_debug_msg_collect),
-                                     ytsg_client_mgr_debug_msg_invoke,
-                                     G_CALLBACK (ytsg_client_mgr_debug_msg_cb),
+                                     G_CALLBACK (ytsg_client_debug_msg_collect),
+                                     ytsg_client_debug_msg_invoke,
+                                     G_CALLBACK (ytsg_client_debug_msg_cb),
                                      client,
                                      NULL,
                                      (GObject*)client,
@@ -1449,13 +1450,13 @@ ytsg_client_debug_iface_added_cb (TpProxy    *tproxy,
 }
 
 static void
-ytsg_client_mgr_setup_debug  (YtsgClient *client)
+ytsg_client_setup_debug  (YtsgClient *client)
 {
   YtsgClientPrivate *priv = client->priv;
-  TpDBusDaemon    *dbus;
-  GError          *error = NULL;
-  TpProxy         *proxy;
-  char            *busname;
+  TpDBusDaemon      *dbus;
+  GError            *error = NULL;
+  TpProxy           *proxy;
+  char              *busname;
 
   dbus = tp_dbus_daemon_dup (&error);
 
@@ -1485,38 +1486,79 @@ ytsg_client_mgr_setup_debug  (YtsgClient *client)
   /*
    * Connecting to the signals triggers the interface-added signal
    */
-  ytsg_client_mgr_connect_debug_signals (client, proxy);
+  ytsg_client_connect_debug_signals (client, proxy);
 
   g_object_unref (dbus);
   g_free (busname);
 }
 
+/*
+ * Callback from the async tp_account_prepare_async() call
+ *
+ * This function is ready for the New World Order according to Ytstenut ...
+ */
 static void
-ytsg_client_mgr_ready_cb (TpConnectionManager *cm,
-                          const GError        *error,
-                          gpointer             data,
-                          GObject             *weak_object)
+ytsg_client_account_prepared_cb (GObject      *acc,
+                                 GAsyncResult *res,
+                                 gpointer      data)
 {
-  YtsgClient *client = data;
+  YtsgClient        *client  = data;
+  YtsgClientPrivate *priv    = client->priv;
+  GError            *error   = NULL;
+  TpAccount         *account = (TpAccount*)acc;
+
+  if (!tp_account_prepare_finish (account, res, &error))
+    {
+      g_error ("Account unprepared: %s", error->message);
+    }
+
+  priv->account = account;
+
+  YTSG_NOTE (CLIENT, "Account successfully opened");
+
+  /*
+   * If connection has been requested already, make one
+   */
+  if (priv->connect)
+    ytsg_client_make_connection (client);
+}
+
+static void
+ytsg_client_account_cb (GObject *object, GAsyncResult *res, gpointer data)
+{
+  YtsgClient        *self  = (YtsgClient*) data;
+  YtsgClientPrivate *priv  = self->priv;
+  GError            *error = NULL;
+  const GQuark       features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
+
+  g_assert (TP_IS_YTS_ACCOUNT_MANAGER (object));
+  g_assert (G_IS_ASYNC_RESULT (res));
+
+  priv->account =
+    tp_yts_account_manager_get_account_finish (TP_YTS_ACCOUNT_MANAGER (object),
+                                               res, &error);
 
   if (error)
-    g_error (error->message);
-
-  YTSG_NOTE (CLIENT, "Manager (%s) ready", client->priv->mgr_name);
+    g_error ("Could not access account: %s", error->message);
 
   if (ytsg_debug_flags & YTSG_DEBUG_TP)
     tp_debug_set_flags ("all");
 
   if (ytsg_debug_flags & YTSG_DEBUG_MANAGER)
-    ytsg_client_mgr_setup_debug (client);
+    ytsg_client_setup_debug (self);
+
+  tp_account_prepare_async (priv->account,
+                            &features[0],
+                            ytsg_client_account_prepared_cb,
+                            self);
 }
 
 static void
 ytsg_client_constructed (GObject *object)
 {
-  YtsgClient        *self  = (YtsgClient*) object;
-  YtsgClientPrivate *priv  = self->priv;
-  GError            *error = NULL;
+  YtsgClient          *self  = (YtsgClient*) object;
+  YtsgClientPrivate   *priv  = self->priv;
+  GError              *error = NULL;
 
   if (G_OBJECT_CLASS (ytsg_client_parent_class)->constructed)
     G_OBJECT_CLASS (ytsg_client_parent_class)->constructed (object);
@@ -1527,9 +1569,7 @@ ytsg_client_constructed (GObject *object)
   if (!priv->jid || !*priv->jid)
     g_error ("JID must be set at construction time.");
 
-  if (priv->protocol == YTSG_PROTOCOL_XMPP)
-    priv->mgr_name = g_strdup ("gabble");
-  else if (priv->protocol == YTSG_PROTOCOL_LOCAL_XMPP)
+  if (priv->protocol == YTSG_PROTOCOL_LOCAL_XMPP)
     priv->mgr_name = g_strdup ("salut");
   else
     g_error ("Unknown protocol requested");
@@ -1538,29 +1578,21 @@ ytsg_client_constructed (GObject *object)
 
   if (error)
     {
-      g_critical (G_STRLOC ": %s: %s; no nScreen functionality will be "
-                  "available", __FUNCTION__, error->message);
-      g_clear_error (&error);
+      g_error ("Can't connect to dbus: %s", error->message);
       return;
     }
 
-  priv->mgr = tp_connection_manager_new (priv->dbus,
-                                         priv->mgr_name, NULL,
-                                         &error);
+  priv->mgr = tp_yts_account_manager_dup ();
 
-  if (error)
-    {
-      g_critical (G_STRLOC ": %s: %s; no nScreen functionality will be "
-                  "available", __FUNCTION__, error->message);
-      g_clear_error (&error);
-      return;
-    }
 
-  tp_connection_manager_call_when_ready (priv->mgr,
-                                         ytsg_client_mgr_ready_cb,
-                                         self,
-                                         NULL,
-                                         (GObject*)self);
+  if (!TP_IS_YTS_ACCOUNT_MANAGER (priv->mgr))
+    g_error ("Missing Account Manager");
+
+  tp_yts_account_manager_hold (priv->mgr);
+
+  tp_yts_account_manager_get_account_async (priv->mgr, NULL,
+                                            ytsg_client_account_cb,
+                                            self);
 }
 
 static void
@@ -1684,6 +1716,8 @@ ytsg_client_dispose (GObject *object)
 
   if (priv->mgr)
     {
+      tp_yts_account_manager_release (priv->mgr);
+
       g_object_unref (priv->mgr);
       priv->mgr = NULL;
     }
@@ -2027,117 +2061,6 @@ ytsg_client_connection_prepare_cb (GObject      *connection,
 }
 
 /*
- * TODO -- THIS FUNCTION belongs to the old order; once the connection via
- * TpAccount is enable, it should be removed.
- */
-static void
-ytsg_client_connection_cb (TpConnectionManager *proxy,
-                           const gchar         *bus_name,
-                           const gchar         *object_path,
-                           const GError        *error,
-                           gpointer             data,
-                           GObject             *weak_object)
-{
-  YtsgClient        *client     = data;
-  YtsgClientPrivate *priv       = client->priv;
-  GError            *myerror    = NULL;
-  GQuark             features[] = { TP_CONNECTION_FEATURE_CONTACT_INFO,
-                                    TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS,
-                                    TP_CONNECTION_FEATURE_CAPABILITIES,
-                                    0 };
-
-  priv->dialing = FALSE;
-
-  if (error)
-    {
-      /*
-       * We can't function without a connection, but we probably do not want
-       * to abort the application.
-       */
-      g_warning (G_STRLOC ": %s: %s; will attempt to reconnect after %ds",
-                 __FUNCTION__, error->message, RECONNECT_DELAY);
-
-      _ytsg_client_reconnect_after (client, RECONNECT_DELAY);
-      return;
-    }
-
-  priv->connection = tp_connection_new (priv->dbus,
-                                        bus_name,
-                                        object_path,
-                                        &myerror);
-
-  if (myerror)
-    {
-      g_critical (G_STRLOC ": %s: %s; no nScreen functionality will be "
-                  "available", __FUNCTION__, myerror->message);
-      g_clear_error (&myerror);
-      return;
-    }
-
-  tp_g_signal_connect_object (priv->connection, "notify::connection-ready",
-                              G_CALLBACK (ytsg_client_connection_ready_cb),
-                              client, 0);
-
-  tp_cli_connection_connect_to_connection_error (priv->connection,
-                                                 ytsg_client_error_cb,
-                                                 client,
-                                                 NULL,
-                                                 (GObject*)client,
-                                                 &myerror);
-
-  if (myerror)
-    {
-      g_critical (G_STRLOC ": %s: %s; no nScreen functionality will be "
-                  "available", __FUNCTION__, myerror->message);
-      g_clear_error (&myerror);
-      return;
-    }
-
-  tp_cli_connection_connect_to_status_changed (priv->connection,
-                                               ytsg_client_status_cb,
-                                               client,
-                                               NULL,
-                                               (GObject*) client,
-                                               &myerror);
-
-  if (myerror)
-    {
-      g_critical (G_STRLOC ": %s: %s; no nScreen functionality will be "
-                  "available", __FUNCTION__, myerror->message);
-      g_clear_error (&myerror);
-      return;
-    }
-
-  tp_cli_connection_connect_to_new_channel (priv->connection,
-                                            ytsg_client_channel_cb,
-                                            client,
-                                            NULL,
-                                            (GObject*)client,
-                                            &myerror);
-
-  if (myerror)
-    {
-      g_critical (G_STRLOC ": %s: %s; no nScreen functionality will be "
-                  "available", __FUNCTION__, myerror->message);
-      g_clear_error (&myerror);
-      return;
-    }
-
-  tp_proxy_prepare_async (priv->connection,
-                          features,
-                          ytsg_client_connection_prepare_cb,
-                          client);
-
-  if (priv->connect)
-    tp_cli_connection_call_connect (priv->connection,
-                                    -1,
-                                    ytsg_client_connected_cb,
-                                    client,
-                                    NULL,
-                                    (GObject*)client);
-}
-
-/*
  * Sets up required features on the connection, and connects callbacks to
  * signals that we care about.
  */
@@ -2252,26 +2175,17 @@ ytsg_client_account_connection_notify_cb (TpAccount  *account,
   ytsg_client_setup_account_connection (client);
 }
 
-/*
- * Callback from the async tp_account_prepare_async() call
- *
- * This function is ready for the New World Order according to Ytstenut ...
- */
 static void
-ytsg_client_account_prepared_cb (GObject      *acc,
-                                 GAsyncResult *res,
-                                 gpointer      data)
+ytsg_client_make_connection (YtsgClient *client)
 {
-  YtsgClient *client  = data;
-  GError     *error   = NULL;
-  TpAccount  *account = (TpAccount*)acc;
+  YtsgClientPrivate *priv  = client->priv;
 
-  if (!tp_account_prepare_finish (account, res, &error))
-    {
-      g_error ("Account unprepared: %s", error->message);
-    }
-
-  YTSG_NOTE (CLIENT, "Account successfully opened");
+  /*
+   * If we don't have an account yet, we do nothing and will make call to this
+   * function when the account is ready.
+   */
+  if (!priv->account)
+    return;
 
   /*
    * At this point the account is prepared, but that does not mean we have a
@@ -2279,15 +2193,15 @@ ytsg_client_account_prepared_cb (GObject      *acc,
    * have a connection, we request that the presence changes to 'on line' and
    * listen for when the :connection property changes.
    */
-  if (!tp_account_get_connection (account))
+  if (!tp_account_get_connection (priv->account))
     {
       YTSG_NOTE (CLIENT, "Currently off line, changing ...");
 
-      g_signal_connect (account, "notify::connection",
+      g_signal_connect (priv->account, "notify::connection",
                         G_CALLBACK (ytsg_client_account_connection_notify_cb),
                         client);
 
-      tp_account_request_presence_async (account,
+      tp_account_request_presence_async (priv->account,
                                          TP_CONNECTION_PRESENCE_TYPE_AVAILABLE,
                                          "online",
                                          "online",
@@ -2298,93 +2212,11 @@ ytsg_client_account_prepared_cb (GObject      *acc,
     ytsg_client_setup_account_connection (client);
 }
 
-static void
-ytsg_client_make_connection (YtsgClient *client)
-{
-#if 1
-  /*
-   * This is the old nscreen way of constructing the connection manually ...
-   */
-  YtsgClientPrivate *priv  = client->priv;
-  const char        *proto = "jabber";
-  GHashTable        *hash;
-
-  if (priv->protocol == YTSG_PROTOCOL_LOCAL_XMPP)
-    {
-      proto = "local-xmpp";
-
-      /* FIXME */
-      hash = tp_asv_new ("jid",                G_TYPE_STRING, priv->jid,
-                         "first-name",         G_TYPE_STRING, priv->jid,
-                         "last-name",          G_TYPE_STRING, priv->jid,
-                         "published-name",     G_TYPE_STRING, priv->jid,
-                         NULL);
-    }
-#if 0
- else if (priv->protocol == YTSG_PROTOCOL_XMPP)
-    {
-      hash = tp_asv_new ("account",            G_TYPE_STRING, priv->jid,
-                         "server",             G_TYPE_STRING, priv->server,
-                         "port",               G_TYPE_UINT,    priv->port,
-                         "password",           G_TYPE_STRING, priv->password,
-                         "ignore-ssl-errors",  G_TYPE_BOOLEAN, TRUE,
-                         "require-encryption", G_TYPE_BOOLEAN, TRUE,
-                         "keepalive-interval", G_TYPE_UINT,     20,
-                         NULL);
-
-      if (priv->resource)
-        tp_asv_set_string (hash, "resource", priv->resource);
-    }
-#endif
-  else
-    g_error ("Unknown protocol.");
-
-  priv->dialing = TRUE;
-
-  tp_cli_connection_manager_call_request_connection (priv->mgr,
-                                                     -1,
-                                                     proto,
-                                                     hash,
-                                                     ytsg_client_connection_cb,
-                                                     client,
-                                                     NULL,
-                                                     (GObject*)client);
-
-  g_hash_table_destroy (hash);
-
-#else
-  /*
-   * This is the new-order way; we will get the account path from the Ytstenut
-   * dbus API and used that to establish the connection instead ...
-   */
-  YtsgClientPrivate *priv  = client->priv;
-  GError            *error = NULL;
-  const char        *account_path = /* FIXME */
-    "/org/freedesktop/Telepathy/Account/salut/local_xmpp/account1";
-  const GQuark features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
-
-  priv->account = tp_account_new (priv->dbus,
-                                  account_path,
-                                  &error);
-
-  if (error)
-    {
-      g_error ("Account error: %s", error->message);
-    }
-
-  tp_account_prepare_async (priv->account,
-                            &features[0],
-                            ytsg_client_account_prepared_cb,
-                            client);
-#endif
-}
-
-
 /**
  * ytsg_client_connect_to_mesh:
  * @client: #YtsgClient
  *
- * Initiates connection to nScreen server. Once the connection is established,
+ * Initiates connection to the mesh. Once the connection is established,
  * the YtsgClient::authenticated signal will be emitted.
  *
  * NB: this function long name is to avoid collision with the GIR singnal
