@@ -159,9 +159,6 @@ ytsg_service_dispose (GObject *object)
 static void
 ytsg_service_finalize (GObject *object)
 {
-  YtsgService        *self = (YtsgService*) object;
-  YtsgServicePrivate *priv = self->priv;
-
   G_OBJECT_CLASS (ytsg_service_parent_class)->finalize (object);
 }
 

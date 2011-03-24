@@ -99,21 +99,16 @@ ytsg_metadata_service_class_init (YtsgMetadataServiceClass *klass)
 static void
 ytsg_metadata_service_constructed (GObject *object)
 {
-  YtsgMetadataService *self = (YtsgMetadataService*) object;
-
   if (G_OBJECT_CLASS (ytsg_metadata_service_parent_class)->constructed)
     G_OBJECT_CLASS (ytsg_metadata_service_parent_class)->constructed (object);
 }
 
 static void
 ytsg_metadata_service_get_property (GObject    *object,
-                          guint       property_id,
-                          GValue     *value,
-                          GParamSpec *pspec)
+                                    guint       property_id,
+                                    GValue     *value,
+                                    GParamSpec *pspec)
 {
-  YtsgMetadataService        *self = (YtsgMetadataService*) object;
-  YtsgMetadataServicePrivate *priv = self->priv;
-
   switch (property_id)
     {
     default:
@@ -127,9 +122,6 @@ ytsg_metadata_service_set_property (GObject      *object,
                           const GValue *value,
                           GParamSpec   *pspec)
 {
-  YtsgMetadataService        *self = (YtsgMetadataService*) object;
-  YtsgMetadataServicePrivate *priv = self->priv;
-
   switch (property_id)
     {
     default:
@@ -160,9 +152,6 @@ ytsg_metadata_service_dispose (GObject *object)
 static void
 ytsg_metadata_service_finalize (GObject *object)
 {
-  YtsgMetadataService        *self = (YtsgMetadataService*) object;
-  YtsgMetadataServicePrivate *priv = self->priv;
-
   G_OBJECT_CLASS (ytsg_metadata_service_parent_class)->finalize (object);
 }
 

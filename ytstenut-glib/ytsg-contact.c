@@ -249,8 +249,6 @@ ytsg_contact_class_init (YtsgContactClass *klass)
 static void
 ytsg_contact_constructed (GObject *object)
 {
-  YtsgContact *self = (YtsgContact*) object;
-
   if (G_OBJECT_CLASS (ytsg_contact_parent_class)->constructed)
     G_OBJECT_CLASS (ytsg_contact_parent_class)->constructed (object);
 }
@@ -261,8 +259,7 @@ ytsg_contact_get_property (GObject    *object,
                            GValue     *value,
                            GParamSpec *pspec)
 {
-  YtsgContact        *self = (YtsgContact*) object;
-  YtsgContactPrivate *priv = self->priv;
+  YtsgContact *self = (YtsgContact*) object;
 
   switch (property_id)
     {

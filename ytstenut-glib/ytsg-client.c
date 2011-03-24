@@ -151,6 +151,15 @@ ytsg_client_presence_cb (TpContact    *tp_contact,
     }
 }
 
+#if 0
+/*
+ * FIXME
+ *
+ * This function filters contacts into wanted/unwated rosters, depending on
+ * their capabilities (in nscreen this was tied to <presence/>, hence the
+ * function name). The same functionality needs to be implemented using the
+ * new capabilities API.
+ */
 static void
 ytsg_client_contact_status_cb (YtsgContact *item,
                                GParamSpec  *pspec,
@@ -175,7 +184,6 @@ ytsg_client_contact_status_cb (YtsgContact *item,
    * FIXME -- this is tied to caps being advertised via status, which is not
    * the case ... hook into new API.
    */
-#if 0
   if ((status = ytsg_contact_get_status (item)) && status->caps)
     {
       int j;
@@ -192,9 +200,6 @@ ytsg_client_contact_status_cb (YtsgContact *item,
             }
         }
     }
-#else
-  wanted = TRUE;
-#endif
 
   in_r  = _ytsg_roster_contains_contact (priv->roster, item);
   in_u  = _ytsg_roster_contains_contact (priv->unwanted, item);
@@ -224,6 +229,7 @@ ytsg_client_contact_status_cb (YtsgContact *item,
         _ytsg_roster_add_contact (priv->roster, item);
     }
 }
+#endif
 
 static void
 ytsg_client_contacts_cb (TpConnection      *connection,
@@ -372,13 +378,11 @@ ytsg_client_contacts_cb (TpConnection      *connection,
           else
             _ytsg_roster_add_contact (priv->unwanted, item);
 
-          /* FIXME -- status was used to advertise caps, that is no longer
-           * the case, so replace this ...
+          /*
+           * FIXME -- query and process the contact's capabilites (see the
+           * commented out ytsg_client_contact_status_cb for what needs to be
+           * done).
            */
-          g_signal_connect (item, "notify::status",
-                            G_CALLBACK (ytsg_client_contact_status_cb),
-                            client);
-
           tp_g_signal_connect_object (cont, "presence-changed",
                                       G_CALLBACK (ytsg_client_presence_cb),
                                       item, 0);

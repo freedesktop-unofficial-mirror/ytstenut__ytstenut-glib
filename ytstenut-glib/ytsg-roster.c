@@ -31,13 +31,13 @@ static void ytsg_roster_dispose (GObject *object);
 static void ytsg_roster_finalize (GObject *object);
 static void ytsg_roster_constructed (GObject *object);
 static void ytsg_roster_get_property (GObject    *object,
-                                         guint       property_id,
-                                         GValue     *value,
-                                         GParamSpec *pspec);
+                                      guint       property_id,
+                                      GValue     *value,
+                                      GParamSpec *pspec);
 static void ytsg_roster_set_property (GObject      *object,
-                                         guint         property_id,
-                                         const GValue *value,
-                                         GParamSpec   *pspec);
+                                      guint         property_id,
+                                      const GValue *value,
+                                      GParamSpec   *pspec);
 
 G_DEFINE_TYPE (YtsgRoster, ytsg_roster, G_TYPE_OBJECT);
 
@@ -135,8 +135,6 @@ ytsg_roster_class_init (YtsgRosterClass *klass)
 static void
 ytsg_roster_constructed (GObject *object)
 {
-  YtsgRoster *self = (YtsgRoster*) object;
-
   if (G_OBJECT_CLASS (ytsg_roster_parent_class)->constructed)
     G_OBJECT_CLASS (ytsg_roster_parent_class)->constructed (object);
 }
@@ -147,9 +145,6 @@ ytsg_roster_get_property (GObject    *object,
                           GValue     *value,
                           GParamSpec *pspec)
 {
-  YtsgRoster        *self = (YtsgRoster*) object;
-  YtsgRosterPrivate *priv = self->priv;
-
   switch (property_id)
     {
     default:
@@ -206,9 +201,6 @@ ytsg_roster_dispose (GObject *object)
 static void
 ytsg_roster_finalize (GObject *object)
 {
-  YtsgRoster        *self = (YtsgRoster*) object;
-  YtsgRosterPrivate *priv = self->priv;
-
   G_OBJECT_CLASS (ytsg_roster_parent_class)->finalize (object);
 }
 
