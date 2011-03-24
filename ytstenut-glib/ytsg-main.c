@@ -59,6 +59,7 @@ guint ytsg_debug_flags = 0;
 static const GDebugKey ytsg_debug_keys[] = {
   { "client",          YTSG_DEBUG_CLIENT  },
   { "roster",          YTSG_DEBUG_ROSTER  },
+  { "contact",         YTSG_DEBUG_CONTACT },
   { "status",          YTSG_DEBUG_STATUS  },
   { "tp",              YTSG_DEBUG_TP      },
   { "manager",         YTSG_DEBUG_MANAGER },

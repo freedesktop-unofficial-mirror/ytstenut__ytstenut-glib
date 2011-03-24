@@ -67,7 +67,6 @@ struct _YtsgClientPrivate
 {
   YtsgRoster   *roster;    /* the roster of this client */
   YtsgRoster   *unwanted;  /* roster of unwanted items */
-  YtsgStatus   *status;    /* the nScreen status of this client */
   GArray       *caps;
 
   /* connection parameters */
@@ -129,27 +128,6 @@ enum
 
 static guint signals[N_SIGNALS] = {0};
 
-static void
-ytsg_client_presence_cb (TpContact    *tp_contact,
-                         guint         type,
-                         gchar        *status,
-                         gchar        *message,
-                         YtsgContact  *contact)
-{
-  YTSG_NOTE (CLIENT, "Presence for %s changed: %s [%s]",
-             tp_contact_get_identifier (tp_contact), status, message);
-
-  YtsgPresence  presence;
-
-  switch (type)
-    {
-    case TP_CONNECTION_PRESENCE_TYPE_AVAILABLE:
-      presence = YTSG_PRESENCE_AVAILABLE;
-      break;
-    default:
-      presence = YTSG_PRESENCE_UNAVAILABLE;
-    }
-}
 
 #if 0
 /*
@@ -383,9 +361,6 @@ ytsg_client_contacts_cb (TpConnection      *connection,
            * commented out ytsg_client_contact_status_cb for what needs to be
            * done).
            */
-          tp_g_signal_connect_object (cont, "presence-changed",
-                                      G_CALLBACK (ytsg_client_presence_cb),
-                                      item, 0);
         }
 
       if (stat)
@@ -1276,7 +1251,6 @@ ytsg_client_class_init (YtsgClientClass *klass)
                   G_TYPE_STRING,
                   G_TYPE_STRING,
                   G_TYPE_BOOLEAN);
-
 }
 
 /*
@@ -2143,7 +2117,7 @@ ytsg_client_setup_account_connection (YtsgClient *client)
 }
 
 /*
- * Callback for the async request to change presence ... not that we don't
+ * Callback for the async request to change presence ... not that we do
  * do anything with it, except when it fails.
  */
 static void

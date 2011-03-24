@@ -28,12 +28,14 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/channel.h>
 
-#include "ytsg-contact.h"
-#include "ytsg-private.h"
-#include "ytsg-marshal.h"
 #include "ytsg-client.h"
+#include "ytsg-contact.h"
 #include "ytsg-debug.h"
+#include "ytsg-enum-types.h"
 #include "ytsg-error.h"
+#include "ytsg-marshal.h"
+#include "ytsg-private.h"
+#include "ytsg-types.h"
 
 #include "empathy-tp-file.h"
 
@@ -58,15 +60,16 @@ G_DEFINE_TYPE (YtsgContact, ytsg_contact, G_TYPE_OBJECT);
 
 struct _YtsgContactPrivate
 {
-  GHashTable *services;   /* hash of YtsgService instances */
+  GHashTable   *services;   /* hash of YtsgService instances */
 
-  TpContact  *tp_contact; /* TpContact associated with YtsgContact */
+  TpContact    *tp_contact; /* TpContact associated with YtsgContact */
 
-  char       *icon_token; /* token identifying this contacts avatar */
+  char         *icon_token; /* token identifying this contacts avatar */
 
-  YtsgClient *client;     /* back-reference to the client that owns us */
-  YtsgStatus *status;     /* status of this contact -- FIXME -- status is
-                             per-service, not contact */
+  YtsgClient   *client;     /* back-reference to the client that owns us */
+  YtsgPresence  presence;   /* presence state of this client */
+  YtsgStatus   *status;     /* status of this contact -- FIXME -- status is
+                               per-service, not contact */
 
   GQueue     *pending_files;    /* files dispatched before channel open */
   GHashTable *ft_cancellables;
@@ -90,6 +93,7 @@ enum
   PROP_TP_CONTACT,
   PROP_ICON,
   PROP_CLIENT,
+  PROP_PRESENCE,
   PROP_STATUS,
   PROP_SUBSCRIPTION,
 };
@@ -206,6 +210,19 @@ ytsg_contact_class_init (YtsgContactClass *klass)
   g_object_class_install_property (object_class, PROP_SUBSCRIPTION, pspec);
 
   /**
+   * YtsgContact:presence:
+   *
+   * #YtsgPresence state for this contact
+   */
+  pspec = g_param_spec_enum ("presence",
+                             "YtsgPresence",
+                             "YtsgPresence",
+                             YTSG_TYPE_PRESENCE,
+                             YTSG_PRESENCE_UNAVAILABLE,
+                             G_PARAM_READABLE);
+  g_object_class_install_property (object_class, PROP_PRESENCE, pspec);
+
+  /**
    * YtsgContact::service-added:
    * @contact: the contact which received the signal
    * @service: the service
@@ -247,10 +264,59 @@ ytsg_contact_class_init (YtsgContactClass *klass)
 }
 
 static void
+ytsg_contact_presence_cb (TpContact    *tp_contact,
+                          guint         type,
+                          gchar        *status,
+                          gchar        *message,
+                          YtsgContact  *contact)
+{
+  YtsgContactPrivate *priv = contact->priv;
+  YtsgPresence        presence;
+
+  YTSG_NOTE (CONTACT, "Presence for %s changed: %s [%s]",
+             tp_contact_get_identifier (tp_contact), status, message);
+
+
+  /*
+   * The Ytstenut presence differs from the human IM presence; basically, we
+   * only care whether the user is online or offline.
+   */
+  switch (type)
+    {
+    case TP_CONNECTION_PRESENCE_TYPE_AVAILABLE:
+    case TP_CONNECTION_PRESENCE_TYPE_AWAY:
+    case TP_CONNECTION_PRESENCE_TYPE_EXTENDED_AWAY:
+    case TP_CONNECTION_PRESENCE_TYPE_BUSY:
+    case TP_CONNECTION_PRESENCE_TYPE_HIDDEN:
+    default:
+      presence = YTSG_PRESENCE_AVAILABLE;
+      break;
+
+    case TP_CONNECTION_PRESENCE_TYPE_UNKNOWN:
+    case TP_CONNECTION_PRESENCE_TYPE_OFFLINE:
+    case TP_CONNECTION_PRESENCE_TYPE_ERROR:
+      presence = YTSG_PRESENCE_UNAVAILABLE;
+    }
+
+  if (priv->presence != presence)
+    {
+      priv->presence = presence;
+      g_object_notify ((GObject*)contact, "presence");
+    }
+}
+
+static void
 ytsg_contact_constructed (GObject *object)
 {
+  YtsgContact        *contact = (YtsgContact*) object;
+  YtsgContactPrivate *priv    = contact->priv;
+
   if (G_OBJECT_CLASS (ytsg_contact_parent_class)->constructed)
     G_OBJECT_CLASS (ytsg_contact_parent_class)->constructed (object);
+
+  tp_g_signal_connect_object (priv->tp_contact, "presence-changed",
+                              G_CALLBACK (ytsg_contact_presence_cb),
+                              contact, 0);
 }
 
 static void
@@ -259,7 +325,8 @@ ytsg_contact_get_property (GObject    *object,
                            GValue     *value,
                            GParamSpec *pspec)
 {
-  YtsgContact *self = (YtsgContact*) object;
+  YtsgContact        *self = (YtsgContact*) object;
+  YtsgContactPrivate *priv = self->priv;
 
   switch (property_id)
     {
@@ -271,6 +338,9 @@ ytsg_contact_get_property (GObject    *object,
         g_warning ("Should use ytst_contact_get_icon() instead of querying "
                    "YstgContact:icon");
       }
+      break;
+    case PROP_PRESENCE:
+      g_value_set_enum (value, priv->presence);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
