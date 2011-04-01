@@ -69,8 +69,6 @@ struct _YtsgRoster
 
 GType ytsg_roster_get_type (void) G_GNUC_CONST;
 
-YtsgRoster *ytsg_roster_new (YtsgClient *client);
-
 GHashTable        *ytsg_roster_get_contacts              (YtsgRoster *roster);
 const YtsgContact *ytsg_roster_find_contact_by_jid       (YtsgRoster *roster,
                                                            const char *jid);

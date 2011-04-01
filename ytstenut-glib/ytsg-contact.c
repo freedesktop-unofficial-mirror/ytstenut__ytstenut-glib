@@ -1058,3 +1058,24 @@ ytsg_contact_cancel_file (const YtsgContact *item, GFile *gfile)
   return TRUE;
 }
 
+void
+_ytsg_contact_add_service (YtsgContact *contact, YtsgService *service)
+{
+  /* FIXME */
+  g_warning (G_STRLOC ": NOT IMPLEMENTED !!!");
+}
+
+void _ytsg_contact_remove_service (YtsgContact *contact, YtsgService *service)
+{
+  /* FIXME */
+  g_warning (G_STRLOC ": NOT IMPLEMENTED !!!");
+}
+
+gboolean
+_ytsg_contact_is_empty (YtsgContact *contact)
+{
+  YtsgContactPrivate *priv = contact->priv;
+
+  return (g_hash_table_size (priv->services) == 0);
+}
+

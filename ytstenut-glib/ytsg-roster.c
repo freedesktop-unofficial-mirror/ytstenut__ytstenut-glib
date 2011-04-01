@@ -26,6 +26,7 @@
 #include "ytsg-roster.h"
 
 #include <string.h>
+#include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
 
 static void ytsg_roster_dispose (GObject *object);
 static void ytsg_roster_finalize (GObject *object);
@@ -95,9 +96,9 @@ ytsg_roster_class_init (YtsgRosterClass *klass)
   g_object_class_install_property (object_class, PROP_CLIENT, pspec);
 
   /**
-   * NsRoster::item-added
+   * YtsgRoster::contact-added
    * @roster: #YtsgRoster object which emitted the signal,
-   * @item: #YtsgItem that was added.
+   * @contact: #YtsgContact that was added.
    *
    * Since: 0.1
    */
@@ -227,69 +228,101 @@ ytsg_roster_get_contacts (YtsgRoster *roster)
 }
 
 /*
- * ytsg_roster_add_contact:
+ * ytsg_roster_add_service:
  * @roster: #YtsgRoster
- * @contact: #YtsgContact
+ * @service: #YtsgService
  *
- * Adds contact to a roster and emits YtsgRoster::contact-added signal, assuming
- * reference on the #YtsgContact object.
+ * Adds service to a roster and emits YtsgRoster::service-added signal, assuming
+ * reference on the #YtsgService object.
  *
  * For use by #YtsgClient.
  */
 void
-_ytsg_roster_add_contact (YtsgRoster *roster, YtsgContact *contact)
+_ytsg_roster_add_service (YtsgRoster *roster, YtsgService *service)
 {
   YtsgRosterPrivate *priv;
+  const char        *jid;
+  const char        *uid;
+  YtsgContact       *contact;
+  gboolean           emit = FALSE;
 
   g_return_if_fail (YTSG_IS_ROSTER (roster));
-  g_return_if_fail (YTSG_IS_CONTACT (contact));
+  g_return_if_fail (YTSG_IS_SERVICE (service));
 
   priv = roster->priv;
 
-  g_hash_table_insert (priv->contacts,
-                       (char*)ytsg_contact_get_jid (contact),
-                       contact);
+  jid = ytsg_service_get_jid (service);
+  uid = ytsg_service_get_uid (service);
 
-  g_signal_emit (roster, signals[CONTACT_ADDED], 0, contact);
+  if (!(contact = (YtsgContact*)ytsg_roster_find_contact_by_jid (roster, jid)))
+    {
+      /*
+        FIXME
+        contact = _ytsg_contact_new (YtsgClient *client, TpContact *tp_contact);
+        */
+
+      g_hash_table_insert (priv->contacts, (char*)jid, contact);
+
+      emit = TRUE;
+    }
+
+  _ytsg_contact_add_service (contact, service);
+
+  if (emit)
+    g_signal_emit (roster, signals[CONTACT_ADDED], 0, contact);
 }
 
 /*
- * ytsg_roster_remove_contact:
+ * ytsg_roster_remove_service:
  * @roster: #YtsgRoster
- * @contact: #YtsgContact
- * @dispose: if %TRUE, forecefully runs dispose on the #YtsgContact object
+ * @service: #YtsgService
+ * @dispose: if %TRUE, forecefully runs dispose on the #YtsgService object
  *
- * Removes contact from a roster and emits YtsgRoster::contact-removed signal;
- * if dispose is %TRUE, runs the contact's dispose method.
+ * Removes service from a roster and emits YtsgRoster::service-removed signal;
+ * if dispose is %TRUE, runs the service's dispose method.
  *
  * For use by #YtsgClient.
  */
 void
-_ytsg_roster_remove_contact (YtsgRoster  *roster,
-                             YtsgContact *contact,
+_ytsg_roster_remove_service (YtsgRoster  *roster,
+                             YtsgService *service,
                              gboolean     dispose)
 {
   YtsgRosterPrivate *priv;
+  const char        *jid;
+  const char        *uid;
+  YtsgContact       *contact;
+  gboolean           emit = FALSE;
 
   g_return_if_fail (YTSG_IS_ROSTER (roster));
-  g_return_if_fail (YTSG_IS_CONTACT (contact));
+  g_return_if_fail (YTSG_IS_SERVICE (service));
 
   priv = roster->priv;
 
-  g_object_ref (contact);
+  g_object_ref (service);
 
-  if (g_hash_table_remove (priv->contacts, ytsg_contact_get_jid (contact)))
+  jid = ytsg_service_get_jid (service);
+  uid = ytsg_service_get_uid (service);
+
+  if (!(contact = (YtsgContact*)ytsg_roster_find_contact_by_jid (roster, jid)))
     {
-      g_signal_emit (roster, signals[CONTACT_REMOVED], 0, contact);
-
-      if (dispose)
-        g_object_run_dispose ((GObject*)contact);
+      g_warning ("Contact for service not found");
+      return;
     }
-  else
-    g_warning (G_STRLOC " contact %s (%p) not in roster %p",
-               ytsg_contact_get_jid (contact), contact, roster);
 
-  g_object_unref (contact);
+  _ytsg_contact_remove_service (contact, service);
+
+  emit = _ytsg_contact_is_empty (contact);
+
+  g_object_unref (service);
+
+  if (emit)
+    {
+      g_object_ref (contact);
+      g_hash_table_remove (priv->contacts, jid);
+      g_signal_emit (roster, signals[CONTACT_REMOVED], 0, contact);
+      g_object_unref (contact);
+    }
 }
 
 /*
@@ -522,7 +555,7 @@ ytsg_roster_find_contact_by_capability (YtsgRoster *roster,
 }
 
 YtsgRoster*
-ytsg_roster_new (YtsgClient *client)
+_ytsg_roster_new (YtsgClient *client)
 {
   return g_object_new (YTSG_TYPE_ROSTER,
                        "client", client,

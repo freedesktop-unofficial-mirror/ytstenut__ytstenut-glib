@@ -42,6 +42,7 @@ G_DEFINE_ABSTRACT_TYPE (YtsgService, ytsg_service, G_TYPE_OBJECT);
 struct _YtsgServicePrivate
 {
   const char *uid;
+  const char *jid;
 
   guint disposed : 1;
 };
@@ -55,6 +56,7 @@ enum
 {
   PROP_0,
   PROP_UID,
+  PROP_JID,
 };
 
 /* static guint signals[N_SIGNALS] = {0}; */
@@ -84,6 +86,18 @@ ytsg_service_class_init (YtsgServiceClass *klass)
                                NULL,
                                G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
   g_object_class_install_property (object_class, PROP_UID, pspec);
+
+  /**
+   * YtsgService:jid:
+   *
+   * The jid of this service
+   */
+  pspec = g_param_spec_string ("jid",
+                               "jid",
+                               "jid",
+                               NULL,
+                               G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
+  g_object_class_install_property (object_class, PROP_JID, pspec);
 }
 
 static void
@@ -112,6 +126,9 @@ ytsg_service_get_property (GObject    *object,
     case PROP_UID:
       g_value_set_string (value, priv->uid);
       break;
+    case PROP_JID:
+      g_value_set_string (value, priv->jid);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -130,6 +147,9 @@ ytsg_service_set_property (GObject      *object,
     {
     case PROP_UID:
       priv->uid = g_intern_string (g_value_get_string (value));
+      break;
+    case PROP_JID:
+      priv->jid = g_intern_string (g_value_get_string (value));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);

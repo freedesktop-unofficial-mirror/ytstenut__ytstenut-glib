@@ -90,6 +90,7 @@ struct _YtsgClientPrivate
   TpChannel            *mydevices;
   TpChannel            *subscriptions;
   TpProxy              *debug_proxy;
+  TpYtsStatus          *status;
 
   /* callback ids */
   guint reconnect_id;
@@ -208,323 +209,6 @@ ytsg_client_contact_status_cb (YtsgContact *item,
     }
 }
 #endif
-
-static void
-ytsg_client_contacts_cb (TpConnection      *connection,
-                         guint              n_contacts,
-                         TpContact * const *contacts,
-                         guint              n_failed,
-                         const TpHandle    *failed,
-                         const GError      *error,
-                         gpointer           data,
-                         GObject           *weak_object)
-{
-  YtsgClient        *client = data;
-  YtsgClientPrivate *priv   = client->priv;
-  YtsgRoster        *roster = priv->roster;
-  int                i;
-
-  if (error)
-    {
-      g_warning (G_STRLOC ": %s: %s", __FUNCTION__, error->message);
-      return;
-    }
-
-  for (i = 0; i < n_contacts; ++i)
-    {
-      TpContact   *cont    = contacts[i];
-      YtsgContact *found_r = NULL;
-      YtsgContact *found_u = NULL;
-      YtsgStatus  *stat    = NULL; /* FIXME */
-
-      const char   *msg    = tp_contact_get_presence_message (cont);
-      TpHandle      h      = tp_contact_get_handle (cont);
-      gboolean      wanted = TRUE;
-      YtsgPresence  presence;
-
-      if (tp_contact_get_presence_type (cont) ==
-          TP_CONNECTION_PRESENCE_TYPE_AVAILABLE)
-        {
-          presence = YTSG_PRESENCE_AVAILABLE;
-        }
-      else
-        {
-          presence = YTSG_PRESENCE_UNAVAILABLE;
-        }
-
-#if 0
-      /* FIXME */
-      stat = ytsg_status_new_from_message (presence, msg);
-
-      /* FIXME */
-
-      /*
-       * If the client has caps set, we filter the roster by those caps.
-       */
-      if (priv->caps)
-        {
-          int j;
-
-          wanted = FALSE;
-
-          if (stat->caps)
-            {
-              for (j = 0; j < stat->caps->len; ++j)
-                {
-                  YtsgCapsTupple *t;
-
-                  t = g_array_index (stat->caps, YtsgCapsTupple*, j);
-
-                  if (t && ((t->capability == YTSG_CAPS_CONTROL) ||
-                            ytsg_client_has_capability (client, t->capability)))
-                    {
-                      wanted = TRUE;
-                      break;
-                    }
-                }
-            }
-        }
-#endif
-
-      if (!(found_r = _ytsg_roster_find_contact_by_handle (roster, h)))
-        found_u = _ytsg_roster_find_contact_by_handle (priv->unwanted, h);
-
-      if (found_r && !wanted)
-        {
-          YTSG_NOTE (CLIENT,
-                     "Removing unwanted contact %s from roster: %s [%s]",
-                     tp_contact_get_identifier (cont),
-                     tp_contact_get_presence_status (cont),
-                     msg);
-
-          g_object_ref (found_r);
-          _ytsg_roster_remove_contact (roster, found_r, FALSE);
-          _ytsg_roster_add_contact (priv->unwanted, found_r);
-        }
-      else if (!found_r && !found_u)
-        {
-          YtsgContact   *item;
-          YtsgSubscription  subs = YTSG_SUBSCRIPTION_NONE;
-
-          YTSG_NOTE (CLIENT, "Adding contact %s to roster %s: %s [%s]",
-                     tp_contact_get_identifier (cont),
-                     wanted ? "wanted" : "unwanted",
-                     tp_contact_get_presence_status (cont),
-                     msg);
-
-          /*
-           * The subscription status has to be worked out from the membership
-           * of the subscription channel.
-           */
-          if (priv->subscriptions)
-            {
-              const TpIntSet *m;
-              TpHandle        h = tp_contact_get_handle (cont);
-
-              m = tp_channel_group_get_members (priv->subscriptions);
-
-              if (tp_intset_is_member (m, h))
-		subs = YTSG_SUBSCRIPTION_APPROVED;
-              else
-                {
-                  m = tp_channel_group_get_remote_pending (priv->subscriptions);
-
-                  if (tp_intset_is_member (m, h))
-                    subs |= YTSG_SUBSCRIPTION_PENDING_OUT;
-                  else
-                    {
-                      m = tp_channel_group_get_remote_pending (priv->subscriptions);
-
-                      if (tp_intset_is_member (m, h))
-                        subs |= YTSG_SUBSCRIPTION_PENDING_IN;
-                    }
-                }
-            }
-
-          if (priv->protocol == YTSG_PROTOCOL_LOCAL_XMPP)
-            subs = YTSG_SUBSCRIPTION_APPROVED;
-
-          item = g_object_new (YTSG_TYPE_CONTACT,
-                               "client",       client,
-                               "tp-contact",   cont,
-                               "status",       stat,
-                               "subscription", (guint)subs,
-                               NULL);
-
-          if (wanted)
-            _ytsg_roster_add_contact (roster, item);
-          else
-            _ytsg_roster_add_contact (priv->unwanted, item);
-
-          /*
-           * FIXME -- query and process the contact's capabilites (see the
-           * commented out ytsg_client_contact_status_cb for what needs to be
-           * done).
-           */
-        }
-
-      if (stat)
-        g_object_unref (stat);
-    }
-}
-
-static void
-ytsg_client_group_members_cb (TpChannel *self,
-                              gchar     *message,
-                              GArray    *added,          /* guint */
-                              GArray    *removed,        /* guint */
-                              GArray    *local_pending,  /* guint */
-                              GArray    *remote_pending, /* guint */
-                              guint      actor,
-                              guint      reason,
-                              gpointer   data)
-{
-  int                i;
-  YtsgRoster        *roster;
-  YtsgClient        *client     = data;
-  YtsgClientPrivate *priv       = client->priv;
-  TpContactFeature   features[] = { TP_CONTACT_FEATURE_PRESENCE,
-                                    TP_CONTACT_FEATURE_CONTACT_INFO,
-                                    TP_CONTACT_FEATURE_AVATAR_DATA,
-                                    TP_CONTACT_FEATURE_CAPABILITIES};
-
-  /*
-   * NB: this function can be called with no changes at all if the roster is
-   *     empty.
-   */
-  roster = priv->roster;
-
-  if (!priv->connection)
-    {
-      YTSG_NOTE (CLIENT, "Got members-changed signal after disconnection");
-      return;
-    }
-
-  YTSG_NOTE (CLIENT, "Members changed on channel %s",
-             self == priv->mydevices ? "MyDevices" :
-             (self == priv->subscriptions ? "subscriptions" : "unknown"));
-
-  if (priv->protocol == YTSG_PROTOCOL_XMPP)
-    {
-      if (self == priv->mydevices)
-        {
-          if (removed)
-            for (i = 0; i < removed->len; ++i)
-              {
-                guint handle = g_array_index (removed, guint, i);
-
-                _ytsg_roster_remove_contact_by_handle (roster, handle);
-              }
-
-          if (added && added->len)
-            {
-              if (!tp_connection_is_ready (priv->connection))
-                {
-                  priv->members_pending = TRUE;
-                  YTSG_NOTE (CLIENT,
-                             "Connection not ready, postponing members");
-                }
-              else
-                tp_connection_get_contacts_by_handle (priv->connection,
-                                            added->len,
-                                            (const TpHandle *)added->data,
-                                            G_N_ELEMENTS (features),
-                                            (const TpContactFeature *)&features,
-                                            ytsg_client_contacts_cb,
-                                            client,
-                                            NULL,
-                                            (GObject*)client);
-            }
-        }
-      else if (self == priv->subscriptions)
-        {
-          g_debug ("Subscriptions: rm %d, add %d, r_pend %d, l_pend %d",
-                   removed ? removed->len : 0,
-                   added ? added->len : 0,
-                   remote_pending ? remote_pending->len : 0,
-                   local_pending ? local_pending->len : 0);
-
-          if (removed)
-            for (i = 0; i < removed->len; ++i)
-              {
-                guint        handle = g_array_index (removed, guint, i);
-                YtsgContact *item;
-
-                if ((item = _ytsg_roster_find_contact_by_handle (roster,
-                                                                 handle)))
-                  _ytsg_contact_set_subscription (item, YTSG_SUBSCRIPTION_NONE);
-              }
-
-          if (added)
-            for (i = 0; i < added->len; ++i)
-              {
-                guint        handle = g_array_index (added, guint, i);
-                YtsgContact *item;
-
-                if ((item = _ytsg_roster_find_contact_by_handle (roster,
-                                                                 handle)))
-                  _ytsg_contact_set_subscription (item,
-                                                  YTSG_SUBSCRIPTION_APPROVED);
-              }
-
-          if (remote_pending)
-            for (i = 0; i < remote_pending->len; ++i)
-              {
-                guint        handle = g_array_index (remote_pending, guint, i);
-                YtsgContact *item;
-
-                if ((item = _ytsg_roster_find_contact_by_handle (roster,
-                                                                 handle)))
-                  _ytsg_contact_set_subscription (item,
-                                                  YTSG_SUBSCRIPTION_PENDING_OUT);
-              }
-
-          if (local_pending)
-            for (i = 0; i < local_pending->len; ++i)
-              {
-                guint        handle = g_array_index (local_pending, guint, i);
-                YtsgContact *item;
-
-                if ((item = _ytsg_roster_find_contact_by_handle (roster, handle)))
-                  _ytsg_contact_set_subscription (item,
-                                                  YTSG_SUBSCRIPTION_PENDING_IN);
-              }
-        }
-    }
-  else if (priv->protocol == YTSG_PROTOCOL_LOCAL_XMPP)
-    {
-      if (self == priv->subscriptions)
-        {
-          if (removed)
-            for (i = 0; i < removed->len; ++i)
-              {
-                guint handle = g_array_index (removed, guint, i);
-
-                _ytsg_roster_remove_contact_by_handle (roster, handle);
-              }
-
-          if (added && added->len)
-            {
-              if (!tp_connection_is_ready (priv->connection))
-                {
-                  priv->members_pending = TRUE;
-                  YTSG_NOTE (CLIENT,
-                           "Connection not ready, postponing members");
-                }
-              else
-                tp_connection_get_contacts_by_handle (priv->connection,
-                                            added->len,
-                                            (const TpHandle *)added->data,
-                                            G_N_ELEMENTS (features),
-                                            (const TpContactFeature *)&features,
-                                            ytsg_client_contacts_cb,
-                                            client,
-                                            NULL,
-                                            (GObject*)client);
-            }
-        }
-    }
-}
 
 static gboolean
 ytsg_client_channel_requested (TpChannel *proxy)
@@ -730,32 +414,6 @@ ytsg_client_ft_core_cb (GObject *proxy, GAsyncResult *res, gpointer data)
 }
 
 static void
-ytsg_client_channel_prepare_cb (GObject      *channel,
-                                GAsyncResult *res,
-                                gpointer      data)
-{
-  YtsgClient        *client = data;
-  YtsgClientPrivate *priv   = client->priv;
-  GError            *error  = NULL;
-
-  if (!tp_proxy_prepare_finish (channel, res, &error))
-    {
-      g_critical ("Failed to prepare channel %s: %s",
-                  (void*)channel == priv->subscriptions ? "subscriptions" :
-                  "MyDevices",
-                  error && error->message ? error->message : "unknown error");
-    }
-  else
-    {
-      /*
-       * If we are not in ready state, emit the ready signal.
-       */
-      if (!priv->ready)
-        g_signal_emit (client, signals[READY], 0);
-    }
-}
-
-static void
 ytsg_client_channel_cb (TpConnection *proxy,
                         const gchar  *path,
                         const gchar  *type,
@@ -806,83 +464,8 @@ ytsg_client_channel_cb (TpConnection *proxy,
         }
       break;
     case TP_HANDLE_TYPE_LIST:
-      /*
-       * decide if we care about the subscription channel, or the MyDevices
-       * group only
-       */
-
-      /*
-       * There is probably a better way, but querrying the channel props
-       * requires yet another async call, so we just check the path ends in
-       * 'subscribe'
-       */
-      if (!strcmp (path + (strlen (path) - strlen ("subscribe")), "subscribe"))
-        {
-          GError    *error = NULL;
-          TpChannel *ch;
-          GQuark     features[] = { TP_CHANNEL_FEATURE_GROUP, 0};
-
-          ch = tp_channel_new (proxy, path, type, handle_type, handle, &error);
-
-          priv->subscriptions = ch;
-
-          if (error)
-            {
-              g_warning (G_STRLOC ": %s: %s", __FUNCTION__, error->message);
-              g_clear_error (&error);
-
-              /*
-               * This is pretty bad, the subscription channel is essential.
-               */
-              ytsg_client_disconnect_from_mesh (client);
-              _ytsg_client_reconnect_after (client, RECONNECT_DELAY);
-              return;
-            }
-
-          tp_g_signal_connect_object (ch, "group-members-changed",
-                                      G_CALLBACK (ytsg_client_group_members_cb),
-                                      client,
-                                      0);
-
-          tp_proxy_prepare_async (ch, features,
-                                  ytsg_client_channel_prepare_cb, client);
-        }
       break;
     case TP_HANDLE_TYPE_GROUP:
-      if (!strcmp (path + (strlen (path) - strlen ("MyDevices")), "MyDevices"))
-        {
-          GError    *error = NULL;
-          TpChannel *ch;
-          GQuark     features[] = { TP_CHANNEL_FEATURE_GROUP, 0};
-
-          YTSG_NOTE (CLIENT, "MyDevices channel");
-
-          ch = tp_channel_new (proxy, path, type, handle_type, handle, &error);
-
-          if (error)
-            {
-              g_warning (G_STRLOC ": %s: %s", __FUNCTION__, error->message);
-              g_clear_error (&error);
-
-              /*
-               * This is pretty bad, the MyDevices channel is where we get the
-               * rosters from.
-               */
-              ytsg_client_disconnect_from_mesh (client);
-              _ytsg_client_reconnect_after (client, RECONNECT_DELAY);
-              return;
-            }
-
-          priv->mydevices = ch;
-
-          tp_g_signal_connect_object (ch, "group-members-changed",
-                                      G_CALLBACK (ytsg_client_group_members_cb),
-                                      client,
-                                      0);
-
-          tp_proxy_prepare_async (ch, features,
-                                  ytsg_client_channel_prepare_cb, client);
-        }
       break;
     default:;
     }
@@ -1534,15 +1117,15 @@ ytsg_client_account_cb (GObject *object, GAsyncResult *res, gpointer data)
 static void
 ytsg_client_constructed (GObject *object)
 {
-  YtsgClient          *client = (YtsgClient*) object;
-  YtsgClientPrivate   *priv   = client->priv;
-  GError              *error  = NULL;
+  YtsgClient          *client    = (YtsgClient*) object;
+  YtsgClientPrivate   *priv      = client->priv;
+  GError              *error     = NULL;
 
   if (G_OBJECT_CLASS (ytsg_client_parent_class)->constructed)
     G_OBJECT_CLASS (ytsg_client_parent_class)->constructed (object);
 
-  priv->roster   = ytsg_roster_new (client);
-  priv->unwanted = ytsg_roster_new (client);
+  priv->roster   = _ytsg_roster_new (client);
+  priv->unwanted = _ytsg_roster_new (client);
 
   if (!priv->jid || !*priv->jid)
     g_error ("JID must be set at construction time.");
@@ -1872,45 +1455,53 @@ ytsg_client_status_cb (TpConnection *proxy,
 }
 
 static void
+yts_client_yts_status_cb (GObject      *obj,
+                          GAsyncResult *res,
+                          gpointer      data)
+{
+  TpConnection      *conn   = TP_CONNECTION (obj);
+  YtsgClient        *client = data;
+  YtsgClientPrivate *priv   = client->priv;
+  GError            *error  = NULL;
+  TpYtsStatus       *status;
+
+  if (!(status = tp_yts_status_ensure_for_connection_finish (conn, res,&error)))
+    {
+      g_error ("Failed to obtain status: %s", error->message);
+    }
+
+  priv->status = status;
+
+  if (!priv->ready)
+    g_signal_emit (client, signals[READY], 0);
+}
+
+static void
 ytsg_client_connection_ready_cb (TpConnection *conn,
                                  GParamSpec   *par,
                                  YtsgClient   *client)
 {
   YtsgClientPrivate *priv = client->priv;
+  GCancellable      *cancellable;
 
   if (tp_connection_is_ready (conn))
     {
       YTSG_NOTE (CLIENT, "TP Connection entered ready state");
 
-      if (priv->members_pending)
-        {
-          /* get members */
-          TpContactFeature features[] = { TP_CONTACT_FEATURE_PRESENCE,
-                                          TP_CONTACT_FEATURE_CONTACT_INFO,
-                                          TP_CONTACT_FEATURE_AVATAR_DATA,
-                                          TP_CONTACT_FEATURE_CAPABILITIES};
-          const TpIntSet *set = tp_channel_group_get_members (priv->mydevices);
+      cancellable = g_cancellable_new ();
 
-          if (set)
-            {
-              GArray *added = tp_intset_to_array (set);
+      tp_yts_status_ensure_for_connection_async (conn,
+                                                 cancellable,
+                                                 yts_client_yts_status_cb,
+                                                 client);
 
-              tp_connection_get_contacts_by_handle (conn,
-                                          added->len,
-                                          (const TpHandle *)added->data,
-                                          G_N_ELEMENTS (features),
-                                          (const TpContactFeature *)&features,
-                                          ytsg_client_contacts_cb,
-                                          client,
-                                          NULL,
-                                          (GObject*)client);
-
-
-              g_array_free (added, TRUE);
-            }
-
-          priv->members_pending = FALSE;
-        }
+      /*
+       * FIXME -- this should be stored, so we can clean up in dispose any
+       * pending op, ???
+       *
+       * But the TpYtsStatus docs say it's not used ...
+       */
+      g_object_unref (cancellable);
     }
 }
 
@@ -2283,6 +1874,8 @@ static void
 ytsg_client_refresh_roster (YtsgClient *client)
 {
   /* FIXME */
+  g_warning (G_STRLOC ": NOT IMPLEMENTED !!!");
+
 #if 0
   YtsgClientPrivate *priv = client->priv;
   GList             *l;

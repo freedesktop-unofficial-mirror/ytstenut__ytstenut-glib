@@ -67,6 +67,7 @@ struct _YtsgService
 GType ytsg_service_get_type (void) G_GNUC_CONST;
 
 const char *ytsg_service_get_uid (YtsgService *service);
+const char *ytsg_service_get_jid (YtsgService *service);
 
 G_END_DECLS
 

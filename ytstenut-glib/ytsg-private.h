@@ -38,6 +38,11 @@
 G_BEGIN_DECLS
 
 YtsgContact *_ytsg_contact_new (YtsgClient *client, TpContact *tp_contact);
+void         _ytsg_contact_add_service (YtsgContact *contact,
+                                        YtsgService *service);
+void         _ytsg_contact_remove_service (YtsgContact *contact,
+                                           YtsgService *service);
+gboolean     _ytsg_contact_is_empty (YtsgContact *contact);
 
 YtsgMetadata *_ytsg_metadata_new_from_xml (const char *xml);
 YtsgMetadata *_ytsg_metadata_new_from_node (RestXmlNode  *node,
@@ -49,7 +54,8 @@ void _ytsg_metadata_service_received_status (YtsgMetadataService *service,
 void _ytsg_metadata_service_received_message (YtsgMetadataService *service,
                                               const char          *xml);
 
-YtsgRoster   *_ytsg_roster_new (void);
+YtsgRoster   *_ytsg_roster_new (YtsgClient *client);
+
 void          _ytsg_roster_add_contact (YtsgRoster  *roster,
                                         YtsgContact *contact);
 void          _ytsg_roster_remove_contact (YtsgRoster  *roster,
