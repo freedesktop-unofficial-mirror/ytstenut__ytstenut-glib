@@ -21,6 +21,10 @@
  *          Cosimo Cecchi <cosimo.cecchi@collabora.co.uk>
  */
 
+ /*
+  * 29/09/2010: modified for Ytstenut use by Tomas Frydrych <tf@linux.intel.com>
+  */
+
 #ifndef __EMPATHY_TP_FILE_H__
 #define __EMPATHY_TP_FILE_H__
 

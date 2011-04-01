@@ -21,6 +21,12 @@
  *          Cosimo Cecchi <cosimo.cecchi@collabora.co.uk>
  */
 
+ /* 29/09/2010: modified for Ytstenut use by Tomas Frydrych <tf@linux.intel.com>
+  *
+  * - added :incoming property
+  * - use Yts debug macros
+  */
+
 #include <config.h>
 
 #include <string.h>
