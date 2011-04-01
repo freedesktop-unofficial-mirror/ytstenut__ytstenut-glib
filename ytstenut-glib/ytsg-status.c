@@ -29,13 +29,13 @@ static void ytsg_status_dispose (GObject *object);
 static void ytsg_status_finalize (GObject *object);
 static void ytsg_status_constructed (GObject *object);
 static void ytsg_status_get_property (GObject    *object,
-                                         guint       property_id,
-                                         GValue     *value,
-                                         GParamSpec *pspec);
+                                      guint       property_id,
+                                      GValue     *value,
+                                      GParamSpec *pspec);
 static void ytsg_status_set_property (GObject      *object,
-                                         guint         property_id,
-                                         const GValue *value,
-                                         GParamSpec   *pspec);
+                                      guint         property_id,
+                                      const GValue *value,
+                                      GParamSpec   *pspec);
 
 G_DEFINE_TYPE (YtsgStatus, ytsg_status, YTSG_TYPE_METADATA);
 
