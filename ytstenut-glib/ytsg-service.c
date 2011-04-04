@@ -21,6 +21,7 @@
 
 #include "ytsg-service.h"
 #include "ytsg-metadata-service.h"
+#include "ytsg-client.h"
 
 static void ytsg_service_dispose (GObject *object);
 static void ytsg_service_finalize (GObject *object);
@@ -43,6 +44,7 @@ struct _YtsgServicePrivate
 {
   const char *uid;
   const char *jid;
+  YtsgClient *client;   /* back-reference to the client object that owns us */
 
   guint disposed : 1;
 };
@@ -57,6 +59,7 @@ enum
   PROP_0,
   PROP_UID,
   PROP_JID,
+  PROP_CLIENT,
 };
 
 /* static guint signals[N_SIGNALS] = {0}; */
@@ -74,6 +77,18 @@ ytsg_service_class_init (YtsgServiceClass *klass)
   object_class->constructed  = ytsg_service_constructed;
   object_class->get_property = ytsg_service_get_property;
   object_class->set_property = ytsg_service_set_property;
+
+  /**
+   * YtsgService:client:
+   *
+   * #YtsgClient this service belongs to
+   */
+  pspec = g_param_spec_object ("client",
+                               "YtsgClient",
+                               "YtsgClient",
+                               YTSG_TYPE_CLIENT,
+                               G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY);
+  g_object_class_install_property (object_class, PROP_CLIENT, pspec);
 
   /**
    * YtsgService:uid:
@@ -145,6 +160,9 @@ ytsg_service_set_property (GObject      *object,
 
   switch (property_id)
     {
+    case PROP_CLIENT:
+      priv->client = g_value_get_object (value);
+      break;
     case PROP_UID:
       priv->uid = g_intern_string (g_value_get_string (value));
       break;
@@ -173,6 +191,8 @@ ytsg_service_dispose (GObject *object)
 
   priv->disposed = TRUE;
 
+  priv->client = NULL;
+
   G_OBJECT_CLASS (ytsg_service_parent_class)->dispose (object);
 }
 
@@ -199,3 +219,14 @@ ytsg_service_get_uid (YtsgService *service)
   return service->priv->uid;
 }
 
+YtsgClient*
+ytsg_service_get_client (YtsgService *service)
+{
+  YtsgServicePrivate *priv;
+
+  g_return_val_if_fail (YTSG_IS_SERVICE (service), NULL);
+
+  priv = service->priv;
+
+  return priv->client;
+}

@@ -129,87 +129,6 @@ enum
 
 static guint signals[N_SIGNALS] = {0};
 
-
-#if 0
-/*
- * FIXME
- *
- * This function filters contacts into wanted/unwated rosters, depending on
- * their capabilities (in nscreen this was tied to <presence/>, hence the
- * function name). The same functionality needs to be implemented using the
- * new capabilities API.
- */
-static void
-ytsg_client_contact_status_cb (YtsgContact *item,
-                               GParamSpec  *pspec,
-                               YtsgClient  *client)
-{
-  YtsgClientPrivate *priv   = client->priv;
-  gboolean           wanted = TRUE;
-  gboolean           in_r;
-  gboolean           in_u;
-  const YtsgStatus  *status;
-
-  if (!priv->caps)
-    return;
-
-  /*
-   * Separate the grain from the chaff (i.e., split known contacts into the
-   * normal and unwanted rosters)
-   */
-  wanted = FALSE;
-
-  /*
-   * FIXME -- this is tied to caps being advertised via status, which is not
-   * the case ... hook into new API.
-   */
-  if ((status = ytsg_contact_get_status (item)) && status->caps)
-    {
-      int j;
-
-      for (j = 0; j < status->caps->len; ++j)
-        {
-          YtsgCapsTupple *t = g_array_index (status->caps, YtsgCapsTupple*, j);
-
-          if (t && ((t->capability == YTSG_CAPS_CONTROL) ||
-                    ytsg_client_has_capability (client, t->capability)))
-            {
-              wanted = TRUE;
-              break;
-            }
-        }
-    }
-
-  in_r  = _ytsg_roster_contains_contact (priv->roster, item);
-  in_u  = _ytsg_roster_contains_contact (priv->unwanted, item);
-
-  g_assert ((in_r && !in_u) || (in_u && !in_r));
-
-  if (!wanted)
-    {
-      if (in_r)
-        {
-          g_object_ref (item);
-          _ytsg_roster_remove_contact (priv->roster, item, FALSE);
-        }
-
-      if (!in_u)
-        _ytsg_roster_add_contact (priv->unwanted, item);
-    }
-  else
-    {
-      if (in_u)
-        {
-          g_object_ref (item);
-          _ytsg_roster_remove_contact (priv->unwanted, item, FALSE);
-        }
-
-      if (!in_r)
-        _ytsg_roster_add_contact (priv->roster, item);
-    }
-}
-#endif
-
 static gboolean
 ytsg_client_channel_requested (TpChannel *proxy)
 {
@@ -1454,6 +1373,31 @@ ytsg_client_status_cb (TpConnection *proxy,
     g_signal_emit (client, signals[DISCONNECTED], 0);
 }
 
+static gboolean
+yts_client_caps_overlap (GArray *mycaps, char **caps)
+{
+  int i;
+
+  /* TODO -- this is not nice, maybe YtsgClient:caps should also be just a
+   *         char**
+   */
+  for (i = 0; i < mycaps->len; ++i)
+    {
+      char **p;
+
+      for (p = caps; *p; ++p)
+        {
+          if (!strcmp (g_quark_to_string (g_array_index (mycaps, YtsgCaps, i)),
+                       *p))
+            {
+              return TRUE;
+            }
+        }
+    }
+
+  return FALSE;
+}
+
 static void
 yts_client_yts_status_cb (GObject      *obj,
                           GAsyncResult *res,
@@ -1464,6 +1408,7 @@ yts_client_yts_status_cb (GObject      *obj,
   YtsgClientPrivate *priv   = client->priv;
   GError            *error  = NULL;
   TpYtsStatus       *status;
+  GHashTable        *services;
 
   if (!(status = tp_yts_status_ensure_for_connection_finish (conn, res,&error)))
     {
@@ -1471,6 +1416,48 @@ yts_client_yts_status_cb (GObject      *obj,
     }
 
   priv->status = status;
+
+  if ((services = tp_yts_status_get_discovered_services (status)))
+    {
+      char           *jid;
+      GHashTable     *service;
+      GHashTableIter  iter;
+
+      g_hash_table_iter_init (&iter, services);
+      while (g_hash_table_iter_next (&iter, (void**)&jid, (void**)&service))
+        {
+          char           *sid;
+          GValueArray    *sinfo;
+          GHashTableIter  iter2;
+
+          g_hash_table_iter_init (&iter2, service);
+          while (g_hash_table_iter_next (&iter2, (void**)&sid, (void**)&sinfo))
+            {
+              const char  *type;
+              GHashTable  *names;
+              char       **caps;
+              YtsgRoster  *roster;
+
+              if (sinfo->n_values == 3)
+                {
+                  g_warning ("Missformed service description");
+                  continue;
+                }
+
+              type  = g_value_get_string (g_value_array_get_nth (sinfo, 0));
+              names = g_value_get_boxed (g_value_array_get_nth (sinfo, 1));
+              caps  = g_value_get_boxed (g_value_array_get_nth (sinfo, 2));
+
+              if (yts_client_caps_overlap (priv->caps, caps))
+                roster = priv->roster;
+              else
+                roster = priv->unwanted;
+
+              _ytsg_roster_add_service (roster, jid, sid, type,
+                                        (const char**)caps, names);
+            }
+        }
+    }
 
   if (!priv->ready)
     g_signal_emit (client, signals[READY], 0);
@@ -1496,7 +1483,7 @@ ytsg_client_connection_ready_cb (TpConnection *conn,
                                                  client);
 
       /*
-       * FIXME -- this should be stored, so we can clean up in dispose any
+       * TODO -- this should be stored, so we can clean up in dispose any
        * pending op, ???
        *
        * But the TpYtsStatus docs say it's not used ...
@@ -1618,7 +1605,7 @@ ytsg_client_connection_prepare_cb (GObject      *connection,
         }
 
 #if 0
-      /* FIXME -- */
+      /* TODO -- */
       /*
        * local-xmpp / salut does not support the ContactCapabilities interface,
        * but file transfer is enabled by default, so it does not matter to us.
@@ -2085,4 +2072,28 @@ ytsg_client_get_jid (const YtsgClient *client)
   priv = client->priv;
 
   return priv->jid;
+}
+
+TpConnection *
+_ytsg_client_get_connection (YtsgClient *client)
+{
+  YtsgClientPrivate *priv;
+
+  g_return_val_if_fail (YTSG_IS_CLIENT (client), NULL);
+
+  priv = client->priv;
+
+  return priv->connection;
+}
+
+TpYtsStatus *
+_ytsg_client_get_status (YtsgClient *client)
+{
+  YtsgClientPrivate *priv;
+
+  g_return_val_if_fail (YTSG_IS_CLIENT (client), NULL);
+
+  priv = client->priv;
+
+  return priv->status;
 }

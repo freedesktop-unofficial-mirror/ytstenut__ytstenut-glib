@@ -22,6 +22,10 @@
 #ifndef _YTSG_PRIVATE_H
 #define _YTSG_PRIVATE_H
 
+#include <rest/rest-xml-node.h>
+#include <telepathy-glib/contact.h>
+#include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
+
 #include <ytstenut-glib/ytsg-client.h>
 #include <ytstenut-glib/ytsg-contact.h>
 #include <ytstenut-glib/ytsg-error.h>
@@ -30,14 +34,11 @@
 #include <ytstenut-glib/ytsg-roster.h>
 #include <ytstenut-glib/ytsg-types.h>
 
-#include <rest/rest-xml-node.h>
-#include <telepathy-glib/contact.h>
-
 #define I_(str) (g_intern_static_string ((str)))
 
 G_BEGIN_DECLS
 
-YtsgContact *_ytsg_contact_new (YtsgClient *client, TpContact *tp_contact);
+YtsgContact *_ytsg_contact_new (YtsgClient *client, const char *jid);
 void         _ytsg_contact_add_service (YtsgContact *contact,
                                         YtsgService *service);
 void         _ytsg_contact_remove_service (YtsgContact *contact,
@@ -48,7 +49,13 @@ YtsgMetadata *_ytsg_metadata_new_from_xml (const char *xml);
 YtsgMetadata *_ytsg_metadata_new_from_node (RestXmlNode  *node,
                                             const char  **attributes);
 
-YtsgService  *_ytsg_metadata_service_new (const char *uid);
+YtsgService *_ytsg_metadata_service_new (YtsgClient  *client,
+                                         const char  *jid,
+                                         const char  *uid,
+                                         const char  *type,
+                                         const char **caps,
+                                         GHashTable  *names);
+
 void _ytsg_metadata_service_received_status (YtsgMetadataService *service,
                                              const char          *xml);
 void _ytsg_metadata_service_received_message (YtsgMetadataService *service,
@@ -61,6 +68,13 @@ void          _ytsg_roster_add_contact (YtsgRoster  *roster,
 void          _ytsg_roster_remove_contact (YtsgRoster  *roster,
                                            YtsgContact *contact,
                                            gboolean     dispose);
+void          _ytsg_roster_add_service (YtsgRoster  *roster,
+                                        const char  *jid,
+                                        const char  *sid,
+                                        const char  *type,
+                                        const char **caps,
+                                        GHashTable  *names);
+
 void          _ytsg_roster_clear (YtsgRoster *roster);
 void          _ytsg_roster_remove_contact_by_handle (YtsgRoster *roster,
                                                      guint       handle);
@@ -68,13 +82,13 @@ YtsgContact  *_ytsg_roster_find_contact_by_handle (YtsgRoster *roster,
                                                    guint       handle);
 gboolean      _ytsg_roster_contains_contact (YtsgRoster        *roster,
                                              const YtsgContact *contact);
-void          _ytsg_contact_set_subscription  (const YtsgContact *contact,
-                                               YtsgSubscription   subscription);
 void           _ytsg_contact_set_ft_channel (YtsgContact *item,
                                              TpChannel *channel);
 
 void          _ytsg_client_reconnect_after (YtsgClient *client,
                                             guint after_seconds);
+TpConnection *_ytsg_client_get_connection (YtsgClient *client);
+TpYtsStatus  *_ytsg_client_get_status (YtsgClient *client);
 
 G_END_DECLS
 

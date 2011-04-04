@@ -24,6 +24,8 @@
 
 #include <glib-object.h>
 
+#include <ytstenut-glib/ytsg-types.h>
+
 G_BEGIN_DECLS
 
 #define YTSG_TYPE_SERVICE                                               \
@@ -66,8 +68,9 @@ struct _YtsgService
 
 GType ytsg_service_get_type (void) G_GNUC_CONST;
 
-const char *ytsg_service_get_uid (YtsgService *service);
-const char *ytsg_service_get_jid (YtsgService *service);
+const char *ytsg_service_get_uid    (YtsgService *service);
+const char *ytsg_service_get_jid    (YtsgService *service);
+YtsgClient *ytsg_service_get_client (YtsgService *service);
 
 G_END_DECLS
 

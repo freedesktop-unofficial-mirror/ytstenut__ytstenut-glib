@@ -53,6 +53,10 @@ static void ytsg_contact_set_property (GObject      *object,
                                        const GValue *value,
                                        GParamSpec   *pspec);
 
+static void ytsg_contact_avatar_file_cb (TpContact   *contact,
+                                         GParamSpec  *param,
+                                         YtsgContact *ycontact);
+
 G_DEFINE_TYPE (YtsgContact, ytsg_contact, G_TYPE_OBJECT);
 
 #define YTSG_CONTACT_GET_PRIVATE(o) \
@@ -60,21 +64,17 @@ G_DEFINE_TYPE (YtsgContact, ytsg_contact, G_TYPE_OBJECT);
 
 struct _YtsgContactPrivate
 {
+  const char   *jid;
   GHashTable   *services;   /* hash of YtsgService instances */
-
   TpContact    *tp_contact; /* TpContact associated with YtsgContact */
 
   char         *icon_token; /* token identifying this contacts avatar */
 
   YtsgClient   *client;     /* back-reference to the client that owns us */
   YtsgPresence  presence;   /* presence state of this client */
-  YtsgStatus   *status;     /* status of this contact -- FIXME -- status is
-                               per-service, not contact */
 
-  GQueue     *pending_files;    /* files dispatched before channel open */
-  GHashTable *ft_cancellables;
-
-  YtsgSubscription  subscription; /* subscription state of this item */
+  GQueue       *pending_files;    /* files dispatched before channel open */
+  GHashTable   *ft_cancellables;
 
   guint disposed : 1;
 };
@@ -90,12 +90,10 @@ enum
 enum
 {
   PROP_0,
-  PROP_TP_CONTACT,
+  PROP_JID,
   PROP_ICON,
   PROP_CLIENT,
   PROP_PRESENCE,
-  PROP_STATUS,
-  PROP_SUBSCRIPTION,
 };
 
 static guint signals[N_SIGNALS] = {0};
@@ -142,31 +140,6 @@ ytsg_contact_class_init (YtsgContactClass *klass)
   klass->service_removed     = ytsg_contact_service_removed;
 
   /**
-   * YtsgContact:tp-contact:
-   *
-   * TpContact of this item.
-   */
-  pspec = g_param_spec_object ("tp-contact",
-                               "TpContact",
-                               "TpContact",
-                               TP_TYPE_CONTACT,
-                               G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY);
-  g_object_class_install_property (object_class, PROP_TP_CONTACT, pspec);
-
-  /**
-   * YtsgContact:tp-contact:
-   *
-   * TpContact of this item.
-   */
-  pspec = g_param_spec_object ("status",
-                               "YtsgStatus",
-                               "YtsgStatus",
-                               YTSG_TYPE_STATUS,
-                               G_PARAM_WRITABLE);
-  g_object_class_install_property (object_class, PROP_STATUS, pspec);
-
-
-  /**
    * YtsgContact:icon:
    *
    * Icon for this item.
@@ -196,20 +169,6 @@ ytsg_contact_class_init (YtsgContactClass *klass)
   g_object_class_install_property (object_class, PROP_CLIENT, pspec);
 
   /**
-   * YtsgContact:subscription:
-   *
-   * Subscription state of the item, #YtsgSubscription
-   */
-  pspec = g_param_spec_uint ("subscription",
-                             "Subscription",
-                             "Subscription to connect on",
-                             0,
-                             G_MAXUINT,
-                             0,
-                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT);
-  g_object_class_install_property (object_class, PROP_SUBSCRIPTION, pspec);
-
-  /**
    * YtsgContact:presence:
    *
    * #YtsgPresence state for this contact
@@ -221,6 +180,18 @@ ytsg_contact_class_init (YtsgContactClass *klass)
                              YTSG_PRESENCE_UNAVAILABLE,
                              G_PARAM_READABLE);
   g_object_class_install_property (object_class, PROP_PRESENCE, pspec);
+
+  /**
+   * YtsgContact:jid:
+   *
+   * The jid of this contact
+   */
+  pspec = g_param_spec_string ("jid",
+                               "jid",
+                               "jid",
+                               NULL,
+                               G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
+  g_object_class_install_property (object_class, PROP_JID, pspec);
 
   /**
    * YtsgContact::service-added:
@@ -306,17 +277,66 @@ ytsg_contact_presence_cb (TpContact    *tp_contact,
 }
 
 static void
-ytsg_contact_constructed (GObject *object)
+ytsg_contact_tp_contact_cb (TpConnection       *connection,
+                            guint               n_contacts,
+                            TpContact * const  *contacts,
+                            const char * const *requesed_ids,
+                            GHashTable         *failed_id_errors,
+                            const GError       *error,
+                            gpointer            data,
+                            GObject            *object)
 {
   YtsgContact        *contact = (YtsgContact*) object;
   YtsgContactPrivate *priv    = contact->priv;
 
-  if (G_OBJECT_CLASS (ytsg_contact_parent_class)->constructed)
-    G_OBJECT_CLASS (ytsg_contact_parent_class)->constructed (object);
+  if (error)
+    {
+      g_warning (G_STRLOC ": %s: %s", __FUNCTION__, error->message);
+      return;
+    }
 
+  priv->tp_contact = g_object_ref (contacts[0]);
+
+  /*
+   * TODO -- do we need to do this ? I think all services will disappear if
+   * if the contact goes off line.
+   */
   tp_g_signal_connect_object (priv->tp_contact, "presence-changed",
                               G_CALLBACK (ytsg_contact_presence_cb),
                               contact, 0);
+
+  tp_g_signal_connect_object (priv->tp_contact, "notify::avatar-file",
+                              G_CALLBACK (ytsg_contact_avatar_file_cb),
+                              contact, 0);
+}
+
+static void
+ytsg_contact_constructed (GObject *object)
+{
+  TpConnection       *connection;
+  YtsgContact        *contact = (YtsgContact*) object;
+  YtsgContactPrivate *priv    = contact->priv;
+  TpContactFeature    features[] = { TP_CONTACT_FEATURE_PRESENCE,
+                                     TP_CONTACT_FEATURE_CONTACT_INFO,
+                                     TP_CONTACT_FEATURE_AVATAR_DATA,
+                                     TP_CONTACT_FEATURE_CAPABILITIES};
+
+  if (G_OBJECT_CLASS (ytsg_contact_parent_class)->constructed)
+    G_OBJECT_CLASS (ytsg_contact_parent_class)->constructed (object);
+
+  connection = _ytsg_client_get_connection (priv->client);
+
+  g_assert (connection);
+
+  tp_connection_get_contacts_by_id (connection,
+                                    1,
+                                    &priv->jid,
+                                    G_N_ELEMENTS (features),
+                                    (const TpContactFeature *)&features,
+                                    ytsg_contact_tp_contact_cb,
+                                    contact,
+                                    NULL,
+                                    (GObject*)contact);
 }
 
 static void
@@ -330,6 +350,9 @@ ytsg_contact_get_property (GObject    *object,
 
   switch (property_id)
     {
+    case PROP_JID:
+      g_value_set_string (value, priv->jid);
+      break;
     case PROP_ICON:
       {
         GFile *file = ytsg_contact_get_icon (self, NULL);
@@ -378,28 +401,11 @@ ytsg_contact_set_property (GObject      *object,
 
   switch (property_id)
     {
-    case PROP_TP_CONTACT:
-      {
-        priv->tp_contact = g_value_dup_object (value);
-
-        g_signal_connect (priv->tp_contact, "notify::avatar-file",
-                          G_CALLBACK (ytsg_contact_avatar_file_cb),
-                          self);
-      }
+    case PROP_JID:
+      priv->jid = g_intern_string (g_value_get_string (value));
       break;
     case PROP_CLIENT:
       priv->client = g_value_get_object (value);
-      break;
-    case PROP_STATUS:
-      {
-        if (priv->status)
-          g_object_unref (priv->status);
-
-        priv->status = g_value_dup_object (value);
-      }
-      break;
-    case PROP_SUBSCRIPTION:
-      _ytsg_contact_set_subscription (self, g_value_get_uint (value));
       break;
 
     default:
@@ -449,12 +455,6 @@ ytsg_contact_dispose (GObject *object)
       priv->tp_contact = NULL;
     }
 
-  if (priv->status)
-    {
-      g_object_unref (priv->status);
-      priv->status = NULL;
-    }
-
   G_OBJECT_CLASS (ytsg_contact_parent_class)->dispose (object);
 }
 
@@ -490,9 +490,8 @@ ytsg_contact_get_jid (const YtsgContact *contact)
   priv = contact->priv;
 
   g_return_val_if_fail (!priv->disposed, NULL);
-  g_return_val_if_fail (priv->tp_contact, NULL);
 
-  return tp_contact_get_identifier (priv->tp_contact);
+  return priv->jid;
 }
 
 /**
@@ -544,14 +543,14 @@ ytsg_contact_get_icon (const YtsgContact  *contact, const char **mime)
 }
 
 YtsgContact *
-_ytsg_contact_new (YtsgClient *client, TpContact *tp_contact)
+_ytsg_contact_new (YtsgClient *client, const char *jid)
 {
   g_return_val_if_fail (YTSG_IS_CLIENT (client), NULL);
-  g_return_val_if_fail ( TP_IS_CONTACT (tp_contact), NULL);
+  g_return_val_if_fail (jid && *jid, NULL);
 
   return g_object_new (YTSG_TYPE_CONTACT,
-                       "client",       client,
-                       "tp-contact",   tp_contact,
+                       "client", client,
+                       "jid",    jid,
                        NULL);
 }
 
@@ -585,44 +584,6 @@ ytsg_contact_has_capability (const YtsgContact *item, YtsgCaps cap)
   g_critical (G_STRLOC ": NOT IMPLEMENTED!!!");
 
   return FALSE;
-}
-
-
-/*
- * ytsg_roster_item_set_subscription:
- * @item: #YtsgRosterItem
- * @subscription: #YtsgSubscription
- *
- * Sets #YtsgSubscription state of this item.
- */
-void
-_ytsg_contact_set_subscription (const YtsgContact *contact,
-                                YtsgSubscription   subscription)
-{
-  YtsgContactPrivate  *priv;
-  YtsgSubscription     or_with = subscription;
-
-  g_return_if_fail (YTSG_CONTACT (contact));
-
-  priv = contact->priv;
-
-  g_return_if_fail (!priv->disposed);
-
-  if (priv->subscription & subscription)
-    return;
-
-  YTSG_NOTE (ROSTER, "Contact %s: subscription status %d",
-           ytsg_contact_get_jid (contact), subscription);
-
-  if (subscription == YTSG_SUBSCRIPTION_APPROVED)
-    {
-      priv->subscription &= ~YTSG_SUBSCRIPTION_PENDING_IN;
-      priv->subscription &= ~YTSG_SUBSCRIPTION_PENDING_OUT;
-    }
-
-  priv->subscription |= or_with;
-
-  g_object_notify ((GObject*) contact, "subscription");
 }
 
 static gboolean
@@ -951,9 +912,6 @@ ytsg_contact_send_file (const YtsgContact *item, GFile *gfile)
 
   g_return_val_if_fail (!priv->disposed, YTSG_ERROR_OBJECT_DISPOSED);
 
-  if (!(priv->subscription & YTSG_SUBSCRIPTION_APPROVED))
-    return YTSG_ERROR_NOT_ALLOWED;
-
   finfo = g_file_query_info (gfile,
                              "standard::*",
                              0,
@@ -1061,8 +1019,10 @@ ytsg_contact_cancel_file (const YtsgContact *item, GFile *gfile)
 void
 _ytsg_contact_add_service (YtsgContact *contact, YtsgService *service)
 {
-  /* FIXME */
-  g_warning (G_STRLOC ": NOT IMPLEMENTED !!!");
+  /*
+   * Emit the signal; the run-first signal closure will do the rest
+   */
+  g_signal_emit (contact, signals[SERVICE_ADDED], 0, service);
 }
 
 void _ytsg_contact_remove_service (YtsgContact *contact, YtsgService *service)

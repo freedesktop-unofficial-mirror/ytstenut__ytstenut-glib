@@ -228,51 +228,6 @@ ytsg_roster_get_contacts (YtsgRoster *roster)
 }
 
 /*
- * ytsg_roster_add_service:
- * @roster: #YtsgRoster
- * @service: #YtsgService
- *
- * Adds service to a roster and emits YtsgRoster::service-added signal, assuming
- * reference on the #YtsgService object.
- *
- * For use by #YtsgClient.
- */
-void
-_ytsg_roster_add_service (YtsgRoster *roster, YtsgService *service)
-{
-  YtsgRosterPrivate *priv;
-  const char        *jid;
-  const char        *uid;
-  YtsgContact       *contact;
-  gboolean           emit = FALSE;
-
-  g_return_if_fail (YTSG_IS_ROSTER (roster));
-  g_return_if_fail (YTSG_IS_SERVICE (service));
-
-  priv = roster->priv;
-
-  jid = ytsg_service_get_jid (service);
-  uid = ytsg_service_get_uid (service);
-
-  if (!(contact = (YtsgContact*)ytsg_roster_find_contact_by_jid (roster, jid)))
-    {
-      /*
-        FIXME
-        contact = _ytsg_contact_new (YtsgClient *client, TpContact *tp_contact);
-        */
-
-      g_hash_table_insert (priv->contacts, (char*)jid, contact);
-
-      emit = TRUE;
-    }
-
-  _ytsg_contact_add_service (contact, service);
-
-  if (emit)
-    g_signal_emit (roster, signals[CONTACT_ADDED], 0, contact);
-}
-
-/*
  * ytsg_roster_remove_service:
  * @roster: #YtsgRoster
  * @service: #YtsgService
@@ -573,3 +528,41 @@ ytsg_roster_get_client (YtsgRoster *roster)
 
   return priv->client;
 }
+
+void
+_ytsg_roster_add_service (YtsgRoster  *roster,
+                          const char  *jid,
+                          const char  *sid,
+                          const char  *type,
+                          const char **caps,
+                          GHashTable  *names)
+{
+  YtsgRosterPrivate *priv;
+  YtsgContact       *contact;
+  gboolean           emit = FALSE;
+  YtsgService       *service;
+
+  g_return_if_fail (YTSG_IS_ROSTER (roster));
+
+  priv = roster->priv;
+
+  if (!(contact = (YtsgContact*)ytsg_roster_find_contact_by_jid (roster, jid)))
+    {
+      contact = _ytsg_contact_new (priv->client, jid);
+
+      g_hash_table_insert (priv->contacts, (char*)jid, contact);
+
+      emit = TRUE;
+    }
+
+  service = _ytsg_metadata_service_new (priv->client, jid, sid,
+                                        type, caps, names);
+
+  _ytsg_contact_add_service (contact, service);
+
+  g_object_unref (service);
+
+  if (emit)
+    g_signal_emit (roster, signals[CONTACT_ADDED], 0, contact);
+}
+
