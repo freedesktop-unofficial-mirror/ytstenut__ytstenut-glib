@@ -34,6 +34,8 @@ struct _YtsgMetadataServicePrivate
   char       **caps;
   GHashTable  *names;
 
+  YtsgStatus  *status;
+
   guint disposed : 1;
 };
 
@@ -70,7 +72,7 @@ ytsg_metadata_service_class_init (YtsgMetadataServiceClass *klass)
   object_class->set_property = ytsg_metadata_service_set_property;
 
   /**
-   * YtsgService:type:
+   * YtsgMetadataService:type:
    *
    * The type of this service
    */
@@ -82,7 +84,7 @@ ytsg_metadata_service_class_init (YtsgMetadataServiceClass *klass)
   g_object_class_install_property (object_class, PROP_TYPE, pspec);
 
   /**
-   * YtsgService:names:
+   * YtsgMetadataService:names:
    *
    * The names of this service
    */
@@ -94,7 +96,7 @@ ytsg_metadata_service_class_init (YtsgMetadataServiceClass *klass)
   g_object_class_install_property (object_class, PROP_NAMES, pspec);
 
   /**
-   * YtsgService:caps:
+   * YtsgMetadataService:caps:
    *
    * The caps of this service
    */
@@ -167,16 +169,31 @@ ytsg_metadata_service_status_changed_cb (TpYtsStatus *status,
   YTSG_NOTE (STATUS, "Status changed for %s/%s:%s",
              contact_id, service_name, capability);
 
-  /* FIXME -- update status */
-  g_warning ("NOT IMPLEMENTED");
+  if (priv->status)
+    {
+      g_object_unref (priv->status);
+      priv->status = NULL;
+    }
+
+  if (xml && *xml)
+    {
+      priv->status = (YtsgStatus*) _ytsg_metadata_new_from_xml (xml);
+
+      if (!YTSG_IS_STATUS (priv->status))
+        g_warning ("Failed to construct YtsgStatus object");
+    }
+
+  g_signal_emit (self, signals[STATUS], 0, priv->status);
 }
 
 static void
 ytsg_metadata_service_constructed (GObject *object)
 {
   YtsgMetadataService        *self = (YtsgMetadataService*) object;
+  YtsgMetadataServicePrivate *priv = self->priv;
   YtsgClient                 *client;
   TpYtsStatus                *status;
+  GHashTable                 *stats;
 
   if (G_OBJECT_CLASS (ytsg_metadata_service_parent_class)->constructed)
     G_OBJECT_CLASS (ytsg_metadata_service_parent_class)->constructed (object);
@@ -184,8 +201,39 @@ ytsg_metadata_service_constructed (GObject *object)
   client = ytsg_service_get_client ((YtsgService *)object);
   g_assert (client);
 
-  status = _ytsg_client_get_status (client);
+  /*
+   * Construct the YtsgStatus object from the xml stored in
+   * TpYtsStatus:discovered-statuses
+   *
+   * -- this is bit cumbersome, requiring nested hash table lookup.
+   */
+  status = _ytsg_client_get_tp_status (client);
   g_assert (status);
+
+  if (priv->caps && *priv->caps &&
+      (stats = tp_yts_status_get_discovered_statuses (status)))
+    {
+      const char *jid = ytsg_service_get_jid ((YtsgService*)self);
+      const char *uid = ytsg_service_get_uid ((YtsgService*)self);
+
+      const char *cap = *priv->caps; /*a single capability we have*/
+      GHashTable *cinfo;
+
+      if ((cinfo = g_hash_table_lookup (stats, jid)))
+        {
+          GHashTable *capinfo;
+
+          if ((capinfo = g_hash_table_lookup (cinfo, cap)))
+            {
+              char *xml;
+
+              if ((xml = g_hash_table_lookup (capinfo, uid)))
+                {
+                  priv->status = (YtsgStatus*)_ytsg_metadata_new_from_xml (xml);
+                }
+            }
+        }
+    }
 
   tp_g_signal_connect_object (status, "status-changed",
                           G_CALLBACK (ytsg_metadata_service_status_changed_cb),
@@ -267,6 +315,12 @@ ytsg_metadata_service_dispose (GObject *object)
       priv->names = NULL;
     }
 
+  if (priv->status)
+    {
+      g_object_unref (priv->status);
+      priv->status = NULL;
+    }
+
   G_OBJECT_CLASS (ytsg_metadata_service_parent_class)->dispose (object);
 }
 
@@ -286,9 +340,15 @@ void
 _ytsg_metadata_service_received_status (YtsgMetadataService *service,
                                         const char          *xml)
 {
-  YtsgStatus *status;
+  YtsgMetadataServicePrivate *priv = service->priv;
+  YtsgStatus                 *status;
 
   status = (YtsgStatus*) _ytsg_metadata_new_from_xml (xml);
+
+  if (priv->status)
+    g_object_unref (priv->status);
+
+  priv->status = status;
 
   g_return_if_fail (YTSG_IS_STATUS (status));
 
@@ -368,3 +428,14 @@ _ytsg_metadata_service_new (YtsgClient  *client,
                        NULL);
 }
 
+YtsgStatus *
+ytsg_metadata_service_get_status (YtsgMetadataService *service)
+{
+  YtsgMetadataServicePrivate *priv;
+
+  g_return_val_if_fail (YTSG_IS_METADATA_SERVICE (service), NULL);
+
+  priv = service->priv;
+
+  return priv->status;
+}

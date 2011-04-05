@@ -24,6 +24,7 @@
 #include "ytsg-enum-types.h"
 #include "ytsg-error.h"
 #include "ytsg-marshal.h"
+#include "ytsg-metadata.h"
 #include "ytsg-private.h"
 #include "ytsg-roster.h"
 #include "ytsg-types.h"
@@ -70,8 +71,7 @@ struct _YtsgClientPrivate
   GArray       *caps;
 
   /* connection parameters */
-  char         *jid;
-  char         *resource;
+  char         *uid;
   char         *mgr_name;
   YtsgProtocol  protocol;
 
@@ -87,10 +87,9 @@ struct _YtsgClientPrivate
   TpYtsAccountManager  *mgr;
   TpAccount            *account;
   TpConnection         *connection;
-  TpChannel            *mydevices;
-  TpChannel            *subscriptions;
   TpProxy              *debug_proxy;
-  TpYtsStatus          *status;
+  TpYtsStatus          *tp_status;
+  YtsgStatus           *status;
 
   /* callback ids */
   guint reconnect_id;
@@ -120,8 +119,7 @@ enum
 enum
 {
   PROP_0,
-  PROP_JID,
-  PROP_RESOURCE,
+  PROP_UID,
   PROP_PROTOCOL,
   PROP_CAPABILITIES,
   PROP_ICON_TOKEN,
@@ -351,8 +349,8 @@ ytsg_client_channel_cb (TpConnection *proxy,
       return;
     }
 
-  /* YTSG_NOTE (CLIENT, "New channel: %s: %s: h type %d, h %d", */
-  /*          path, type, handle_type, handle); */
+  YTSG_NOTE (CLIENT, "New channel: %s: %s: h type %d, h %d",
+             path, type, handle_type, handle);
 
   switch (handle_type)
     {
@@ -409,11 +407,28 @@ ytsg_client_ready (YtsgClient *client)
 
   YTSG_NOTE (CLIENT, "TP Channel is ready");
 
-  /* FIXME */
-#if 0
-  if (priv->status)
-    ytsg_client_dispatch_status (client);
-#endif
+  if (priv->tp_status && priv->status)
+    {
+      char *xml = ytsg_metadata_to_string ((YtsgMetadata*)priv->status);
+      int   i;
+
+      for (i = 0; i < priv->caps->len; ++i)
+        {
+          const char *c;
+
+          c = g_quark_to_string (g_array_index (priv->caps, YtsgCaps, i));
+
+          tp_yts_status_advertise_status_async (priv->tp_status,
+                                                c,
+                                                priv->uid,
+                                                xml,
+                                                NULL,
+                                                NULL,
+                                                NULL);
+        }
+
+      g_free (xml);
+    }
 }
 
 static void
@@ -427,18 +442,6 @@ ytsg_client_cleanup_connection_resources (YtsgClient *client)
 
   priv->ready    = FALSE;
   priv->prepared = FALSE;
-
-  if (priv->mydevices)
-    {
-      g_object_unref (priv->mydevices);
-      priv->mydevices = NULL;
-    }
-
-  if (priv->subscriptions)
-    {
-      g_object_unref (priv->subscriptions);
-      priv->subscriptions = NULL;
-    }
 
   /*
    * Empty roster
@@ -556,32 +559,18 @@ ytsg_client_class_init (YtsgClientClass *klass)
   klass->incoming_file       = ytsg_client_incoming_file;
 
   /**
-   * YtsgClient:jid:
+   * YtsgClient:uid:
    *
-   * The jid of this client
-   *
-   * Since: 0.1
-   */
-  pspec = g_param_spec_string ("jid",
-                               "Jabber ID",
-                               "Jabber ID",
-                               NULL,
-                               G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
-  g_object_class_install_property (object_class, PROP_JID, pspec);
-
-  /**
-   * YtsgClient:resource:
-   *
-   * The resource of this client
+   * The uid of this service
    *
    * Since: 0.1
    */
-  pspec = g_param_spec_string ("resource",
-                               "Jabber resource",
-                               "Jabber resource",
+  pspec = g_param_spec_string ("uid",
+                               "Service UID",
+                               "Service UID",
                                NULL,
                                G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
-  g_object_class_install_property (object_class, PROP_RESOURCE, pspec);
+  g_object_class_install_property (object_class, PROP_UID, pspec);
 
   pspec = g_param_spec_enum ("protocol",
                              "Protocol",
@@ -1046,8 +1035,8 @@ ytsg_client_constructed (GObject *object)
   priv->roster   = _ytsg_roster_new (client);
   priv->unwanted = _ytsg_roster_new (client);
 
-  if (!priv->jid || !*priv->jid)
-    g_error ("JID must be set at construction time.");
+  if (!priv->uid || !*priv->uid)
+    g_error ("UID must be set at construction time.");
 
   if (priv->protocol == YTSG_PROTOCOL_LOCAL_XMPP)
     priv->mgr_name = g_strdup ("salut");
@@ -1086,14 +1075,11 @@ ytsg_client_get_property (GObject    *object,
 
   switch (property_id)
     {
-    case PROP_JID:
-      g_value_set_string (value, priv->jid);
+    case PROP_UID:
+      g_value_set_string (value, priv->uid);
       break;
     case PROP_ICON_TOKEN:
       g_value_set_string (value, priv->icon_token);
-      break;
-    case PROP_RESOURCE:
-      g_value_set_string (value, priv->resource);
       break;
     case PROP_CAPABILITIES:
       g_value_set_boxed (value, priv->caps);
@@ -1118,16 +1104,10 @@ ytsg_client_set_property (GObject      *object,
 
   switch (property_id)
     {
-    case PROP_JID:
+    case PROP_UID:
       {
-        g_free (priv->jid);
-        priv->jid = g_value_dup_string (value);
-      }
-      break;
-    case PROP_RESOURCE:
-      {
-        g_free (priv->resource);
-        priv->resource = g_value_dup_string (value);
+        g_free (priv->uid);
+        priv->uid = g_value_dup_string (value);
       }
       break;
     case PROP_CAPABILITIES:
@@ -1173,18 +1153,6 @@ ytsg_client_dispose (GObject *object)
       priv->unwanted = NULL;
     }
 
-  if (priv->mydevices)
-    {
-      g_object_unref (priv->mydevices);
-      priv->mydevices = NULL;
-    }
-
-  if (priv->subscriptions)
-    {
-      g_object_unref (priv->subscriptions);
-      priv->subscriptions = NULL;
-    }
-
   if (priv->connection)
     {
       tp_cli_connection_call_disconnect  (priv->connection,
@@ -1208,6 +1176,12 @@ ytsg_client_dispose (GObject *object)
       priv->debug_proxy = NULL;
     }
 
+  if (priv->status)
+    {
+      g_object_unref (priv->status);
+      priv->status = NULL;
+    }
+
   G_OBJECT_CLASS (ytsg_client_parent_class)->dispose (object);
 }
 
@@ -1217,8 +1191,7 @@ ytsg_client_finalize (GObject *object)
   YtsgClient        *client = (YtsgClient*) object;
   YtsgClientPrivate *priv   = client->priv;
 
-  g_free (priv->jid);
-  g_free (priv->resource);
+  g_free (priv->uid);
   g_free (priv->icon_token);
   g_free (priv->icon_mime_type);
   g_free (priv->mgr_name);
@@ -1398,26 +1371,57 @@ yts_client_caps_overlap (GArray *mycaps, char **caps)
   return FALSE;
 }
 
-static void
-yts_client_yts_status_cb (GObject      *obj,
-                          GAsyncResult *res,
-                          gpointer      data)
+static gboolean
+ytsg_client_process_one_service (YtsgClient        *client,
+                                 const char        *jid,
+                                 const char        *sid,
+                                 const GValueArray *service)
 {
-  TpConnection      *conn   = TP_CONNECTION (obj);
-  YtsgClient        *client = data;
-  YtsgClientPrivate *priv   = client->priv;
-  GError            *error  = NULL;
-  TpYtsStatus       *status;
-  GHashTable        *services;
+  YtsgClientPrivate *priv = client->priv;
+  const char        *type;
+  GHashTable        *names;
+  char             **caps;
+  YtsgRoster        *roster;
+  GValueArray       *sinfo = (GValueArray*) service;
 
-  if (!(status = tp_yts_status_ensure_for_connection_finish (conn, res,&error)))
+  if (sinfo->n_values == 3)
     {
-      g_error ("Failed to obtain status: %s", error->message);
+      g_warning ("Missformed service description");
+      return FALSE;
     }
 
-  priv->status = status;
+  type  = g_value_get_string (g_value_array_get_nth (sinfo, 0));
+  names = g_value_get_boxed (g_value_array_get_nth (sinfo, 1));
+  caps  = g_value_get_boxed (g_value_array_get_nth (sinfo, 2));
 
-  if ((services = tp_yts_status_get_discovered_services (status)))
+  if (yts_client_caps_overlap (priv->caps, caps))
+    roster = priv->roster;
+  else
+    roster = priv->unwanted;
+
+  _ytsg_roster_add_service (roster, jid, sid, type,
+                            (const char**)caps, names);
+
+  return TRUE;
+}
+
+static void
+ytsg_client_service_added_cb (TpYtsStatus       *self,
+                              const gchar       *jid,
+                              const gchar       *sid,
+                              const GValueArray *sinfo,
+                              YtsgClient        *client)
+{
+  ytsg_client_process_one_service (client, jid, sid, sinfo);
+}
+
+static void
+ytsg_client_process_status (YtsgClient *client)
+{
+  YtsgClientPrivate *priv = client->priv;
+  GHashTable        *services;
+
+  if ((services = tp_yts_status_get_discovered_services (priv->tp_status)))
     {
       char           *jid;
       GHashTable     *service;
@@ -1433,31 +1437,35 @@ yts_client_yts_status_cb (GObject      *obj,
           g_hash_table_iter_init (&iter2, service);
           while (g_hash_table_iter_next (&iter2, (void**)&sid, (void**)&sinfo))
             {
-              const char  *type;
-              GHashTable  *names;
-              char       **caps;
-              YtsgRoster  *roster;
-
-              if (sinfo->n_values == 3)
-                {
-                  g_warning ("Missformed service description");
-                  continue;
-                }
-
-              type  = g_value_get_string (g_value_array_get_nth (sinfo, 0));
-              names = g_value_get_boxed (g_value_array_get_nth (sinfo, 1));
-              caps  = g_value_get_boxed (g_value_array_get_nth (sinfo, 2));
-
-              if (yts_client_caps_overlap (priv->caps, caps))
-                roster = priv->roster;
-              else
-                roster = priv->unwanted;
-
-              _ytsg_roster_add_service (roster, jid, sid, type,
-                                        (const char**)caps, names);
+              ytsg_client_process_one_service (client, jid, sid, sinfo);
             }
         }
     }
+}
+
+static void
+ytsg_client_yts_status_cb (GObject      *obj,
+                           GAsyncResult *res,
+                           gpointer      data)
+{
+  TpConnection      *conn   = TP_CONNECTION (obj);
+  YtsgClient        *client = data;
+  YtsgClientPrivate *priv   = client->priv;
+  GError            *error  = NULL;
+  TpYtsStatus       *status;
+
+  if (!(status = tp_yts_status_ensure_for_connection_finish (conn, res,&error)))
+    {
+      g_error ("Failed to obtain status: %s", error->message);
+    }
+
+  priv->tp_status = status;
+
+  tp_g_signal_connect_object (status, "service-added",
+                              G_CALLBACK (ytsg_client_service_added_cb),
+                              client, 0);
+
+  ytsg_client_process_status (client);
 
   if (!priv->ready)
     g_signal_emit (client, signals[READY], 0);
@@ -1468,8 +1476,7 @@ ytsg_client_connection_ready_cb (TpConnection *conn,
                                  GParamSpec   *par,
                                  YtsgClient   *client)
 {
-  YtsgClientPrivate *priv = client->priv;
-  GCancellable      *cancellable;
+  GCancellable *cancellable;
 
   if (tp_connection_is_ready (conn))
     {
@@ -1479,7 +1486,7 @@ ytsg_client_connection_ready_cb (TpConnection *conn,
 
       tp_yts_status_ensure_for_connection_async (conn,
                                                  cancellable,
-                                                 yts_client_yts_status_cb,
+                                                 ytsg_client_yts_status_cb,
                                                  client);
 
       /*
@@ -1817,23 +1824,22 @@ ytsg_client_connect_to_mesh (YtsgClient *client)
 /**
  * ytsg_client_new:
  * @protocol: #YtsgProtocol
- * @jid: jid to connect with
- * @resource: string containing the name of the jabber resource, can be %NULL
+ * @uid: UID for this service; UIDs must follow the dbus convetion for unique
+ * names.
  *
  * Creates a new #YtsgClient object connected to the provided roster
  *
  * Return value: #YtsgClient object.
  */
 YtsgClient *
-ytsg_client_new (YtsgProtocol protocol, const char *jid, const char *resource)
+ytsg_client_new (YtsgProtocol protocol, const char *uid)
 {
-  if (!jid)
-    g_error ("JID must be specified at construction time.");
+  if (!uid)
+    g_error ("UID must be specified at construction time.");
 
   return g_object_new (YTSG_TYPE_CLIENT,
                        "protocol", protocol,
-                       "jid",      jid,
-                       "resource", resource,
+                       "uid",      uid,
                        NULL);
 }
 
@@ -1860,86 +1866,15 @@ ytsg_client_has_capability (YtsgClient *client, YtsgCaps cap)
 static void
 ytsg_client_refresh_roster (YtsgClient *client)
 {
-  /* FIXME */
-  g_warning (G_STRLOC ": NOT IMPLEMENTED !!!");
-
-#if 0
   YtsgClientPrivate *priv = client->priv;
-  GList             *l;
 
-  if (!priv->caps)
+  if (!priv->tp_status)
     return;
 
-  l = g_list_copy (ytsg_roster_get_items (priv->roster));
+  _ytsg_roster_clear (priv->roster);
+  _ytsg_roster_clear (priv->unwanted);
 
-  for (; l; l = l->next)
-    {
-      YtsgContact      *item = l->data;
-      gboolean          wanted = FALSE;
-      const YtsgStatus *status;
-
-      if ((status = ytsg_contact_get_status (item)) && status->caps)
-        {
-          int j;
-
-          for (j = 0; j < status->caps->len; ++j)
-            {
-              YtsgCapsTupple *t = g_array_index (status->caps,
-                                                 YtsgCapsTupple*, j);
-
-              if (t && ((t->capability == YTSG_CAPS_CONTROL) ||
-                        ytsg_client_has_capability (client, t->capability)))
-                {
-                  wanted = TRUE;
-                  break;
-                }
-            }
-        }
-
-      if (!wanted)
-        {
-          g_object_ref (item);
-          _ytsg_roster_remove_item (priv->roster, item, FALSE);
-          _ytsg_roster_add_item (priv->unwanted, item);
-        }
-    }
-
-  l = g_list_copy (ytsg_roster_get_items (priv->unwanted));
-
-  for (; l; l = l->next)
-    {
-      YtsgContact   *item = l->data;
-      gboolean        wanted = FALSE;
-      const YtsgStatus *status;
-
-      if ((status = ytsg_contact_get_status (item)) && status->caps)
-        {
-          int j;
-
-          for (j = 0; j < status->caps->len; ++j)
-            {
-              YtsgCapsTupple *t = g_array_index (status->caps,
-                                                 YtsgCapsTupple*, j);
-
-              if (t && ((t->capability == YTSG_CAPS_CONTROL) ||
-                        ytsg_client_has_capability (client, t->capability)))
-                {
-                  wanted = TRUE;
-                  break;
-                }
-            }
-        }
-
-      if (wanted)
-        {
-          g_object_ref (item);
-          _ytsg_roster_remove_item (priv->unwanted, item, FALSE);
-          _ytsg_roster_add_item (priv->roster, item);
-        }
-    }
-
-  g_list_free (l);
-#endif
+  ytsg_client_process_status (client);
 }
 
 /**
@@ -2071,7 +2006,21 @@ ytsg_client_get_jid (const YtsgClient *client)
 
   priv = client->priv;
 
-  return priv->jid;
+  g_warning ("NOT IMPLEMENTED !!!");
+
+  return NULL;
+}
+
+const char *
+ytsg_client_get_uid (const YtsgClient *client)
+{
+  YtsgClientPrivate *priv;
+
+  g_return_val_if_fail (YTSG_IS_CLIENT (client), NULL);
+
+  priv = client->priv;
+
+  return priv->uid;
 }
 
 TpConnection *
@@ -2087,7 +2036,7 @@ _ytsg_client_get_connection (YtsgClient *client)
 }
 
 TpYtsStatus *
-_ytsg_client_get_status (YtsgClient *client)
+_ytsg_client_get_tp_status (YtsgClient *client)
 {
   YtsgClientPrivate *priv;
 
@@ -2095,5 +2044,48 @@ _ytsg_client_get_status (YtsgClient *client)
 
   priv = client->priv;
 
-  return priv->status;
+  return priv->tp_status;
 }
+
+void
+ytsg_client_set_status (YtsgClient *client, YtsgStatus *status)
+{
+  YtsgClientPrivate *priv;
+
+  g_return_if_fail (YTSG_IS_CLIENT (client) &&
+                    (!status || YTSG_IS_STATUS (status)));
+
+  priv = client->priv;
+
+  if (priv->status)
+    {
+      g_object_unref (priv->status);
+      priv->status = NULL;
+    }
+
+  if (status)
+    {
+      char *xml;
+      int   i;
+
+      priv->status = status;
+
+      xml = ytsg_metadata_to_string ((YtsgMetadata*)priv->status);
+
+      for (i = 0; i < priv->caps->len; ++i)
+        {
+          const char *c;
+
+          c = g_quark_to_string (g_array_index (priv->caps, YtsgCaps, i));
+
+          tp_yts_status_advertise_status_async (priv->tp_status,
+                                                c,
+                                                priv->uid,
+                                                xml,
+                                                NULL,
+                                                NULL,
+                                                NULL);
+        }
+    }
+}
+

@@ -204,8 +204,7 @@ main (int argc, char **argv)
    * us.
    */
   client = ytsg_client_new (YTSG_PROTOCOL_LOCAL_XMPP,
-                            "testapp@local",
-                            "testapp");
+                            "com.meego.ytstenut.LocalConnectionTest");
 
   g_signal_connect (client, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);

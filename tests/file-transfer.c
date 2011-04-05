@@ -146,8 +146,7 @@ main (int argc, char **argv)
   loop = g_main_loop_new (NULL, FALSE);
 
   client1 = ytsg_client_new (YTSG_PROTOCOL_LOCAL_XMPP,
-                             "ft-testapp1",
-                             "testapp");
+                             "com.meego.ytstenut.FileTransferTest1");
   g_signal_connect (client1, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);
   roster1 = ytsg_client_get_roster (client1);
@@ -156,8 +155,7 @@ main (int argc, char **argv)
   ytsg_client_connect_to_mesh (client1);
 
   client2 = ytsg_client_new (YTSG_PROTOCOL_LOCAL_XMPP,
-                             "ft-testapp2",
-                             "testapp");
+                             "com.meego.ytstenut.FileTransferTest2");
   g_signal_connect (client2, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);
   roster2 = ytsg_client_get_roster (client2);

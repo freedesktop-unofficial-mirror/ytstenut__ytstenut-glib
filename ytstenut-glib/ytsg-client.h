@@ -30,6 +30,7 @@
 #include <ytstenut-glib/ytsg-message.h>
 #include <ytstenut-glib/ytsg-roster.h>
 #include <ytstenut-glib/ytsg-types.h>
+#include <ytstenut-glib/ytsg-status.h>
 
 
 G_BEGIN_DECLS
@@ -85,9 +86,7 @@ struct _YtsgClient
 
 GType ytsg_client_get_type (void) G_GNUC_CONST;
 
-YtsgClient *ytsg_client_new (YtsgProtocol  protocol,
-                             const char   *jid,
-                             const char   *resource);
+YtsgClient *ytsg_client_new (YtsgProtocol protocol, const char *uid);
 
 void        ytsg_client_disconnect_from_mesh (YtsgClient *client);
 void        ytsg_client_connect_to_mesh (YtsgClient *client);
@@ -98,6 +97,9 @@ void        ytsg_client_set_incoming_file_directory (YtsgClient *client,
                                                      const char *directory);
 const char *ytsg_client_get_incoming_file_directory (YtsgClient *client);
 const char *ytsg_client_get_jid (const YtsgClient *client);
+const char *ytsg_client_get_uid (const YtsgClient *client);
+void        ytsg_client_set_status (YtsgClient *client, YtsgStatus *status);
+
 
 G_END_DECLS
 

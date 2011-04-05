@@ -94,9 +94,13 @@ enum
   PROP_ICON,
   PROP_CLIENT,
   PROP_PRESENCE,
+  PROP_TP_CONTACT,
+
+  PROP_LAST
 };
 
 static guint signals[N_SIGNALS] = {0};
+static GParamSpec *properties[PROP_LAST];
 
 static void
 ytsg_contact_service_added (YtsgContact *contact, YtsgService *service)
@@ -125,7 +129,6 @@ ytsg_contact_service_removed (YtsgContact *contact, YtsgService *service)
 static void
 ytsg_contact_class_init (YtsgContactClass *klass)
 {
-  GParamSpec   *pspec;
   GObjectClass *object_class = (GObjectClass *)klass;
 
   g_type_class_add_private (klass, sizeof (YtsgContactPrivate));
@@ -149,49 +152,67 @@ ytsg_contact_class_init (YtsgContactClass *klass)
    *
    * Since: 0.1
    */
-  pspec = g_param_spec_object ("icon",
-                               "Icon",
-                               "Icon",
-                               G_TYPE_FILE,
-                               G_PARAM_READABLE);
-  g_object_class_install_property (object_class, PROP_ICON, pspec);
+  properties[PROP_ICON] = g_param_spec_object ("icon",
+                                               "Icon",
+                                               "Icon",
+                                               G_TYPE_FILE,
+                                               G_PARAM_READABLE);
+  g_object_class_install_property (object_class, PROP_ICON,
+                                   properties[PROP_ICON]);
 
   /**
    * YtsgContact:client:
    *
    * #YtsgClient that owns the roster
    */
-  pspec = g_param_spec_object ("client",
-                               "Client",
-                               "Client",
-                               YTSG_TYPE_CLIENT,
+  properties[PROP_CLIENT] = g_param_spec_object ("client",
+                                               "Client",
+                                               "Client",
+                                               YTSG_TYPE_CLIENT,
                                G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY);
-  g_object_class_install_property (object_class, PROP_CLIENT, pspec);
+  g_object_class_install_property (object_class, PROP_CLIENT,
+                                   properties[PROP_CLIENT]);
 
   /**
    * YtsgContact:presence:
    *
    * #YtsgPresence state for this contact
    */
-  pspec = g_param_spec_enum ("presence",
-                             "YtsgPresence",
-                             "YtsgPresence",
-                             YTSG_TYPE_PRESENCE,
-                             YTSG_PRESENCE_UNAVAILABLE,
-                             G_PARAM_READABLE);
-  g_object_class_install_property (object_class, PROP_PRESENCE, pspec);
+  properties[PROP_PRESENCE] = g_param_spec_enum ("presence",
+                                                 "YtsgPresence",
+                                                 "YtsgPresence",
+                                                 YTSG_TYPE_PRESENCE,
+                                                 YTSG_PRESENCE_UNAVAILABLE,
+                                                 G_PARAM_READABLE);
+  g_object_class_install_property (object_class, PROP_PRESENCE,
+                                   properties[PROP_PRESENCE]);
 
   /**
    * YtsgContact:jid:
    *
    * The jid of this contact
    */
-  pspec = g_param_spec_string ("jid",
-                               "jid",
-                               "jid",
-                               NULL,
+  properties[PROP_JID] = g_param_spec_string ("jid",
+                                              "jid",
+                                              "jid",
+                                              NULL,
                                G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
-  g_object_class_install_property (object_class, PROP_JID, pspec);
+  g_object_class_install_property (object_class, PROP_JID,
+                                   properties[PROP_JID]);
+
+  /**
+   * YtsgContact:tp-contact:
+   *
+   * #TpContact of this item.
+   */
+  properties[PROP_TP_CONTACT] = g_param_spec_object ("tp-contact",
+                                                     "TP Contact",
+                                                     "TP Contact",
+                                                     TP_TYPE_CONTACT,
+                                                     G_PARAM_READABLE);
+  g_object_class_install_property (object_class, PROP_TP_CONTACT,
+                                   properties[PROP_TP_CONTACT]);
+
 
   /**
    * YtsgContact::service-added:
@@ -272,7 +293,7 @@ ytsg_contact_presence_cb (TpContact    *tp_contact,
   if (priv->presence != presence)
     {
       priv->presence = presence;
-      g_object_notify ((GObject*)contact, "presence");
+      g_object_notify_by_pspec ((GObject*)contact, properties[PROP_PRESENCE]);
     }
 }
 
@@ -308,6 +329,9 @@ ytsg_contact_tp_contact_cb (TpConnection       *connection,
   tp_g_signal_connect_object (priv->tp_contact, "notify::avatar-file",
                               G_CALLBACK (ytsg_contact_avatar_file_cb),
                               contact, 0);
+
+  g_object_notify_by_pspec ((GObject*)priv->tp_contact,
+                            properties[PROP_TP_CONTACT]);
 }
 
 static void
@@ -365,6 +389,10 @@ ytsg_contact_get_property (GObject    *object,
     case PROP_PRESENCE:
       g_value_set_enum (value, priv->presence);
       break;
+    case PROP_TP_CONTACT:
+      g_value_set_object (value, priv->tp_contact);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -387,7 +415,7 @@ ytsg_contact_avatar_file_cb (TpContact   *contact,
   g_free (priv->icon_token);
   priv->icon_token = g_strdup (token);
 
-  g_object_notify ((GObject*)ycontact, "icon");
+  g_object_notify_by_pspec ((GObject*)ycontact, properties[PROP_ICON]);
 }
 
 static void
@@ -505,6 +533,7 @@ ytsg_contact_get_jid (const YtsgContact *contact)
 const char *
 ytsg_contact_get_name (const YtsgContact *contact)
 {
+  /* FIXME -- */
   g_warning (G_STRLOC ": %s is not implemented", __FUNCTION__);
   return NULL;
 }
@@ -1025,10 +1054,22 @@ _ytsg_contact_add_service (YtsgContact *contact, YtsgService *service)
   g_signal_emit (contact, signals[SERVICE_ADDED], 0, service);
 }
 
-void _ytsg_contact_remove_service (YtsgContact *contact, YtsgService *service)
+void
+_ytsg_contact_remove_service_by_uid (YtsgContact *contact, const char *uid)
 {
-  /* FIXME */
-  g_warning (G_STRLOC ": NOT IMPLEMENTED !!!");
+  YtsgContactPrivate *priv = contact->priv;
+  YtsgService        *service;
+
+  g_return_if_fail (uid && *uid);
+
+  /*
+   * Look up the service and emit the service-removed signal; the signal closure
+   *  will take care of the rest.
+   */
+  if ((service = g_hash_table_lookup (priv->services, (gpointer)uid)))
+    {
+      g_signal_emit (contact, signals[SERVICE_REMOVED], 0, service);
+    }
 }
 
 gboolean

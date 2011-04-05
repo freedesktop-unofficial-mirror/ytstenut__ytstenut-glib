@@ -228,36 +228,27 @@ ytsg_roster_get_contacts (YtsgRoster *roster)
 }
 
 /*
- * ytsg_roster_remove_service:
+ * ytsg_roster_remove_service_by_id:
  * @roster: #YtsgRoster
- * @service: #YtsgService
- * @dispose: if %TRUE, forecefully runs dispose on the #YtsgService object
+ * @jid: JID of the contact that the service is running on
+ * @uid: the service UID.
  *
- * Removes service from a roster and emits YtsgRoster::service-removed signal;
- * if dispose is %TRUE, runs the service's dispose method.
+ * Removes service from a roster and emits YtsgRoster::service-removed signal.
  *
  * For use by #YtsgClient.
  */
 void
-_ytsg_roster_remove_service (YtsgRoster  *roster,
-                             YtsgService *service,
-                             gboolean     dispose)
+_ytsg_roster_remove_service_by_id (YtsgRoster *roster,
+                                   const char *jid,
+                                   const char *uid)
 {
   YtsgRosterPrivate *priv;
-  const char        *jid;
-  const char        *uid;
   YtsgContact       *contact;
   gboolean           emit = FALSE;
 
   g_return_if_fail (YTSG_IS_ROSTER (roster));
-  g_return_if_fail (YTSG_IS_SERVICE (service));
 
   priv = roster->priv;
-
-  g_object_ref (service);
-
-  jid = ytsg_service_get_jid (service);
-  uid = ytsg_service_get_uid (service);
 
   if (!(contact = (YtsgContact*)ytsg_roster_find_contact_by_jid (roster, jid)))
     {
@@ -265,11 +256,9 @@ _ytsg_roster_remove_service (YtsgRoster  *roster,
       return;
     }
 
-  _ytsg_contact_remove_service (contact, service);
+  _ytsg_contact_remove_service_by_uid (contact, uid);
 
   emit = _ytsg_contact_is_empty (contact);
-
-  g_object_unref (service);
 
   if (emit)
     {
@@ -278,58 +267,6 @@ _ytsg_roster_remove_service (YtsgRoster  *roster,
       g_signal_emit (roster, signals[CONTACT_REMOVED], 0, contact);
       g_object_unref (contact);
     }
-}
-
-/*
- * ytsg_roster_remove_contact_by_handle:
- * @roster: #YtsgRoster
- * @handle: handle of this contact
- *
- * Removes contact from a roster and emits YtsgRoster::contact-removed signal;
- * once the the signal emission is finished, this function will forecefully run
- * the the contacts dispose method to ensure that that all TP resources are
- * released.
- *
- * For use by #YtsgClient.
- */
-void
-_ytsg_roster_remove_contact_by_handle (YtsgRoster *roster, guint handle)
-{
-  YtsgRosterPrivate *priv;
-  GHashTableIter     iter;
-  gpointer           key, value;
-
-  g_return_if_fail (YTSG_IS_ROSTER (roster));
-
-  priv = roster->priv;
-
-  g_hash_table_iter_init (&iter, priv->contacts);
-  while (g_hash_table_iter_next (&iter, &key, &value))
-    {
-      YtsgContact *contact    = value;
-      TpContact   *tp_contact = ytsg_contact_get_tp_contact (contact);
-      guint        h          = tp_contact_get_handle (tp_contact);
-
-      if (h == handle)
-        {
-          const char *jid = ytsg_contact_get_jid (contact);
-
-          g_object_ref (contact);
-
-          g_hash_table_remove (priv->contacts, jid);
-
-          g_signal_emit (roster, signals[CONTACT_REMOVED], 0, contact);
-
-          g_object_run_dispose ((GObject*)contact);
-
-          g_object_unref (contact);
-          return;
-        }
-
-    }
-
-  g_warning (G_STRLOC " contact with handle %d not in roster %p",
-             handle, roster);
 }
 
 /*
@@ -401,41 +338,6 @@ ytsg_roster_find_contact_by_jid (YtsgRoster *roster, const char *jid)
     }
 
   return NULL;
-}
-
-/*
- * ytsg_roster_contains_contact:
- * @roster: #YtsgRoster
- * @contact: #YtsgContact
- *
- * Checks if roster contains given contact.
- *
- * Return value: (transfer none): %TRUE if the contact is in the roster.
- */
-gboolean
-_ytsg_roster_contains_contact (YtsgRoster *roster, const YtsgContact *contact)
-{
-  YtsgRosterPrivate *priv;
-  GHashTableIter     iter;
-  gpointer           key, value;
-
-  g_return_val_if_fail (YTSG_IS_ROSTER (roster), FALSE);
-  g_return_val_if_fail (YTSG_IS_CONTACT (contact), FALSE);
-
-  priv = roster->priv;
-
-  g_hash_table_iter_init (&iter, priv->contacts);
-  while (g_hash_table_iter_next (&iter, &key, &value))
-    {
-      YtsgContact *c = value;
-
-      if (c == contact)
-        {
-          return TRUE;
-        }
-    }
-
-  return FALSE;
 }
 
 /*

@@ -41,8 +41,8 @@ G_BEGIN_DECLS
 YtsgContact *_ytsg_contact_new (YtsgClient *client, const char *jid);
 void         _ytsg_contact_add_service (YtsgContact *contact,
                                         YtsgService *service);
-void         _ytsg_contact_remove_service (YtsgContact *contact,
-                                           YtsgService *service);
+void         _ytsg_contact_remove_service_by_uid (YtsgContact *contact,
+                                                  const char *uid);
 gboolean     _ytsg_contact_is_empty (YtsgContact *contact);
 
 YtsgMetadata *_ytsg_metadata_new_from_xml (const char *xml);
@@ -74,21 +74,20 @@ void          _ytsg_roster_add_service (YtsgRoster  *roster,
                                         const char  *type,
                                         const char **caps,
                                         GHashTable  *names);
+void         _ytsg_roster_remove_service_by_id (YtsgRoster *roster,
+                                                const char *jid,
+                                                const char *uid);
 
 void          _ytsg_roster_clear (YtsgRoster *roster);
-void          _ytsg_roster_remove_contact_by_handle (YtsgRoster *roster,
-                                                     guint       handle);
 YtsgContact  *_ytsg_roster_find_contact_by_handle (YtsgRoster *roster,
                                                    guint       handle);
-gboolean      _ytsg_roster_contains_contact (YtsgRoster        *roster,
-                                             const YtsgContact *contact);
 void           _ytsg_contact_set_ft_channel (YtsgContact *item,
                                              TpChannel *channel);
 
 void          _ytsg_client_reconnect_after (YtsgClient *client,
                                             guint after_seconds);
 TpConnection *_ytsg_client_get_connection (YtsgClient *client);
-TpYtsStatus  *_ytsg_client_get_status (YtsgClient *client);
+TpYtsStatus  *_ytsg_client_get_tp_status (YtsgClient *client);
 
 G_END_DECLS
 
