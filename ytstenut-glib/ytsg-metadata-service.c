@@ -369,13 +369,6 @@ _ytsg_metadata_service_received_message (YtsgMetadataService *service,
 }
 
 static void
-ytsg_service_metadata_send_status (YtsgMetadataService *service,
-                                   YtsgStatus          *status)
-{
-  g_critical (G_STRLOC ": NOT IMPLEMENTED !!!");
-}
-
-static void
 ytsg_service_metadata_send_message (YtsgMetadataService *service,
                                     YtsgMessage         *message)
 {
@@ -396,13 +389,13 @@ ytsg_metadata_service_send_metadata (YtsgMetadataService *service,
   g_return_if_fail (YTSG_IS_METADATA_SERVICE (service));
   g_return_if_fail (YTSG_IS_METADATA (metadata));
 
-  if (YTSG_IS_STATUS (metadata))
-    {
-      ytsg_service_metadata_send_status (service, (YtsgStatus*)metadata);
-    }
-  else if (YTSG_IS_MESSAGE (metadata))
+  if (YTSG_IS_MESSAGE (metadata))
     {
       ytsg_service_metadata_send_message (service, (YtsgMessage*)metadata);
+    }
+  else if (YTSG_IS_STATUS (metadata))
+    {
+      g_warning ("Cannot send YtsgStatus, only YtsgMessage !!!");
     }
   else
     g_warning ("Unknown metadata type %s",  G_OBJECT_TYPE_NAME (metadata));
