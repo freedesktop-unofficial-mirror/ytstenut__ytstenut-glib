@@ -19,6 +19,15 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * SECTION:ytsg-roster
+ * @short_description: Object representing a roster of devices and services
+ * connected to the Ytstenut application mesh.
+ *
+ * #YtsgRoster represents all known devices and services in the Ytstenut
+ * application mesh.
+ */
+
 #include "ytsg-client.h"
 #include "ytsg-contact.h"
 #include "ytsg-marshal.h"
@@ -100,6 +109,8 @@ ytsg_roster_class_init (YtsgRosterClass *klass)
    * @roster: #YtsgRoster object which emitted the signal,
    * @contact: #YtsgContact that was added.
    *
+   * Emitted when contact is added to the roster.
+   *
    * Since: 0.1
    */
   signals[CONTACT_ADDED] =
@@ -117,8 +128,9 @@ ytsg_roster_class_init (YtsgRosterClass *klass)
    * @roster: #YtsgRoster object which emitted the signal,
    * @contact: #YtsgContact that was removed.
    *
-   * Applications that connected signal handlers to the contact, should disconnect
-   * them when this signal is emitted.
+   * Emitted when contact is removed from the roster. Applications that
+   * connected signal handlers to the contact, should disconnect them when this
+   * signal is emitted.
    *
    * Since: 0.1
    */
@@ -419,6 +431,15 @@ _ytsg_roster_new (YtsgClient *client)
                        NULL);
 }
 
+/**
+ * ytsg_roster_get_client:
+ * @roster: #YtsgRoster
+ *
+ * Retrieves the #YtsgClient associated with this roster; the client object
+ * must not be freed by the caller.
+ *
+ * Return value (transfer none): #YtsgClient.
+ */
 YtsgClient*
 ytsg_roster_get_client (YtsgRoster *roster)
 {

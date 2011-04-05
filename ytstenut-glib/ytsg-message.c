@@ -19,6 +19,13 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * SECTION:ytsg-message
+ * @short_description: Object encapsulating a Ytstenut metadata message.
+ *
+ * #YtsgMessage represents a Ytstenut metadata message.
+ */
+
 #include "ytsg-message.h"
 #include "ytsg-private.h"
 

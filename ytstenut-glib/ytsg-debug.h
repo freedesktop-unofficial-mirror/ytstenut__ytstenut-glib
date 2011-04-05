@@ -30,6 +30,18 @@
 
 G_BEGIN_DECLS
 
+/**
+ * YtsgProtocol:
+ * @YTSG_DEBUG_CLIENT: debug client
+ * @YTSG_DEBUG_ROSTER: debug roster
+ * @YTSG_DEBUG_STATUS: debug status
+ * @YTSG_DEBUG_TP: debug telepathy
+ * @YTSG_DEBUG_MANAGER: debug manager
+ * @YTSG_DEBUG_MESSAGE: debug messages
+ * @YTSG_DEBUG_FILE_TRANSFER: debug file transfer
+ * @YTSG_DEBUG_CONTACT: debug contact
+ *
+ */
 typedef enum {
   YTSG_DEBUG_CLIENT        = 0x001,
   YTSG_DEBUG_ROSTER        = 0x002,
@@ -42,6 +54,30 @@ typedef enum {
 } YtsgDebugFlags;
 
 #ifdef YTSG_ENABLE_DEBUG
+
+/**
+ * YTSG_NOTE:
+ * @type: the note type
+ * @x: the note text, printf-like formatting allowed
+ * @a...: parmaters, if any
+ *
+ * Prints a note to stdout
+ */
+
+/**
+ * YTSG_TIMESTAMP:
+ * @type: the note type
+ * @x: the note text, printf-like formatting allowed
+ * @a...: parmaters, if any
+ *
+ * Prints a note with a timestamp to stdout.
+ */
+
+/**
+ * YTSG_MARK:
+ *
+ * Prints a mark to stdout.
+ */
 
 #ifdef __GNUC__
 #define YTSG_NOTE(type,x,a...)               G_STMT_START {  \

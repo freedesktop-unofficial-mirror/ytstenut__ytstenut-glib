@@ -7,7 +7,7 @@ AUTOMAKE_OPTIONS = 1.6
 DOC_MODULE=ytstenut-glib
 
 # Uncomment for versioned docs and specify the version of the module, e.g. '2'.
-#DOC_MODULE_VERSION=$(YTSTENUT_VERSION)
+#DOC_MODULE_VERSION=$(YTSG_VERSION)
 
 
 # The top-level SGML file. You can change this if you want to.
@@ -55,8 +55,8 @@ EXTRA_HFILES=
 # Header files to ignore when scanning. Use base file name, no paths
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
 IGNORE_HFILES= \
-	ns-marshal.h \
-	ns-enum-types.h
+	ytsg-marshal.h \
+	ytsg-enum-types.h
 
 
 # Images to copy into HTML directory.
@@ -77,8 +77,8 @@ expand_content_files=
 # signals and properties.
 # e.g. GTKDOC_CFLAGS=-I$(top_srcdir) -I$(top_builddir) $(GTK_DEBUG_FLAGS)
 # e.g. GTKDOC_LIBS=$(top_builddir)/gtk/$(gtktargetlib)
-INCLUDES=-I$(top_srcdir)/ytstenut-glib $(YTSTENUT_CFLAGS)
-GTKDOC_LIBS=$(top_builddir)/ytstenut-glib/libytstenut-glib-@YTSTENUT_API_VERSION@.la $(YTSTENUT_LIBS)
+INCLUDES=-I$(top_srcdir)/ytstenut-glib $(YTSG_CFLAGS)
+GTKDOC_LIBS=$(top_builddir)/ytstenut-glib/libytstenut-glib-@YTSG_API_VERSION@.la $(YTSG_LIBS)
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
 include $(top_srcdir)/gtk-doc.make

@@ -28,7 +28,6 @@ G_BEGIN_DECLS
  * @YTSG_ERROR_NOT_ALLOWED: the operation is not allowed.
  * @YTSG_ERROR_NO_ROUTE: no route to complete the operation
  * @YTSG_ERROR_UNKNOWN: some other,unspecified, error condition.
- *
  * @YTSG_ERROR_CUSTOM_START: custom error codes can start at this value
  * @YTSG_ERROR_CUSTOM_END: custom error code must not exceed this value
  *

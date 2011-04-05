@@ -19,6 +19,13 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * SECTION:ytsg-matadata
+ * @short_description: base class for #YtsgStatus and #YtsgMessage.
+ *
+ * #YtsgMetadata is a base class for Ytstenut metadata classes.
+ */
+
 #include "ytsg-metadata.h"
 #include "ytsg-private.h"
 #include "ytsg-message.h"

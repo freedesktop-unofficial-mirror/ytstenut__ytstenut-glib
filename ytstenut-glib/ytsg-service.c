@@ -19,6 +19,14 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * SECTION:ytsg-service
+ * @short_description: Object representing a service connected to the Ytstenut
+ * mesh.
+ *
+ * #YtsgService represents a known service in the Ytstenut application mesh.
+ */
+
 #include "ytsg-service.h"
 #include "ytsg-metadata-service.h"
 #include "ytsg-client.h"
@@ -219,6 +227,33 @@ ytsg_service_get_uid (YtsgService *service)
   return service->priv->uid;
 }
 
+/**
+ * ytsg_service_get_jid:
+ * @service: #YtsgService
+ *
+ * Returns the jid of the the client on which th given service is running. The
+ * returned pointer is to a canonical representation created with
+ * g_intern_string().
+ *
+ * Return value: (transfer none): the jid.
+ */
+const char *
+ytsg_service_get_jid (YtsgService *service)
+{
+  g_return_val_if_fail (YTSG_IS_SERVICE (service), NULL);
+
+  return service->priv->jid;
+}
+
+/**
+ * ytsg_service_get_client:
+ * @service: #YtsgService
+ *
+ * Retrieves the #YtsgClient associated with this service; the client object
+ * must not be freed by the caller.
+ *
+ * Return value (transfer none): #YtsgClient.
+ */
 YtsgClient*
 ytsg_service_get_client (YtsgService *service)
 {

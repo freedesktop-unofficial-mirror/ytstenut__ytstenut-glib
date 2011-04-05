@@ -19,6 +19,14 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * SECTION:ytsg-contact
+ * @short_description: Object representing a device connected to the Ytstenut
+ * mesh.
+ *
+ * #YtsgContact represents a known device in the Ytstenut application mesh.
+ */
+
 #include <string.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/connection.h>
@@ -583,6 +591,16 @@ _ytsg_contact_new (YtsgClient *client, const char *jid)
                        NULL);
 }
 
+/**
+ * ytsg_contact_get_tp_contact:
+ * @contact: #YtsgContact
+ *
+ * Retrieves the #TpContact associated with this #YtsgContact object; can be
+ * %NULL. When the #TpContact is available, the YtsgContact::notify-tp-contact
+ * signal will be emitted.
+ *
+ * Return value (transfer none): The associated #TpContact.
+ */
 TpContact *
 ytsg_contact_get_tp_contact (const YtsgContact  *contact)
 {

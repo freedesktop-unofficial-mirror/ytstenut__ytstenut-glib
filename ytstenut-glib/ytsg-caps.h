@@ -19,6 +19,13 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * SECTION:ytsg-caps
+ * @short_description: represents application capability.
+ *
+ * #YtsgCaps represents application capability.
+ */
+
 #ifndef _YTSG_CAPS_H
 #define _YTSG_CAPS_H
 

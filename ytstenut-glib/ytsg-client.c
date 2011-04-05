@@ -19,6 +19,15 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * SECTION:ytsg-client
+ * @short_description: Object representing the service connecting to the
+ * Ytstenut mesh.
+ *
+ * #YtsgClient is an object that mediates connection between the current
+ * application and the Ytstenut application mesh.
+ */
+
 #include "ytsg-client.h"
 #include "ytsg-debug.h"
 #include "ytsg-enum-types.h"
@@ -1909,6 +1918,15 @@ ytsg_client_set_capabilities (YtsgClient *client, YtsgCaps caps)
   g_object_notify ((GObject*)client, "capabilities");
 }
 
+/**
+ * ytsg_client_get_roster:
+ * @client: #YtsgClient
+ *
+ * Gets the #YtsgRoster for this client. The object is owned by the client
+ * and must not be freed by the caller.
+ *
+ * Return value (tranfer none): #YtsgRoster.
+ */
 YtsgRoster *
 ytsg_client_get_roster (YtsgClient *client)
 {
@@ -1983,6 +2001,9 @@ ytsg_client_set_incoming_file_directory (YtsgClient *client,
  * ytsg_client_get_incoming_file_directory:
  * @client: #YtsgClient
  *
+ * Returns the directory into which any files from incoming file transfers will
+ * be placed.
+ *
  * Return value: (tranfer none): directory where incoming files are stored.
  */
 const char *
@@ -1997,6 +2018,14 @@ ytsg_client_get_incoming_file_directory (YtsgClient *client)
   return priv->incoming_dir;
 }
 
+/**
+ * ytsg_client_get_jid:
+ * @client: #YtsgClient
+ *
+ * Returns the jabber id associated with the current client.
+ *
+ * Return value: the jabber id.
+ */
 const char *
 ytsg_client_get_jid (const YtsgClient *client)
 {
@@ -2011,6 +2040,14 @@ ytsg_client_get_jid (const YtsgClient *client)
   return NULL;
 }
 
+/**
+ * ytsg_client_get_uid:
+ * @client: #YtsgClient
+ *
+ * Returns uid of the service this client represents.
+ *
+ * Return value: the service uid.
+ */
 const char *
 ytsg_client_get_uid (const YtsgClient *client)
 {
@@ -2047,6 +2084,13 @@ _ytsg_client_get_tp_status (YtsgClient *client)
   return priv->tp_status;
 }
 
+/**
+ * ytsg_client_set_status:
+ * @client: #YtsgClient
+ * @status: new #YtsgStatus
+ *
+ * Changes the status of the service represented by this client to status.
+ */
 void
 ytsg_client_set_status (YtsgClient *client, YtsgStatus *status)
 {
