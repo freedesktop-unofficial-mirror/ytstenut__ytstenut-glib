@@ -51,16 +51,29 @@ typedef struct _YtsgMessage        YtsgMessage;
 typedef struct _YtsgMessageClass   YtsgMessageClass;
 typedef struct _YtsgMessagePrivate YtsgMessagePrivate;
 
+/**
+ * YtsgMessageClass:
+ *
+ * #YtsgMessage class.
+ */
 struct _YtsgMessageClass
 {
+  /*< private >*/
   YtsgMetadataClass parent_class;
 };
 
+/**
+ * YtsgMessage:
+ *
+ * Encapsulates a Ytstenut message, either being sent to a given #YtsgService or
+ * received by #YtsgClient.
+ */
 struct _YtsgMessage
 {
+  /*< private >*/
   YtsgMetadata parent;
 
-  /*<private>*/
+  /*< private >*/
   YtsgMessagePrivate *priv;
 };
 

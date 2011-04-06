@@ -21,7 +21,7 @@
 
 /**
  * SECTION:ytsg-roster
- * @short_description: Object representing a roster of devices and services
+ * @short_description: Represents a roster of devices and services
  * connected to the Ytstenut application mesh.
  *
  * #YtsgRoster represents all known devices and services in the Ytstenut

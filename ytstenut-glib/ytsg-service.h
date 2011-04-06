@@ -53,16 +53,28 @@ typedef struct _YtsgService        YtsgService;
 typedef struct _YtsgServiceClass   YtsgServiceClass;
 typedef struct _YtsgServicePrivate YtsgServicePrivate;
 
+/**
+ * YtsgServiceClass:
+ *
+ * #YtsgService class.
+ */
 struct _YtsgServiceClass
 {
+  /*< private >*/
   GObjectClass parent_class;
 };
 
+/**
+ * YtsgService:
+ *
+ * Abstract base class for XPMN services; see #YtsgMetadataService.
+ */
 struct _YtsgService
 {
+  /*< private >*/
   GObject parent;
 
-  /*<private>*/
+  /*< private >*/
   YtsgServicePrivate *priv;
 };
 

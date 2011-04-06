@@ -21,8 +21,8 @@
 
 /**
  * SECTION:ytsg-metadata-service
- * @short_description: Object representing a metadata service connected to the
- * Ytstenut mesh.
+ * @short_description: Represents a metadata service
+ * connected to the Ytstenut mesh.
  *
  * #YtsgMetadataService represents a known metadata service in the Ytstenut
  * application mesh.

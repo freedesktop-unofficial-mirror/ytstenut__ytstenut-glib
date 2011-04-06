@@ -21,9 +21,12 @@
 
 /**
  * SECTION:ytsg-error
- * @short_description: and error object.
+ * @short_description: An error object.
+ * @title: YtsgError
+ * @section_id: ytsg-error
  *
- * #YtsgError represents an errror in asynchronous operations.
+ * #YtsgError represents an errror in asynchronous operations. All erros consist
+ * of a unique identifier and a status code.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -69,7 +72,7 @@ ytsg_error_get_atom (YtsgError error)
  * ytsg_error_new_atom:
  *
  * Obtains a new atom for #YtsgError; this function is intended for use by code
- * that generates #YtsgError's
+ * that generates #YtsgError<!-- -->s.
  */
 guint32
 ytsg_error_new_atom ()

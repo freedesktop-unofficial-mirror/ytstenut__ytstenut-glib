@@ -23,6 +23,13 @@
  * Based on clutter-debug.h
  */
 
+/**
+ * SECTION:ytsg-debug
+ * @short_description: Debugging API
+ *
+ * This section list available debugging API
+ */
+
 #ifndef _YTSG_DEBUG_H
 #define _YTSG_DEBUG_H
 

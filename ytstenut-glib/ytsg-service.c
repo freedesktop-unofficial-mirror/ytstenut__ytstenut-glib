@@ -21,8 +21,8 @@
 
 /**
  * SECTION:ytsg-service
- * @short_description: Object representing a service connected to the Ytstenut
- * mesh.
+ * @short_description: Represents a service connected to the Ytstenut
+ * application mesh.
  *
  * #YtsgService represents a known service in the Ytstenut application mesh.
  */

@@ -46,11 +46,14 @@
     <chapter id="ytsg-classes">
       <title>Ytstenut-glib Objects</title>
 
+      <xi:include href="xml/ytsg-types.xml"/>
+      <xi:include href="xml/ytsg-error.xml"/>
       <xi:include href="xml/ytsg-client.xml"/>
       <xi:include href="xml/ytsg-roster.xml"/>
       <xi:include href="xml/ytsg-contact.xml"/>
       <xi:include href="xml/ytsg-service.xml"/>
       <xi:include href="xml/ytsg-metadata-service.xml"/>
+      <xi:include href="xml/ytsg-caps.xml"/>
       <xi:include href="xml/ytsg-metadata.xml"/>
       <xi:include href="xml/ytsg-status.xml"/>
       <xi:include href="xml/ytsg-message.xml"/>

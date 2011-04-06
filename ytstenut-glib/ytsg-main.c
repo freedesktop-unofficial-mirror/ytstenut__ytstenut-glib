@@ -22,6 +22,13 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * SECTION:ytsg-main
+ * @short_description: Global Functions
+ *
+ * This section list global function in libytstenut-glib
+ */
+
 #define _GNU_SOURCE /* for getresuid(), getresgid() */
 
 #ifdef HAVE_CONFIG_H

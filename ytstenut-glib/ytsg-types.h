@@ -19,6 +19,15 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * SECTION:ytsg-types
+ * @short_description: Common Ytestenut-glib types
+ * @title: Common Types
+ * @section_id: ytsg-types
+ *
+ * Common Ytstenut-glib types
+ */
+
 #ifndef _YTSG_TYPES_H
 #define _YTSG_TYPES_H
 
@@ -54,30 +63,10 @@ typedef enum { /*< prefix=YTSG_PRESENCE >*/
   YTSG_PRESENCE_UNAVAILABLE = 0,
   YTSG_PRESENCE_AVAILABLE,
 
-  /* <private> */
+  /* < private > */
   /* Must be last */
   _YTSG_PRESENCE_LAST_
 } YtsgPresence;
-
-/**
- * YtsgSubscription:
- * @YTSG_SUBSCRIPTION_NONE: No subscription
- * @YTSG_SUBSCRIPTION_PENDING_OUT: Subscription pending approval by remote
- * @YTSG_SUBSCRIPTION_PENDING_IN: Subscription pending approval locally,
- * @YTSG_SUBSCRIPTION_APPROVED: Subscription is approved for two way communication
- *
- * YtsgSubscription represents the subscription status of #YtsgClient.
- */
-typedef enum { /*< prefix=YTSG_SUBSCRIPTION >*/
-  YTSG_SUBSCRIPTION_NONE          = 0,
-  YTSG_SUBSCRIPTION_PENDING_OUT   = 0x1,
-  YTSG_SUBSCRIPTION_PENDING_IN    = 0x2,
-  YTSG_SUBSCRIPTION_APPROVED      = 0x4,
-
-  /* <private>*/
-  /* Must be last */
-  _YTSG_SUBSCRIPTION_LAST_
-} YtsgSubscription;
 
 G_END_DECLS
 

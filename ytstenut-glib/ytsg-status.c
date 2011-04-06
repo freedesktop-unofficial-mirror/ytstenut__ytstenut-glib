@@ -21,10 +21,11 @@
 
 /**
  * SECTION:ytsg-status
- * @short_description: Object representing a service connected to the Ytstenut
- * mesh.
+ * @short_description: Represent the status of a service connected
+ * to the Ytstenut mesh.
  *
- * #YtsgStatus represents a known service in the Ytstenut application mesh.
+ * #YtsgStatus represents status of a known service in the Ytstenut application
+ * mesh.
  */
 
 #include <string.h>

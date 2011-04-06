@@ -51,16 +51,28 @@ typedef struct _YtsgStatus        YtsgStatus;
 typedef struct _YtsgStatusClass   YtsgStatusClass;
 typedef struct _YtsgStatusPrivate YtsgStatusPrivate;
 
+/**
+ * YtsgStatusClass:
+ *
+ * #YtsgStatus class.
+ */
 struct _YtsgStatusClass
 {
+  /*< private >*/
   YtsgMetadataClass parent_class;
 };
 
+/**
+ * YtsgStatus:
+ *
+ * Status of a #YtsgService or #YtsgClient.
+ */
 struct _YtsgStatus
 {
+  /*< private >*/
   YtsgMetadata parent;
 
-  /*<private>*/
+  /*< private >*/
   YtsgStatusPrivate *priv;
 };
 

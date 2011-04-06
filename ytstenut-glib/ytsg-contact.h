@@ -57,6 +57,13 @@ typedef struct _YtsgContact        YtsgContact;
 typedef struct _YtsgContactClass   YtsgContactClass;
 typedef struct _YtsgContactPrivate YtsgContactPrivate;
 
+/**
+ * YtsgContactClass:
+ * @service_added: signal handler for #YtsgContact::service-added
+ * @service_removed: signal handler for #YtsgContact::service-removed
+ *
+ * #YtsgContact class.
+ */
 struct _YtsgContactClass
 {
   GObjectClass parent_class;
@@ -65,11 +72,19 @@ struct _YtsgContactClass
   void (*service_removed) (YtsgContact *contact, YtsgService *service);
 };
 
+/**
+ * YtsgContact:
+ *
+ * Represents a single XMPP connection (usually a device) in the Ytstenut
+ * mesh. One or more #YtsgService<!-- -->s will be available throug a given
+ * contact.
+ */
 struct _YtsgContact
 {
+  /*< private >*/
   GObject parent;
 
-  /*<private>*/
+  /*< private >*/
   YtsgContactPrivate *priv;
 };
 

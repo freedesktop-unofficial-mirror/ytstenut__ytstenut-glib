@@ -21,10 +21,11 @@
 
 /**
  * SECTION:ytsg-contact
- * @short_description: Object representing a device connected to the Ytstenut
- * mesh.
+ * @short_description: Represents a device connected to the
+ * Ytstenut mesh.
  *
- * #YtsgContact represents a known device in the Ytstenut application mesh.
+ * #YtsgContact represents a known device in the Ytstenut application mesh,
+ * and provides access to any services (#YtsService) available on the device.
  */
 
 #include <string.h>

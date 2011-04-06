@@ -21,7 +21,7 @@
 
 /**
  * SECTION:ytsg-message
- * @short_description: Object encapsulating a Ytstenut metadata message.
+ * @short_description: Encapsulates a Ytstenut metadata message.
  *
  * #YtsgMessage represents a Ytstenut metadata message.
  */

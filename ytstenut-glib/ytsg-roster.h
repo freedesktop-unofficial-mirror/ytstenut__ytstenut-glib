@@ -54,16 +54,28 @@ typedef struct _YtsgRoster        YtsgRoster;
 typedef struct _YtsgRosterClass   YtsgRosterClass;
 typedef struct _YtsgRosterPrivate YtsgRosterPrivate;
 
+/**
+ * YtsgRosterClass:
+ *
+ * #YtsgRoster class.
+ */
 struct _YtsgRosterClass
 {
+  /*< private >*/
   GObjectClass parent_class;
 };
 
+/**
+ * YtsgRoster:
+ *
+ * Represents a roster of #YtsgContact<!-- -->s known to #YtsgClient.
+ */
 struct _YtsgRoster
 {
+  /*< private >*/
   GObject parent;
 
-  /*<private>*/
+  /*< private >*/
   YtsgRosterPrivate *priv;
 };
 

@@ -59,10 +59,22 @@ G_BEGIN_DECLS
 typedef struct _YtsgClientClass   YtsgClientClass;
 typedef struct _YtsgClientPrivate YtsgClientPrivate;
 
+/**
+ * YtsgClientClass:
+ * @authenticated: signal handler for #YtsgClient::authenticated
+ * @ready: signal handler for #YtsgClient::ready
+ * @disconnected: signal handler for #YtsgClient::disconnected
+ * @message: signal handler for #YtsgClient::message
+ * @incoming_file: signal handler for #YtsgClient::incoming-file
+ *
+ * Class for #YtsgClient
+ */
 struct _YtsgClientClass
 {
+  /*< private >*/
   GObjectClass parent_class;
 
+  /*< public >*/
   void     (*authenticated) (YtsgClient *client);
   void     (*ready)         (YtsgClient *client);
   void     (*disconnected)  (YtsgClient *client);
@@ -73,14 +85,18 @@ struct _YtsgClientClass
                              guint64     size,
                              guint64     offset,
                              TpChannel  *channel);
-
 };
 
+/**
+ * YtsgClient:
+ *
+ * Class representing an application connection to the Ytstenut mesh.
+ */
 struct _YtsgClient
 {
+  /*< private >*/
   GObject parent;
 
-  /*<private>*/
   YtsgClientPrivate *priv;
 };
 

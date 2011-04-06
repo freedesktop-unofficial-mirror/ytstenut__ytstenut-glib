@@ -20,8 +20,8 @@
  */
 
 /**
- * SECTION:ytsg-matadata
- * @short_description: base class for #YtsgStatus and #YtsgMessage.
+ * SECTION:ytsg-metadata
+ * @short_description: Base class for #YtsgStatus and #YtsgMessage.
  *
  * #YtsgMetadata is a base class for Ytstenut metadata classes.
  */

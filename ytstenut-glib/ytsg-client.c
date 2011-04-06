@@ -21,11 +21,12 @@
 
 /**
  * SECTION:ytsg-client
- * @short_description: Object representing the service connecting to the
- * Ytstenut mesh.
+ * @short_description: Represents a connection to the Ytstenut mesh.
  *
  * #YtsgClient is an object that mediates connection between the current
- * application and the Ytstenut application mesh.
+ * application and the Ytstenut application mesh. It provides access to roster
+ * of availalble services (#YtsgRoster) and means to advertises status within
+ * the mesh.
  */
 
 #include "ytsg-client.h"
@@ -581,6 +582,13 @@ ytsg_client_class_init (YtsgClientClass *klass)
                                G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
   g_object_class_install_property (object_class, PROP_UID, pspec);
 
+  /**
+   * YtsgClient:protocol:
+   *
+   * XMPP protocol to use for connection.
+   *
+   * Since: 0.1
+   */
   pspec = g_param_spec_enum ("protocol",
                              "Protocol",
                              "Protocol",

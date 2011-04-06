@@ -34,19 +34,32 @@ typedef struct _YtsgMetadataService        YtsgMetadataService;
 typedef struct _YtsgMetadataServiceClass   YtsgMetadataServiceClass;
 typedef struct _YtsgMetadataServicePrivate YtsgMetadataServicePrivate;
 
+/**
+ * YtsgMetadataServiceClass:
+ *
+ * #YtsgMetadataService class.
+ */
 struct _YtsgMetadataServiceClass
 {
+  /*< private >*/
   YtsgServiceClass parent_class;
 
+  /*< public >*/
   void (*received_status)  (YtsgMetadataService *service, YtsgStatus  *status);
   void (*received_message) (YtsgMetadataService *service, YtsgMessage *message);
 };
 
+/**
+ * YtsgMetadataService:
+ *
+ * Ytstenut service.
+ */
 struct _YtsgMetadataService
 {
+  /*< private >*/
   YtsgService parent;
 
-  /*<private>*/
+  /*< private >*/
   YtsgMetadataServicePrivate *priv;
 };
 

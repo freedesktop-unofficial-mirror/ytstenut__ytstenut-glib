@@ -52,16 +52,28 @@ typedef struct _YtsgMetadata        YtsgMetadata;
 typedef struct _YtsgMetadataClass   YtsgMetadataClass;
 typedef struct _YtsgMetadataPrivate YtsgMetadataPrivate;
 
+/**
+ * YtsgMetadataClass:
+ * 
+ * #YtsgMetadata class.
+ */
 struct _YtsgMetadataClass
 {
+  /*< private >*/
   GObjectClass parent_class;
 };
 
+/**
+ * YtsgMetadata:
+ * 
+ * Base class for #YtsgMessage and #YtsgStatus.
+ */
 struct _YtsgMetadata
 {
+  /*< private >*/
   GObject parent;
 
-  /*<private>*/
+  /*< private >*/
   YtsgMetadataPrivate *priv;
 };
 
