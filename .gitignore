@@ -3,6 +3,8 @@
 *.la
 *.lo
 *.o
+*.stamp
+*.bak
 .deps
 .libs
 Makefile
@@ -18,6 +20,18 @@ config.sub
 configure
 depcomp
 docs/reference/ytstenut-glib/ytstenut-glib-docs.xml
+*decl-list.txt
+*decl.txt
+*undeclared.txt
+*undocumented.txt
+*unused.txt
+*glib.args
+*glib.hierarchy
+*glib.interfaces
+*glib.prerequisites
+*glib.signals
+*glib.types
+
 gtk-doc.make
 install-sh
 libtool
