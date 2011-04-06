@@ -88,6 +88,10 @@ void          _ytsg_client_reconnect_after (YtsgClient *client,
                                             guint after_seconds);
 TpConnection *_ytsg_client_get_connection (YtsgClient *client);
 TpYtsStatus  *_ytsg_client_get_tp_status (YtsgClient *client);
+void          _ytsg_client_send_message (YtsgClient  *client,
+                                         const char  *jid,
+                                         const char  *uid,
+                                         YtsgMessage *message);
 
 G_END_DECLS
 

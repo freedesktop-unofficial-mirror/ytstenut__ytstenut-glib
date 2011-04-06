@@ -400,7 +400,12 @@ static void
 ytsg_service_metadata_send_message (YtsgMetadataService *service,
                                     YtsgMessage         *message)
 {
-  g_critical (G_STRLOC ": NOT IMPLEMENTED !!!");
+  YtsgService *s      = (YtsgService*) service;
+  YtsgClient  *client = ytsg_service_get_client (s);
+  const char  *jid    = ytsg_service_get_jid (s);
+  const char  *uid    = ytsg_service_get_uid (s);
+
+  _ytsg_client_send_message (client, jid, uid, message);
 }
 
 /**

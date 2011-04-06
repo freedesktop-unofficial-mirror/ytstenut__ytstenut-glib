@@ -100,6 +100,7 @@ struct _YtsgClientPrivate
   TpProxy              *debug_proxy;
   TpYtsStatus          *tp_status;
   YtsgStatus           *status;
+  TpYtsClient          *tp_client;
 
   /* callback ids */
   guint reconnect_id;
@@ -978,6 +979,19 @@ ytsg_client_setup_debug  (YtsgClient *client)
   g_free (busname);
 }
 
+static void
+ytsg_client_yts_channels_received_cb (TpYtsClient *tp_client,
+                                      YtsgClient  *client)
+{
+  TpYtsChannel *ch;
+
+  while ((ch = tp_yts_client_accept_channel (tp_client)))
+    {
+      /* FIXME -- incoming channel */
+      g_critical ("NOT IMPLEMENTED");
+    }
+}
+
 /*
  * Callback from the async tp_account_prepare_async() call
  *
@@ -1002,6 +1016,16 @@ ytsg_client_account_prepared_cb (GObject      *acc,
 
   YTSG_NOTE (CLIENT, "Account successfully opened");
 
+  priv->tp_client = tp_yts_client_new (priv->uid, account);
+
+  if (!tp_yts_client_register (priv->tp_client, &error))
+    {
+      g_error ("Failed to register account: %s", error->message);
+    }
+
+  tp_g_signal_connect_object (priv->tp_client, "received-channels",
+                              G_CALLBACK (ytsg_client_yts_channels_received_cb),
+                              client, 0);
   /*
    * If connection has been requested already, make one
    */
@@ -2141,3 +2165,52 @@ ytsg_client_set_status (YtsgClient *client, YtsgStatus *status)
     }
 }
 
+static void
+ytsg_client_outgoing_channel_cb (GObject      *obj,
+                                 GAsyncResult *res,
+                                 gpointer      data)
+{
+  TpYtsChannel *ch    = TP_YTS_CHANNEL (obj);
+  YtsgMessage  *msg   = data;
+  GError       *error = NULL;
+
+  if (!tp_yts_channel_request_finish (ch, res, &error))
+    {
+      g_warning ("Failed to open outgoing channel: %s", error->message);
+      g_clear_error (&error);
+      return;
+    }
+
+  /* FIXME */
+  g_critical (G_STRLOC ": NOT IMPLEMENTED !!!");
+}
+
+
+void
+_ytsg_client_send_message (YtsgClient  *client,
+                           const char  *jid,
+                           const char  *uid,
+                           YtsgMessage *message)
+{
+  YtsgClientPrivate *priv = client->priv;
+  TpChannel         *ch;
+  GHashTable        *props;
+  char              *path;
+  GError            *error = NULL;
+
+
+  /* FIXME */
+  props = NULL;
+  path = NULL;
+
+  ch = tp_yts_channel_new_from_properties (priv->connection,
+                                           path, props, &error);
+
+  /* TODO -- I am unclear as to whether the message content is wrapped in the
+   * channel props here, or whether it is later fed through in the callback.
+   */
+  tp_yts_channel_request_async ((TpYtsChannel*)ch,
+                                NULL,
+                                ytsg_client_outgoing_channel_cb,
+                                message);
+}
