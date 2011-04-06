@@ -617,6 +617,28 @@ ytsg_contact_get_tp_contact (const YtsgContact  *contact)
 }
 
 /**
+ * ytsg_contact_get_client:
+ * @contact: #YtsgContact
+ *
+ * Retrieves the #YtsgClient associated with this #YtsgContact object.
+ *
+ * Return value (transfer none): The associated #YtsgClient.
+ */
+YtsgClient *
+ytsg_contact_get_client (const YtsgContact  *contact)
+{
+  YtsgContactPrivate *priv;
+
+  g_return_val_if_fail (YTSG_IS_CONTACT (contact), NULL);
+
+  priv = contact->priv;
+
+  g_return_val_if_fail (!priv->disposed, NULL);
+
+  return priv->client;
+}
+
+/**
  * ytsg_contact_has_capability:
  * @item: #YtsgContact,
  * @cap: #YtsgCaps, capability to check for.
@@ -727,9 +749,9 @@ typedef struct
 
 static YtsgCPendingFile *
 ytsg_c_pending_file_new (const YtsgContact *item,
-                        GFile              *gfile,
-                        const char         *name,
-                        guint32             atom)
+                         GFile              *gfile,
+                         const char         *name,
+                         guint32             atom)
 {
   YtsgCPendingFile *m = g_slice_new (YtsgCPendingFile);
 
@@ -973,7 +995,11 @@ ytsg_contact_send_file (const YtsgContact *item, GFile *gfile)
       return YTSG_ERROR_INVALID_PARAMETER;
     }
 
-  atom = ytsg_error_new_atom ();
+  /*
+   * NB: the atom through this files is used in its shifted, rather than
+   * canonical form, so it can be just ored with an error code.
+   */
+  atom = (ytsg_error_new_atom () << 16);
 
   g_debug ("Sending file with atom %d", atom);
 

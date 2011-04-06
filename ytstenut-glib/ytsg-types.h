@@ -38,7 +38,9 @@ G_BEGIN_DECLS
 /*
  * Forward declarations
  */
-typedef struct _YtsgClient        YtsgClient;
+typedef struct _YtsgClient  YtsgClient;
+typedef struct _YtsgContact YtsgContact;
+typedef struct _YtsgService YtsgService;
 
 /**
  * YtsgProtocol:

@@ -3,9 +3,10 @@
 #ifndef _YTSG_METADATA_SERVICE_H
 #define _YTSG_METADATA_SERVICE_H
 
+#include <ytstenut-glib/ytsg-error.h>
+#include <ytstenut-glib/ytsg-message.h>
 #include <ytstenut-glib/ytsg-service.h>
 #include <ytstenut-glib/ytsg-status.h>
-#include <ytstenut-glib/ytsg-message.h>
 
 G_BEGIN_DECLS
 
@@ -65,8 +66,8 @@ struct _YtsgMetadataService
 
 GType ytsg_metadata_service_get_type (void) G_GNUC_CONST;
 
-void ytsg_metadata_service_send_metadata (YtsgMetadataService *service,
-                                          YtsgMetadata        *metadata);
+YtsgError ytsg_metadata_service_send_metadata (YtsgMetadataService *service,
+                                               YtsgMetadata        *metadata);
 
 G_END_DECLS
 

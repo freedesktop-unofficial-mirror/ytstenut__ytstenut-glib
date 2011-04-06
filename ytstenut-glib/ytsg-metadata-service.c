@@ -220,13 +220,16 @@ ytsg_metadata_service_constructed (GObject *object)
   YtsgMetadataService        *self = (YtsgMetadataService*) object;
   YtsgMetadataServicePrivate *priv = self->priv;
   YtsgClient                 *client;
+  YtsgContact                *contact;
   TpYtsStatus                *status;
   GHashTable                 *stats;
 
   if (G_OBJECT_CLASS (ytsg_metadata_service_parent_class)->constructed)
     G_OBJECT_CLASS (ytsg_metadata_service_parent_class)->constructed (object);
 
-  client = ytsg_service_get_client ((YtsgService *)object);
+  contact = ytsg_service_get_contact ((YtsgService *)object);
+  g_assert (contact);
+  client = ytsg_contact_get_client (contact);
   g_assert (client);
 
   /*
@@ -396,16 +399,16 @@ _ytsg_metadata_service_received_message (YtsgMetadataService *service,
   g_signal_emit (service, signals[MESSAGE], 0, message);
 }
 
-static void
+static YtsgError
 ytsg_service_metadata_send_message (YtsgMetadataService *service,
                                     YtsgMessage         *message)
 {
-  YtsgService *s      = (YtsgService*) service;
-  YtsgClient  *client = ytsg_service_get_client (s);
-  const char  *jid    = ytsg_service_get_jid (s);
-  const char  *uid    = ytsg_service_get_uid (s);
+  YtsgService *s       = (YtsgService*) service;
+  YtsgContact *contact = ytsg_service_get_contact (s);
+  YtsgClient  *client  = ytsg_contact_get_client (contact);
+  const char  *uid     = ytsg_service_get_uid (s);
 
-  _ytsg_client_send_message (client, jid, uid, message);
+  return _ytsg_client_send_message (client, contact, uid, message);
 }
 
 /**
@@ -413,18 +416,23 @@ ytsg_service_metadata_send_message (YtsgMetadataService *service,
  * @service: #YtsgMetadataService
  * @metadata: #YtsgMetadata that was received
  *
- *  Sends the provided metadata via the service.
+ * Sends the provided metadata via the service.
+ *
+ * Return value: #YtsgError indicating status of the operation.
  */
-void
+YtsgError
 ytsg_metadata_service_send_metadata (YtsgMetadataService *service,
                                      YtsgMetadata        *metadata)
 {
-  g_return_if_fail (YTSG_IS_METADATA_SERVICE (service));
-  g_return_if_fail (YTSG_IS_METADATA (metadata));
+  g_return_val_if_fail (YTSG_IS_METADATA_SERVICE (service),
+                        ytsg_error_new (YTSG_ERROR_INVALID_PARAMETER));
+  g_return_val_if_fail (YTSG_IS_METADATA (metadata),
+                        ytsg_error_new (YTSG_ERROR_INVALID_PARAMETER));
 
   if (YTSG_IS_MESSAGE (metadata))
     {
-      ytsg_service_metadata_send_message (service, (YtsgMessage*)metadata);
+      return ytsg_service_metadata_send_message (service,
+                                                 (YtsgMessage*)metadata);
     }
   else if (YTSG_IS_STATUS (metadata))
     {
@@ -432,6 +440,8 @@ ytsg_metadata_service_send_metadata (YtsgMetadataService *service,
     }
   else
     g_warning ("Unknown metadata type %s",  G_OBJECT_TYPE_NAME (metadata));
+
+  return ytsg_error_new (YTSG_ERROR_INVALID_PARAMETER);
 }
 
 YtsgService *

@@ -27,9 +27,9 @@
  * #YtsgService represents a known service in the Ytstenut application mesh.
  */
 
-#include "ytsg-service.h"
+#include "ytsg-contact.h"
 #include "ytsg-metadata-service.h"
-#include "ytsg-client.h"
+#include "ytsg-service.h"
 
 static void ytsg_service_dispose (GObject *object);
 static void ytsg_service_finalize (GObject *object);
@@ -50,9 +50,8 @@ G_DEFINE_ABSTRACT_TYPE (YtsgService, ytsg_service, G_TYPE_OBJECT);
 
 struct _YtsgServicePrivate
 {
-  const char *uid;
-  const char *jid;
-  YtsgClient *client;   /* back-reference to the client object that owns us */
+  const char  *uid;
+  YtsgContact *contact;   /* back-reference to the contact object that owns us */
 
   guint disposed : 1;
 };
@@ -66,8 +65,7 @@ enum
 {
   PROP_0,
   PROP_UID,
-  PROP_JID,
-  PROP_CLIENT,
+  PROP_CONTACT,
 };
 
 /* static guint signals[N_SIGNALS] = {0}; */
@@ -87,16 +85,16 @@ ytsg_service_class_init (YtsgServiceClass *klass)
   object_class->set_property = ytsg_service_set_property;
 
   /**
-   * YtsgService:client:
+   * YtsgService:contact:
    *
-   * #YtsgClient this service belongs to
+   * #YtsgContact this service belongs to
    */
-  pspec = g_param_spec_object ("client",
-                               "YtsgClient",
-                               "YtsgClient",
-                               YTSG_TYPE_CLIENT,
+  pspec = g_param_spec_object ("contact",
+                               "YtsgContact",
+                               "YtsgContact",
+                               YTSG_TYPE_CONTACT,
                                G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY);
-  g_object_class_install_property (object_class, PROP_CLIENT, pspec);
+  g_object_class_install_property (object_class, PROP_CONTACT, pspec);
 
   /**
    * YtsgService:uid:
@@ -109,18 +107,6 @@ ytsg_service_class_init (YtsgServiceClass *klass)
                                NULL,
                                G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
   g_object_class_install_property (object_class, PROP_UID, pspec);
-
-  /**
-   * YtsgService:jid:
-   *
-   * The jid of this service
-   */
-  pspec = g_param_spec_string ("jid",
-                               "jid",
-                               "jid",
-                               NULL,
-                               G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
-  g_object_class_install_property (object_class, PROP_JID, pspec);
 }
 
 static void
@@ -149,9 +135,6 @@ ytsg_service_get_property (GObject    *object,
     case PROP_UID:
       g_value_set_string (value, priv->uid);
       break;
-    case PROP_JID:
-      g_value_set_string (value, priv->jid);
-      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -168,14 +151,11 @@ ytsg_service_set_property (GObject      *object,
 
   switch (property_id)
     {
-    case PROP_CLIENT:
-      priv->client = g_value_get_object (value);
+    case PROP_CONTACT:
+      priv->contact = g_value_get_object (value);
       break;
     case PROP_UID:
       priv->uid = g_intern_string (g_value_get_string (value));
-      break;
-    case PROP_JID:
-      priv->jid = g_intern_string (g_value_get_string (value));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -199,7 +179,7 @@ ytsg_service_dispose (GObject *object)
 
   priv->disposed = TRUE;
 
-  priv->client = NULL;
+  priv->contact = NULL;
 
   G_OBJECT_CLASS (ytsg_service_parent_class)->dispose (object);
 }
@@ -231,9 +211,8 @@ ytsg_service_get_uid (YtsgService *service)
  * ytsg_service_get_jid:
  * @service: #YtsgService
  *
- * Returns the jid of the the client on which th given service is running. The
- * returned pointer is to a canonical representation created with
- * g_intern_string().
+ * Returns the jid of the the given service. The returned pointer is to a
+ * canonical representation created with g_intern_string().
  *
  * Return value: (transfer none): the jid.
  */
@@ -242,20 +221,20 @@ ytsg_service_get_jid (YtsgService *service)
 {
   g_return_val_if_fail (YTSG_IS_SERVICE (service), NULL);
 
-  return service->priv->jid;
+  return ytsg_contact_get_jid (service->priv->contact);
 }
 
 /**
- * ytsg_service_get_client:
+ * ytsg_service_get_contact:
  * @service: #YtsgService
  *
- * Retrieves the #YtsgClient associated with this service; the client object
+ * Retrieves the #YtsgContact associated with this service; the contact object
  * must not be freed by the caller.
  *
- * Return value (transfer none): #YtsgClient.
+ * Return value (transfer none): #YtsgContact.
  */
-YtsgClient*
-ytsg_service_get_client (YtsgService *service)
+YtsgContact*
+ytsg_service_get_contact (YtsgService *service)
 {
   YtsgServicePrivate *priv;
 
@@ -263,5 +242,5 @@ ytsg_service_get_client (YtsgService *service)
 
   priv = service->priv;
 
-  return priv->client;
+  return priv->contact;
 }

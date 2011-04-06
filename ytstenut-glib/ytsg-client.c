@@ -2165,52 +2165,82 @@ ytsg_client_set_status (YtsgClient *client, YtsgStatus *status)
     }
 }
 
+struct YtsgCLChannelData
+{
+  YtsgClient *client;
+  YtsgError   error;
+};
+
 static void
 ytsg_client_outgoing_channel_cb (GObject      *obj,
                                  GAsyncResult *res,
                                  gpointer      data)
 {
-  TpYtsChannel *ch    = TP_YTS_CHANNEL (obj);
-  YtsgMessage  *msg   = data;
-  GError       *error = NULL;
+  TpYtsChannel             *ch    = TP_YTS_CHANNEL (obj);
+  GError                   *error = NULL;
+  struct YtsgCLChannelData *d     = data;
+  guint32                   a;
+  YtsgError                 e;
+
+  a = ytsg_error_get_atom (d->error);
 
   if (!tp_yts_channel_request_finish (ch, res, &error))
     {
       g_warning ("Failed to open outgoing channel: %s", error->message);
       g_clear_error (&error);
-      return;
+
+      e = ytsg_error_make (a, YTSG_ERROR_NO_MSG_CHANNEL);
+    }
+  else
+    {
+      e = ytsg_error_make (a, YTSG_ERROR_SUCCESS);
     }
 
-  /* FIXME */
-  g_critical (G_STRLOC ": NOT IMPLEMENTED !!!");
+  ytsg_client_emit_error (d->client, e);
+
+  g_free (d);
 }
 
 
-void
+YtsgError
 _ytsg_client_send_message (YtsgClient  *client,
-                           const char  *jid,
+                           YtsgContact *contact,
                            const char  *uid,
                            YtsgMessage *message)
 {
-  YtsgClientPrivate *priv = client->priv;
-  TpChannel         *ch;
-  GHashTable        *props;
-  char              *path;
-  GError            *error = NULL;
+  YtsgClientPrivate        *priv = client->priv;
+  GHashTable               *attrs;
+  struct YtsgCLChannelData *d;
+  YtsgError                 e;
+  char                     *xml;
+  TpContact                *tp_contact;
 
+  tp_contact = ytsg_contact_get_tp_contact (contact);
+
+  g_assert (tp_contact);
 
   /* FIXME */
-  props = NULL;
-  path = NULL;
+  attrs = NULL;
 
-  ch = tp_yts_channel_new_from_properties (priv->connection,
-                                           path, props, &error);
+  e = ytsg_error_new (YTSG_ERROR_PENDING);
 
-  /* TODO -- I am unclear as to whether the message content is wrapped in the
-   * channel props here, or whether it is later fed through in the callback.
-   */
-  tp_yts_channel_request_async ((TpYtsChannel*)ch,
-                                NULL,
-                                ytsg_client_outgoing_channel_cb,
-                                message);
+  d         = g_new (struct YtsgCLChannelData, 1);
+  d->error  = e;
+  d->client = client;
+
+  xml = ytsg_metadata_body_to_string ((YtsgMetadata*)message);
+
+  tp_yts_client_request_channel_async (priv->tp_client,
+                                       tp_contact,
+                                       uid,
+                                       TP_YTS_REQUEST_TYPE_GET,
+                                       attrs,
+                                       xml,
+                                       NULL,
+                                       ytsg_client_outgoing_channel_cb,
+                                       d);
+
+  g_free (xml);
+
+  return e;
 }

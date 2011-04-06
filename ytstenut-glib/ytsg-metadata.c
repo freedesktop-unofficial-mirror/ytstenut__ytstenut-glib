@@ -426,6 +426,23 @@ ytsg_metadata_to_string (YtsgMetadata *self)
   return rest_xml_node_print (priv->top_level_node);
 }
 
+/**
+ * ytsg_metadata_body_to_string:
+ * @self: #YtsgMetadata
+ *
+ * Converts the body of #YtsgMetada object in XML representation.
+ *
+ * Return value: (transfer full): xml string; the caller must free the string
+ * with g_free() when no longer needed.
+ */
+char *
+ytsg_metadata_body_to_string (YtsgMetadata *self)
+{
+  /* FIXME */
+  g_critical ("NOT IMPLEMENTED");
+  return NULL;
+}
+
 static gboolean
 ytsg_rest_xml_node_check_attrs (RestXmlNode *node0, RestXmlNode *node1)
 {

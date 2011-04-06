@@ -44,6 +44,7 @@ typedef enum { /*< prefix=YTSG_ERROR >*/
   YTSG_ERROR_INVALID_PARAMETER,
   YTSG_ERROR_NOT_ALLOWED,
   YTSG_ERROR_NO_ROUTE,
+  YTSG_ERROR_NO_MSG_CHANNEL,
 
   /* Last predefined error code */
   YTSG_ERROR_UNKNOWN      = 0x00007fff,
@@ -58,9 +59,11 @@ typedef enum { /*< prefix=YTSG_ERROR >*/
 
 } YtsgError;
 
-guint   ytsg_error_get_code (YtsgError error);
-guint   ytsg_error_get_atom (YtsgError error);
-guint32 ytsg_error_new_atom (void);
+YtsgError ytsg_error_new (guint32 code);
+guint32   ytsg_error_new_atom ();
+YtsgError ytsg_error_make (guint32 atom, guint32 code);
+guint     ytsg_error_get_code (YtsgError error);
+guint     ytsg_error_get_atom (YtsgError error);
 
 G_END_DECLS
 

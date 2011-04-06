@@ -19,6 +19,10 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
+ * TODO -- this should probably be rewritten using the GAsync machinery.
+ */
+
 /**
  * SECTION:ytsg-error
  * @short_description: An error object.
@@ -72,7 +76,11 @@ ytsg_error_get_atom (YtsgError error)
  * ytsg_error_new_atom:
  *
  * Obtains a new atom for #YtsgError; this function is intended for use by code
- * that generates #YtsgError<!-- -->s.
+ * that generates #YtsgError<!-- -->s. NB: the atom is in its canonical shape
+ * and will have to be shifted left by 16 bits before it can be ored with an
+ * error code.
+ *
+ * Return value: a new atom for use with #YtsgError.
  */
 guint32
 ytsg_error_new_atom ()
@@ -85,6 +93,30 @@ ytsg_error_new_atom ()
       atom = 1;
     }
 
-  return (atom << 16);
+  return atom;
 }
 
+/**
+ * ytsg_error_make:
+ * @atom: the error atom
+ * @code: the error code
+ *
+ * Creates #YtsgError from the provided values
+ */
+YtsgError
+ytsg_error_make (guint32 atom, guint32 code)
+{
+  return ((atom << 16) | code);
+}
+
+/**
+ * ytsg_error_new:
+ * @code: the error code
+ *
+ * Creates #YtsgError with a new atom from the provide error code
+ */
+YtsgError
+ytsg_error_new (guint32 code)
+{
+  return ((ytsg_error_new_atom () << 16) | code);
+}

@@ -28,7 +28,7 @@
 
 #include <ytstenut-glib/ytsg-caps.h>
 #include <ytstenut-glib/ytsg-error.h>
-#include <ytstenut-glib/ytsg-service.h>
+#include <ytstenut-glib/ytsg-types.h>
 
 G_BEGIN_DECLS
 
@@ -53,7 +53,6 @@ G_BEGIN_DECLS
                                YTSG_TYPE_CONTACT,                       \
                                YtsgContactClass))
 
-typedef struct _YtsgContact        YtsgContact;
 typedef struct _YtsgContactClass   YtsgContactClass;
 typedef struct _YtsgContactPrivate YtsgContactPrivate;
 
@@ -90,6 +89,7 @@ struct _YtsgContact
 
 GType ytsg_contact_get_type (void) G_GNUC_CONST;
 
+YtsgClient *ytsg_contact_get_client         (const YtsgContact  *contact);
 const char *ytsg_contact_get_jid            (const YtsgContact  *contact);
 const char *ytsg_contact_get_name           (const YtsgContact  *contact);
 TpContact  *ytsg_contact_get_tp_contact     (const YtsgContact  *contact);

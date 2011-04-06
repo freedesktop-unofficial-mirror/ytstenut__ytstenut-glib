@@ -49,7 +49,6 @@ G_BEGIN_DECLS
                                YTSG_TYPE_SERVICE,                       \
                                YtsgServiceClass))
 
-typedef struct _YtsgService        YtsgService;
 typedef struct _YtsgServiceClass   YtsgServiceClass;
 typedef struct _YtsgServicePrivate YtsgServicePrivate;
 
@@ -80,9 +79,9 @@ struct _YtsgService
 
 GType ytsg_service_get_type (void) G_GNUC_CONST;
 
-const char *ytsg_service_get_uid    (YtsgService *service);
-const char *ytsg_service_get_jid    (YtsgService *service);
-YtsgClient *ytsg_service_get_client (YtsgService *service);
+const char  *ytsg_service_get_uid     (YtsgService *service);
+const char  *ytsg_service_get_jid     (YtsgService *service);
+YtsgContact *ytsg_service_get_contact (YtsgService *service);
 
 G_END_DECLS
 
