@@ -456,6 +456,11 @@ _ytsg_metadata_extract (YtsgMetadata *self, char **body)
 
   b = g_strdup (n0->content);
 
+  /*
+   * This is necessary for the g_strconcat() below to work */
+  if (!b)
+    b = g_strdup ("");
+
   g_hash_table_iter_init (&iter, n0->children);
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
