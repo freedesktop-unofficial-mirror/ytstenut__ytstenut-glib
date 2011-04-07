@@ -25,7 +25,7 @@
 #include <ytstenut-glib/ytsg-status.h>
 #include <string.h>
 
-#define MYUID       "test-uid"
+#define MYUID       "com.meego.ytstenut.TestService"
 #define STATUS_XML  "<status a1='v1' a2='v2'></status>"
 #define MESSAGE_XML "<message a1='v1' a2='v2'></message>"
 
@@ -63,15 +63,15 @@ main (int argc, char **argv)
   g_thread_init (NULL);
   g_type_init ();
 
-  /* FIXME -- we should have a private constructor for tests only without
-   * client and such.
+  /*
+   * The metadata-serivice-test property allows for partial construction of
+   * the object, so we can run some rudimentary tests.
    */
-  service = _ytsg_metadata_service_new (NULL,
-                                        "test@localhost",
-                                        "com.meego.ytstenut.TestService",
-                                        "application",
-                                        NULL,
-                                        NULL);
+  service = g_object_new (YTSG_TYPE_METADATA_SERVICE,
+                          "metadata-service-test", TRUE,
+                          "uid", MYUID,
+                          "type", "application",
+                          NULL);
 
   g_assert (service);
 

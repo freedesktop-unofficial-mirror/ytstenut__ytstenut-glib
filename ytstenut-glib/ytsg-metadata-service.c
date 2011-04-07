@@ -65,6 +65,7 @@ struct _YtsgMetadataServicePrivate
   YtsgStatus  *status;
 
   guint disposed : 1;
+  guint test     : 1;
 };
 
 enum
@@ -81,6 +82,7 @@ enum
   PROP_TYPE,
   PROP_NAMES,
   PROP_CAPS,
+  PROP_METADATA_SERVICE_TEST,
 };
 
 static guint signals[N_SIGNALS] = {0};
@@ -134,6 +136,20 @@ ytsg_metadata_service_class_init (YtsgMetadataServiceClass *klass)
                               G_TYPE_STRV,
                               G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
   g_object_class_install_property (object_class, PROP_CAPS, pspec);
+
+  /**
+   * YtsgMetadataService:test:
+   *
+   * allows partial construction of YtsgMetadataService for compile time
+   * test purposes.
+   */
+  pspec = g_param_spec_boolean ("metadata-service-test",
+                                "YtsgMetadataService test",
+                                "YtsgMetadataService test",
+                                FALSE,
+                                G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY);
+  g_object_class_install_property (object_class, PROP_METADATA_SERVICE_TEST,
+                                   pspec);
 
   /**
    * YtsgMetadataService::status:
@@ -227,48 +243,53 @@ ytsg_metadata_service_constructed (GObject *object)
   if (G_OBJECT_CLASS (ytsg_metadata_service_parent_class)->constructed)
     G_OBJECT_CLASS (ytsg_metadata_service_parent_class)->constructed (object);
 
-  contact = ytsg_service_get_contact ((YtsgService *)object);
-  g_assert (contact);
-  client = ytsg_contact_get_client (contact);
-  g_assert (client);
-
-  /*
-   * Construct the YtsgStatus object from the xml stored in
-   * TpYtsStatus:discovered-statuses
-   *
-   * -- this is bit cumbersome, requiring nested hash table lookup.
-   */
-  status = _ytsg_client_get_tp_status (client);
-  g_assert (status);
-
-  if (priv->caps && *priv->caps &&
-      (stats = tp_yts_status_get_discovered_statuses (status)))
+  if (!priv->test)
     {
-      const char *jid = ytsg_service_get_jid ((YtsgService*)self);
-      const char *uid = ytsg_service_get_uid ((YtsgService*)self);
+      contact = ytsg_service_get_contact ((YtsgService *)object);
 
-      const char *cap = *priv->caps; /*a single capability we have*/
-      GHashTable *cinfo;
+      g_assert (contact);
+      client = ytsg_contact_get_client (contact);
+      g_assert (client);
 
-      if ((cinfo = g_hash_table_lookup (stats, jid)))
+      /*
+       * Construct the YtsgStatus object from the xml stored in
+       * TpYtsStatus:discovered-statuses
+       *
+       * -- this is bit cumbersome, requiring nested hash table lookup.
+       */
+      status = _ytsg_client_get_tp_status (client);
+      g_assert (status);
+
+      if (priv->caps && *priv->caps &&
+          (stats = tp_yts_status_get_discovered_statuses (status)))
         {
-          GHashTable *capinfo;
+          const char *jid = ytsg_service_get_jid ((YtsgService*)self);
+          const char *uid = ytsg_service_get_uid ((YtsgService*)self);
 
-          if ((capinfo = g_hash_table_lookup (cinfo, cap)))
+          const char *cap = *priv->caps; /*a single capability we have*/
+          GHashTable *cinfo;
+
+          if ((cinfo = g_hash_table_lookup (stats, jid)))
             {
-              char *xml;
+              GHashTable *capinfo;
 
-              if ((xml = g_hash_table_lookup (capinfo, uid)))
+              if ((capinfo = g_hash_table_lookup (cinfo, cap)))
                 {
-                  priv->status = (YtsgStatus*)_ytsg_metadata_new_from_xml (xml);
+                  char *xml;
+
+                  if ((xml = g_hash_table_lookup (capinfo, uid)))
+                    {
+                      priv->status =
+                        (YtsgStatus*)_ytsg_metadata_new_from_xml (xml);
+                    }
                 }
             }
         }
-    }
 
-  tp_g_signal_connect_object (status, "status-changed",
-                          G_CALLBACK (ytsg_metadata_service_status_changed_cb),
-                          self, 0);
+      tp_g_signal_connect_object (status, "status-changed",
+                           G_CALLBACK (ytsg_metadata_service_status_changed_cb),
+                                  self, 0);
+    }
 }
 
 static void
@@ -308,6 +329,9 @@ ytsg_metadata_service_set_property (GObject      *object,
 
   switch (property_id)
     {
+    case PROP_METADATA_SERVICE_TEST:
+      priv->test = g_value_get_boolean (value);
+      break;
     case PROP_TYPE:
       priv->type = g_intern_string (g_value_get_string (value));
       break;
