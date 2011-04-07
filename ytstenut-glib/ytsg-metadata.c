@@ -426,21 +426,48 @@ ytsg_metadata_to_string (YtsgMetadata *self)
   return rest_xml_node_print (priv->top_level_node);
 }
 
-/**
- * ytsg_metadata_body_to_string:
+/*
+ * _ytsg_metadata_extract:
  * @self: #YtsgMetadata
+ * @body: location to store the body of the metadata; free with g_free() when no
+ * longer needed.
  *
- * Converts the body of #YtsgMetada object in XML representation.
+ * Extracts the top level attributes into a hash table, and converts the
+ * content of any child nodes to xml string. This is intended for use by
+ * #YtsgClient when sending messages.
  *
- * Return value: (transfer full): xml string; the caller must free the string
- * with g_free() when no longer needed.
+ * Return value: (transfer full): top level attributes, the caller holds a
+ * reference on the returned hash table, which it needs to release with
+ * g_hash_table_unref() when no longer needed.
  */
-char *
-ytsg_metadata_body_to_string (YtsgMetadata *self)
+GHashTable *
+_ytsg_metadata_extract (YtsgMetadata *self, char **body)
 {
-  /* FIXME */
-  g_critical ("NOT IMPLEMENTED");
-  return NULL;
+  YtsgMetadataPrivate *priv;
+  RestXmlNode         *n0;
+  GHashTableIter       iter;
+  gpointer             key, value;
+  char                *b;
+
+  g_return_val_if_fail (YTSG_IS_METADATA (self) && body, NULL);
+
+  priv = self->priv;
+  n0 = priv->top_level_node;
+
+  b = g_strdup (n0->content);
+
+  g_hash_table_iter_init (&iter, n0->children);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      char *child = rest_xml_node_print ((RestXmlNode *) value);
+
+      b = g_strconcat (b, child, NULL);
+      g_free (child);
+    }
+
+  *body = b;
+
+  return g_hash_table_ref (n0->attrs);
 }
 
 static gboolean

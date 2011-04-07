@@ -84,7 +84,6 @@ void         ytsg_metadata_add_attribute (YtsgMetadata *self,
                                           const char   *name,
                                           const char   *value);
 char        *ytsg_metadata_to_string (YtsgMetadata *self);
-char        *ytsg_metadata_body_to_string (YtsgMetadata *self);
 gboolean     ytsg_metadata_is_equal (YtsgMetadata *self, YtsgMetadata *other);
 RestXmlNode *ytsg_metadata_get_root_node (YtsgMetadata *self);
 

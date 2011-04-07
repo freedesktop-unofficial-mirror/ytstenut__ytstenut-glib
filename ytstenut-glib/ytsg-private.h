@@ -48,6 +48,7 @@ gboolean     _ytsg_contact_is_empty (YtsgContact *contact);
 YtsgMetadata *_ytsg_metadata_new_from_xml (const char *xml);
 YtsgMetadata *_ytsg_metadata_new_from_node (RestXmlNode  *node,
                                             const char  **attributes);
+GHashTable   *_ytsg_metadata_extract (YtsgMetadata *self, char **body);
 
 YtsgService *_ytsg_metadata_service_new (YtsgClient  *client,
                                          const char  *jid,

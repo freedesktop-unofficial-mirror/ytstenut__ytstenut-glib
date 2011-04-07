@@ -2212,23 +2212,26 @@ _ytsg_client_send_message (YtsgClient  *client,
   GHashTable               *attrs;
   struct YtsgCLChannelData *d;
   YtsgError                 e;
-  char                     *xml;
+  char                     *xml = NULL;
   TpContact                *tp_contact;
 
   tp_contact = ytsg_contact_get_tp_contact (contact);
-
   g_assert (tp_contact);
 
-  /* FIXME */
-  attrs = NULL;
+  if (!(attrs = _ytsg_metadata_extract ((YtsgMetadata*)message, &xml)))
+    {
+      g_warning ("Failed to extract content from YtsgMessage object");
+
+      e = ytsg_error_new (YTSG_ERROR_INVALID_PARAMETER);
+      g_free (xml);
+      return e;
+    }
 
   e = ytsg_error_new (YTSG_ERROR_PENDING);
 
   d         = g_new (struct YtsgCLChannelData, 1);
   d->error  = e;
   d->client = client;
-
-  xml = ytsg_metadata_body_to_string ((YtsgMetadata*)message);
 
   tp_yts_client_request_channel_async (priv->tp_client,
                                        tp_contact,
@@ -2240,6 +2243,7 @@ _ytsg_client_send_message (YtsgClient  *client,
                                        ytsg_client_outgoing_channel_cb,
                                        d);
 
+  g_hash_table_unref (attrs);
   g_free (xml);
 
   return e;
