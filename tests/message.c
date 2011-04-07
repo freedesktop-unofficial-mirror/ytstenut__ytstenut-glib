@@ -27,22 +27,39 @@ int
 main (int argc, char **argv)
 {
   YtsgMessage  *message;
-  const char  *attrs[] = {"a1", "v1", "a2", "v2", NULL};
-  const char  *a1, *a2, *a3;
+  YtsgMetadata *mdata;
+  const char   *attrs[] = {"a1", "v1", "a2", "v2", NULL};
+  const char   *a1, *a2, *a3;
+  RestXmlNode  *child;
+  char         *xml;
+  GHashTable   *h;
+  char         *body;
 
   g_thread_init (NULL);
   g_type_init ();
 
   message = ytsg_message_new (attrs);
+  mdata   = (YtsgMetadata*)message;
 
-  ytsg_metadata_add_attribute ((YtsgMetadata*)message, "a3", "v3");
-  a1 = ytsg_metadata_get_attribute ((YtsgMetadata*)message, "a1");
-  a2 = ytsg_metadata_get_attribute ((YtsgMetadata*)message, "a2");
-  a3 = ytsg_metadata_get_attribute ((YtsgMetadata*)message, "a3");
+  ytsg_metadata_add_attribute (mdata, "a3", "v3");
+  a1 = ytsg_metadata_get_attribute (mdata, "a1");
+  a2 = ytsg_metadata_get_attribute (mdata, "a2");
+  a3 = ytsg_metadata_get_attribute (mdata, "a3");
 
   g_assert_cmpstr (a1, ==, "v1");
   g_assert_cmpstr (a2, ==, "v2");
   g_assert_cmpstr (a3, ==, "v3");
+
+  child = rest_xml_node_add_child (ytsg_metadata_get_root_node (mdata),"c1");
+
+  rest_xml_node_add_attr (child, "ca1", "cv1");
+
+  h = _ytsg_metadata_extract (mdata, &body);
+  g_assert (h);
+  g_assert_cmpstr (body, ==, "<c1 ca1='cv1'></c1>");
+
+  g_free (body);
+  g_hash_table_unref (h);
 
   return 0;
 }
