@@ -63,7 +63,15 @@ main (int argc, char **argv)
   g_thread_init (NULL);
   g_type_init ();
 
-  service = _ytsg_metadata_service_new (MYUID);
+  /* FIXME -- we should have a private constructor for tests only without
+   * client and such.
+   */
+  service = _ytsg_metadata_service_new (NULL,
+                                        "test@localhost",
+                                        "com.meego.ytstenut.TestService",
+                                        "application",
+                                        NULL,
+                                        NULL);
 
   g_assert (service);
 
