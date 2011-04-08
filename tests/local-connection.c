@@ -123,27 +123,13 @@ timeout_cb (gpointer data)
 }
 
 /*
- * Callback for the YtsgRoster 'item-added' signal; the roster UI in the
+ * Callback for the YtsgRoster 'contact-added' signal; the roster UI in the
  * application will need to connect to this.
  */
 static void
 contact_added_cb (YtsgRoster *client, YtsgContact *item, gpointer data)
 {
-  const YtsgStatus *status;
-
   g_message ("Roster: added %p", item);
-
-#if 0
-  /*
-   * Get the initial status of the item.
-   */
-  status = ytsg_contact_get_status (item);
-
-  /*
-   * Print to console for debugging purposes.
-   */
-  ytsg_status_dump (status);
-#endif
 
   /*
    * Connect to the "notify::status" signal so we can monitor status changes.

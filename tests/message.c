@@ -21,6 +21,7 @@
  */
 
 #include <ytstenut-glib/ytsg-message.h>
+#include <ytstenut-glib/ytsg-private.h>
 #include <string.h>
 
 int
@@ -31,7 +32,6 @@ main (int argc, char **argv)
   const char   *attrs[] = {"a1", "v1", "a2", "v2", NULL};
   const char   *a1, *a2, *a3;
   RestXmlNode  *child;
-  char         *xml;
   GHashTable   *h;
   char         *body;
 
