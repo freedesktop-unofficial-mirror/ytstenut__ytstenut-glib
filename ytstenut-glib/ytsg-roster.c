@@ -30,6 +30,7 @@
 
 #include "ytsg-client.h"
 #include "ytsg-contact.h"
+#include "ytsg-debug.h"
 #include "ytsg-marshal.h"
 #include "ytsg-private.h"
 #include "ytsg-roster.h"
@@ -486,6 +487,9 @@ _ytsg_roster_add_service (YtsgRoster  *roster,
   g_object_unref (service);
 
   if (emit)
-    g_signal_emit (roster, signals[CONTACT_ADDED], 0, contact);
+    {
+      YTSG_NOTE (ROSTER, "New contact %s", jid);
+      g_signal_emit (roster, signals[CONTACT_ADDED], 0, contact);
+    }
 }
 

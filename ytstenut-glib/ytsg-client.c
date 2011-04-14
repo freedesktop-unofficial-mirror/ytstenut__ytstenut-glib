@@ -406,7 +406,7 @@ ytsg_client_authenticated (YtsgClient *client)
 
   priv->authenticated = TRUE;
 
-  YTSG_NOTE (CLIENT, "Authenticated");
+  YTSG_NOTE (CONNECTION, "Authenticated");
 }
 
 static void
@@ -416,7 +416,7 @@ ytsg_client_ready (YtsgClient *client)
 
   priv->ready = TRUE;
 
-  YTSG_NOTE (CLIENT, "TP Channel is ready");
+  YTSG_NOTE (CLIENT, "YtsgClient is ready");
 
   if (priv->tp_status && priv->status)
     {
@@ -904,7 +904,7 @@ ytsg_client_connect_debug_signals (YtsgClient *client, TpProxy *proxy)
 
   if (error)
     {
-      YTSG_NOTE (CLIENT, "%s", error->message);
+      YTSG_NOTE (MANAGER, "%s", error->message);
       g_clear_error (&error);
     }
 
@@ -1014,7 +1014,7 @@ ytsg_client_account_prepared_cb (GObject      *acc,
 
   priv->account = account;
 
-  YTSG_NOTE (CLIENT, "Account successfully opened");
+  YTSG_NOTE (CONNECTION, "Account successfully opened");
 
   priv->tp_client = tp_yts_client_new (priv->uid, account);
 
@@ -1050,6 +1050,8 @@ ytsg_client_account_cb (GObject *object, GAsyncResult *res, gpointer data)
 
   if (error)
     g_error ("Could not access account: %s", error->message);
+
+  YTSG_NOTE (CONNECTION, "Got account");
 
   if (ytsg_debug_flags & YTSG_DEBUG_TP)
     tp_debug_set_flags ("all");
@@ -1378,7 +1380,7 @@ ytsg_client_status_cb (TpConnection *proxy,
   if (client->priv->disposed)
     return;
 
-  YTSG_NOTE (CLIENT, "Connection: %s: '%s'",
+  YTSG_NOTE (CONNECTION, "Connection: %s: '%s'",
            status[arg_Status], reason[arg_Reason]);
 
   if (arg_Status == TP_CONNECTION_STATUS_CONNECTED)
@@ -1509,7 +1511,10 @@ ytsg_client_yts_status_cb (GObject      *obj,
   ytsg_client_process_status (client);
 
   if (!priv->ready)
-    g_signal_emit (client, signals[READY], 0);
+    {
+      YTSG_NOTE (CLIENT, "Emitting 'ready' signal");
+      g_signal_emit (client, signals[READY], 0);
+    }
 }
 
 static void
@@ -1521,7 +1526,7 @@ ytsg_client_connection_ready_cb (TpConnection *conn,
 
   if (tp_connection_is_ready (conn))
     {
-      YTSG_NOTE (CLIENT, "TP Connection entered ready state");
+      YTSG_NOTE (CONNECTION, "TP Connection entered ready state");
 
       cancellable = g_cancellable_new ();
 
@@ -1684,7 +1689,7 @@ ytsg_client_setup_account_connection (YtsgClient *client)
 
   priv->dialing = FALSE;
 
-  YTSG_NOTE (CLIENT, "Connection ready ?: %d",
+  YTSG_NOTE (CONNECTION, "Connection ready ?: %d",
              tp_connection_is_ready (priv->connection));
 
   tp_g_signal_connect_object (priv->connection, "notify::connection-ready",
@@ -1753,13 +1758,23 @@ ytsg_client_account_online_cb (GObject      *acc,
 {
   GError    *error   = NULL;
   TpAccount *account = (TpAccount*)acc;
+  char      *stat;
+  char      *msg;
+  TpConnectionPresenceType presence;
 
   if (!tp_account_request_presence_finish (account, res, &error))
     {
       g_error ("Failed to change presence to online");
     }
 
-  YTSG_NOTE (CLIENT, "Request to change presence to 'online' succeeded");
+  presence = tp_account_get_current_presence (account, &stat, &msg);
+
+  YTSG_NOTE (CONNECTION,
+             "Request to change presence to 'online' succeeded: %d, %s:%s",
+             presence, stat, msg);
+
+  g_free (stat);
+  g_free (msg);
 }
 
 /*
@@ -1770,7 +1785,7 @@ ytsg_client_account_connection_notify_cb (TpAccount  *account,
                                           GParamSpec *pspec,
                                           YtsgClient *client)
 {
-  YTSG_NOTE (CLIENT, "We got connection!");
+  YTSG_NOTE (CONNECTION, "We got connection!");
 
   g_signal_handlers_disconnect_by_func (account,
                                    ytsg_client_account_connection_notify_cb,
@@ -1789,7 +1804,10 @@ ytsg_client_make_connection (YtsgClient *client)
    * function when the account is ready.
    */
   if (!priv->account)
-    return;
+    {
+      YTSG_NOTE (CONNECTION, "Account not yet available");
+      return;
+    }
 
   /*
    * At this point the account is prepared, but that does not mean we have a
@@ -1799,7 +1817,7 @@ ytsg_client_make_connection (YtsgClient *client)
    */
   if (!tp_account_get_connection (priv->account))
     {
-      YTSG_NOTE (CLIENT, "Currently off line, changing ...");
+      YTSG_NOTE (CONNECTION, "Currently off line, changing ...");
 
       g_signal_connect (priv->account, "notify::connection",
                         G_CALLBACK (ytsg_client_account_connection_notify_cb),
@@ -1831,7 +1849,7 @@ ytsg_client_connect_to_mesh (YtsgClient *client)
 {
   YtsgClientPrivate *priv;
 
-  YTSG_NOTE (CLIENT, "Connecting ...");
+  YTSG_NOTE (CONNECTION, "Connecting ...");
 
   g_return_if_fail (YTSG_IS_CLIENT (client));
 

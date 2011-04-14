@@ -67,13 +67,14 @@ guint ytsg_debug_flags = 0;
 
 #ifdef YTSG_ENABLE_DEBUG
 static const GDebugKey ytsg_debug_keys[] = {
-  { "client",          YTSG_DEBUG_CLIENT  },
-  { "roster",          YTSG_DEBUG_ROSTER  },
-  { "contact",         YTSG_DEBUG_CONTACT },
-  { "status",          YTSG_DEBUG_STATUS  },
-  { "tp",              YTSG_DEBUG_TP      },
-  { "manager",         YTSG_DEBUG_MANAGER },
-  { "message",         YTSG_DEBUG_MESSAGE },
+  { "connection",      YTSG_DEBUG_CONNECTION },
+  { "client",          YTSG_DEBUG_CLIENT     },
+  { "roster",          YTSG_DEBUG_ROSTER     },
+  { "contact",         YTSG_DEBUG_CONTACT    },
+  { "status",          YTSG_DEBUG_STATUS     },
+  { "tp",              YTSG_DEBUG_TP         },
+  { "manager",         YTSG_DEBUG_MANAGER    },
+  { "message",         YTSG_DEBUG_MESSAGE    },
   { "file-transfer",   YTSG_DEBUG_FILE_TRANSFER   },
 };
 #endif /* YTSG_ENABLE_DEBUG */

@@ -1096,6 +1096,10 @@ _ytsg_contact_add_service (YtsgContact *contact, YtsgService *service)
   /*
    * Emit the signal; the run-first signal closure will do the rest
    */
+  YTSG_NOTE (CONTACT, "New service %s on %s",
+             ytsg_service_get_uid (service),
+             ytsg_service_get_jid (service));
+
   g_signal_emit (contact, signals[SERVICE_ADDED], 0, service);
 }
 
