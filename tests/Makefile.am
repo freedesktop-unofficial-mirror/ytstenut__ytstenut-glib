@@ -1,4 +1,5 @@
-TESTS = message status metadata-service local-connection message-send file-transfer
+#TESTS = message status metadata-service local-connection message-send file-transfer
+TESTS = local-connection
 
 AM_CPPFLAGS = 					\
 	-DG_DISABLE_DEPRECATED 			\
