@@ -1491,13 +1491,13 @@ ytsg_client_yts_status_cb (GObject      *obj,
                            GAsyncResult *res,
                            gpointer      data)
 {
-  TpConnection      *conn   = TP_CONNECTION (obj);
+  TpAccount         *acc    = TP_ACCOUNT (obj);
   YtsgClient        *client = data;
   YtsgClientPrivate *priv   = client->priv;
   GError            *error  = NULL;
   TpYtsStatus       *status;
 
-  if (!(status = tp_yts_status_ensure_for_connection_finish (conn, res,&error)))
+  if (!(status = tp_yts_status_ensure_finish (acc, res,&error)))
     {
       g_error ("Failed to obtain status: %s", error->message);
     }
@@ -1522,7 +1522,8 @@ ytsg_client_connection_ready_cb (TpConnection *conn,
                                  GParamSpec   *par,
                                  YtsgClient   *client)
 {
-  GCancellable *cancellable;
+  GCancellable      *cancellable;
+  YtsgClientPrivate *priv = client->priv;
 
   if (tp_connection_is_ready (conn))
     {
@@ -1530,10 +1531,10 @@ ytsg_client_connection_ready_cb (TpConnection *conn,
 
       cancellable = g_cancellable_new ();
 
-      tp_yts_status_ensure_for_connection_async (conn,
-                                                 cancellable,
-                                                 ytsg_client_yts_status_cb,
-                                                 client);
+      tp_yts_status_ensure_async (priv->account,
+                                  cancellable,
+                                  ytsg_client_yts_status_cb,
+                                  client);
 
       /*
        * TODO -- this should be stored, so we can clean up in dispose any
