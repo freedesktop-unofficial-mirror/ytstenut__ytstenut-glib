@@ -988,7 +988,7 @@ ytsg_client_yts_channels_received_cb (TpYtsClient *tp_client,
   while ((ch = tp_yts_client_accept_channel (tp_client)))
     {
       /* FIXME -- incoming channel */
-      g_critical ("NOT IMPLEMENTED");
+      g_critical (G_STRLOC ": NOT IMPLEMENTED");
     }
 }
 
@@ -2085,7 +2085,7 @@ ytsg_client_get_jid (const YtsgClient *client)
 
   priv = client->priv;
 
-  g_warning ("NOT IMPLEMENTED !!!");
+  g_warning (G_STRLOC ": NOT IMPLEMENTED !!!");
 
   return NULL;
 }
