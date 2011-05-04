@@ -469,8 +469,7 @@ ytsg_metadata_service_send_metadata (YtsgMetadataService *service,
 }
 
 YtsgService *
-_ytsg_metadata_service_new (YtsgClient  *client,
-                            const char  *jid,
+_ytsg_metadata_service_new (YtsgContact *contact,
                             const char  *uid,
                             const char  *type,
                             const char **caps,
@@ -479,12 +478,11 @@ _ytsg_metadata_service_new (YtsgClient  *client,
   g_return_val_if_fail (uid && *uid, NULL);
 
   return g_object_new (YTSG_TYPE_METADATA_SERVICE,
-                       "client", client,
-                       "jid",    jid,
-                       "uid",    uid,
-                       "type",   type,
-                       "caps",   caps,
-                       "names",  names,
+                       "contact", contact,
+                       "uid",     uid,
+                       "type",    type,
+                       "caps",    caps,
+                       "names",   names,
                        NULL);
 }
 

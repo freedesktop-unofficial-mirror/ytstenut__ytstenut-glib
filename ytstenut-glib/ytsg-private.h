@@ -50,12 +50,11 @@ YtsgMetadata *_ytsg_metadata_new_from_node (RestXmlNode  *node,
                                             const char  **attributes);
 GHashTable   *_ytsg_metadata_extract (YtsgMetadata *self, char **body);
 
-YtsgService *_ytsg_metadata_service_new (YtsgClient  *client,
-                                         const char  *jid,
-                                         const char  *uid,
-                                         const char  *type,
-                                         const char **caps,
-                                         GHashTable  *names);
+YtsgService *_ytsg_metadata_service_new (YtsgContact  *contact,
+                                         const char   *uid,
+                                         const char   *type,
+                                         const char  **caps,
+                                         GHashTable   *names);
 
 void _ytsg_metadata_service_received_status (YtsgMetadataService *service,
                                              const char          *xml);
