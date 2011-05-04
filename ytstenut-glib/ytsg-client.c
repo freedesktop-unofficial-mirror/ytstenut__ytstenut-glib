@@ -1018,11 +1018,6 @@ ytsg_client_account_prepared_cb (GObject      *acc,
 
   priv->tp_client = tp_yts_client_new (priv->uid, account);
 
-  if (!tp_yts_client_register (priv->tp_client, &error))
-    {
-      g_error ("Failed to register account: %s", error->message);
-    }
-
   tp_g_signal_connect_object (priv->tp_client, "received-channels",
                               G_CALLBACK (ytsg_client_yts_channels_received_cb),
                               client, 0);
@@ -1427,17 +1422,20 @@ ytsg_client_process_one_service (YtsgClient        *client,
   YtsgRoster        *roster;
   GValueArray       *sinfo = (GValueArray*) service;
 
-  if (sinfo->n_values == 3)
+  if (sinfo->n_values != 3)
     {
-      g_warning ("Missformed service description");
+      g_warning ("Missformed service description (nvalues == %d)",
+                 sinfo->n_values);
       return FALSE;
     }
+
+  YTSG_NOTE (CLIENT, "Processing service %s:%s", jid, sid);
 
   type  = g_value_get_string (g_value_array_get_nth (sinfo, 0));
   names = g_value_get_boxed (g_value_array_get_nth (sinfo, 1));
   caps  = g_value_get_boxed (g_value_array_get_nth (sinfo, 2));
 
-  if (yts_client_caps_overlap (priv->caps, caps))
+  if (!priv->caps || yts_client_caps_overlap (priv->caps, caps))
     roster = priv->roster;
   else
     roster = priv->unwanted;
@@ -1470,6 +1468,9 @@ ytsg_client_process_status (YtsgClient *client)
       GHashTable     *service;
       GHashTableIter  iter;
 
+      if (g_hash_table_size (services) <= 0)
+        YTSG_NOTE (CLIENT, "No services discovered so far");
+
       g_hash_table_iter_init (&iter, services);
       while (g_hash_table_iter_next (&iter, (void**)&jid, (void**)&service))
         {
@@ -1484,6 +1485,8 @@ ytsg_client_process_status (YtsgClient *client)
             }
         }
     }
+  else
+    YTSG_NOTE (CLIENT, "No discovered services");
 }
 
 static void
@@ -1501,6 +1504,8 @@ ytsg_client_yts_status_cb (GObject      *obj,
     {
       g_error ("Failed to obtain status: %s", error->message);
     }
+
+  YTSG_NOTE (CLIENT, "Processing status");
 
   priv->tp_status = status;
 
@@ -1638,6 +1643,13 @@ ytsg_client_connection_prepare_cb (GObject      *connection,
     }
   else
     {
+      if (!tp_yts_client_register (priv->tp_client, &error))
+        {
+          g_error ("Failed to register account: %s", error->message);
+        }
+      else
+        YTSG_NOTE (CONNECTION, "Registered TpYtsClient");
+
       if (priv->icon_data &&
           ytsg_client_is_avatar_type_supported (client,
                                               priv->icon_mime_type,
@@ -1682,6 +1694,7 @@ ytsg_client_setup_account_connection (YtsgClient *client)
   GQuark             features[] = { TP_CONNECTION_FEATURE_CONTACT_INFO,
                                     TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS,
                                     TP_CONNECTION_FEATURE_CAPABILITIES,
+                                    TP_CONNECTION_FEATURE_CONNECTED,
                                     0 };
 
   priv->connection = tp_account_get_connection (priv->account);
