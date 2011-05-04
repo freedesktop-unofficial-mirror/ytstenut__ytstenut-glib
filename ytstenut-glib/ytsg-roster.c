@@ -472,6 +472,8 @@ _ytsg_roster_add_service (YtsgRoster  *roster,
 
   if (!(contact = (YtsgContact*)ytsg_roster_find_contact_by_jid (roster, jid)))
     {
+      YTSG_NOTE (ROSTER, "Creating new contact for %s", jid);
+
       contact = _ytsg_contact_new (priv->client, jid);
 
       g_hash_table_insert (priv->contacts, (char*)jid, contact);
@@ -479,8 +481,9 @@ _ytsg_roster_add_service (YtsgRoster  *roster,
       emit = TRUE;
     }
 
-  service = _ytsg_metadata_service_new (priv->client, jid, sid,
-                                        type, caps, names);
+  YTSG_NOTE (ROSTER, "Adding service %s:%s", jid, sid);
+
+  service = _ytsg_metadata_service_new (contact, sid, type, caps, names);
 
   _ytsg_contact_add_service (contact, service);
 
