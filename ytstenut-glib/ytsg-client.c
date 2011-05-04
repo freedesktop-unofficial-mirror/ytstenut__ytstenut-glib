@@ -2188,7 +2188,136 @@ struct YtsgCLChannelData
 {
   YtsgClient *client;
   YtsgError   error;
+  gboolean    status_done;
+  int         ref_count;
 };
+
+static void
+ytsg_cl_channel_data_unref (struct YtsgCLChannelData *d)
+{
+  d->ref_count--;
+
+  if (d->ref_count <= 0)
+    g_free (d);
+}
+
+static struct YtsgCLChannelData *
+ytsg_cl_channel_data_ref (struct YtsgCLChannelData *d)
+{
+  d->ref_count++;
+  return d;
+}
+
+static void
+ytsg_client_msg_replied_cb (TpYtsChannel *proxy,
+                            GHashTable   *attributes,
+                            const gchar  *body,
+                            gpointer      data,
+                            GObject      *weak_object)
+{
+  GHashTableIter            iter;
+  gpointer                  key, value;
+  struct YtsgCLChannelData *d = data;
+
+  YTSG_NOTE (MESSAGE, "Got reply with attributes:");
+
+  g_hash_table_iter_init (&iter, attributes);
+
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      YTSG_NOTE (MESSAGE, "    %s = %s\n",
+                 (const gchar *) key, (const gchar *) value);
+    }
+
+  YTSG_NOTE (MESSAGE, "    body: %s\n", body);
+
+  if (!d->status_done)
+    {
+      guint32   a;
+      YtsgError e;
+
+      a = ytsg_error_get_atom (d->error);
+      e = ytsg_error_make (a, YTSG_ERROR_SUCCESS);
+
+      ytsg_client_emit_error (d->client, e);
+
+      d->status_done = TRUE;
+    }
+
+  ytsg_cl_channel_data_unref (d);
+}
+
+static void
+ytsg_client_msg_failed_cb (TpYtsChannel *proxy,
+                           guint         error_type,
+                           const gchar  *stanza_error_name,
+                           const gchar  *ytstenut_error_name,
+                           const gchar  *text,
+                           gpointer      data,
+                           GObject      *weak_object)
+{
+  guint32                   a;
+  YtsgError                 e;
+  struct YtsgCLChannelData *d = data;
+
+  a = ytsg_error_get_atom (d->error);
+
+  g_warning ("Sending of message failed: type %u, %s, %s, %s",
+             error_type, stanza_error_name, ytstenut_error_name, text);
+
+  e = ytsg_error_make (a, YTSG_ERROR_NO_MSG_CHANNEL);
+
+  ytsg_client_emit_error (d->client, e);
+
+  d->status_done = TRUE;
+
+  ytsg_cl_channel_data_unref (d);
+}
+
+static void
+ytsg_client_msg_closed_cb (TpChannel *channel,
+                           gpointer   data,
+                           GObject   *weak_object)
+{
+  struct YtsgCLChannelData *d = data;
+
+  YTSG_NOTE (MESSAGE, "Channel closed");
+
+  if (!d->status_done)
+    {
+      guint32   a;
+      YtsgError e;
+
+      a = ytsg_error_get_atom (d->error);
+      e = ytsg_error_make (a, YTSG_ERROR_SUCCESS);
+
+      ytsg_client_emit_error (d->client, e);
+
+      d->status_done = TRUE;
+    }
+
+  ytsg_cl_channel_data_unref (d);
+}
+
+static void
+ytsg_client_msg_request_cb (GObject      *source_object,
+                            GAsyncResult *result,
+                            gpointer      data)
+{
+  GError *error = NULL;
+
+  if (!tp_yts_channel_request_finish (
+          TP_YTS_CHANNEL (source_object), result, &error))
+    {
+      g_warning ("Failed to Request on channel: %s\n", error->message);
+    }
+  else
+    {
+      YTSG_NOTE (MESSAGE, "Channel requested");
+    }
+
+  g_clear_error (&error);
+}
 
 static void
 ytsg_client_outgoing_channel_cb (GObject      *obj,
@@ -2198,26 +2327,39 @@ ytsg_client_outgoing_channel_cb (GObject      *obj,
   TpYtsChannel             *ch    = TP_YTS_CHANNEL (obj);
   GError                   *error = NULL;
   struct YtsgCLChannelData *d     = data;
-  guint32                   a;
-  YtsgError                 e;
-
-  a = ytsg_error_get_atom (d->error);
-
   if (!tp_yts_channel_request_finish (ch, res, &error))
     {
+      guint32   a;
+      YtsgError e;
+
+      a = ytsg_error_get_atom (d->error);
+
       g_warning ("Failed to open outgoing channel: %s", error->message);
       g_clear_error (&error);
 
       e = ytsg_error_make (a, YTSG_ERROR_NO_MSG_CHANNEL);
+
+      ytsg_client_emit_error (d->client, e);
     }
   else
     {
-      e = ytsg_error_make (a, YTSG_ERROR_SUCCESS);
+      YTSG_NOTE (MESSAGE, "Got message channel, sending request");
+
+      tp_yts_channel_connect_to_replied (ch, ytsg_client_msg_replied_cb,
+                                         ytsg_cl_channel_data_ref (d),
+                                         NULL, NULL, NULL);
+      tp_yts_channel_connect_to_failed (ch, ytsg_client_msg_failed_cb,
+                                        ytsg_cl_channel_data_ref (d),
+                                        NULL, NULL, NULL);
+      tp_cli_channel_connect_to_closed (TP_CHANNEL (ch),
+                                        ytsg_client_msg_closed_cb,
+                                        ytsg_cl_channel_data_ref (d),
+                                        NULL, NULL, NULL);
+
+      tp_yts_channel_request_async (ch, NULL, ytsg_client_msg_request_cb, NULL);
     }
 
-  ytsg_client_emit_error (d->client, e);
-
-  g_free (d);
+  ytsg_cl_channel_data_unref (d);
 }
 
 
@@ -2248,9 +2390,11 @@ _ytsg_client_send_message (YtsgClient  *client,
 
   e = ytsg_error_new (YTSG_ERROR_PENDING);
 
-  d         = g_new (struct YtsgCLChannelData, 1);
-  d->error  = e;
-  d->client = client;
+  d              = g_new (struct YtsgCLChannelData, 1);
+  d->error       = e;
+  d->client      = client;
+  d->status_done = FALSE;
+  d->ref_count   = 1;
 
   tp_yts_client_request_channel_async (priv->tp_client,
                                        tp_contact,
