@@ -37,7 +37,7 @@ timeout_test_cb (gpointer data)
 {
   GMainLoop *loop = data;
 
-  g_message ("Quiting local connection test");
+  g_message ("TIMEOUT: quiting local connection test");
 
   g_main_loop_quit (loop);
 
