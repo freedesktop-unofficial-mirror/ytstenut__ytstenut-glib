@@ -481,7 +481,6 @@ ytsg_client_disconnected (YtsgClient *client)
 static void
 ytsg_client_message (YtsgClient *client, YtsgMessage *msg)
 {
-  g_signal_emit (client, signals[MESSAGE], 0, msg);
 }
 
 static gboolean
@@ -987,8 +986,30 @@ ytsg_client_yts_channels_received_cb (TpYtsClient *tp_client,
 
   while ((ch = tp_yts_client_accept_channel (tp_client)))
     {
-      /* FIXME -- incoming channel */
-      g_critical (G_STRLOC ": NOT IMPLEMENTED");
+      GHashTable     *props;
+      GHashTableIter  iter;
+      gpointer        key, value;
+
+      g_object_get (ch, "channel-properties", &props, NULL);
+      g_assert (props);
+
+      g_hash_table_iter_init (&iter, props);
+      while (g_hash_table_iter_next (&iter, &key, &value))
+        {
+          YtsgMessage *msg;
+          GValue      *v = value;
+          char        *k = key;
+
+          if (!strcmp (k, "com.meego.xpmn.ytstenut.Channel.RequestBody"))
+            {
+              const char *xml = g_value_get_string (v);
+
+              msg = (YtsgMessage*) _ytsg_metadata_new_from_xml (xml);
+
+              g_signal_emit (client, signals[MESSAGE], 0, msg);
+            }
+        }
+
     }
 }
 
@@ -1018,9 +1039,6 @@ ytsg_client_account_prepared_cb (GObject      *acc,
 
   priv->tp_client = tp_yts_client_new (priv->uid, account);
 
-  tp_g_signal_connect_object (priv->tp_client, "received-channels",
-                              G_CALLBACK (ytsg_client_yts_channels_received_cb),
-                              client, 0);
   /*
    * If connection has been requested already, make one
    */
@@ -1650,6 +1668,10 @@ ytsg_client_connection_prepare_cb (GObject      *connection,
       else
         YTSG_NOTE (CONNECTION, "Registered TpYtsClient");
 
+      tp_g_signal_connect_object (priv->tp_client, "received-channels",
+                              G_CALLBACK (ytsg_client_yts_channels_received_cb),
+                              client, 0);
+
       if (priv->icon_data &&
           ytsg_client_is_avatar_type_supported (client,
                                               priv->icon_mime_type,
@@ -2199,10 +2221,14 @@ ytsg_client_set_status (YtsgClient *client, YtsgStatus *status)
 
 struct YtsgCLChannelData
 {
-  YtsgClient *client;
-  YtsgError   error;
-  gboolean    status_done;
-  int         ref_count;
+  YtsgClient  *client;
+  YtsgContact *contact;
+  GHashTable  *attrs;
+  char        *xml;
+  char        *uid;
+  YtsgError    error;
+  gboolean     status_done;
+  int          ref_count;
 };
 
 static void
@@ -2211,7 +2237,12 @@ ytsg_cl_channel_data_unref (struct YtsgCLChannelData *d)
   d->ref_count--;
 
   if (d->ref_count <= 0)
-    g_free (d);
+    {
+      g_hash_table_unref (d->attrs);
+      g_free (d->xml);
+      g_free (d->uid);
+      g_free (d);
+    }
 }
 
 static struct YtsgCLChannelData *
@@ -2337,10 +2368,12 @@ ytsg_client_outgoing_channel_cb (GObject      *obj,
                                  GAsyncResult *res,
                                  gpointer      data)
 {
-  TpYtsChannel             *ch    = TP_YTS_CHANNEL (obj);
-  GError                   *error = NULL;
-  struct YtsgCLChannelData *d     = data;
-  if (!tp_yts_channel_request_finish (ch, res, &error))
+  TpYtsChannel             *ch;
+  TpYtsClient              *client = TP_YTS_CLIENT (obj);
+  GError                   *error  = NULL;
+  struct YtsgCLChannelData *d      = data;
+
+  if (!(ch = tp_yts_client_request_channel_finish (client, res, &error)))
     {
       guint32   a;
       YtsgError e;
@@ -2375,6 +2408,41 @@ ytsg_client_outgoing_channel_cb (GObject      *obj,
   ytsg_cl_channel_data_unref (d);
 }
 
+static YtsgError
+ytsg_client_dispatch_message (struct YtsgCLChannelData *d)
+{
+  TpContact         *tp_contact;
+  YtsgClientPrivate *priv = d->client->priv;
+
+  YTSG_NOTE (CLIENT, "Dispatching delayed message to %s", d->uid);
+
+  tp_contact = ytsg_contact_get_tp_contact (d->contact);
+  g_assert (tp_contact);
+
+  tp_yts_client_request_channel_async (priv->tp_client,
+                                       tp_contact,
+                                       d->uid,
+                                       TP_YTS_REQUEST_TYPE_GET,
+                                       d->attrs,
+                                       d->xml,
+                                       NULL,
+                                       ytsg_client_outgoing_channel_cb,
+                                       d);
+
+  return d->error;
+}
+
+static void
+ytsg_client_notify_tp_contact_cb (YtsgContact              *contact,
+                                  GParamSpec               *pspec,
+                                  struct YtsgCLChannelData *d)
+{
+  YTSG_NOTE (CLIENT, "Contact ready");
+  ytsg_client_dispatch_message (d);
+  g_signal_handlers_disconnect_by_func (contact,
+                                        ytsg_client_notify_tp_contact_cb,
+                                        d);
+}
 
 YtsgError
 _ytsg_client_send_message (YtsgClient  *client,
@@ -2382,15 +2450,10 @@ _ytsg_client_send_message (YtsgClient  *client,
                            const char  *uid,
                            YtsgMessage *message)
 {
-  YtsgClientPrivate        *priv = client->priv;
   GHashTable               *attrs;
   struct YtsgCLChannelData *d;
   YtsgError                 e;
   char                     *xml = NULL;
-  TpContact                *tp_contact;
-
-  tp_contact = ytsg_contact_get_tp_contact (contact);
-  g_assert (tp_contact);
 
   if (!(attrs = _ytsg_metadata_extract ((YtsgMetadata*)message, &xml)))
     {
@@ -2406,21 +2469,25 @@ _ytsg_client_send_message (YtsgClient  *client,
   d              = g_new (struct YtsgCLChannelData, 1);
   d->error       = e;
   d->client      = client;
+  d->contact     = contact;
   d->status_done = FALSE;
   d->ref_count   = 1;
+  d->attrs       = attrs;
+  d->xml         = xml;
+  d->uid         = g_strdup (uid);
 
-  tp_yts_client_request_channel_async (priv->tp_client,
-                                       tp_contact,
-                                       uid,
-                                       TP_YTS_REQUEST_TYPE_GET,
-                                       attrs,
-                                       xml,
-                                       NULL,
-                                       ytsg_client_outgoing_channel_cb,
-                                       d);
+  if (ytsg_contact_get_tp_contact (contact))
+    {
+      ytsg_client_dispatch_message (d);
+    }
+  else
+    {
+      YTSG_NOTE (CLIENT, "Contact not ready, postponing message dispatch");
 
-  g_hash_table_unref (attrs);
-  g_free (xml);
+      g_signal_connect (contact, "notify::tp-contact",
+                        G_CALLBACK (ytsg_client_notify_tp_contact_cb),
+                        d);
+    }
 
   return e;
 }
