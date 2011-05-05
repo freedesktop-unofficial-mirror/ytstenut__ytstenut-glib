@@ -81,34 +81,34 @@ incoming_file_cb (YtsgClient *client,
   return TRUE;
 }
 
-
 static void
-contact_added_cb (YtsgRoster *roster, YtsgContact *item, gpointer data)
+service_added_cb (YtsgRoster *roster, YtsgService *service, gpointer data)
 {
-  YtsgClient *client = ytsg_roster_get_client (roster);
-  const char *cjid   = ytsg_contact_get_jid (item);
-  gboolean    our    = FALSE;
+  YtsgClient  *client  = ytsg_roster_get_client (roster);
+  YtsgContact *contact = ytsg_service_get_contact (service);
+  const char  *jid     = ytsg_contact_get_jid (contact);
+  const char  *sid     = ytsg_service_get_uid (service);
 
-  if (client == client1 && strstr (cjid, "ft-testapp2"))
+  static YtsgService *to = NULL;
+
+  if (client == client1 && strstr (sid, "com.meego.ytstenut.FileTransferTest2"))
     {
       ready1 = TRUE;
-      our    = TRUE;
+      to     = service;
     }
 
-  if (client == client2 && strstr (cjid, "ft-testapp1@"))
+  if (client == client2 && strstr (sid, "com.meego.ytstenut.FileTransferTest1"))
     {
-      ready2 = TRUE;
-      our    = TRUE;
+      ready2   = TRUE;
     }
 
   /*
    * Waiting for both clients to appear ...
    */
-  if (our && ready1 && ready2)
+  if (ready1 && ready2)
     {
-      GFile      *file  = g_file_new_for_path ("/home/tomas/git/ytstenut-glib/tests/file-transfer.c");
-      YtsgClient *other = client == client1 ? client2 : client1;
-      YtsgError   e;
+      GFile     *file  = g_file_new_for_path ("file-transfer.c");
+      YtsgError  e;
 
       retval = 1;
 
@@ -118,10 +118,10 @@ contact_added_cb (YtsgRoster *roster, YtsgContact *item, gpointer data)
           g_main_loop_quit (loop);
         }
 
-      g_signal_connect (other, "incoming-file",
+      g_signal_connect (client2, "incoming-file",
                         G_CALLBACK (incoming_file_cb), NULL);
 
-      e = ytsg_contact_send_file (item, file);
+      e = ytsg_contact_send_file (ytsg_service_get_contact (to), file);
 
       g_object_unref (file);
 
@@ -150,8 +150,8 @@ main (int argc, char **argv)
   g_signal_connect (client1, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);
   roster1 = ytsg_client_get_roster (client1);
-  g_signal_connect (roster1, "contact-added",
-                    G_CALLBACK (contact_added_cb), NULL);
+  g_signal_connect (roster1, "service-added",
+                    G_CALLBACK (service_added_cb), NULL);
   ytsg_client_connect_to_mesh (client1);
 
   client2 = ytsg_client_new (YTSG_PROTOCOL_LOCAL_XMPP,
@@ -159,8 +159,8 @@ main (int argc, char **argv)
   g_signal_connect (client2, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);
   roster2 = ytsg_client_get_roster (client2);
-  g_signal_connect (roster2, "contact-added",
-                    G_CALLBACK (contact_added_cb), NULL);
+  g_signal_connect (roster2, "service-added",
+                    G_CALLBACK (service_added_cb), NULL);
   ytsg_client_connect_to_mesh (client2);
 
   g_timeout_add_seconds (TEST_LENGTH, timeout_test_cb, loop);
