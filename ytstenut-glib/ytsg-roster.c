@@ -68,6 +68,9 @@ enum
   CONTACT_ADDED,
   CONTACT_REMOVED,
 
+  SERVICE_ADDED,
+  SERVICE_REMOVED,
+
   N_SIGNALS,
 };
 
@@ -144,6 +147,46 @@ ytsg_roster_class_init (YtsgRosterClass *klass)
                   ytsg_marshal_VOID__OBJECT,
                   G_TYPE_NONE, 1,
                   YTSG_TYPE_CONTACT);
+
+  /**
+   * YtsgRoster::service-added
+   * @roster: #YtsgRoster object which emitted the signal,
+   * @service: #YtsgService that was added.
+   *
+   * Emitted when service is added to the roster.
+   *
+   * Since: 0.1
+   */
+  signals[SERVICE_ADDED] =
+    g_signal_new (I_("service-added"),
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  0,
+                  NULL, NULL,
+                  ytsg_marshal_VOID__OBJECT,
+                  G_TYPE_NONE, 1,
+                  YTSG_TYPE_SERVICE);
+
+  /**
+   * YtsgRoster::service-removed
+   * @roster: #YtsgRoster object which emitted the signal,
+   * @service: #YtsgService that was removed.
+   *
+   * Emitted when service is removed from the roster. Applications that
+   * connected signal handlers to the service, should disconnect them when this
+   * signal is emitted.
+   *
+   * Since: 0.1
+   */
+  signals[SERVICE_REMOVED] =
+    g_signal_new (I_("service-removed"),
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  0,
+                  NULL, NULL,
+                  ytsg_marshal_VOID__OBJECT,
+                  G_TYPE_NONE, 1,
+                  YTSG_TYPE_SERVICE);
 }
 
 static void
@@ -191,7 +234,7 @@ ytsg_roster_init (YtsgRoster *self)
   self->priv = YTSG_ROSTER_GET_PRIVATE (self);
 
   self->priv->contacts = g_hash_table_new_full (g_str_hash, g_str_equal,
-                                                NULL, g_object_unref);
+                                                g_free, g_object_unref);
 }
 
 static void
@@ -342,7 +385,7 @@ ytsg_roster_find_contact_by_jid (YtsgRoster *roster, const char *jid)
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
       YtsgContact *contact = value;
-      const gchar *j       = ytsg_contact_get_jid (contact);
+      const gchar *j       = key;
 
       if (j && !strcmp (j, jid))
         {
@@ -453,6 +496,23 @@ ytsg_roster_get_client (YtsgRoster *roster)
   return priv->client;
 }
 
+static void
+ytsg_roster_contact_service_removed_cb (YtsgContact *contact,
+                                        YtsgService *service,
+                                        YtsgRoster  *roster)
+{
+  g_signal_emit (roster, signals[SERVICE_REMOVED], 0, service);
+}
+
+static void
+ytsg_roster_contact_service_added_cb (YtsgContact *contact,
+                                      YtsgService *service,
+                                      YtsgRoster  *roster)
+{
+  g_signal_emit (roster, signals[SERVICE_ADDED], 0, service);
+}
+
+
 void
 _ytsg_roster_add_service (YtsgRoster  *roster,
                           const char  *jid,
@@ -463,7 +523,6 @@ _ytsg_roster_add_service (YtsgRoster  *roster,
 {
   YtsgRosterPrivate *priv;
   YtsgContact       *contact;
-  gboolean           emit = FALSE;
   YtsgService       *service;
 
   g_return_if_fail (YTSG_IS_ROSTER (roster));
@@ -476,9 +535,17 @@ _ytsg_roster_add_service (YtsgRoster  *roster,
 
       contact = _ytsg_contact_new (priv->client, jid);
 
-      g_hash_table_insert (priv->contacts, (char*)jid, contact);
+      g_signal_connect (contact, "service-added",
+                        G_CALLBACK (ytsg_roster_contact_service_added_cb),
+                        roster);
+      g_signal_connect (contact, "service-removed",
+                        G_CALLBACK (ytsg_roster_contact_service_removed_cb),
+                        roster);
 
-      emit = TRUE;
+      g_hash_table_insert (priv->contacts, g_strdup (jid), contact);
+
+      YTSG_NOTE (ROSTER, "Emitting contact-added for new contact %s", jid);
+      g_signal_emit (roster, signals[CONTACT_ADDED], 0, contact);
     }
 
   YTSG_NOTE (ROSTER, "Adding service %s:%s", jid, sid);
@@ -488,11 +555,5 @@ _ytsg_roster_add_service (YtsgRoster  *roster,
   _ytsg_contact_add_service (contact, service);
 
   g_object_unref (service);
-
-  if (emit)
-    {
-      YTSG_NOTE (ROSTER, "New contact %s", jid);
-      g_signal_emit (roster, signals[CONTACT_ADDED], 0, contact);
-    }
 }
 
