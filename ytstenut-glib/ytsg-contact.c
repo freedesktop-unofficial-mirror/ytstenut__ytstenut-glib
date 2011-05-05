@@ -325,6 +325,8 @@ ytsg_contact_tp_contact_cb (TpConnection       *connection,
       return;
     }
 
+  YTSG_NOTE (CONTACT, "Got TpContact for %s", priv->jid);
+
   priv->tp_contact = g_object_ref (contacts[0]);
 
   /*
@@ -339,7 +341,7 @@ ytsg_contact_tp_contact_cb (TpConnection       *connection,
                               G_CALLBACK (ytsg_contact_avatar_file_cb),
                               contact, 0);
 
-  g_object_notify_by_pspec ((GObject*)priv->tp_contact,
+  g_object_notify_by_pspec ((GObject*)contact,
                             properties[PROP_TP_CONTACT]);
 }
 
@@ -360,6 +362,8 @@ ytsg_contact_constructed (GObject *object)
   connection = _ytsg_client_get_connection (priv->client);
 
   g_assert (connection);
+
+  YTSG_NOTE (CONTACT, "Requesting TpContact for %s", priv->jid);
 
   tp_connection_get_contacts_by_id (connection,
                                     1,
