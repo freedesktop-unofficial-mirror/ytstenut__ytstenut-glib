@@ -824,7 +824,7 @@ ytsg_contact_ft_channel_ready_cb (TpChannel       *channel,
   if (!tp_channel_is_ready (channel))
     return;
 
-  g_debug ("The FT channel is ready");
+  YTSG_NOTE (FILE_TRANSFER, "The FT channel is ready");
 
   ytsg_c_dispatch_file (file);
   ytsg_c_pending_file_free (file);
@@ -950,27 +950,10 @@ ytsg_contact_create_ft_channel_cb (TpConnection *proxy,
     }
 }
 
-/**
- * ytsg_contact_send_file:
- * @item: #YtsgContact,
- * @gfile: #GFile to send
- *
- * Sends file to the contact represented by this item. The caller can safely
- * release reference on the supplied #GFile after calling this function.
- *
- * Return value: Returns %YTSG_ERROR_SUCCESS on success, return value
- * %YTSG_ERROR_NOT_ALLOWED indicates that the current client is not mutually
- * approved to exchange files with the item. %YTSG_ERROR_PENDING is returned if
- * the execution of the command has to be deferred until the communication
- * channel is ready; in this case the file will be automatically send at the
- * appropriate time, and any errors, or eventaul success, will be indicated by
- * emitting the #YtsgClient::error signal at that time.
- */
-YtsgError
-ytsg_contact_send_file (const YtsgContact *item, GFile *gfile)
+static YtsgError
+ytsg_contact_do_send_file (const YtsgContact *item, GFile *gfile, guint32 atom)
 {
   YtsgContactPrivate *priv;
-  guint32             atom;
   const char         *content_type = "binary";
   GFileInfo          *finfo;
   GError             *error = NULL;
@@ -986,6 +969,9 @@ ytsg_contact_send_file (const YtsgContact *item, GFile *gfile)
 
   g_return_val_if_fail (!priv->disposed, YTSG_ERROR_OBJECT_DISPOSED);
 
+  if (!priv->tp_contact)
+    return YTSG_ERROR_NO_ROUTE;
+
   finfo = g_file_query_info (gfile,
                              "standard::*",
                              0,
@@ -998,14 +984,6 @@ ytsg_contact_send_file (const YtsgContact *item, GFile *gfile)
       g_clear_error (&error);
       return YTSG_ERROR_INVALID_PARAMETER;
     }
-
-  /*
-   * NB: the atom through this files is used in its shifted, rather than
-   * canonical form, so it can be just ored with an error code.
-   */
-  atom = (ytsg_error_new_atom () << 16);
-
-  g_debug ("Sending file with atom %d", atom);
 
   file = ytsg_c_pending_file_new (item, gfile,
                                   g_file_info_get_display_name (finfo), atom);
@@ -1049,6 +1027,105 @@ ytsg_contact_send_file (const YtsgContact *item, GFile *gfile)
                                             (GObject*)item);
 
   g_object_unref (finfo);
+
+  return (atom & YTSG_ERROR_PENDING);
+}
+
+struct YtsgContactFTData
+{
+  GFile   *gfile;
+  guint32  atom;
+};
+
+static void
+ytsg_contact_notify_tp_contact_cb (YtsgContact              *contact,
+                                   GParamSpec               *pspec,
+                                   struct YtsgContactFTData *d)
+{
+  YTSG_NOTE (FILE_TRANSFER, "Contact ready");
+  ytsg_contact_do_send_file (contact, d->gfile, d->atom);
+
+  g_signal_handlers_disconnect_by_func (contact,
+                                        ytsg_contact_notify_tp_contact_cb,
+                                        d);
+
+  g_object_unref (d->gfile);
+  g_free (d);
+}
+
+
+/**
+ * ytsg_contact_send_file:
+ * @item: #YtsgContact,
+ * @gfile: #GFile to send
+ *
+ * Sends file to the contact represented by this item. The caller can safely
+ * release reference on the supplied #GFile after calling this function.
+ *
+ * Return value: Returns %YTSG_ERROR_SUCCESS on success, return value
+ * %YTSG_ERROR_NOT_ALLOWED indicates that the current client is not mutually
+ * approved to exchange files with the item. %YTSG_ERROR_PENDING is returned if
+ * the execution of the command has to be deferred until the communication
+ * channel is ready; in this case the file will be automatically send at the
+ * appropriate time, and any errors, or eventaul success, will be indicated by
+ * emitting the #YtsgClient::error signal at that time.
+ */
+YtsgError
+ytsg_contact_send_file (const YtsgContact *item, GFile *gfile)
+{
+  YtsgContactPrivate *priv;
+  GFileInfo          *finfo;
+  GError             *error = NULL;
+  guint32             atom;
+
+  g_return_val_if_fail (YTSG_IS_CONTACT (item) && gfile,
+                        YTSG_ERROR_INVALID_PARAMETER);
+
+  priv = item->priv;
+
+  g_return_val_if_fail (!priv->disposed, YTSG_ERROR_OBJECT_DISPOSED);
+
+  finfo = g_file_query_info (gfile,
+                             "standard::*",
+                             0,
+                             NULL,
+                             &error);
+
+  if (error)
+    {
+      g_warning ("Unable to query file, %s", error->message);
+      g_clear_error (&error);
+      return YTSG_ERROR_INVALID_PARAMETER;
+    }
+
+  g_object_unref (finfo);
+
+  /*
+   * NB: the atom through this file is used in its shifted, rather than
+   * canonical form, so it can be just ored with an error code.
+   */
+  atom = (ytsg_error_new_atom () << 16);
+
+  YTSG_NOTE (FILE_TRANSFER, "Sending file with atom %d", atom);
+
+  if (priv->tp_contact)
+    {
+      ytsg_contact_do_send_file (item, gfile, atom);
+    }
+  else
+    {
+      struct YtsgContactFTData *d = g_new (struct YtsgContactFTData, 1);
+
+      d->gfile = g_object_ref (gfile);
+      d->atom  = atom;
+
+      YTSG_NOTE (FILE_TRANSFER,
+                 "Contact not ready, postponing message file transfer");
+
+      g_signal_connect ((GObject*)item, "notify::tp-contact",
+                        G_CALLBACK (ytsg_contact_notify_tp_contact_cb),
+                        d);
+    }
 
   return (atom & YTSG_ERROR_PENDING);
 }
