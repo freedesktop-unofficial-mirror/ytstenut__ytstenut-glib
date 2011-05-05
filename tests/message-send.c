@@ -54,24 +54,45 @@ authenticated_cb (YtsgClient *client, gpointer data)
 }
 
 static void
-contact_added_cb (YtsgRoster *roster, YtsgContact *item, gpointer data)
+message_cb (YtsgClient *client, YtsgMessage *msg, gpointer data)
 {
-  YtsgClient *client = ytsg_roster_get_client (roster);
-  const char *cjid   = ytsg_contact_get_jid (item);
-  gboolean    our    = FALSE;
+  YtsgMetadata *md = (YtsgMetadata*)msg;
 
-  g_debug ("Contact %s", cjid);
+  g_assert (YTSG_IS_MESSAGE (msg));
 
-  if (client == client1 && strstr (cjid, "ft-testapp2"))
+  g_assert_cmpstr ("v1", ==, ytsg_metadata_get_attribute (md, "a1"));
+  g_assert_cmpstr ("v2", ==, ytsg_metadata_get_attribute (md, "a2"));
+
+  retval = 0;
+  g_main_loop_quit (loop);
+}
+
+static void
+service_added_cb (YtsgRoster *roster, YtsgService *service, gpointer data)
+{
+  YtsgClient  *client  = ytsg_roster_get_client (roster);
+  YtsgContact *contact = ytsg_service_get_contact (service);
+  const char  *jid     = ytsg_contact_get_jid (contact);
+  const char  *sid     = ytsg_service_get_uid (service);
+  gboolean     our     = FALSE;
+
+  static YtsgService *service2 = NULL;
+
+  g_debug ("Service %s:%s", jid, sid);
+
+  if (client == client1 && strstr (sid, "com.meego.ytstenut.SendMessageTest2"))
     {
-      ready1 = TRUE;
-      our    = TRUE;
+      ready1   = TRUE;
+      our      = TRUE;
+      service2 = service;
     }
 
-  if (client == client2 && strstr (cjid, "ft-testapp1@"))
+  if (client == client2 && strstr (sid, "com.meego.ytstenut.SendMessageTest1"))
     {
-      ready2 = TRUE;
-      our    = TRUE;
+      ready2   = TRUE;
+      our      = TRUE;
+
+      g_signal_connect (client, "message", G_CALLBACK (message_cb), NULL);
     }
 
   /*
@@ -79,6 +100,23 @@ contact_added_cb (YtsgRoster *roster, YtsgContact *item, gpointer data)
    */
   if (our && ready1 && ready2)
     {
+      YtsgError     e;
+      YtsgMetadata *metadata;
+      const char   *attributes[] =
+        {
+          "a1", "v1",
+          "a2", "v2",
+          NULL
+        };
+
+      metadata = (YtsgMetadata*)ytsg_message_new ((const char**)&attributes);
+
+      g_debug ("Both test services are ready, sending message");
+
+      e = ytsg_metadata_service_send_metadata ((YtsgMetadataService *)service2,
+                                               metadata);
+
+      g_assert (ytsg_error_get_code (e) == YTSG_ERROR_PENDING);
     }
 }
 
@@ -97,8 +135,8 @@ main (int argc, char **argv)
   g_signal_connect (client1, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);
   roster1 = ytsg_client_get_roster (client1);
-  g_signal_connect (roster1, "contact-added",
-                    G_CALLBACK (contact_added_cb), NULL);
+  g_signal_connect (roster1, "service-added",
+                    G_CALLBACK (service_added_cb), NULL);
   ytsg_client_connect_to_mesh (client1);
 
   client2 = ytsg_client_new (YTSG_PROTOCOL_LOCAL_XMPP,
@@ -106,8 +144,8 @@ main (int argc, char **argv)
   g_signal_connect (client2, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);
   roster2 = ytsg_client_get_roster (client2);
-  g_signal_connect (roster2, "contact-added",
-                    G_CALLBACK (contact_added_cb), NULL);
+  g_signal_connect (roster2, "service-added",
+                    G_CALLBACK (service_added_cb), NULL);
   ytsg_client_connect_to_mesh (client2);
 
   g_timeout_add_seconds (TEST_LENGTH, timeout_test_cb, loop);
