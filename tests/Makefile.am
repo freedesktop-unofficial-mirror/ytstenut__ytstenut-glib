@@ -1,4 +1,4 @@
-TESTS = message status metadata-service local-connection message-send
+TESTS = message status metadata-service local-connection message-send status-set
 
 AM_CPPFLAGS = 					\
 	-DG_DISABLE_DEPRECATED 			\
@@ -33,3 +33,6 @@ local_connection_LDADD   = $(YTSG_LIBS)
 
 message_send_SOURCES     = message-send.c
 message_send_LDADD       = $(YTSG_LIBS)
+
+status_set_SOURCES     = status-set.c
+status_set_LDADD       = $(YTSG_LIBS)
