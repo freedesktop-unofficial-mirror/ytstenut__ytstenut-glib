@@ -207,11 +207,11 @@ ytsg_metadata_service_status_changed_cb (TpYtsStatus *status,
 
   g_return_if_fail (contact_id && service_name && jid && uid);
 
-  if (strcmp (contact_id, jid) || strcmp (service_name, uid))
-    return;
-
   YTSG_NOTE (STATUS, "Status changed for %s/%s:%s",
              contact_id, service_name, capability);
+
+  if (strcmp (contact_id, jid) || strcmp (service_name, uid))
+    return;
 
   if (priv->status)
     {
