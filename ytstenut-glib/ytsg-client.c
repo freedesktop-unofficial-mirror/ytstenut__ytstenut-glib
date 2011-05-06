@@ -1453,10 +1453,14 @@ ytsg_client_process_one_service (YtsgClient        *client,
   names = g_value_get_boxed (g_value_array_get_nth (sinfo, 1));
   caps  = g_value_get_boxed (g_value_array_get_nth (sinfo, 2));
 
-  if (!priv->caps || yts_client_caps_overlap (priv->caps, caps))
+  if (!priv->caps || !caps || !*caps ||
+      yts_client_caps_overlap (priv->caps, caps))
     roster = priv->roster;
   else
     roster = priv->unwanted;
+
+  YTSG_NOTE (CLIENT, "Using roster %s",
+             roster == priv->roster ? "wanted" : "unwanted");
 
   _ytsg_roster_add_service (roster, jid, sid, type,
                             (const char**)caps, names);
@@ -1508,6 +1512,62 @@ ytsg_client_process_status (YtsgClient *client)
 }
 
 static void
+ytsg_client_advertise_status_cb (GObject      *source_object,
+                                 GAsyncResult *result,
+                                 gpointer      data)
+{
+  TpYtsStatus *status = TP_YTS_STATUS (source_object);
+  GError      *error = NULL;
+
+  if (!tp_yts_status_advertise_status_finish (status, result, &error))
+    {
+      g_critical ("Failed to advertise status: %s", error->message);
+    }
+  else
+    {
+      YTSG_NOTE (CLIENT, "Advertising of status succeeded");
+    }
+
+  g_clear_error (&error);
+}
+
+static void
+ytsg_client_dispatch_status (YtsgClient *client)
+{
+  YtsgClientPrivate *priv;
+  char *xml = NULL;
+  int   i;
+
+  g_return_if_fail (YTSG_IS_CLIENT (client));
+
+  priv = client->priv;
+
+  g_return_if_fail (priv->caps && priv->caps->len);
+
+  if (priv->status)
+    xml = ytsg_metadata_to_string ((YtsgMetadata*)priv->status);
+
+  YTSG_NOTE (CLIENT, "Setting status to\n%s", xml);
+
+  for (i = 0; i < priv->caps->len; ++i)
+    {
+      const char *c;
+
+      c = g_quark_to_string (g_array_index (priv->caps, YtsgCaps, i));
+
+      tp_yts_status_advertise_status_async (priv->tp_status,
+                                            c,
+                                            priv->uid,
+                                            xml,
+                                            NULL,
+                                            ytsg_client_advertise_status_cb,
+                                            client);
+    }
+
+  g_free (xml);
+}
+
+static void
 ytsg_client_yts_status_cb (GObject      *obj,
                            GAsyncResult *res,
                            gpointer      data)
@@ -1530,6 +1590,9 @@ ytsg_client_yts_status_cb (GObject      *obj,
   tp_g_signal_connect_object (status, "service-added",
                               G_CALLBACK (ytsg_client_service_added_cb),
                               client, 0);
+
+  if (priv->status)
+    ytsg_client_dispatch_status (client);
 
   ytsg_client_process_status (client);
 
@@ -1963,6 +2026,8 @@ ytsg_client_refresh_roster (YtsgClient *client)
 {
   YtsgClientPrivate *priv = client->priv;
 
+  YTSG_NOTE (CLIENT, "Refreshing roster");
+
   if (!priv->tp_status)
     return;
 
@@ -1992,7 +2057,12 @@ ytsg_client_set_capabilities (YtsgClient *client, YtsgCaps caps)
   priv = client->priv;
 
   if (ytsg_client_has_capability (client, caps))
-    return;
+    {
+      YTSG_NOTE (CLIENT, "Capablity '%s' already set",
+                 g_quark_to_string (caps));
+
+      return;
+    }
 
   if (!priv->caps)
     priv->caps = g_array_sized_new (FALSE, FALSE, sizeof (YtsgCaps), 1);
@@ -2170,6 +2240,11 @@ _ytsg_client_get_tp_status (YtsgClient *client)
   return priv->tp_status;
 }
 
+/*
+ * FIXME -- bad API, constructing the YtsgStatus is hard, this should be a
+ * private API, with a better public API wrapping it.
+ */
+
 /**
  * ytsg_client_set_status:
  * @client: #YtsgClient
@@ -2182,10 +2257,11 @@ ytsg_client_set_status (YtsgClient *client, YtsgStatus *status)
 {
   YtsgClientPrivate *priv;
 
-  g_return_if_fail (YTSG_IS_CLIENT (client) &&
-                    (!status || YTSG_IS_STATUS (status)));
+  g_return_if_fail (YTSG_IS_CLIENT (client) && YTSG_IS_STATUS (status));
 
   priv = client->priv;
+
+  g_return_if_fail (priv->caps && priv->caps->len);
 
   if (priv->status)
     {
@@ -2193,29 +2269,11 @@ ytsg_client_set_status (YtsgClient *client, YtsgStatus *status)
       priv->status = NULL;
     }
 
-  if (status)
+  priv->status = status;
+
+  if (priv->tp_status)
     {
-      char *xml;
-      int   i;
-
-      priv->status = status;
-
-      xml = ytsg_metadata_to_string ((YtsgMetadata*)priv->status);
-
-      for (i = 0; i < priv->caps->len; ++i)
-        {
-          const char *c;
-
-          c = g_quark_to_string (g_array_index (priv->caps, YtsgCaps, i));
-
-          tp_yts_status_advertise_status_async (priv->tp_status,
-                                                c,
-                                                priv->uid,
-                                                xml,
-                                                NULL,
-                                                NULL,
-                                                NULL);
-        }
+      ytsg_client_dispatch_status (client);
     }
 }
 
