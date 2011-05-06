@@ -331,10 +331,46 @@ _ytsg_metadata_new_from_node (RestXmlNode *node, const char **attributes)
   else if (!strcmp (node->name, "status"))
     {
       if (attributes)
-        mdata = g_object_new (YTSG_TYPE_STATUS,
-                              "top-level-node", node,
-                              "attributes",     attributes,
-                              NULL);
+        {
+          const char **p;
+          gboolean     have_caps     = FALSE;
+          gboolean     have_activity = FALSE;
+          gboolean     have_xmlns    = FALSE;
+          gboolean     have_from     = FALSE;
+
+          for (p = attributes; *p; ++p)
+            {
+              if (!strcmp (*p, "capability"))
+                have_caps = TRUE;
+              else if (!strcmp (*p, "activity"))
+                have_activity = TRUE;
+              else if (!strcmp (*p, "xmlns"))
+                have_xmlns = TRUE;
+              else if (!strcmp (*p, "from-service"))
+                have_from = TRUE;
+            }
+
+          if (!have_caps || !have_activity || !have_from)
+            {
+              g_warning ("Cannot construct YtsgStatus without capability, "
+                         "activity and from-service attributes.");
+              return NULL;
+            }
+
+          if (have_xmlns)
+            {
+              g_warning ("xmlns attribute is not allowed when constructing "
+                         "YtsgStatus");
+              return NULL;
+            }
+
+          mdata = g_object_new (YTSG_TYPE_STATUS,
+                                "top-level-node", node,
+                                "attributes",     attributes,
+                                NULL);
+
+          ytsg_metadata_add_attribute (mdata, "xmlns", "urn:ytstenut:status");
+        }
       else
         mdata = g_object_new (YTSG_TYPE_STATUS, "top-level-node", node, NULL);
     }
