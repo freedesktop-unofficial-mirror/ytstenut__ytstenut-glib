@@ -112,7 +112,9 @@ service_added_cb (YtsgRoster *roster, YtsgService *service, gpointer data)
 
       status = ytsg_status_new ((const char**)&attributes);
 
-      ytsg_client_set_status (client1, status);
+      ytsg_client_set_status_by_capability (client1,
+                                    "urn:ytstenut:capabilities:yts-caps-video",
+                                    "yts-activity-playing");
     }
 }
 

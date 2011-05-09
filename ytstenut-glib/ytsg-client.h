@@ -115,7 +115,9 @@ const char *ytsg_client_get_incoming_file_directory (YtsgClient *client);
 const char *ytsg_client_get_jid (const YtsgClient *client);
 const char *ytsg_client_get_uid (const YtsgClient *client);
 void        ytsg_client_set_status (YtsgClient *client, YtsgStatus *status);
-
+void        ytsg_client_set_status_by_capability (YtsgClient *client,
+                                                  const char *capability,
+                                                  const char *activity);
 
 G_END_DECLS
 

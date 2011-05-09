@@ -2246,11 +2246,52 @@ _ytsg_client_get_tp_status (YtsgClient *client)
  */
 
 /**
+ * ytsg_client_set_status_by_capability:
+ * @client: #YtsgClient
+ * @capability: the capability to set status for
+ * @activity: the activity to set the status to.
+ *
+ * Changes the status of the service represented by this client to status.
+ */
+void
+ytsg_client_set_status_by_capability (YtsgClient *client,
+                                      const char *capability,
+                                      const char *activity)
+{
+  YtsgClientPrivate *priv;
+  YtsgStatus        *status = NULL;
+
+  g_return_if_fail (YTSG_IS_CLIENT (client) && capability);
+
+  priv = client->priv;
+
+  g_return_if_fail (priv->caps && priv->caps->len);
+
+  if (activity)
+    {
+      const char   *attributes[] =
+        {
+          "capability",   capability,
+          "activity",     activity,
+          "from-service", priv->uid,
+          NULL
+        };
+
+      g_debug ("Constructing status for %s, %s, %s",
+               capability, activity, priv->uid);
+
+      status = ytsg_status_new ((const char**)&attributes);
+    }
+
+  ytsg_client_set_status (client, status);
+}
+
+/**
  * ytsg_client_set_status:
  * @client: #YtsgClient
  * @status: new #YtsgStatus
  *
- * Changes the status of the service represented by this client to status.
+ * Changes the status of the service represented by this client to status;
  */
 void
 ytsg_client_set_status (YtsgClient *client, YtsgStatus *status)
@@ -2262,6 +2303,9 @@ ytsg_client_set_status (YtsgClient *client, YtsgStatus *status)
   priv = client->priv;
 
   g_return_if_fail (priv->caps && priv->caps->len);
+
+  if (status)
+    g_object_ref (status);
 
   if (priv->status)
     {
