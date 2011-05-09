@@ -29,7 +29,11 @@ main (int argc, char **argv)
 {
   YtsgStatus  *status1, *status2;
   YtsgMessage *message;
-  const char  *attrs[] = {"a1", "v1", "a2", "v2", NULL};
+  const char  *attrs[] = {
+    "capability", "urn:ytstenut:capabilities:yts-caps-video",
+    "activity", "yts-activity-playing",
+    "from-service", "com.meego.ytstenut.TestStatus",
+    "a1", "v1", "a2", "v2", NULL};
   const char  *a1, *a2, *a3;
   RestXmlNode *top1, *top2, *child11, *child12, *child21, *child22;
 
