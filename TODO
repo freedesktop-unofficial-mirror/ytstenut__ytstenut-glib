@@ -1,0 +1,8 @@
+TODO
+
+* ytsg_client_connect_to_mesh() -> ytsg_client_connect()
+* Need to pass jid, or better sending service, with received message.
+* Roster should be created with _new() instead of _get() from client.
+* Should send-file really be with YtsgContact? Why not Service? Which service is receiving the file?
+* Get rid of --enable-docs and adhere to --enable-gtk-doc only.
+* Add checking and error reporting when service name doesn't conform when creating YtsgClient.

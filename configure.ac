@@ -159,6 +159,7 @@ docs/Makefile
 docs/reference/Makefile
 docs/reference/ytstenut-glib/Makefile
 docs/reference/ytstenut-glib/ytstenut-glib-docs.xml
+examples/Makefile
 ytstenut-glib/Makefile
 ytstenut-glib/ytsg-version.h
 ytstenut-glib/ytstenut-glib.pc
