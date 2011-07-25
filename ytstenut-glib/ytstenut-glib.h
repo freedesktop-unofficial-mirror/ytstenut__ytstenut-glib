@@ -22,15 +22,19 @@
 #ifndef _YTSG_H
 #define _YTSG_H
 
+#include <ytstenut-glib/ytsg-caps.h>
 #include <ytstenut-glib/ytsg-client.h>
 #include <ytstenut-glib/ytsg-contact.h>
 #include <ytstenut-glib/ytsg-debug.h>
+#include <ytstenut-glib/ytsg-error.h>
 #include <ytstenut-glib/ytsg-main.h>
 #include <ytstenut-glib/ytsg-message.h>
 #include <ytstenut-glib/ytsg-metadata.h>
+#include <ytstenut-glib/ytsg-metadata-service.h>
 #include <ytstenut-glib/ytsg-roster.h>
 #include <ytstenut-glib/ytsg-service.h>
 #include <ytstenut-glib/ytsg-status.h>
+#include <ytstenut-glib/ytsg-types.h>
 #include <ytstenut-glib/ytsg-version.h>
 
 #include <ytstenut-glib/ytsg-marshal.h>
