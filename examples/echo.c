@@ -5,6 +5,13 @@
 
 #include <ytstenut-glib/ytstenut-glib.h>
 
+#define CLIENT_UID "org.freedesktop.ytstenut.EchoClient"
+#define SERVER_UID "org.freedesktop.ytstenut.EchoServer"
+
+/*
+ * Client
+ */
+
 static void
 _client_authenticated (YtsgClient *client,
                        void       *data)
@@ -31,7 +38,15 @@ _client_message (YtsgClient   *client,
                  YtsgMessage  *msg,
                  void         *data)
 {
+  char const *text;
+
   g_debug ("%s()", __FUNCTION__);
+
+  g_return_if_fail (YTSG_IS_MESSAGE (msg));
+
+  text = ytsg_metadata_get_attribute (YTSG_METADATA (msg), "message");
+  g_debug ("Message is \"%s\"", text);
+
 }
 
 static gboolean
@@ -51,27 +66,35 @@ _client_roster_service_added_cb (YtsgRoster   *roster,
                                  YtsgService  *service,
                                  gpointer      data)
 {
+  char const *uid;
+  char const *jid;
   YtsgMetadata  *message;
   const char *payload[] = {
       "message", "hello world",
       NULL
   };
 
-  message = (YtsgMetadata*)ytsg_message_new ((const char**)&payload);
-  ytsg_metadata_service_send_metadata ((YtsgMetadataService *)service,
-                                       message);  
+  uid = ytsg_service_get_uid (service);
+  jid = ytsg_service_get_jid (service);
 
+  g_debug ("%s() %s %s", __FUNCTION__, uid, jid);
+  g_debug ("Sending message \"%s\"", payload[1]);
+
+  if (0 == g_strcmp0 (uid, SERVER_UID)) {
+    message = (YtsgMetadata*)ytsg_message_new ((const char**)&payload);
+    ytsg_metadata_service_send_metadata ((YtsgMetadataService *)service,
+                                         message);
+  }
 }
-  
+
 static int
 run_client (void)
 {
   YtsgClient  *client;
   YtsgRoster  *roster;
   GMainLoop   *mainloop;
-  
-  client = ytsg_client_new (YTSG_PROTOCOL_LOCAL_XMPP,
-                            "org.freedesktop.ytstenut.EchoClient");
+
+  client = ytsg_client_new (YTSG_PROTOCOL_LOCAL_XMPP, CLIENT_UID);
   g_signal_connect (client, "authenticated",
                     G_CALLBACK (_client_authenticated), NULL);
   g_signal_connect (client, "ready",
@@ -86,15 +109,23 @@ run_client (void)
   roster = ytsg_client_get_roster (client);
   g_signal_connect (roster, "service-added",
                     G_CALLBACK (_client_roster_service_added_cb), NULL);
-  
+
   ytsg_client_connect_to_mesh (client);
-    
+
   mainloop = g_main_loop_new (NULL, false);
   g_main_loop_run (mainloop);
   g_main_loop_unref (mainloop);
 
   return EXIT_SUCCESS;
 }
+
+/*
+ * Server
+ */
+
+typedef struct {
+  YtsgMetadataService *service;
+} server_data_t;
 
 static void
 _server_authenticated (YtsgClient *client,
@@ -118,19 +149,29 @@ _server_disconnected (YtsgClient  *client,
 }
 
 static void
-_server_message (YtsgClient   *client,
-                 YtsgMessage  *msg,
-                 void         *data)
+_server_message (YtsgClient     *client,
+                 YtsgMessage    *msg,
+                 server_data_t  *data)
 {
-  char *payload;
-  
-  g_debug ("%s()", __FUNCTION__);
+  g_debug ("%s() know client: %s", __FUNCTION__,
+                                  data->service ? "yes" : "no");
 
   g_return_if_fail (YTSG_IS_MESSAGE (msg));
 
-  payload = ytsg_metadata_to_string (YTSG_METADATA (msg));
-  g_debug (payload);
-  g_free (payload);
+  if (data->service) {
+    YtsgMetadata *message;
+    char const *payload[] = {
+      "message", "foo",
+      NULL
+    };
+    char const *text = ytsg_metadata_get_attribute (YTSG_METADATA (msg),
+                                                    "message");
+    g_debug ("%s() echoing \"%s\"", __FUNCTION__, text);
+    payload[1] = text;
+    message = (YtsgMetadata*)ytsg_message_new ((const char**)&payload);
+    ytsg_metadata_service_send_metadata ((YtsgMetadataService *)data->service,
+                                         message);
+  }
 }
 
 static gboolean
@@ -145,14 +186,36 @@ _server_incoming_file (YtsgClient  *client,
   return false;
 }
 
+static void
+_server_roster_service_added_cb (YtsgRoster     *roster,
+                                 YtsgService    *service,
+                                 server_data_t  *data)
+{
+  char const *uid;
+  char const *jid;
+
+  uid = ytsg_service_get_uid (service);
+  jid = ytsg_service_get_jid (service);
+
+  g_debug ("%s() %s %s", __FUNCTION__, uid, jid);
+
+  /* FIXME, possible race condition when client sends message before
+   * it shows up in our roster? */
+  if (0 == g_strcmp0 (uid, CLIENT_UID)) {
+    /* Should probably take a weak ref here. */
+    data->service = YTSG_METADATA_SERVICE (service);
+  }
+}
+
 static int
 run_server (void)
 {
-  YtsgClient  *client;
-  GMainLoop   *mainloop;
-  
-  client = ytsg_client_new (YTSG_PROTOCOL_LOCAL_XMPP,
-                            "com.meego.ytstenut.EchoServer");
+  YtsgClient    *client;
+  YtsgRoster    *roster;
+  GMainLoop     *mainloop;
+  server_data_t  data = { NULL, };
+
+  client = ytsg_client_new (YTSG_PROTOCOL_LOCAL_XMPP, SERVER_UID);
   g_signal_connect (client, "authenticated",
                     G_CALLBACK (_server_authenticated), NULL);
   g_signal_connect (client, "ready",
@@ -160,15 +223,16 @@ run_server (void)
   g_signal_connect (client, "disconnected",
                     G_CALLBACK (_server_disconnected), NULL);
   g_signal_connect (client, "message",
-                    G_CALLBACK (_server_message), NULL);
+                    G_CALLBACK (_server_message), &data);
   g_signal_connect (client, "incoming-file",
                     G_CALLBACK (_server_incoming_file), NULL);
 
-//  ytsg_client_set_capabilities (client, YTSG_CAPS_CONTROL);
-//  ytsg_client_set_status_by_capability (client, YTSG_CAPS_S_CONTROL, "idle");
+  roster = ytsg_client_get_roster (client);
+  g_signal_connect (roster, "service-added",
+                    G_CALLBACK (_server_roster_service_added_cb), &data);
 
   ytsg_client_connect_to_mesh (client);
-    
+
   mainloop = g_main_loop_new (NULL, false);
   g_main_loop_run (mainloop);
   g_main_loop_unref (mainloop);
@@ -191,7 +255,7 @@ main (int     argc,
   GError          *error = NULL;
   GOptionContext  *context;
   int ret;
-  
+
   context = g_option_context_new ("- Ytstenut echo test");
   g_option_context_add_main_entries (context, entries, NULL);
   g_option_context_add_group (context, ytsg_get_option_group ());
@@ -203,14 +267,14 @@ main (int     argc,
 
   if (client) {
     g_message ("Running as client ...");
-    ret = run_client ();  
+    ret = run_client ();
   } else if (server) {
     g_message ("Running as server ...");
-    ret = run_server (); 
+    ret = run_server ();
   } else {
     g_warning ("%s : Not running as server or client, quitting", G_STRLOC);
     ret = -1;
   }
-    
+
   return ret;
 }
