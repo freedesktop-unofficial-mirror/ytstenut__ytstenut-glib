@@ -14,8 +14,14 @@ echo_LDADD = $(YTSG_LIBS)
 
 bin_PROGRAMS = \
   echo \
+  status \
   $(NULL)
 
-echo_SOURCES = \ 
+echo_SOURCES = \
   echo.c \
   $(NULL)
+
+status_SOURCES = \
+  status.c \
+  $(NULL)
+

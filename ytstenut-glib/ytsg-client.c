@@ -2014,6 +2014,7 @@ ytsg_client_has_capability (YtsgClient *client, YtsgCaps cap)
     {
       YtsgCaps c = g_array_index (priv->caps, YtsgCaps, i);
 
+      /* FIXME Huh why would say having control caps imply video or whatever? -Rob */
       if (c == cap || c == YTSG_CAPS_CONTROL)
         return TRUE;
     }
