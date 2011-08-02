@@ -27,6 +27,11 @@ static void
 ytsg_vs_player_default_init (YtsgVSPlayerInterface *interface)
 {
   g_object_interface_install_property (interface,
+                                       g_param_spec_object ("playable", "", "",
+                                                            YTSG_VS_TYPE_PLAYABLE,
+                                                            G_PARAM_READWRITE));
+
+  g_object_interface_install_property (interface,
                                        g_param_spec_boolean ("playing", "", "",
                                                              false,
                                                              G_PARAM_READWRITE));
@@ -35,11 +40,27 @@ ytsg_vs_player_default_init (YtsgVSPlayerInterface *interface)
                                        g_param_spec_double ("volume", "", "",
                                                             0.0, 1.0, 0.5,
                                                             G_PARAM_READWRITE));
+}
 
-  g_object_interface_install_property (interface,
-                                       g_param_spec_object ("playable", "", "",
-                                                            YTSG_VS_TYPE_PLAYABLE,
-                                                            G_PARAM_READWRITE));
+YtsgVSPlayable *
+ytsg_vs_player_get_playable (YtsgVSPlayer *self)
+{
+  YtsgVSPlayable *playable;
+
+  g_return_val_if_fail (YTSG_VS_IS_PLAYER (self), NULL);
+
+  playable = NULL;
+  g_object_get (G_OBJECT (self), "playable", &playable, NULL);
+  return playable;
+}
+
+void
+ytsg_vs_player_set_playable (YtsgVSPlayer   *self,
+                             YtsgVSPlayable *playable)
+{
+  g_return_if_fail (YTSG_VS_IS_PLAYER (self));
+
+  g_object_set (G_OBJECT (self), "playable", playable, NULL);
 }
 
 bool
@@ -82,26 +103,5 @@ ytsg_vs_player_set_volume (YtsgVSPlayer *self,
   g_return_if_fail (YTSG_VS_IS_PLAYER (self));
 
   g_object_set (G_OBJECT (self), "volume", volume, NULL);
-}
-
-YtsgVSPlayable *
-ytsg_vs_player_get_playable (YtsgVSPlayer *self)
-{
-  YtsgVSPlayable *playable;
-
-  g_return_val_if_fail (YTSG_VS_IS_PLAYER (self), NULL);
-
-  playable = NULL;
-  g_object_get (G_OBJECT (self), "playable", &playable, NULL);
-  return playable;
-}
-
-void
-ytsg_vs_player_set_playable (YtsgVSPlayer   *self,
-                             YtsgVSPlayable *playable)
-{
-  g_return_if_fail (YTSG_VS_IS_PLAYER (self));
-
-  g_object_set (G_OBJECT (self), "playable", playable, NULL);
 }
 

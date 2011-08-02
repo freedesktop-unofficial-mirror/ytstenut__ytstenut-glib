@@ -37,7 +37,7 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_VS_TYPE_PLAYER))
 
 #define YTSG_VS_PLAYER_GET_INTERFACE(obj) \
-  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), YTSG_VS_TYPE_PLAYER, YtsgVSPlayerIface))
+  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), YTSG_VS_TYPE_PLAYER, YtsgVSPlayerInterface))
 
 typedef struct YtsgVSPlayer YtsgVSPlayer;
 typedef struct YtsgVSPlayerInterface YtsgVSPlayerInterface;
@@ -50,6 +50,13 @@ struct YtsgVSPlayerInterface {
 
 GType
 ytsg_vs_player_get_type (void) G_GNUC_CONST;
+
+YtsgVSPlayable *
+ytsg_vs_player_get_playable (YtsgVSPlayer *self);
+
+void
+ytsg_vs_player_set_playable (YtsgVSPlayer   *self,
+                             YtsgVSPlayable *playable);
 
 bool
 ytsg_vs_player_get_playing (YtsgVSPlayer *self);
@@ -64,13 +71,6 @@ ytsg_vs_player_get_volume (YtsgVSPlayer *self);
 void
 ytsg_vs_player_set_volume (YtsgVSPlayer *self,
                            double        volume);
-
-YtsgVSPlayable *
-ytsg_vs_player_get_playable (YtsgVSPlayer *self);
-
-void
-ytsg_vs_player_set_playable (YtsgVSPlayer   *self,
-                             YtsgVSPlayable *playable);
 
 G_END_DECLS
 

@@ -35,7 +35,7 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_VS_TYPE_PLAYABLE))
 
 #define YTSG_VS_PLAYABLE_GET_INTERFACE(obj) \
-  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), YTSG_VS_TYPE_PLAYABLE, YtsgVSPlayableIface))
+  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), YTSG_VS_TYPE_PLAYABLE, YtsgVSPlayableInterface))
 
 typedef struct YtsgVSPlayable YtsgVSPlayable;
 typedef struct YtsgVSPlayableInterface YtsgVSPlayableInterface;

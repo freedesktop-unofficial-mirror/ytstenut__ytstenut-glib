@@ -32,6 +32,8 @@ source_h =						\
 		\
 		$(srcdir)/ytsg-vs-playable.h \
 		$(srcdir)/ytsg-vs-player.h \
+		$(srcdir)/ytsg-vs-transfer.h \
+		$(srcdir)/ytsg-vs-transmission.h \
 		$(NULL)
 
 source_c =						\
@@ -51,6 +53,8 @@ source_c =						\
 		\
 		$(srcdir)/ytsg-vs-playable.c \
 		$(srcdir)/ytsg-vs-player.c \
+		$(srcdir)/ytsg-vs-transfer.c \
+		$(srcdir)/ytsg-vs-transmission.c \
 		$(NULL)
 
 

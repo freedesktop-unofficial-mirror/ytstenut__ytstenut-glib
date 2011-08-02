@@ -40,4 +40,9 @@
 #include <ytstenut-glib/ytsg-marshal.h>
 #include <ytstenut-glib/ytsg-enum-types.h>
 
+#include <ytstenut-glib/ytsg-vs-playable.h>
+#include <ytstenut-glib/ytsg-vs-player.h>
+#include <ytstenut-glib/ytsg-vs-transfer.h>
+#include <ytstenut-glib/ytsg-vs-transmission.h>
+
 #endif /* _YTSG_H */
