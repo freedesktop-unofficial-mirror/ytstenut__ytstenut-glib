@@ -30,8 +30,10 @@ source_h =						\
 		$(srcdir)/ytsg-types.h			\
 		$(srcdir)/ytsg-version.h		\
 		\
+		$(srcdir)/ytsg-vs-content.h \
 		$(srcdir)/ytsg-vs-playable.h \
 		$(srcdir)/ytsg-vs-player.h \
+		$(srcdir)/ytsg-vs-query.h \
 		$(srcdir)/ytsg-vs-transfer.h \
 		$(srcdir)/ytsg-vs-transmission.h \
 		$(NULL)
@@ -51,8 +53,10 @@ source_c =						\
 		$(srcdir)/ytsg-service.c		\
 		$(srcdir)/ytsg-status.c			\
 		\
+		$(srcdir)/ytsg-vs-content.c \
 		$(srcdir)/ytsg-vs-playable.c \
 		$(srcdir)/ytsg-vs-player.c \
+		$(srcdir)/ytsg-vs-query.c \
 		$(srcdir)/ytsg-vs-transfer.c \
 		$(srcdir)/ytsg-vs-transmission.c \
 		$(NULL)
