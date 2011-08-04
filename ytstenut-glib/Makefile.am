@@ -32,6 +32,7 @@ source_h =						\
 		\
 		$(srcdir)/ytsg-vs-content.h \
 		$(srcdir)/ytsg-vs-playable.h \
+		$(srcdir)/ytsg-vs-playable-proxy.h \
 		$(srcdir)/ytsg-vs-player.h \
 		$(srcdir)/ytsg-vs-query.h \
 		$(srcdir)/ytsg-vs-transcript.h \
@@ -56,6 +57,7 @@ source_c =						\
 		\
 		$(srcdir)/ytsg-vs-content.c \
 		$(srcdir)/ytsg-vs-playable.c \
+		$(srcdir)/ytsg-vs-playable-proxy.c \
 		$(srcdir)/ytsg-vs-player.c \
 		$(srcdir)/ytsg-vs-query.c \
 		$(srcdir)/ytsg-vs-transcript.c \

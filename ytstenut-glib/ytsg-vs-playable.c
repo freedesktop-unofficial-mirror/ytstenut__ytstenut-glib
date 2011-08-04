@@ -25,57 +25,43 @@ G_DEFINE_INTERFACE (YtsgVSPlayable, ytsg_vs_playable, G_TYPE_OBJECT)
 static void
 ytsg_vs_playable_default_init (YtsgVSPlayableInterface *interface)
 {
-  g_object_interface_install_property (interface,
-                                       g_param_spec_string ("URI", "", "",
-                                                            NULL,
-                                                            G_PARAM_READABLE));
+  GParamFlags param_flags;
 
-  g_object_interface_install_property (interface,
-                                       g_param_spec_string ("title", "", "",
-                                                            NULL,
-                                                            G_PARAM_READABLE));
+  param_flags = G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
+                G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB;
 
   g_object_interface_install_property (interface,
                                        g_param_spec_double ("duration", "", "",
                                                             0.0, G_MAXDOUBLE, 0.0,
-                                                            G_PARAM_READABLE));
-
-  g_object_interface_install_property (interface,
-                                       g_param_spec_double ("position", "", "",
-                                                            0.0, G_MAXDOUBLE, 0.0,
-                                                            G_PARAM_READWRITE));
+                                                            param_flags));
 
   g_object_interface_install_property (interface,
                                        g_param_spec_boxed ("metadata", "", "",
                                                             G_TYPE_HASH_TABLE,
-                                                            G_PARAM_READABLE));
+                                                            param_flags));
 
-  /* TODO Image, what format? Shall we depend on GdkPixbuf? Or just store an
-   * URI to a temporary file? */
-}
+  g_object_interface_install_property (interface,
+                                       g_param_spec_double ("position", "", "",
+                                                            0.0, G_MAXDOUBLE, 0.0,
+                                                            G_PARAM_READWRITE |
+                                                            G_PARAM_STATIC_NAME |
+                                                            G_PARAM_STATIC_NICK |
+                                                            G_PARAM_STATIC_BLURB));
 
-char *
-ytsg_vs_playable_get_uri (YtsgVSPlayable *self)
-{
-  char *uri;
+  g_object_interface_install_property (interface,
+                                       g_param_spec_string ("thumbnail", "", "",
+                                                            NULL,
+                                                            param_flags));
 
-  g_return_val_if_fail (YTSG_VS_IS_PLAYABLE (self), NULL);
+  g_object_interface_install_property (interface,
+                                       g_param_spec_string ("title", "", "",
+                                                            NULL,
+                                                            param_flags));
 
-  uri = NULL;
-  g_object_get (G_OBJECT (self), "URI", &uri, NULL);
-  return uri;
-}
-
-char *
-ytsg_vs_playable_get_title (YtsgVSPlayable *self)
-{
-  char *title;
-
-  g_return_val_if_fail (YTSG_VS_IS_PLAYABLE (self), NULL);
-
-  title = NULL;
-  g_object_get (G_OBJECT (self), "title", &title, NULL);
-  return title;
+  g_object_interface_install_property (interface,
+                                       g_param_spec_string ("uri", "", "",
+                                                            NULL,
+                                                            param_flags));
 }
 
 double
@@ -88,27 +74,6 @@ ytsg_vs_playable_get_duration (YtsgVSPlayable *self)
   duration = 0.0;
   g_object_get (G_OBJECT (self), "duration", &duration, NULL);
   return duration;
-}
-
-double
-ytsg_vs_playable_get_position (YtsgVSPlayable *self)
-{
-  double position;
-
-  g_return_val_if_fail (YTSG_VS_IS_PLAYABLE (self), 0.0);
-
-  position = 0.0;
-  g_object_get (G_OBJECT (self), "position", &position, NULL);
-  return position;
-}
-
-void
-ytsg_vs_playable_set_position (YtsgVSPlayable *self,
-                               double          position)
-{
-  g_return_if_fail (YTSG_VS_IS_PLAYABLE (self));
-
-  g_object_set (G_OBJECT (self), "position", position, NULL);
 }
 
 GHashTable *
@@ -140,5 +105,62 @@ ytsg_vs_playable_get_metadata_attribute (YtsgVSPlayable *self,
   g_boxed_free (G_TYPE_HASH_TABLE, metadata);
 
   return value;
+}
+
+double
+ytsg_vs_playable_get_position (YtsgVSPlayable *self)
+{
+  double position;
+
+  g_return_val_if_fail (YTSG_VS_IS_PLAYABLE (self), 0.0);
+
+  position = 0.0;
+  g_object_get (G_OBJECT (self), "position", &position, NULL);
+  return position;
+}
+
+void
+ytsg_vs_playable_set_position (YtsgVSPlayable *self,
+                               double          position)
+{
+  g_return_if_fail (YTSG_VS_IS_PLAYABLE (self));
+
+  g_object_set (G_OBJECT (self), "position", position, NULL);
+}
+
+char *
+ytsg_vs_playable_get_thumbnail (YtsgVSPlayable *self)
+{
+  char *thumbnail;
+
+  g_return_val_if_fail (YTSG_VS_IS_PLAYABLE (self), NULL);
+
+  thumbnail = NULL;
+  g_object_get (G_OBJECT (self), "thumbnail", &thumbnail, NULL);
+  return thumbnail;
+}
+
+char *
+ytsg_vs_playable_get_title (YtsgVSPlayable *self)
+{
+  char *title;
+
+  g_return_val_if_fail (YTSG_VS_IS_PLAYABLE (self), NULL);
+
+  title = NULL;
+  g_object_get (G_OBJECT (self), "title", &title, NULL);
+  return title;
+}
+
+char *
+ytsg_vs_playable_get_uri (YtsgVSPlayable *self)
+{
+  char *uri;
+
+  g_return_val_if_fail (YTSG_VS_IS_PLAYABLE (self), NULL);
+
+  uri = NULL;
+  g_object_get (G_OBJECT (self), "uri", &uri, NULL);
+  return uri;
 }
 

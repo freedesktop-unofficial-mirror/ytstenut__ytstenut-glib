@@ -49,14 +49,15 @@ struct YtsgVSPlayableInterface {
 GType
 ytsg_vs_playable_get_type (void) G_GNUC_CONST;
 
-char *
-ytsg_vs_playable_get_uri (YtsgVSPlayable *self);
-
-char *
-ytsg_vs_playable_get_title (YtsgVSPlayable *self);
-
 double
 ytsg_vs_playable_get_duration (YtsgVSPlayable *self);
+
+GHashTable *
+ytsg_vs_playable_get_metadata (YtsgVSPlayable *self);
+
+char const *
+ytsg_vs_playable_get_metadata_attribute (YtsgVSPlayable *self,
+                                         char const     *attribute);
 
 double
 ytsg_vs_playable_get_position (YtsgVSPlayable *self);
@@ -65,12 +66,14 @@ void
 ytsg_vs_playable_set_position (YtsgVSPlayable *self,
                                double          position);
 
-GHashTable *
-ytsg_vs_playable_get_metadata (YtsgVSPlayable *self);
+char *
+ytsg_vs_playable_get_thumbnail (YtsgVSPlayable *self);
 
-char const *
-ytsg_vs_playable_get_metadata_attribute (YtsgVSPlayable *self,
-                                         char const     *attribute);
+char *
+ytsg_vs_playable_get_title (YtsgVSPlayable *self);
+
+char *
+ytsg_vs_playable_get_uri (YtsgVSPlayable *self);
 
 G_END_DECLS
 
