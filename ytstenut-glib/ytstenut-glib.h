@@ -40,6 +40,7 @@
 #include <ytstenut-glib/ytsg-marshal.h>
 #include <ytstenut-glib/ytsg-enum-types.h>
 
+#include <ytstenut-glib/ytsg-capability-status.h>
 #include <ytstenut-glib/ytsg-invocation-message.h>
 
 #include <ytstenut-glib/ytsg-vs-content.h>

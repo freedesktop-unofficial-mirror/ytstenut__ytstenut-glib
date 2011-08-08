@@ -30,7 +30,8 @@ source_h =						\
 		$(srcdir)/ytsg-types.h			\
 		$(srcdir)/ytsg-version.h		\
 		\
-		$(srcdir)/ytsg-invocation-message.h \		
+		$(srcdir)/ytsg-capability-status.h \
+		$(srcdir)/ytsg-invocation-message.h \
 		\
 		$(srcdir)/ytsg-vs-content.h \
 		$(srcdir)/ytsg-vs-playable.h \
@@ -58,7 +59,8 @@ source_c =						\
 		$(srcdir)/ytsg-service.c		\
 		$(srcdir)/ytsg-status.c			\
 		\
-		$(srcdir)/ytsg-invocation-message.c \		
+		$(srcdir)/ytsg-capability-status.c \
+		$(srcdir)/ytsg-invocation-message.c \
 		\
 		$(srcdir)/ytsg-vs-content.c \
 		$(srcdir)/ytsg-vs-playable.c \

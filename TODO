@@ -9,3 +9,5 @@ TODO
 * ytsg_client_set_status_by_capability() is not in the docs.
 * Add "services" property to Contact.
 * Should allow xml inside messages?
+* There should be a common (abstract?) base-class that YtsgMetadata and YtsgInvocationMessage etc derive from.
+
