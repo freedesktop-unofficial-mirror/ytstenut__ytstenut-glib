@@ -13,8 +13,13 @@ AM_LDFLAGS = ../ytstenut-glib/libytstenut-glib-@YTSG_API_VERSION@.la
 echo_LDADD = $(YTSG_LIBS)
 
 bin_PROGRAMS = \
+  invocation-message \
   echo \
   status \
+  $(NULL)
+
+invocation_message_SOURCES = \
+  invocation-message.c \
   $(NULL)
 
 echo_SOURCES = \

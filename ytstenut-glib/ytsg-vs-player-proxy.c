@@ -169,20 +169,3 @@ ytsg_vs_player_proxy_init (YtsgVSPlayerProxy *self)
 {
 }
 
-YtsgVSPlayerProxy *
-ytsg_vs_player_proxy_new (double       duration,
-                            GHashTable  *metadata,
-                            double       position,
-                            char const  *thumbnail,
-                            char const  *title,
-                            char const  *uri)
-{
-  return g_object_new (YTSG_VS_TYPE_PLAYER_PROXY,
-                       "duration",  duration,
-                       "metadata",  metadata,
-                       "position",  position,
-                       "title",     title,
-                       "uri",       uri,
-                       NULL);
-}
-

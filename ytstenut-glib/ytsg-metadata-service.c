@@ -33,6 +33,7 @@
 
 #include "ytsg-client.h"
 #include "ytsg-debug.h"
+#include "ytsg-invocation-message.h"
 #include "ytsg-marshal.h"
 #include "ytsg-message.h"
 #include "ytsg-metadata-service.h"
@@ -453,7 +454,8 @@ ytsg_metadata_service_send_metadata (YtsgMetadataService *service,
   g_return_val_if_fail (YTSG_IS_METADATA (metadata),
                         ytsg_error_new (YTSG_ERROR_INVALID_PARAMETER));
 
-  if (YTSG_IS_MESSAGE (metadata))
+  if (YTSG_IS_MESSAGE (metadata) ||
+      YTSG_IS_INVOCATION_MESSAGE (metadata))
     {
       return ytsg_service_metadata_send_message (service,
                                                  (YtsgMessage*)metadata);

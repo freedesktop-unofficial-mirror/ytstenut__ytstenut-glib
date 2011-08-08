@@ -8,3 +8,4 @@ TODO
 * Add checking and error reporting when service name doesn't conform when creating YtsgClient.
 * ytsg_client_set_status_by_capability() is not in the docs.
 * Add "services" property to Contact.
+* Should allow xml inside messages?
