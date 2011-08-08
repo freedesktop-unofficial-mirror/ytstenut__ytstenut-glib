@@ -43,11 +43,11 @@
 #include <ytstenut-glib/ytsg-capability-status.h>
 #include <ytstenut-glib/ytsg-invocation-message.h>
 
-#include <ytstenut-glib/ytsg-vs-content.h>
-#include <ytstenut-glib/ytsg-vs-playable.h>
-#include <ytstenut-glib/ytsg-vs-player.h>
-#include <ytstenut-glib/ytsg-vs-query.h>
-#include <ytstenut-glib/ytsg-vs-transfer.h>
-#include <ytstenut-glib/ytsg-vs-transmission.h>
+#include <ytstenut-glib/video-service/ytsg-vs-content.h>
+#include <ytstenut-glib/video-service/ytsg-vs-playable.h>
+#include <ytstenut-glib/video-service/ytsg-vs-player.h>
+#include <ytstenut-glib/video-service/ytsg-vs-query.h>
+#include <ytstenut-glib/video-service/ytsg-vs-transfer.h>
+#include <ytstenut-glib/video-service/ytsg-vs-transmission.h>
 
 #endif /* _YTSG_H */

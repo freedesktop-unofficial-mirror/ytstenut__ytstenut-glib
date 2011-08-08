@@ -34,15 +34,15 @@ source_h =						\
 		$(srcdir)/ytsg-invocation-message.h \
 		$(srcdir)/ytsg-invocation-response.h \
 		\
-		$(srcdir)/ytsg-vs-content.h \
-		$(srcdir)/ytsg-vs-playable.h \
-		$(srcdir)/ytsg-vs-playable-proxy.h \
-		$(srcdir)/ytsg-vs-player.h \
-		$(srcdir)/ytsg-vs-player-proxy.h \
-		$(srcdir)/ytsg-vs-query.h \
-		$(srcdir)/ytsg-vs-transcript.h \
-		$(srcdir)/ytsg-vs-transfer.h \
-		$(srcdir)/ytsg-vs-transmission.h \
+		$(srcdir)/video-service/ytsg-vs-content.h \
+		$(srcdir)/video-service/ytsg-vs-playable.h \
+		$(srcdir)/video-service/ytsg-vs-playable-proxy.h \
+		$(srcdir)/video-service/ytsg-vs-player.h \
+		$(srcdir)/video-service/ytsg-vs-player-proxy.h \
+		$(srcdir)/video-service/ytsg-vs-query.h \
+		$(srcdir)/video-service/ytsg-vs-transcript.h \
+		$(srcdir)/video-service/ytsg-vs-transfer.h \
+		$(srcdir)/video-service/ytsg-vs-transmission.h \
 		$(NULL)
 
 source_c =						\
@@ -64,20 +64,20 @@ source_c =						\
 		$(srcdir)/ytsg-invocation-message.c \
 		$(srcdir)/ytsg-invocation-response.c \
 		\
-		$(srcdir)/ytsg-vs-content.c \
-		$(srcdir)/ytsg-vs-playable.c \
-		$(srcdir)/ytsg-vs-playable-proxy.c \
-		$(srcdir)/ytsg-vs-player.c \
-		$(srcdir)/ytsg-vs-player-proxy.c \
-		$(srcdir)/ytsg-vs-query.c \
-		$(srcdir)/ytsg-vs-transcript.c \
-		$(srcdir)/ytsg-vs-transfer.c \
-		$(srcdir)/ytsg-vs-transmission.c \
+		$(srcdir)/video-service/ytsg-vs-content.c \
+		$(srcdir)/video-service/ytsg-vs-playable.c \
+		$(srcdir)/video-service/ytsg-vs-playable-proxy.c \
+		$(srcdir)/video-service/ytsg-vs-player.c \
+		$(srcdir)/video-service/ytsg-vs-player-proxy.c \
+		$(srcdir)/video-service/ytsg-vs-query.c \
+		$(srcdir)/video-service/ytsg-vs-transcript.c \
+		$(srcdir)/video-service/ytsg-vs-transfer.c \
+		$(srcdir)/video-service/ytsg-vs-transmission.c \
 		$(NULL)
 
 
-private_h =
-		$(NULL)
+private_h = \
+	$(NULL)
 
 libytstenut_glib_@YTSG_API_VERSION@_la_SOURCES  = 	$(source_h) 	\
 							$(private_h)	\

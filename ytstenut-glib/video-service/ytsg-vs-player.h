@@ -23,7 +23,7 @@
 
 #include <stdbool.h>
 #include <glib-object.h>
-#include <ytstenut-glib/ytsg-vs-player.h>
+#include <ytstenut-glib/video-service/ytsg-vs-player.h>
 
 G_BEGIN_DECLS
 

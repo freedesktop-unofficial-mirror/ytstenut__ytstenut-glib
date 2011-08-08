@@ -23,8 +23,8 @@
 
 #include <stdbool.h>
 #include <glib-object.h>
-#include <ytstenut-glib/ytsg-vs-transfer.h>
-#include <ytstenut-glib/ytsg-vs-transmission.h>
+#include <ytstenut-glib/video-service/ytsg-vs-transfer.h>
+#include <ytstenut-glib/video-service/ytsg-vs-transmission.h>
 
 G_BEGIN_DECLS
 
