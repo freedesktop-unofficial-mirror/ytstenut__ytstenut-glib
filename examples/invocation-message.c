@@ -70,7 +70,8 @@ _client_roster_service_added (YtsgRoster  *roster,
     GVariant *args = g_variant_new_parsed (
                                 "[ {\"arg1\", <1>}, {\"arg2\", <\"two\">} ]");
 
-    YtsgMetadata *message = ytsg_invocation_message_new (CAPABILITY,
+    YtsgMetadata *message = ytsg_invocation_message_new ("1",
+                                                         CAPABILITY,
                                                          "method1",
                                                          args);
     ytsg_metadata_service_send_metadata (YTSG_METADATA_SERVICE (service),
