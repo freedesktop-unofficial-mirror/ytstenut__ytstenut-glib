@@ -85,6 +85,8 @@ ytsg_invocation_message_new (char const *capability,
   RestXmlNode *node;
 
   node = rest_xml_node_add_child (NULL, "message");
+  /* TODO need those keywords be made reserved */
+  rest_xml_node_add_attr (node, "type", "invocation");
   rest_xml_node_add_attr (node, "capability", capability);
   rest_xml_node_add_attr (node, "aspect", aspect);
 
