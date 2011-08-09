@@ -63,3 +63,4 @@ ytsg_error_message_new (char const  *domain,
 G_END_DECLS
 
 #endif /* YTSG_ERROR_MESSAGE_H */
+
