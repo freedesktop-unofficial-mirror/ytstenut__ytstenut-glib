@@ -27,10 +27,10 @@ G_DEFINE_INTERFACE (YtsgVSQuery, ytsg_vs_query, G_TYPE_OBJECT)
 enum {
   RESULT_SIGNAL,
 
-  LAST_SIGNAL
+  N_SIGNALS
 };
 
-static unsigned int _signals[LAST_SIGNAL] = { 0, };
+static unsigned int _signals[N_SIGNALS] = { 0, };
 
 static void
 ytsg_vs_query_default_init (YtsgVSQueryInterface *interface)

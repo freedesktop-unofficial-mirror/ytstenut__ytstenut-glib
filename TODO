@@ -10,4 +10,4 @@ TODO
 * Add "services" property to Contact.
 * Should allow xml inside messages?
 * There should be a common (abstract?) base-class that YtsgMetadata and YtsgInvocationMessage etc derive from.
-
+* YtsgService should maybe be YtsgRemoteService
