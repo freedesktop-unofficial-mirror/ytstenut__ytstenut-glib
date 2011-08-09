@@ -19,16 +19,16 @@
  */
 
 #include <stdbool.h>
-#include "ytsg-invocation-response.h"
+#include "ytsg-response-message.h"
 
-G_DEFINE_TYPE (YtsgInvocationResponse, ytsg_invocation_response, YTSG_TYPE_METADATA)
+G_DEFINE_TYPE (YtsgResponseMessage, ytsg_response_message, YTSG_TYPE_METADATA)
 
 #define GET_PRIVATE(o) \
-  (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTSG_TYPE_INVOCATION_RESPONSE, YtsgInvocationResponsePrivate))
+  (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTSG_TYPE_RESPONSE_MESSAGE, YtsgResponseMessagePrivate))
 
 typedef struct {
   int dummy;
-} YtsgInvocationResponsePrivate;
+} YtsgResponseMessagePrivate;
 
 static void
 _get_property (GObject      *object,
@@ -57,15 +57,15 @@ _set_property (GObject      *object,
 static void
 _dispose (GObject *object)
 {
-  G_OBJECT_CLASS (ytsg_invocation_response_parent_class)->dispose (object);
+  G_OBJECT_CLASS (ytsg_response_message_parent_class)->dispose (object);
 }
 
 static void
-ytsg_invocation_response_class_init (YtsgInvocationResponseClass *klass)
+ytsg_response_message_class_init (YtsgResponseMessageClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-  g_type_class_add_private (klass, sizeof (YtsgInvocationResponsePrivate));
+  g_type_class_add_private (klass, sizeof (YtsgResponseMessagePrivate));
 
   object_class->get_property = _get_property;
   object_class->set_property = _set_property;
@@ -73,13 +73,13 @@ ytsg_invocation_response_class_init (YtsgInvocationResponseClass *klass)
 }
 
 static void
-ytsg_invocation_response_init (YtsgInvocationResponse *self)
+ytsg_response_message_init (YtsgResponseMessage *self)
 {
 }
 
 YtsgMetadata *
-ytsg_invocation_response_new (char const  *invocation_id,
-                              GVariant    *response)
+ytsg_response_message_new (char const *invocation_id,
+                           GVariant   *response)
 {
   RestXmlNode *node;
 
@@ -98,7 +98,7 @@ ytsg_invocation_response_new (char const  *invocation_id,
     g_free (args);
   }
 
-  return g_object_new (YTSG_TYPE_INVOCATION_RESPONSE,
+  return g_object_new (YTSG_TYPE_RESPONSE_MESSAGE,
                        "top-level-node", node,
                        NULL);
 }
