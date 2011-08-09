@@ -31,6 +31,7 @@ source_h =						\
 		$(srcdir)/ytsg-version.h		\
 		\
 		$(srcdir)/ytsg-capability-status.h \
+		$(srcdir)/ytsg-error-message.h \
 		$(srcdir)/ytsg-invocation-message.h \
 		$(srcdir)/ytsg-invocation-response.h \
 		$(srcdir)/ytsg-service-impl.h \
@@ -62,6 +63,7 @@ source_c =						\
 		$(srcdir)/ytsg-status.c			\
 		\
 		$(srcdir)/ytsg-capability-status.c \
+		$(srcdir)/ytsg-error-message.c \
 		$(srcdir)/ytsg-invocation-message.c \
 		$(srcdir)/ytsg-invocation-response.c \
 		$(srcdir)/ytsg-service-impl.c \
