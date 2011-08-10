@@ -39,9 +39,7 @@ source_h =						\
 		\
 		$(srcdir)/video-service/ytsg-vs-content.h \
 		$(srcdir)/video-service/ytsg-vs-playable.h \
-		$(srcdir)/video-service/ytsg-vs-playable-proxy.h \
 		$(srcdir)/video-service/ytsg-vs-player.h \
-		$(srcdir)/video-service/ytsg-vs-player-proxy.h \
 		$(srcdir)/video-service/ytsg-vs-query.h \
 		$(srcdir)/video-service/ytsg-vs-transcript.h \
 		$(srcdir)/video-service/ytsg-vs-transfer.h \
@@ -81,9 +79,10 @@ source_c =						\
 		$(srcdir)/video-service/ytsg-vs-transmission.c \
 		$(NULL)
 
-
 private_h = \
-	$(NULL)
+		$(srcdir)/video-service/ytsg-vs-playable-proxy.h \
+		$(srcdir)/video-service/ytsg-vs-player-proxy.h \
+		$(NULL)
 
 libytstenut_glib_@YTSG_API_VERSION@_la_SOURCES  = 	$(source_h) 	\
 							$(private_h)	\
