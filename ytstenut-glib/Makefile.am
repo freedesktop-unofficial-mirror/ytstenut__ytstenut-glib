@@ -36,6 +36,7 @@ source_h =						\
 		$(srcdir)/ytsg-invocation-message.h \
 		$(srcdir)/ytsg-response-message.h \
 		$(srcdir)/ytsg-service-impl.h \
+		$(srcdir)/ytsg-service-proxy.h \
 		\
 		$(srcdir)/video-service/ytsg-vs-content.h \
 		$(srcdir)/video-service/ytsg-vs-playable.h \
@@ -67,6 +68,7 @@ source_c =						\
 		$(srcdir)/ytsg-invocation-message.c \
 		$(srcdir)/ytsg-response-message.c \
 		$(srcdir)/ytsg-service-impl.c \
+		$(srcdir)/ytsg-service-proxy.c \
 		\
 		$(srcdir)/video-service/ytsg-vs-content.c \
 		$(srcdir)/video-service/ytsg-vs-playable.c \
