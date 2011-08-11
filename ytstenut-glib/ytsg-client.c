@@ -37,6 +37,7 @@
 #include "ytsg-metadata.h"
 #include "ytsg-private.h"
 #include "ytsg-roster.h"
+#include "ytsg-service-adapter.h"
 #include "ytsg-types.h"
 
 #include "empathy-tp-file.h"
@@ -101,6 +102,9 @@ struct _YtsgClientPrivate
   TpYtsStatus          *tp_status;
   YtsgStatus           *status;
   TpYtsClient          *tp_client;
+
+  /* Implemented services */
+  GHashTable  *services;
 
   /* callback ids */
   guint reconnect_id;
@@ -1006,10 +1010,11 @@ ytsg_client_yts_channels_received_cb (TpYtsClient *tp_client,
 
               msg = (YtsgMessage*) _ytsg_metadata_new_from_xml (xml);
 
+// TODO
+
               g_signal_emit (client, signals[MESSAGE], 0, msg);
             }
         }
-
     }
 }
 
@@ -1184,6 +1189,8 @@ ytsg_client_init (YtsgClient *client)
   client->priv = YTSG_CLIENT_GET_PRIVATE (client);
 
   ytsg_client_set_incoming_file_directory (client, NULL);
+
+  client->priv->services = g_hash_table_new (g_str_hash, g_str_equal);
 }
 
 static void
@@ -1236,6 +1243,12 @@ ytsg_client_dispose (GObject *object)
     {
       g_object_unref (priv->status);
       priv->status = NULL;
+    }
+
+  if (priv->services)
+    {
+      g_hash_table_destroy (priv->services);
+      priv->services = NULL;
     }
 
   G_OBJECT_CLASS (ytsg_client_parent_class)->dispose (object);
@@ -2186,12 +2199,13 @@ ytsg_client_get_incoming_file_directory (YtsgClient *client)
 const char *
 ytsg_client_get_jid (const YtsgClient *client)
 {
+/*
   YtsgClientPrivate *priv;
 
   g_return_val_if_fail (YTSG_IS_CLIENT (client), NULL);
 
   priv = client->priv;
-
+*/
   g_warning (G_STRLOC ": NOT IMPLEMENTED !!!");
 
   return NULL;
@@ -2594,3 +2608,114 @@ _ytsg_client_send_message (YtsgClient  *client,
 
   return e;
 }
+
+/* FIXME this should probably go into some sort of factory.
+ * A bit hacky for now, so we don't need to include video-service headers here. */
+
+extern GType
+ytsg_vs_content_adapter_get_type (void);
+
+extern GType
+ytsg_vs_player_adapter_get_type (void);
+
+extern GType
+ytsg_vs_query_get_adapter_type (void);
+
+extern GType
+ytsg_vs_transfer_get_adapter_type (void);
+
+static YtsgServiceAdapter *
+create_adapter_for_service (YtsgClient  *self,
+                            GObject     *service)
+{
+  GType interface_type;
+
+  interface_type = g_type_from_name ("YtsgVSPlayer");
+  if (interface_type &&
+      g_type_is_a (G_OBJECT_TYPE (service), interface_type)) {
+
+    return g_object_new (ytsg_vs_player_adapter_get_type (),
+                         "service", service,
+                         "service-gtype", interface_type,
+                         NULL);
+  }
+
+  g_critical ("%s : Failed to find built-in adapter class for %s",
+              G_STRLOC,
+              G_OBJECT_TYPE_NAME (service));
+
+  return NULL;
+}
+
+static void
+_adapter_destroyed (YtsgClient  *self,
+                    void        *stale_adapter_ptr)
+{
+  YtsgClientPrivate *priv = self->priv;
+  GHashTableIter     iter;
+  char const        *capability;
+  gpointer           value;
+
+  g_hash_table_iter_init (&iter, priv->services);
+  while (g_hash_table_iter_next (&iter, (gpointer *) &capability, &value))
+    {
+      if (value == stale_adapter_ptr)
+        {
+          YTSG_NOTE (CLIENT, "unregistering capability %s", capability);
+          g_hash_table_remove (priv->services, capability);
+          // FIXME also no longer advertise this capability
+        }
+    }
+}
+
+/*
+ * TODO add GError reporting
+ * The client does not take ownership of the service, it will be
+ * unregistered upon destruction.
+ */
+gboolean
+ytsg_client_register_service (YtsgClient  *self,
+                              GObject     *service)
+{
+  YtsgClientPrivate   *priv = self->priv;
+  YtsgServiceAdapter  *adapter;
+  GParamSpec          *pspec;
+  char const          *capability;
+
+  g_return_val_if_fail (YTSG_IS_CLIENT (self), FALSE);
+
+  pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (service),
+                                        "capability");
+  if (NULL == pspec ||
+      !G_IS_PARAM_SPEC_STRING (pspec))
+    {
+      g_critical ("%s : Service of type %s does not implement 'capability' "
+                  "property of type string",
+                  G_STRLOC,
+                  G_OBJECT_TYPE_NAME (service));
+      return FALSE;
+    }
+
+  capability = G_PARAM_SPEC_STRING (pspec)->default_value;
+  adapter = g_hash_table_lookup (priv->services, capability);
+  if (adapter)
+    {
+      g_critical ("%s : Service for capability %s already registered",
+                  G_STRLOC,
+                  capability);
+      return FALSE;
+    }
+
+  adapter = create_adapter_for_service (self, service);
+  g_return_val_if_fail (adapter, FALSE);
+
+  g_object_weak_ref (G_OBJECT (adapter),
+                     (GWeakNotify) _adapter_destroyed,
+                     self);
+
+  g_hash_table_insert (priv->services, (char *) capability, adapter);
+  ytsg_client_set_capabilities (self, g_quark_from_static_string (capability));
+
+  return TRUE;
+}
+
