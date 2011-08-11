@@ -49,7 +49,7 @@ static void
 _service_adapter_invoke (YtsgServiceAdapter *self,
                          char const         *invocation_id,
                          char const         *aspect,
-                         GVariant           *argumets)
+                         GVariant           *arguments)
 {
   YtsgVSPlayerAdapterPrivate *priv = GET_PRIVATE (self);
 

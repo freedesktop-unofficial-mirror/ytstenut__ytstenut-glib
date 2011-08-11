@@ -36,7 +36,7 @@ static void
 _invoke (YtsgServiceAdapter *self,
          char const         *invocation_id,
          char const         *aspect,
-         GVariant           *argumets)
+         GVariant           *arguments)
 {
   g_critical ("%s : Method YtsgServiceAdapter.invoke_method() not implemented by %s",
               G_STRLOC,
@@ -88,5 +88,19 @@ ytsg_service_adapter_default_init (YtsgServiceAdapterInterface *interface)
                                          ytsg_marshal_VOID__STRING_BOXED,
                                          G_TYPE_NONE, 2,
                                          G_TYPE_STRING, G_TYPE_ERROR);
+}
+
+void
+ytsg_service_adapter_invoke (YtsgServiceAdapter *self,
+                             char const         *invocation_id,
+                             char const         *aspect,
+                             GVariant           *arguments)
+{
+  g_return_if_fail (YTSG_IS_SERVICE_ADAPTER (self));
+
+  YTSG_SERVICE_ADAPTER_GET_INTERFACE (self)->invoke (self,
+                                                     invocation_id,
+                                                     aspect,
+                                                     arguments);
 }
 

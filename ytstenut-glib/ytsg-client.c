@@ -43,6 +43,7 @@
 #include "empathy-tp-file.h"
 
 #include <string.h>
+#include <rest/rest-xml-parser.h>
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/gtypes.h>
@@ -982,6 +983,49 @@ ytsg_client_setup_debug  (YtsgClient *client)
   g_free (busname);
 }
 
+static gboolean
+deliver_to_service (YtsgClient  *self,
+                    char const  *xml)
+{
+  YtsgClientPrivate *priv = self->priv;
+  RestXmlParser *parser;
+  RestXmlNode   *node;
+  gboolean       delivered = FALSE;
+
+  parser = rest_xml_parser_new ();
+
+  node = rest_xml_parser_parse_from_data (parser, xml, -1);
+  if (node)
+    {
+      char const *type = rest_xml_node_get_attr (node, "type");
+      if (0 == g_strcmp0 ("invocation", type))
+        {
+          char const *capability = rest_xml_node_get_attr (node, "capability");
+          YtsgServiceAdapter *adapter = g_hash_table_lookup (priv->services,
+                                                             capability);
+          if (adapter)
+            {
+              char const *invocation_id = rest_xml_node_get_attr (node, "invocation");
+              char const *aspect = rest_xml_node_get_attr (node, "aspect");
+              char const *args = rest_xml_node_get_attr (node, "arguments");
+              GVariant *arguments = NULL;
+              
+              if (args)
+                arguments = g_variant_new_parsed (args);
+              
+              ytsg_service_adapter_invoke (adapter,
+                                           invocation_id,
+                                           aspect,
+                                           arguments);
+              delivered = TRUE;
+            }
+        }
+    }
+
+  g_object_unref (parser);
+  return delivered;
+}
+
 static void
 ytsg_client_yts_channels_received_cb (TpYtsClient *tp_client,
                                       YtsgClient  *client)
@@ -1000,19 +1044,20 @@ ytsg_client_yts_channels_received_cb (TpYtsClient *tp_client,
       g_hash_table_iter_init (&iter, props);
       while (g_hash_table_iter_next (&iter, &key, &value))
         {
-          YtsgMessage *msg;
           GValue      *v = value;
           char        *k = key;
 
           if (!strcmp (k, "com.meego.xpmn.ytstenut.Channel.RequestBody"))
             {
               const char *xml = g_value_get_string (v);
+              gboolean delivered = deliver_to_service (client, xml);
 
-              msg = (YtsgMessage*) _ytsg_metadata_new_from_xml (xml);
-
-// TODO
-
-              g_signal_emit (client, signals[MESSAGE], 0, msg);
+              if (!delivered)
+                {
+                  YtsgMetadata *msg = _ytsg_metadata_new_from_xml (xml);
+                  g_signal_emit (client, signals[MESSAGE], 0, msg);
+                  g_object_unref (msg);
+                }
             }
         }
     }

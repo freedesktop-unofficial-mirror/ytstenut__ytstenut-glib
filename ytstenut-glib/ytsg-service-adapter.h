@@ -52,7 +52,7 @@ struct YtsgServiceAdapterInterface {
   (*invoke) (YtsgServiceAdapter *self,
              char const         *invocation_id,
              char const         *aspect,
-             GVariant           *argumets);
+             GVariant           *arguments);
 
   /* Signals */
 
@@ -74,7 +74,7 @@ void
 ytsg_service_adapter_invoke (YtsgServiceAdapter *self,
                              char const         *invocation_id,
                              char const         *aspect,
-                             GVariant           *argumets);
+                             GVariant           *arguments);
 
 G_END_DECLS
 
