@@ -48,9 +48,10 @@ struct YtsgVSQueryInterface {
   GTypeInterface parent;
 
   /* Signals */
-  bool (*result) (YtsgVSQuery   *self,
-                  GList         *playables,
-                  unsigned int   progress);
+  bool
+  (*result) (YtsgVSQuery  *self,
+             GList        *playables,
+             unsigned int  progress);
 };
 
 GType

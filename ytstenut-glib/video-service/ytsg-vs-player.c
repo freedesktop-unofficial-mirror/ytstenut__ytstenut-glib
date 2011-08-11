@@ -24,8 +24,53 @@
 G_DEFINE_INTERFACE (YtsgVSPlayer, ytsg_vs_player, G_TYPE_OBJECT)
 
 static void
+_play (YtsgVSPlayer *self)
+{
+  g_critical ("%s : Method YtsgVSPlayer.play() not implemented by %s",
+              G_STRLOC,
+              G_OBJECT_TYPE_NAME (self));
+}
+
+static void
+_pause (YtsgVSPlayer *self)
+{
+  g_critical ("%s : Method YtsgVSPlayer.pause() not implemented by %s",
+              G_STRLOC,
+              G_OBJECT_TYPE_NAME (self));
+}
+
+static void
+_next (YtsgVSPlayer *self)
+{
+  g_critical ("%s : Method YtsgVSPlayer.next() not implemented by %s",
+              G_STRLOC,
+              G_OBJECT_TYPE_NAME (self));
+}
+
+static void
+_prev (YtsgVSPlayer *self)
+{
+  g_critical ("%s : Method YtsgVSPlayer.prev() not implemented by %s",
+              G_STRLOC,
+              G_OBJECT_TYPE_NAME (self));
+}
+
+static void
 ytsg_vs_player_default_init (YtsgVSPlayerInterface *interface)
 {
+  interface->play = _play;
+  interface->pause = _pause;
+  interface->next = _next;
+  interface->prev = _prev;
+
+  /* Only to hold the default value */
+  g_object_interface_install_property (interface,
+                                       g_param_spec_string ("capability", "", "",
+                                                            YTSG_VS_PLAYER_CAPABILITY,
+                                                            G_PARAM_STATIC_NAME |
+                                                            G_PARAM_STATIC_NICK |
+                                                            G_PARAM_STATIC_BLURB));
+
   g_object_interface_install_property (interface,
                                        g_param_spec_object ("playable", "", "",
                                                             YTSG_VS_TYPE_PLAYABLE,
@@ -103,5 +148,37 @@ ytsg_vs_player_set_volume (YtsgVSPlayer *self,
   g_return_if_fail (YTSG_VS_IS_PLAYER (self));
 
   g_object_set (G_OBJECT (self), "volume", volume, NULL);
+}
+
+void
+ytsg_vs_player_play (YtsgVSPlayer *self)
+{
+  g_return_if_fail (YTSG_VS_IS_PLAYER (self));
+
+  YTSG_VS_PLAYER_GET_INTERFACE (self)->play (self);
+}
+
+void
+ytsg_vs_player_pause (YtsgVSPlayer *self)
+{
+  g_return_if_fail (YTSG_VS_IS_PLAYER (self));
+
+  YTSG_VS_PLAYER_GET_INTERFACE (self)->pause (self);
+}
+
+void
+ytsg_vs_player_next (YtsgVSPlayer *self)
+{
+  g_return_if_fail (YTSG_VS_IS_PLAYER (self));
+
+  YTSG_VS_PLAYER_GET_INTERFACE (self)->next (self);
+}
+
+void
+ytsg_vs_player_prev (YtsgVSPlayer *self)
+{
+  g_return_if_fail (YTSG_VS_IS_PLAYER (self));
+
+  YTSG_VS_PLAYER_GET_INTERFACE (self)->prev (self);
 }
 

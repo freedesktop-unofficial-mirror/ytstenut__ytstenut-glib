@@ -24,10 +24,10 @@
 G_DEFINE_INTERFACE (YtsgServiceProxy, ytsg_service_proxy, G_TYPE_OBJECT)
 
 static void
-_handle_datagram (YtsgServiceProxy  *self,
-                  YtsgMetadata      *datagram)
+_receive (YtsgServiceProxy  *self,
+          YtsgMetadata      *datagram)
 {
-  g_critical ("%s : Method YtsgServiceProxy.handle_datagram() not implemented by %s",
+  g_critical ("%s : Method YtsgServiceProxy.receive() not implemented by %s",
               G_STRLOC,
               G_OBJECT_TYPE_NAME (self));
 }
@@ -35,16 +35,15 @@ _handle_datagram (YtsgServiceProxy  *self,
 static void
 ytsg_service_proxy_default_init (YtsgServiceProxyInterface *interface)
 {
-  interface->handle_datagram = _handle_datagram;
+  interface->receive = _receive;
 }
 
 void
-ytsg_service_proxy_handle_datagram (YtsgServiceProxy  *self,
-                                    YtsgMetadata      *datagram)
+ytsg_service_proxy_receive (YtsgServiceProxy  *self,
+                            YtsgMetadata      *datagram)
 {
   g_return_if_fail (YTSG_IS_SERVICE_PROXY (self));
 
-  return YTSG_SERVICE_PROXY_GET_INTERFACE (self)->handle_datagram (self,
-                                                                   datagram);
+  return YTSG_SERVICE_PROXY_GET_INTERFACE (self)->receive (self, datagram);
 }
 

@@ -25,6 +25,14 @@ G_DEFINE_INTERFACE (YtsgVSTranscript, ytsg_vs_transcript, G_TYPE_OBJECT)
 static void
 ytsg_vs_transcript_default_init (YtsgVSTranscriptInterface *interface)
 {
+  /* Only to hold the default value */
+  g_object_interface_install_property (interface,
+                                       g_param_spec_string ("capability", "", "",
+                                                            YTSG_VS_TRANSCRIPT_CAPABILITY,
+                                                            G_PARAM_STATIC_NAME |
+                                                            G_PARAM_STATIC_NICK |
+                                                            G_PARAM_STATIC_BLURB));
+
   g_object_interface_install_property (interface,
                                        g_param_spec_boxed ("available-locales", "", "",
                                                            G_TYPE_PTR_ARRAY,

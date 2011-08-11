@@ -45,8 +45,17 @@ _upload (YtsgVSTransfer *self,
 static void
 ytsg_vs_transfer_default_init (YtsgVSTransferInterface *interface)
 {
+  /* Methods */
   interface->download = _download;
   interface->upload = _upload;
+
+  /* Only to hold the default value */
+  g_object_interface_install_property (interface,
+                                       g_param_spec_string ("capability", "", "",
+                                                            YTSG_VS_TRANSFER_CAPABILITY,
+                                                            G_PARAM_STATIC_NAME |
+                                                            G_PARAM_STATIC_NICK |
+                                                            G_PARAM_STATIC_BLURB));
 }
 
 YtsgVSTransmission *

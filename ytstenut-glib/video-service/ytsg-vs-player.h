@@ -23,7 +23,7 @@
 
 #include <stdbool.h>
 #include <glib-object.h>
-#include <ytstenut-glib/video-service/ytsg-vs-player.h>
+#include <ytstenut-glib/video-service/ytsg-vs-playable.h>
 
 G_BEGIN_DECLS
 
@@ -48,6 +48,18 @@ struct YtsgVSPlayerInterface {
 
   /*< private >*/
   GTypeInterface parent;
+
+  void
+  (*play) (YtsgVSPlayer *self);
+
+  void
+  (*pause) (YtsgVSPlayer *self);
+
+  void
+  (*next) (YtsgVSPlayer *self);
+
+  void
+  (*prev) (YtsgVSPlayer *self);
 };
 
 GType
@@ -73,6 +85,19 @@ ytsg_vs_player_get_volume (YtsgVSPlayer *self);
 void
 ytsg_vs_player_set_volume (YtsgVSPlayer *self,
                            double        volume);
+
+
+void
+ytsg_vs_player_play (YtsgVSPlayer *self);
+
+void
+ytsg_vs_player_pause (YtsgVSPlayer *self);
+
+void
+ytsg_vs_player_next (YtsgVSPlayer *self);
+
+void
+ytsg_vs_player_prev (YtsgVSPlayer *self);
 
 G_END_DECLS
 

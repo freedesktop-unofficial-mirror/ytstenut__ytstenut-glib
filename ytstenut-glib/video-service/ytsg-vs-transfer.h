@@ -50,11 +50,13 @@ struct YtsgVSTransferInterface {
   /*< private >*/
   GTypeInterface parent;
 
-  YtsgVSTransmission * (*download) (YtsgVSTransfer  *self,
-                                    char const      *uri);
+  YtsgVSTransmission *
+  (*download) (YtsgVSTransfer *self,
+               char const     *uri);
 
-  YtsgVSTransmission * (*upload) (YtsgVSTransfer  *self,
-                                  char const      *uri);
+  YtsgVSTransmission *
+  (*upload) (YtsgVSTransfer *self,
+             char const     *uri);
 };
 
 GType

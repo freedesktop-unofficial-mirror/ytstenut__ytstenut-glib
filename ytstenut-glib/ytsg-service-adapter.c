@@ -33,9 +33,22 @@ enum {
 static unsigned int _signals[N_SIGNALS] = { 0, };
 
 static void
+_invoke (YtsgServiceAdapter *self,
+         char const         *invocation_id,
+         char const         *aspect,
+         GVariant           *argumets)
+{
+  g_critical ("%s : Method YtsgServiceAdapter.invoke_method() not implemented by %s",
+              G_STRLOC,
+              G_OBJECT_TYPE_NAME (self));
+}
+
+static void
 ytsg_service_adapter_default_init (YtsgServiceAdapterInterface *interface)
 {
   GParamFlags param_flags;
+
+  interface->invoke = _invoke;
 
   /* Properties */
 
@@ -43,15 +56,16 @@ ytsg_service_adapter_default_init (YtsgServiceAdapterInterface *interface)
                 G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB;
 
   g_object_interface_install_property (interface,
-                                       g_param_spec_string ("capability", "", "",
-                                                            NULL,
-                                                            param_flags));
+                                       g_param_spec_object ("service", "", "",
+                                                            G_TYPE_OBJECT,
+                                                            param_flags |
+                                                            G_PARAM_WRITABLE |
+                                                            G_PARAM_CONSTRUCT_ONLY));
 
   g_object_interface_install_property (interface,
-                                       g_param_spec_variant ("status", "", "",
-                                                             g_variant_type_new ("a{sv}"),
-                                                             NULL,
-                                                             param_flags));
+                                       g_param_spec_gtype ("service-gtype", "", "",
+                                                           G_TYPE_NONE,
+                                                           param_flags));
 
   /* Signals */
 

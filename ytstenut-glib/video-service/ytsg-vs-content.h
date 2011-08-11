@@ -48,13 +48,15 @@ struct YtsgVSContentInterface {
   /*< private >*/
   GTypeInterface parent;
 
-  YtsgVSQuery * (*retrieve) (YtsgVSContent  *self,
-                             char const     *uri);
+  YtsgVSQuery *
+  (*retrieve) (YtsgVSContent  *self,
+               char const     *uri);
 
-  YtsgVSQuery * (*search) (YtsgVSContent           *self,
-                           char const             **tokens,
-                           YtsgVSQueryResultOrder   order,
-                           unsigned int             max_results);
+  YtsgVSQuery *
+  (*search) (YtsgVSContent           *self,
+             char const             **tokens,
+             YtsgVSQueryResultOrder   order,
+             unsigned int             max_results);
 };
 
 GType

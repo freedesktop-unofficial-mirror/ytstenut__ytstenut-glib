@@ -74,6 +74,7 @@ source_c =						\
 		$(srcdir)/video-service/ytsg-vs-playable.c \
 		$(srcdir)/video-service/ytsg-vs-playable-proxy.c \
 		$(srcdir)/video-service/ytsg-vs-player.c \
+		$(srcdir)/video-service/ytsg-vs-player-adapter.c \
 		$(srcdir)/video-service/ytsg-vs-player-proxy.c \
 		$(srcdir)/video-service/ytsg-vs-query.c \
 		$(srcdir)/video-service/ytsg-vs-transcript.c \
@@ -83,6 +84,7 @@ source_c =						\
 
 private_h = \
 		$(srcdir)/video-service/ytsg-vs-playable-proxy.h \
+		$(srcdir)/video-service/ytsg-vs-player-adapter.h \
 		$(srcdir)/video-service/ytsg-vs-player-proxy.h \
 		$(NULL)
 

@@ -46,25 +46,35 @@ struct YtsgServiceAdapterInterface {
   /*< private >*/
   GTypeInterface parent;
 
+  /* Methods */
+
+  void
+  (*invoke) (YtsgServiceAdapter *self,
+             char const         *invocation_id,
+             char const         *aspect,
+             GVariant           *argumets);
+
   /* Signals */
 
-  void (*error) (YtsgServiceAdapter  *self,
-                 char const       *invocation_id,
-                 GError const     *error);
+  void
+  (*error) (YtsgServiceAdapter  *self,
+            char const          *invocation_id,
+            GError const        *error);
 
-  void (*response) (YtsgServiceAdapter *self,
-                    char const      *invocation_id,
-                    GVariant        *return_value);
+  void
+  (*response) (YtsgServiceAdapter *self,
+               char const         *invocation_id,
+               GVariant           *return_value);
 };
 
 GType
 ytsg_service_adapter_get_type (void) G_GNUC_CONST;
 
 void
-ytsg_service_adapter_invoke_method (char const  *invocation_id,
-                                 char const  *capability,
-                                 char const  *aspect,
-                                 GVariant    *argumets);
+ytsg_service_adapter_invoke (YtsgServiceAdapter *self,
+                             char const         *invocation_id,
+                             char const         *aspect,
+                             GVariant           *argumets);
 
 G_END_DECLS
 

@@ -49,6 +49,14 @@ ytsg_vs_content_default_init (YtsgVSContentInterface *interface)
 {
   interface->retrieve = _retrieve;
   interface->search = _search;
+
+  /* Only to hold the default value */
+  g_object_interface_install_property (interface,
+                                       g_param_spec_string ("capability", "", "",
+                                                            YTSG_VS_CONTENT_CAPABILITY,
+                                                            G_PARAM_STATIC_NAME |
+                                                            G_PARAM_STATIC_NICK |
+                                                            G_PARAM_STATIC_BLURB));
 }
 
 YtsgVSQuery *

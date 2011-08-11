@@ -47,16 +47,17 @@ struct YtsgServiceProxyInterface {
   /*< private >*/
   GTypeInterface parent;
 
-  void (*handle_datagram) (YtsgServiceProxy *self,
-                           YtsgMetadata     *datagram);
+  void
+  (*receive) (YtsgServiceProxy  *self,
+              YtsgMetadata      *datagram);
 };
 
 GType
 ytsg_service_proxy_get_type (void) G_GNUC_CONST;
 
 void
-ytsg_service_proxy_handle_datagram (YtsgServiceProxy  *self,
-                                    YtsgMetadata      *datagram);
+ytsg_service_proxy_receive (YtsgServiceProxy  *self,
+                            YtsgMetadata      *datagram);
 
 G_END_DECLS
 
