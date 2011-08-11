@@ -45,7 +45,7 @@
 #include <ytstenut-glib/ytsg-event-message.h>
 #include <ytstenut-glib/ytsg-invocation-message.h>
 #include <ytstenut-glib/ytsg-response-message.h>
-#include <ytstenut-glib/ytsg-service-impl.h>
+#include <ytstenut-glib/ytsg-service-adapter.h>
 
 #include <ytstenut-glib/video-service/ytsg-vs-content.h>
 #include <ytstenut-glib/video-service/ytsg-vs-playable.h>

@@ -18,55 +18,55 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
-#ifndef YTSG_SERVICE_IMPL_H
-#define YTSG_SERVICE_IMPL_H
+#ifndef YTSG_SERVICE_ADAPTER_H
+#define YTSG_SERVICE_ADAPTER_H
 
 #include <stdbool.h>
 #include <glib-object.h>
 
 G_BEGIN_DECLS
 
-#define YTSG_TYPE_SERVICE_IMPL \
-  (ytsg_service_impl_get_type ())
+#define YTSG_TYPE_SERVICE_ADAPTER \
+  (ytsg_service_adapter_get_type ())
 
-#define YTSG_SERVICE_IMPL(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTSG_TYPE_SERVICE_IMPL, YtsgServiceImpl))
+#define YTSG_SERVICE_ADAPTER(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTSG_TYPE_SERVICE_ADAPTER, YtsgServiceAdapter))
 
-#define YTSG_IS_SERVICE_IMPL(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_TYPE_SERVICE_IMPL))
+#define YTSG_IS_SERVICE_ADAPTER(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_TYPE_SERVICE_ADAPTER))
 
-#define YTSG_SERVICE_IMPL_GET_INTERFACE(obj) \
-  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), YTSG_TYPE_SERVICE_IMPL, YtsgServiceImplInterface))
+#define YTSG_SERVICE_ADAPTER_GET_INTERFACE(obj) \
+  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), YTSG_TYPE_SERVICE_ADAPTER, YtsgServiceAdapterInterface))
 
-typedef struct YtsgServiceImpl YtsgServiceImpl;
-typedef struct YtsgServiceImplInterface YtsgServiceImplInterface;
+typedef struct YtsgServiceAdapter YtsgServiceAdapter;
+typedef struct YtsgServiceAdapterInterface YtsgServiceAdapterInterface;
 
-struct YtsgServiceImplInterface {
+struct YtsgServiceAdapterInterface {
 
   /*< private >*/
   GTypeInterface parent;
 
   /* Signals */
 
-  void (*response) (YtsgServiceImpl *self,
-                    char const      *invocation_id,
-                    GVariant        *return_value);
-
-  void (*error) (YtsgServiceImpl  *self,
+  void (*error) (YtsgServiceAdapter  *self,
                  char const       *invocation_id,
                  GError const     *error);
+
+  void (*response) (YtsgServiceAdapter *self,
+                    char const      *invocation_id,
+                    GVariant        *return_value);
 };
 
 GType
-ytsg_service_impl_get_type (void) G_GNUC_CONST;
+ytsg_service_adapter_get_type (void) G_GNUC_CONST;
 
 void
-ytsg_service_impl_invoke_method (char const  *invocation_id,
+ytsg_service_adapter_invoke_method (char const  *invocation_id,
                                  char const  *capability,
                                  char const  *aspect,
                                  GVariant    *argumets);
 
 G_END_DECLS
 
-#endif /* YTSG_SERVICE_IMPL_H */
+#endif /* YTSG_SERVICE_ADAPTER_H */
 

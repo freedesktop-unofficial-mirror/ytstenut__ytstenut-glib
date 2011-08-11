@@ -25,6 +25,8 @@
 
 G_BEGIN_DECLS
 
+#define YTSG_VS_TRANSCRIPT_CAPABILITY "org.freedesktop.ytstenut.videoservice.Transcript"
+
 #define YTSG_VS_TYPE_TRANSCRIPT \
   (ytsg_vs_transcript_get_type ())
 

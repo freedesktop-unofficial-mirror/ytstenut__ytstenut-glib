@@ -19,9 +19,9 @@
  */
 
 #include "ytsg-marshal.h"
-#include "ytsg-service-impl.h"
+#include "ytsg-service-adapter.h"
 
-G_DEFINE_INTERFACE (YtsgServiceImpl, ytsg_service_impl, G_TYPE_OBJECT)
+G_DEFINE_INTERFACE (YtsgServiceAdapter, ytsg_service_adapter, G_TYPE_OBJECT)
 
 enum {
   RESPONSE_SIGNAL,
@@ -33,7 +33,7 @@ enum {
 static unsigned int _signals[N_SIGNALS] = { 0, };
 
 static void
-ytsg_service_impl_default_init (YtsgServiceImplInterface *interface)
+ytsg_service_adapter_default_init (YtsgServiceAdapterInterface *interface)
 {
   GParamFlags param_flags;
 
@@ -43,16 +43,22 @@ ytsg_service_impl_default_init (YtsgServiceImplInterface *interface)
                 G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB;
 
   g_object_interface_install_property (interface,
-                                       g_param_spec_boxed ("capabilities", "", "",
-                                                           G_TYPE_STRV,
-                                                           param_flags));
+                                       g_param_spec_string ("capability", "", "",
+                                                            NULL,
+                                                            param_flags));
+
+  g_object_interface_install_property (interface,
+                                       g_param_spec_variant ("status", "", "",
+                                                             g_variant_type_new ("a{sv}"),
+                                                             NULL,
+                                                             param_flags));
 
   /* Signals */
 
   _signals[RESPONSE_SIGNAL] = g_signal_new ("response",
-                                            YTSG_TYPE_SERVICE_IMPL,
+                                            YTSG_TYPE_SERVICE_ADAPTER,
                                             G_SIGNAL_RUN_LAST,
-                                            G_STRUCT_OFFSET (YtsgServiceImplInterface,
+                                            G_STRUCT_OFFSET (YtsgServiceAdapterInterface,
                                                              response),
                                             NULL, NULL,
                                             ytsg_marshal_VOID__STRING_BOXED,
@@ -60,9 +66,9 @@ ytsg_service_impl_default_init (YtsgServiceImplInterface *interface)
                                             G_TYPE_STRING, G_TYPE_VARIANT);
 
   _signals[ERROR_SIGNAL] = g_signal_new ("error",
-                                         YTSG_TYPE_SERVICE_IMPL,
+                                         YTSG_TYPE_SERVICE_ADAPTER,
                                          G_SIGNAL_RUN_LAST,
-                                         G_STRUCT_OFFSET (YtsgServiceImplInterface,
+                                         G_STRUCT_OFFSET (YtsgServiceAdapterInterface,
                                                           error),
                                          NULL, NULL,
                                          ytsg_marshal_VOID__STRING_BOXED,

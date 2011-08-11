@@ -27,6 +27,8 @@
 
 G_BEGIN_DECLS
 
+#define YTSG_VS_PLAYER_CAPABILITY "org.freedesktop.ytstenut.videoservice.Player"
+
 #define YTSG_VS_TYPE_PLAYER \
   (ytsg_vs_player_get_type ())
 

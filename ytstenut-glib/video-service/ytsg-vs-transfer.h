@@ -28,6 +28,8 @@
 
 G_BEGIN_DECLS
 
+#define YTSG_VS_TRANSFER_CAPABILITY "org.freedesktop.ytstenut.videoservice.Transfer"
+
 #define YTSG_VS_TYPE_TRANSFER \
   (ytsg_vs_transfer_get_type ())
 
