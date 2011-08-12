@@ -61,6 +61,9 @@ struct _YtsgServiceClass
 {
   /*< private >*/
   GObjectClass parent_class;
+
+  void (*message) (YtsgService  *self,
+                   char const   *xml_payload);
 };
 
 /**
@@ -79,9 +82,13 @@ struct _YtsgService
 
 GType ytsg_service_get_type (void) G_GNUC_CONST;
 
-const char  *ytsg_service_get_uid     (YtsgService *service);
-const char  *ytsg_service_get_jid     (YtsgService *service);
-YtsgContact *ytsg_service_get_contact (YtsgService *service);
+const char  *  ytsg_service_get_uid     (YtsgService *service);
+const char  *  ytsg_service_get_jid     (YtsgService *service);
+YtsgContact *  ytsg_service_get_contact (YtsgService *service);
+const char  *  ytsg_service_get_service_type    (YtsgService *service);
+const char  ** ytsg_service_get_caps    (YtsgService *service);
+GHashTable  *  ytsg_service_get_names   (YtsgService *service);
+const char  *  ytsg_service_get_status_xml (YtsgService *service);
 
 G_END_DECLS
 

@@ -1009,10 +1009,10 @@ deliver_to_service (YtsgClient  *self,
               char const *aspect = rest_xml_node_get_attr (node, "aspect");
               char const *args = rest_xml_node_get_attr (node, "arguments");
               GVariant *arguments = NULL;
-              
+
               if (args)
                 arguments = g_variant_new_parsed (args);
-              
+
               ytsg_service_adapter_invoke (adapter,
                                            invocation_id,
                                            aspect,

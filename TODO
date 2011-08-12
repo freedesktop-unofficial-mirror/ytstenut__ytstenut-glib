@@ -14,3 +14,4 @@ TODO
 * The pc file name should contain the API version.
 * Look at using xml-rpc
 * Globally rename "com.meego.xpmn.ytstenut" to "org.freedesktop.ytstenut".
+* It probably doesn't work when capabilities are added after connecting the client. Fix it.

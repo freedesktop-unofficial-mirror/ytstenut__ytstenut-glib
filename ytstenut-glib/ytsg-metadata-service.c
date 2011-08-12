@@ -42,7 +42,6 @@
 
 static void ytsg_metadata_service_dispose (GObject *object);
 static void ytsg_metadata_service_finalize (GObject *object);
-static void ytsg_metadata_service_constructed (GObject *object);
 static void ytsg_metadata_service_get_property (GObject    *object,
                                                 guint       property_id,
                                                 GValue     *value,
@@ -59,10 +58,6 @@ G_DEFINE_TYPE (YtsgMetadataService, ytsg_metadata_service, YTSG_TYPE_SERVICE);
 
 struct _YtsgMetadataServicePrivate
 {
-  const char  *type;
-  char       **caps;
-  GHashTable  *names;
-
   YtsgStatus  *status;
 
   guint disposed : 1;
@@ -71,18 +66,15 @@ struct _YtsgMetadataServicePrivate
 
 enum
 {
-  STATUS,
-  MESSAGE,
+  RECEIVED_STATUS,
+  RECEIVED_MESSAGE,
 
-  N_SIGNALS,
+  N_SIGNALS
 };
 
 enum
 {
   PROP_0,
-  PROP_TYPE,
-  PROP_NAMES,
-  PROP_CAPS,
   PROP_METADATA_SERVICE_TEST,
 };
 
@@ -98,45 +90,8 @@ ytsg_metadata_service_class_init (YtsgMetadataServiceClass *klass)
 
   object_class->dispose      = ytsg_metadata_service_dispose;
   object_class->finalize     = ytsg_metadata_service_finalize;
-  object_class->constructed  = ytsg_metadata_service_constructed;
   object_class->get_property = ytsg_metadata_service_get_property;
   object_class->set_property = ytsg_metadata_service_set_property;
-
-  /**
-   * YtsgMetadataService:type:
-   *
-   * The type of this service
-   */
-  pspec = g_param_spec_string ("type",
-                               "type",
-                               "type",
-                               NULL,
-                               G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
-  g_object_class_install_property (object_class, PROP_TYPE, pspec);
-
-  /**
-   * YtsgMetadataService:names:
-   *
-   * The names of this service
-   */
-  pspec = g_param_spec_boxed ("names",
-                              "names",
-                              "names",
-                              G_TYPE_HASH_TABLE,
-                              G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
-  g_object_class_install_property (object_class, PROP_NAMES, pspec);
-
-  /**
-   * YtsgMetadataService:caps:
-   *
-   * The caps of this service
-   */
-  pspec = g_param_spec_boxed ("caps",
-                              "caps",
-                              "caps",
-                              G_TYPE_STRV,
-                              G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
-  g_object_class_install_property (object_class, PROP_CAPS, pspec);
 
   /**
    * YtsgMetadataService:test:
@@ -161,7 +116,7 @@ ytsg_metadata_service_class_init (YtsgMetadataServiceClass *klass)
    *
    * Since: 0.1
    */
-  signals[STATUS] =
+  signals[RECEIVED_STATUS] =
     g_signal_new (I_("status"),
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST,
@@ -173,16 +128,16 @@ ytsg_metadata_service_class_init (YtsgMetadataServiceClass *klass)
 
 
   /**
-   * YtsgMetadataService::message:
+   * YtsgMetadataService::received-message:
    * @service: the service which received the signal
    * @message: the message
    *
-   * The ::message signal is emitted when message is received on given service
+   * The ::received-message signal is emitted when message is received on given service
    *
    * Since: 0.1
    */
-  signals[MESSAGE] =
-    g_signal_new (I_("message"),
+  signals[RECEIVED_MESSAGE] =
+    g_signal_new (I_("received-message"),
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST,
                   G_STRUCT_OFFSET (YtsgMetadataServiceClass, received_message),
@@ -193,26 +148,14 @@ ytsg_metadata_service_class_init (YtsgMetadataServiceClass *klass)
 }
 
 static void
-ytsg_metadata_service_status_changed_cb (TpYtsStatus *status,
-                                         const gchar *contact_id,
-                                         const gchar *capability,
-                                         const gchar *service_name,
-                                         const gchar *xml,
-                                         gpointer     data)
+ytsg_metadata_service_notify_status_xml_cb (YtsgMetadataService *self,
+                                            GParamSpec          *pspec,
+                                            gpointer             data)
 {
-  YtsgMetadataService        *self = data;
   YtsgMetadataServicePrivate *priv = self->priv;
+  char const *xml;
 
-  const char *jid = ytsg_service_get_jid (data);
-  const char *uid = ytsg_service_get_uid (data);
-
-  g_return_if_fail (contact_id && service_name && jid && uid);
-
-  YTSG_NOTE (STATUS, "Status changed for %s/%s:%s",
-             contact_id, service_name, capability);
-
-  if (strcmp (contact_id, jid) || strcmp (service_name, uid))
-    return;
+  xml = ytsg_service_get_status_xml (YTSG_SERVICE (self));
 
   if (priv->status)
     {
@@ -220,77 +163,12 @@ ytsg_metadata_service_status_changed_cb (TpYtsStatus *status,
       priv->status = NULL;
     }
 
-  if (xml && *xml)
-    {
-      priv->status = (YtsgStatus*) _ytsg_metadata_new_from_xml (xml);
+  priv->status = (YtsgStatus*) _ytsg_metadata_new_from_xml (xml);
 
-      if (!YTSG_IS_STATUS (priv->status))
-        g_warning ("Failed to construct YtsgStatus object");
-    }
+  if (!YTSG_IS_STATUS (priv->status))
+    g_warning ("Failed to construct YtsgStatus object");
 
-  g_signal_emit (self, signals[STATUS], 0, priv->status);
-}
-
-static void
-ytsg_metadata_service_constructed (GObject *object)
-{
-  YtsgMetadataService        *self = (YtsgMetadataService*) object;
-  YtsgMetadataServicePrivate *priv = self->priv;
-  YtsgClient                 *client;
-  YtsgContact                *contact;
-  TpYtsStatus                *status;
-  GHashTable                 *stats;
-
-  if (G_OBJECT_CLASS (ytsg_metadata_service_parent_class)->constructed)
-    G_OBJECT_CLASS (ytsg_metadata_service_parent_class)->constructed (object);
-
-  if (!priv->test)
-    {
-      contact = ytsg_service_get_contact ((YtsgService *)object);
-
-      g_assert (contact);
-      client = ytsg_contact_get_client (contact);
-      g_assert (client);
-
-      /*
-       * Construct the YtsgStatus object from the xml stored in
-       * TpYtsStatus:discovered-statuses
-       *
-       * -- this is bit cumbersome, requiring nested hash table lookup.
-       */
-      status = _ytsg_client_get_tp_status (client);
-      g_assert (status);
-
-      if (priv->caps && *priv->caps &&
-          (stats = tp_yts_status_get_discovered_statuses (status)))
-        {
-          const char *jid = ytsg_service_get_jid ((YtsgService*)self);
-          const char *uid = ytsg_service_get_uid ((YtsgService*)self);
-
-          const char *cap = *priv->caps; /*a single capability we have*/
-          GHashTable *cinfo;
-
-          if ((cinfo = g_hash_table_lookup (stats, jid)))
-            {
-              GHashTable *capinfo;
-
-              if ((capinfo = g_hash_table_lookup (cinfo, cap)))
-                {
-                  char *xml;
-
-                  if ((xml = g_hash_table_lookup (capinfo, uid)))
-                    {
-                      priv->status =
-                        (YtsgStatus*)_ytsg_metadata_new_from_xml (xml);
-                    }
-                }
-            }
-        }
-
-      tp_g_signal_connect_object (status, "status-changed",
-                           G_CALLBACK (ytsg_metadata_service_status_changed_cb),
-                                  self, 0);
-    }
+  g_signal_emit (self, signals[RECEIVED_STATUS], 0, priv->status);
 }
 
 static void
@@ -299,21 +177,8 @@ ytsg_metadata_service_get_property (GObject    *object,
                                     GValue     *value,
                                     GParamSpec *pspec)
 {
-  YtsgMetadataService        *self = (YtsgMetadataService*) object;
-  YtsgMetadataServicePrivate *priv = self->priv;
-
   switch (property_id)
     {
-    case PROP_TYPE:
-      g_value_set_string (value, priv->type);
-      break;
-    case PROP_NAMES:
-      g_value_set_boxed (value, priv->names);
-      break;
-    case PROP_CAPS:
-      g_value_set_boxed (value, priv->caps);
-      break;
-
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -333,16 +198,6 @@ ytsg_metadata_service_set_property (GObject      *object,
     case PROP_METADATA_SERVICE_TEST:
       priv->test = g_value_get_boolean (value);
       break;
-    case PROP_TYPE:
-      priv->type = g_intern_string (g_value_get_string (value));
-      break;
-    case PROP_NAMES:
-      priv->names = g_value_dup_boxed (value);
-      break;
-    case PROP_CAPS:
-      priv->caps = g_value_dup_boxed (value);
-      break;
-
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -352,6 +207,9 @@ static void
 ytsg_metadata_service_init (YtsgMetadataService *self)
 {
   self->priv = YTSG_METADATA_SERVICE_GET_PRIVATE (self);
+
+  g_signal_connect (self, "notify::status-xml",
+                    G_CALLBACK (ytsg_metadata_service_notify_status_xml_cb), NULL);
 }
 
 static void
@@ -365,12 +223,6 @@ ytsg_metadata_service_dispose (GObject *object)
 
   priv->disposed = TRUE;
 
-  if (priv->names)
-    {
-      g_hash_table_unref (priv->names);
-      priv->names = NULL;
-    }
-
   if (priv->status)
     {
       g_object_unref (priv->status);
@@ -383,12 +235,6 @@ ytsg_metadata_service_dispose (GObject *object)
 static void
 ytsg_metadata_service_finalize (GObject *object)
 {
-  YtsgMetadataService        *self = (YtsgMetadataService*) object;
-  YtsgMetadataServicePrivate *priv = self->priv;
-
-  if (priv->caps)
-    g_strfreev (priv->caps);
-
   G_OBJECT_CLASS (ytsg_metadata_service_parent_class)->finalize (object);
 }
 
@@ -408,7 +254,7 @@ _ytsg_metadata_service_received_status (YtsgMetadataService *service,
 
   g_return_if_fail (YTSG_IS_STATUS (status));
 
-  g_signal_emit (service, signals[STATUS], 0, status);
+  g_signal_emit (service, signals[RECEIVED_STATUS], 0, status);
 }
 
 void
@@ -421,7 +267,7 @@ _ytsg_metadata_service_received_message (YtsgMetadataService *service,
 
   g_return_if_fail (YTSG_IS_MESSAGE (message));
 
-  g_signal_emit (service, signals[MESSAGE], 0, message);
+  g_signal_emit (service, signals[RECEIVED_MESSAGE], 0, message);
 }
 
 static YtsgError

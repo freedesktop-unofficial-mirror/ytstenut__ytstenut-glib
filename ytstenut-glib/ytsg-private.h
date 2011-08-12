@@ -58,8 +58,9 @@ YtsgService *_ytsg_metadata_service_new (YtsgContact  *contact,
 
 void _ytsg_metadata_service_received_status (YtsgMetadataService *service,
                                              const char          *xml);
-void _ytsg_metadata_service_received_message (YtsgMetadataService *service,
-                                              const char          *xml);
+void
+_ytsg_metadata_service_received_message (YtsgMetadataService *service,
+                                         const char          *xml);
 
 YtsgRoster   *_ytsg_roster_new (YtsgClient *client);
 
