@@ -24,8 +24,11 @@
 static void
 _playable_interface_init (YtsgVSPlayableInterface *interface);
 
-G_DEFINE_TYPE_WITH_CODE (YtsgVSPlayableProxy, ytsg_vs_playable_proxy, G_TYPE_OBJECT,
-                         G_IMPLEMENT_INTERFACE (YTSG_VS_TYPE_PLAYABLE, _playable_interface_init))
+G_DEFINE_TYPE_WITH_CODE (YtsgVSPlayableProxy,
+                         ytsg_vs_playable_proxy,
+                         G_TYPE_OBJECT,
+                         G_IMPLEMENT_INTERFACE (YTSG_VS_TYPE_PLAYABLE,
+                                                _playable_interface_init))
 
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTSG_VS_TYPE_PLAYABLE_PROXY, YtsgVSPlayableProxyPrivate))

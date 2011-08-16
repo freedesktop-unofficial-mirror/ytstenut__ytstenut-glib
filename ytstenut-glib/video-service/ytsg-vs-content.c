@@ -20,7 +20,9 @@
 
 #include "ytsg-vs-content.h"
 
-G_DEFINE_INTERFACE (YtsgVSContent, ytsg_vs_content, G_TYPE_OBJECT)
+G_DEFINE_INTERFACE (YtsgVSContent,
+                    ytsg_vs_content,
+                    G_TYPE_OBJECT)
 
 YtsgVSQuery *
 _retrieve (YtsgVSContent  *self,

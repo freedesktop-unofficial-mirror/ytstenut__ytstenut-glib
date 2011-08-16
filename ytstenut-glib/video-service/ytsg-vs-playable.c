@@ -20,7 +20,9 @@
 
 #include "ytsg-vs-playable.h"
 
-G_DEFINE_INTERFACE (YtsgVSPlayable, ytsg_vs_playable, G_TYPE_OBJECT)
+G_DEFINE_INTERFACE (YtsgVSPlayable,
+                    ytsg_vs_playable,
+                    G_TYPE_OBJECT)
 
 static void
 ytsg_vs_playable_default_init (YtsgVSPlayableInterface *interface)

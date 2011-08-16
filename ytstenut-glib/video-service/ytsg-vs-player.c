@@ -21,7 +21,9 @@
 #include "ytsg-vs-playable.h"
 #include "ytsg-vs-player.h"
 
-G_DEFINE_INTERFACE (YtsgVSPlayer, ytsg_vs_player, G_TYPE_OBJECT)
+G_DEFINE_INTERFACE (YtsgVSPlayer,
+                    ytsg_vs_player,
+                    G_TYPE_OBJECT)
 
 static void
 _play (YtsgVSPlayer *self)

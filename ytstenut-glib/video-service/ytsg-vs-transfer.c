@@ -20,7 +20,9 @@
 
 #include "ytsg-vs-transfer.h"
 
-G_DEFINE_INTERFACE (YtsgVSTransfer, ytsg_vs_transfer, G_TYPE_OBJECT)
+G_DEFINE_INTERFACE (YtsgVSTransfer,
+                    ytsg_vs_transfer,
+                    G_TYPE_OBJECT)
 
 static YtsgVSTransmission *
 _download (YtsgVSTransfer *self,

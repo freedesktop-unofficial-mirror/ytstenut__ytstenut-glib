@@ -27,16 +27,26 @@
 static void
 _player_interface_init (YtsgVSPlayerInterface *interface);
 
-G_DEFINE_TYPE_WITH_CODE (YtsgVSPlayerProxy, ytsg_vs_player_proxy, G_TYPE_OBJECT,
-                         G_IMPLEMENT_INTERFACE (YTSG_VS_TYPE_PLAYER, _player_interface_init))
+G_DEFINE_TYPE_WITH_CODE (YtsgVSPlayerProxy,
+                         ytsg_vs_player_proxy,
+                         YTSG_TYPE_PROXY,
+                         G_IMPLEMENT_INTERFACE (YTSG_VS_TYPE_PLAYER,
+                                                _player_interface_init))
 
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTSG_VS_TYPE_PLAYER_PROXY, YtsgVSPlayerProxyPrivate))
 
 typedef struct {
+
   YtsgVSPlayableProxy *playable;
+  unsigned int         notify_playable_handler;
+
   bool                 playing;
+  unsigned int         notify_playing_handler;
+
   double               volume;
+  unsigned int         notify_volume_handler;
+
 } YtsgVSPlayerProxyPrivate;
 
 /*
@@ -44,8 +54,106 @@ typedef struct {
  */
 
 static void
+_player_property_notify (YtsgVSPlayer *self,
+                         GParamSpec   *pspec,
+                         void         *data)
+{
+  char const *property_name;
+
+  property_name = g_param_spec_get_name (pspec);
+
+  if (0 == g_strcmp0 ("playable", property_name)) {
+
+    /* TODO send home playable URI */
+    g_debug ("%s : 'playable' property not implemented yet", G_STRLOC);
+
+  } else if (0 == g_strcmp0 ("playing", property_name)) {
+
+    bool playing = ytsg_vs_player_get_playing (self);
+    ytsg_proxy_invoke (YTSG_PROXY (self), NULL,
+                       "playing", g_variant_new_boolean (playing));
+
+  } else if (0 == g_strcmp0 ("volume", property_name)) {
+
+    double volume = ytsg_vs_player_get_volume (self);
+    ytsg_proxy_invoke (YTSG_PROXY (self), NULL,
+                       "volume", g_variant_new_double (volume));
+  }
+
+}
+
+static void
+_player_play (YtsgVSPlayer *self)
+{
+  ytsg_proxy_invoke (YTSG_PROXY (self), NULL, "play", NULL);
+}
+
+static void
+_player_pause (YtsgVSPlayer *self)
+{
+  ytsg_proxy_invoke (YTSG_PROXY (self), NULL, "pause", NULL);
+}
+
+static void
+_player_next (YtsgVSPlayer *self)
+{
+  ytsg_proxy_invoke (YTSG_PROXY (self), NULL, "next", NULL);
+}
+
+static void
+_player_prev (YtsgVSPlayer *self)
+{
+  ytsg_proxy_invoke (YTSG_PROXY (self), NULL, "prev", NULL);
+}
+
+static void
 _player_interface_init (YtsgVSPlayerInterface *interface)
 {
+  interface->play = _player_play;
+  interface->pause = _player_pause;
+  interface->next = _player_next;
+  interface->prev = _player_prev;
+}
+
+/*
+ * YtsgProxy overrides
+ */
+
+static void
+_proxy_service_event (YtsgProxy   *self,
+                      char const  *aspect,
+                      GVariant    *arguments)
+{
+  YtsgVSPlayerProxyPrivate *priv = GET_PRIVATE (self);
+
+  if (0 == g_strcmp0 ("playable", aspect)) {
+
+    /* TODO */
+    g_debug ("%s : 'playable' property not implemented yet", G_STRLOC);
+
+  } else if (0 == g_strcmp0 ("playing", aspect) &&
+             g_variant_is_of_type (arguments, G_VARIANT_TYPE_BOOLEAN)) {
+
+    bool playing = g_variant_get_boolean (arguments);
+    g_signal_handler_block (self, priv->notify_playing_handler);
+    ytsg_vs_player_set_playing (YTSG_VS_PLAYER (self), playing);
+    g_signal_handler_unblock (self, priv->notify_playing_handler);
+
+  } else if (0 == g_strcmp0 ("volume", aspect)) {
+
+    double volume = g_variant_get_boolean (arguments);
+    g_signal_handler_block (self, priv->notify_volume_handler);
+    ytsg_vs_player_set_volume (YTSG_VS_PLAYER (self), volume);
+    g_signal_handler_unblock (self, priv->notify_volume_handler);
+  }
+}
+
+static void
+_proxy_service_response (YtsgProxy  *self,
+                         char const *invocation_id,
+                         GVariant   *response)
+{
+  /* TODO */
 }
 
 /*
@@ -144,12 +252,16 @@ static void
 ytsg_vs_player_proxy_class_init (YtsgVSPlayerProxyClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  YtsgProxyClass  *proxy_class = YTSG_PROXY_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (YtsgVSPlayerProxyPrivate));
 
   object_class->get_property = _get_property;
   object_class->set_property = _set_property;
   object_class->dispose = _dispose;
+
+  proxy_class->service_event = _proxy_service_event;
+  proxy_class->service_response = _proxy_service_response;
 
   g_object_class_override_property (object_class,
                                     PROP_PLAYER_PLAYABLE,
@@ -167,5 +279,18 @@ ytsg_vs_player_proxy_class_init (YtsgVSPlayerProxyClass *klass)
 static void
 ytsg_vs_player_proxy_init (YtsgVSPlayerProxy *self)
 {
+  YtsgVSPlayerProxyPrivate *priv = GET_PRIVATE (self);
+
+  priv->notify_playable_handler =
+                g_signal_connect (self, "notify::playable",
+                                  G_CALLBACK (_player_property_notify), NULL);
+
+  priv->notify_playing_handler =
+                g_signal_connect (self, "notify::playing",
+                                  G_CALLBACK (_player_property_notify), NULL);
+
+  priv->notify_volume_handler =
+                g_signal_connect (self, "notify::volume",
+                                  G_CALLBACK (_player_property_notify), NULL);
 }
 

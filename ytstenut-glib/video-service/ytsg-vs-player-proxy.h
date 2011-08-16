@@ -22,6 +22,7 @@
 #define YTSG_VS_PLAYER_PROXY_H
 
 #include <glib-object.h>
+#include <ytstenut-glib/ytsg-proxy.h>
 
 G_BEGIN_DECLS
 
@@ -43,11 +44,11 @@ G_BEGIN_DECLS
   (G_TYPE_INSTANCE_GET_CLASS ((obj), YTSG_VS_TYPE_PLAYER_PROXY, YtsgVSPlayerProxyClass))
 
 typedef struct {
-  GObject parent;
+  YtsgProxy parent;
 } YtsgVSPlayerProxy;
 
 typedef struct {
-  GObjectClass parent;
+  YtsgProxyClass parent;
 } YtsgVSPlayerProxyClass;
 
 GType

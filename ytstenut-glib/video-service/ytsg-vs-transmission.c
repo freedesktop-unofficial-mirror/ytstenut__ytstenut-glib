@@ -20,7 +20,9 @@
 
 #include "ytsg-vs-transmission.h"
 
-G_DEFINE_INTERFACE (YtsgVSTransmission, ytsg_vs_transmission, G_TYPE_OBJECT)
+G_DEFINE_INTERFACE (YtsgVSTransmission,
+                    ytsg_vs_transmission,
+                    G_TYPE_OBJECT)
 
 static void
 ytsg_vs_transmission_default_init (YtsgVSTransmissionInterface *interface)

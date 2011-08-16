@@ -55,6 +55,10 @@ typedef struct {
   /* Signals */
 
   void
+  (*service_event) (YtsgProxy   *self,
+                    char const  *aspect,
+                    GVariant    *arguments);
+  void
   (*service_response) (YtsgProxy  *self,
                        char const *invocation_id,
                        GVariant   *response);
@@ -72,6 +76,18 @@ ytsg_proxy_invoke (YtsgProxy  *self,
                    char const *invocation_id,
                    char const *aspect,
                    GVariant   *arguments);
+
+/* FIXME private */
+
+void
+ytsg_proxy_event (YtsgProxy   *self,
+                  char const  *aspect,
+                  GVariant    *arguments);
+
+void
+ytsg_proxy_response (YtsgProxy  *self,
+                    char const  *invocation_id,
+                    GVariant    *response);
 
 G_END_DECLS
 

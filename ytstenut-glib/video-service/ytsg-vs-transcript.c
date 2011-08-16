@@ -20,7 +20,9 @@
 
 #include "ytsg-vs-transcript.h"
 
-G_DEFINE_INTERFACE (YtsgVSTranscript, ytsg_vs_transcript, G_TYPE_OBJECT)
+G_DEFINE_INTERFACE (YtsgVSTranscript,
+                    ytsg_vs_transcript,
+                    G_TYPE_OBJECT)
 
 static void
 ytsg_vs_transcript_default_init (YtsgVSTranscriptInterface *interface)

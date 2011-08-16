@@ -34,6 +34,7 @@ enum {
 
 enum {
   INVOKE_SERVICE_SIGNAL,
+  SERVICE_EVENT_SIGNAL,
   SERVICE_RESPONSE_SIGNAL,
   N_SIGNALS
 };
@@ -140,6 +141,16 @@ ytsg_proxy_class_init (YtsgProxyClass *klass)
                                   G_TYPE_STRING, G_TYPE_STRING, G_TYPE_VARIANT);
 
   _signals[SERVICE_RESPONSE_SIGNAL] =
+                g_signal_new ("service-event",
+                              YTSG_TYPE_PROXY,
+                              G_SIGNAL_RUN_LAST,
+                              G_STRUCT_OFFSET (YtsgProxyClass, service_event),
+                              NULL, NULL,
+                              ytsg_marshal_VOID__STRING_BOXED,
+                              G_TYPE_NONE, 2,
+                              G_TYPE_STRING, G_TYPE_VARIANT);
+
+  _signals[SERVICE_RESPONSE_SIGNAL] =
               g_signal_new ("service-response",
                             YTSG_TYPE_PROXY,
                             G_SIGNAL_RUN_LAST,
@@ -158,6 +169,8 @@ ytsg_proxy_init (YtsgProxy *self)
 YtsgProxy *
 ytsg_proxy_new (char const *capability)
 {
+  g_return_val_if_fail (capability, NULL);
+
   return g_object_new (YTSG_TYPE_PROXY,
                        "capability", capability,
                        NULL);
@@ -170,10 +183,57 @@ ytsg_proxy_invoke (YtsgProxy  *self,
                    GVariant   *arguments)
 {
   g_return_if_fail (YTSG_IS_PROXY (self));
+  g_return_if_fail (aspect);
 
   g_signal_emit (self, _signals[INVOKE_SERVICE_SIGNAL], 0,
                  invocation_id,
                  aspect,
                  arguments);
+
+  /* This is a bit hackish, ok, but it allows for creating the variant
+   * in the invocation of this function. */
+  if (arguments &&
+      g_variant_is_floating (arguments)) {
+    g_variant_unref (arguments);
+  }
+}
+
+void
+ytsg_proxy_event (YtsgProxy   *self,
+                  char const  *aspect,
+                  GVariant    *arguments)
+{
+  g_return_if_fail (YTSG_IS_PROXY (self));
+  g_return_if_fail (aspect);
+
+  g_signal_emit (self, _signals[SERVICE_EVENT_SIGNAL], 0,
+                 aspect,
+                 arguments);
+
+  /* This is a bit hackish, ok, but it allows for creating the variant
+   * in the invocation of this function. */
+  if (arguments &&
+      g_variant_is_floating (arguments)) {
+    g_variant_unref (arguments);
+  }
+}
+
+void
+ytsg_proxy_response (YtsgProxy  *self,
+                    char const  *invocation_id,
+                    GVariant    *response)
+{
+  g_return_if_fail (YTSG_IS_PROXY (self));
+
+  g_signal_emit (self, _signals[SERVICE_RESPONSE_SIGNAL], 0,
+                 invocation_id,
+                 response);
+
+  /* This is a bit hackish, ok, but it allows for creating the variant
+   * in the invocation of this function. */
+  if (response &&
+      g_variant_is_floating (response)) {
+    g_variant_unref (response);
+  }
 }
 

@@ -22,7 +22,9 @@
 #include "ytsg-marshal.h"
 #include "ytsg-vs-query.h"
 
-G_DEFINE_INTERFACE (YtsgVSQuery, ytsg_vs_query, G_TYPE_OBJECT)
+G_DEFINE_INTERFACE (YtsgVSQuery,
+                    ytsg_vs_query,
+                    G_TYPE_OBJECT)
 
 enum {
   RESULT_SIGNAL,
