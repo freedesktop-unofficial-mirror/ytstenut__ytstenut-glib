@@ -33,6 +33,7 @@
 #include "ytsg-debug.h"
 #include "ytsg-marshal.h"
 #include "ytsg-private.h"
+#include "ytsg-proxy-service.h"
 #include "ytsg-roster.h"
 
 #include <string.h>
@@ -512,6 +513,41 @@ ytsg_roster_contact_service_added_cb (YtsgContact *contact,
   g_signal_emit (roster, signals[SERVICE_ADDED], 0, service);
 }
 
+/* FIXME this should probably go into some sort of factory.
+ * Then we'll probably also use some smarter lookup algorithm. */
+static YtsgService *
+create_service (YtsgRoster   *self,
+                YtsgContact  *contact,
+                char const   *sid,
+                char const   *type,
+                char const  **caps,
+                GHashTable   *names)
+{
+  static char const *known_caps[] = {
+    "org.freedesktop.ytstenut.VideoService.Content",
+    "org.freedesktop.ytstenut.VideoService.Player",
+    "org.freedesktop.ytstenut.VideoService.Transcript",
+    "org.freedesktop.ytstenut.VideoService.Transfer",
+    NULL
+  };
+
+  // TODO: publish implemented profiles in "names"?
+  if (caps && *caps)
+    {
+      char const *capability = *caps;
+      unsigned int i;
+
+      for (i = 0; known_caps[i] != NULL; i++)
+        {
+          if (0 == g_strcmp0 (capability, known_caps[i]))
+            {
+              return ytsg_proxy_service_new (contact, sid, type, caps, names);
+            }
+        }
+    }
+
+  return _ytsg_metadata_service_new (contact, sid, type, caps, names);
+}
 
 void
 _ytsg_roster_add_service (YtsgRoster  *roster,
@@ -554,7 +590,7 @@ _ytsg_roster_add_service (YtsgRoster  *roster,
   g_debug ("%s(): sid %s, jid %s, type %s, caps: %s", __FUNCTION__, sid, jid, type, caps_str);
   g_free (caps_str);
 
-  service = _ytsg_metadata_service_new (contact, sid, type, caps, names);
+  service = create_service (roster, contact, sid, type, caps, names);
 
   _ytsg_contact_add_service (contact, service);
 

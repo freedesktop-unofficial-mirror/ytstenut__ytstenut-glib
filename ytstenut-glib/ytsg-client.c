@@ -1089,6 +1089,17 @@ ytsg_client_account_prepared_cb (GObject      *acc,
 
   priv->tp_client = tp_yts_client_new (priv->uid, account);
 
+  if (priv->caps)
+    {
+      unsigned int i;
+      for (i = 0; i < priv->caps->len; i++)
+        {
+          GQuark cap = g_array_index (priv->caps, GQuark, i);
+          tp_yts_client_add_capability (priv->tp_client,
+                                        g_quark_to_string (cap));
+        }
+    }
+
   /*
    * If connection has been requested already, make one
    */
@@ -2072,7 +2083,6 @@ ytsg_client_has_capability (YtsgClient *client, YtsgCaps cap)
     {
       YtsgCaps c = g_array_index (priv->caps, YtsgCaps, i);
 
-      /* FIXME Huh why would say having control caps imply video or whatever? -Rob */
       if (c == cap || c == YTSG_CAPS_CONTROL)
         return TRUE;
     }
@@ -2122,6 +2132,9 @@ ytsg_client_set_capabilities (YtsgClient *client, YtsgCaps caps)
 
       return;
     }
+
+  if (priv->tp_client)
+    tp_yts_client_add_capability (priv->tp_client, g_quark_to_string (caps));
 
   if (!priv->caps)
     priv->caps = g_array_sized_new (FALSE, FALSE, sizeof (YtsgCaps), 1);

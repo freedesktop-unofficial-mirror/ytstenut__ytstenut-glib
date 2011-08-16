@@ -31,12 +31,13 @@
 #include <string.h>
 #include <telepathy-glib/util.h>
 
+#include "ytsg-metadata-service.h"
+
 #include "ytsg-client.h"
 #include "ytsg-debug.h"
 #include "ytsg-invocation-message.h"
 #include "ytsg-marshal.h"
 #include "ytsg-message.h"
-#include "ytsg-metadata-service.h"
 #include "ytsg-private.h"
 #include "ytsg-status.h"
 
@@ -51,7 +52,7 @@ static void ytsg_metadata_service_set_property (GObject      *object,
                                                 const GValue *value,
                                                 GParamSpec   *pspec);
 
-G_DEFINE_TYPE (YtsgMetadataService, ytsg_metadata_service, YTSG_TYPE_SERVICE);
+G_DEFINE_TYPE (YtsgMetadataService, ytsg_metadata_service, YTSG_TYPE_SERVICE)
 
 #define YTSG_METADATA_SERVICE_GET_PRIVATE(o) \
 (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTSG_TYPE_METADATA_SERVICE, YtsgMetadataServicePrivate))

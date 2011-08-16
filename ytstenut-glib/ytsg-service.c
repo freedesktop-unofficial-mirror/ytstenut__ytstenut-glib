@@ -32,7 +32,6 @@
 #include "ytsg-contact.h"
 #include "ytsg-debug.h"
 #include "ytsg-marshal.h"
-#include "ytsg-metadata-service.h"
 #include "ytsg-private.h"
 #include "ytsg-service.h"
 
@@ -234,6 +233,9 @@ ytsg_service_constructed (GObject *object)
   YtsgClient                 *client;
   TpYtsStatus                *status;
   GHashTable                 *stats;
+
+  if (G_OBJECT_CLASS (ytsg_service_parent_class)->constructed)
+    G_OBJECT_CLASS (ytsg_service_parent_class)->constructed (object);
 
   g_return_if_fail (priv->contact);
 

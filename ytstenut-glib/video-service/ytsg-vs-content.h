@@ -26,7 +26,7 @@
 
 G_BEGIN_DECLS
 
-#define YTSG_VS_CONTENT_CAPABILITY "org.freedesktop.ytstenut.videoservice.Content"
+#define YTSG_VS_CONTENT_CAPABILITY "org.freedesktop.ytstenut.VideoService.Content"
 
 #define YTSG_VS_TYPE_CONTENT \
   (ytsg_vs_content_get_type ())

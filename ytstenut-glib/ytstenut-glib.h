@@ -44,6 +44,8 @@
 #include <ytstenut-glib/ytsg-error-message.h>
 #include <ytstenut-glib/ytsg-event-message.h>
 #include <ytstenut-glib/ytsg-invocation-message.h>
+#include <ytstenut-glib/ytsg-proxy.h>
+#include <ytstenut-glib/ytsg-proxy-service.h>
 #include <ytstenut-glib/ytsg-response-message.h>
 #include <ytstenut-glib/ytsg-service-adapter.h>
 

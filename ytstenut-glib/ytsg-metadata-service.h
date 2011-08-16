@@ -12,6 +12,7 @@ G_BEGIN_DECLS
 
 #define YTSG_TYPE_METADATA_SERVICE                                      \
    (ytsg_metadata_service_get_type())
+
 #define YTSG_METADATA_SERVICE(obj)                                      \
    (G_TYPE_CHECK_INSTANCE_CAST ((obj),                                  \
                                 YTSG_TYPE_METADATA_SERVICE,             \

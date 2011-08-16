@@ -24,6 +24,7 @@
 
 #include <glib-object.h>
 
+#include <ytstenut-glib/ytsg-contact.h>
 #include <ytstenut-glib/ytsg-types.h>
 
 G_BEGIN_DECLS
