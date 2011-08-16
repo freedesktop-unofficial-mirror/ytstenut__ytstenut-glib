@@ -92,7 +92,7 @@ TpYtsStatus  *_ytsg_client_get_tp_status (YtsgClient *client);
 YtsgError     _ytsg_client_send_message (YtsgClient  *client,
                                          YtsgContact *contact,
                                          const char  *uid,
-                                         YtsgMessage *message);
+                                         YtsgMetadata *message);
 
 G_END_DECLS
 

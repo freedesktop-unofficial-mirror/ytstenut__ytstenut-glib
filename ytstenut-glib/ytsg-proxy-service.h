@@ -22,6 +22,7 @@
 #define YTSG_PROXY_SERVICE_H
 
 #include <glib-object.h>
+#include <ytstenut-glib/ytsg-proxy.h>
 #include <ytstenut-glib/ytsg-service.h>
 
 G_BEGIN_DECLS
@@ -61,7 +62,7 @@ ytsg_proxy_service_new (YtsgContact  *contact,
                         char const  **capabilities,
                         GHashTable   *names);
 
-GObject *
+YtsgProxy *
 ytsg_proxy_service_create_proxy (YtsgProxyService *self,
                                  char const       *capability);
 

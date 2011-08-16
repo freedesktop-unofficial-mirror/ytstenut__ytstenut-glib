@@ -280,7 +280,7 @@ ytsg_service_metadata_send_message (YtsgMetadataService *service,
   YtsgClient  *client  = ytsg_contact_get_client (contact);
   const char  *uid     = ytsg_service_get_uid (s);
 
-  return _ytsg_client_send_message (client, contact, uid, message);
+  return _ytsg_client_send_message (client, contact, uid, YTSG_METADATA (message));
 }
 
 /**

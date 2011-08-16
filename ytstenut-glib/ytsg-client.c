@@ -997,10 +997,11 @@ deliver_to_service (YtsgClient  *self,
   node = rest_xml_parser_parse_from_data (parser, xml, -1);
   if (node)
     {
+      char const *capability = rest_xml_node_get_attr (node, "capability");
       char const *type = rest_xml_node_get_attr (node, "type");
       if (0 == g_strcmp0 ("invocation", type))
         {
-          char const *capability = rest_xml_node_get_attr (node, "capability");
+          /* Deliver to service */
           YtsgServiceAdapter *adapter = g_hash_table_lookup (priv->services,
                                                              capability);
           if (adapter)
@@ -1019,6 +1020,12 @@ deliver_to_service (YtsgClient  *self,
                                            arguments);
               delivered = TRUE;
             }
+        }
+      else if (0 == g_strcmp0 ("event", type) ||
+               0 == g_strcmp0 ("response", type))
+        {
+          /* Deliver to matching proxy */
+          g_debug ("%s : events and responses not implemented yet", G_STRLOC);
         }
     }
 
@@ -2620,17 +2627,17 @@ ytsg_client_notify_tp_contact_cb (YtsgContact              *contact,
 }
 
 YtsgError
-_ytsg_client_send_message (YtsgClient  *client,
-                           YtsgContact *contact,
-                           const char  *uid,
-                           YtsgMessage *message)
+_ytsg_client_send_message (YtsgClient   *client,
+                           YtsgContact  *contact,
+                           const char   *uid,
+                           YtsgMetadata *message)
 {
   GHashTable               *attrs;
   struct YtsgCLChannelData *d;
   YtsgError                 e;
   char                     *xml = NULL;
 
-  if (!(attrs = _ytsg_metadata_extract ((YtsgMetadata*)message, &xml)))
+  if (!(attrs = _ytsg_metadata_extract (message, &xml)))
     {
       g_warning ("Failed to extract content from YtsgMessage object");
 

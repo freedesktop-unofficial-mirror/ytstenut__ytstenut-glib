@@ -22,7 +22,6 @@
 #define YTSG_PROXY_H
 
 #include <glib-object.h>
-#include <ytstenut-glib/ytsg-proxy-service.h>
 
 G_BEGIN_DECLS
 
@@ -44,11 +43,11 @@ G_BEGIN_DECLS
   (G_TYPE_INSTANCE_GET_CLASS ((obj), YTSG_TYPE_PROXY, YtsgProxyClass))
 
 typedef struct {
-  YtsgService parent;
+  GObject parent;
 } YtsgProxy;
 
 typedef struct {
-  YtsgServiceClass parent;
+  GObjectClass parent;
 
   /*< private >*/
 
@@ -70,6 +69,9 @@ ytsg_proxy_get_type (void);
 
 YtsgProxy *
 ytsg_proxy_new (char const *capability);
+
+char const *
+ytsg_proxy_get_capability (YtsgProxy *self);
 
 void
 ytsg_proxy_invoke (YtsgProxy  *self,

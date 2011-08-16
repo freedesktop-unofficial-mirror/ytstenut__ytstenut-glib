@@ -19,15 +19,17 @@
  */
 
 #include <stdbool.h>
+#include "ytsg-invocation-message.h"
+#include "ytsg-private.h"
 #include "ytsg-proxy-service.h"
 
 G_DEFINE_TYPE (YtsgProxyService, ytsg_proxy_service, YTSG_TYPE_SERVICE)
 
 #define GET_PRIVATE(o) \
-  (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTSG_VS_TYPE_PROXY_SERVICE, YtsgProxyServicePrivate))
+  (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTSG_TYPE_PROXY_SERVICE, YtsgProxyServicePrivate))
 
 typedef struct {
-  int dummy;
+  GHashTable *proxies;
 } YtsgProxyServicePrivate;
 
 
@@ -62,7 +64,12 @@ _set_property (GObject      *object,
 static void
 _dispose (GObject *object)
 {
-  // YtsgProxyServicePrivate *priv = GET_PRIVATE (object);
+  YtsgProxyServicePrivate *priv = GET_PRIVATE (object);
+
+  if (priv->proxies) {
+    g_hash_table_unref (priv->proxies);
+    priv->proxies = NULL;
+  }
 
   G_OBJECT_CLASS (ytsg_proxy_service_parent_class)->dispose (object);
 }
@@ -82,6 +89,12 @@ ytsg_proxy_service_class_init (YtsgProxyServiceClass *klass)
 static void
 ytsg_proxy_service_init (YtsgProxyService *self)
 {
+  YtsgProxyServicePrivate *priv = GET_PRIVATE (self);
+
+  priv->proxies = g_hash_table_new_full (g_str_hash,
+                                         g_str_equal,
+                                         g_free,
+                                         NULL);
 }
 
 YtsgService *
@@ -100,15 +113,64 @@ ytsg_proxy_service_new (YtsgContact  *contact,
                        NULL);
 }
 
+static void
+_proxy_invoke_service (YtsgProxy        *proxy,
+                       char const       *invocation_id,
+                       char const       *aspect,
+                       GVariant         *arguments,
+                       YtsgProxyService *self)
+{
+  YtsgContact   *contact;
+  YtsgClient    *client;
+  YtsgMetadata  *message;
+  char const    *uid;
+  char const    *capability;
+
+  contact = ytsg_service_get_contact (YTSG_SERVICE (self));
+  client = ytsg_contact_get_client (contact);
+  uid = ytsg_service_get_uid (YTSG_SERVICE (self));
+
+  capability = ytsg_proxy_get_capability (proxy);
+  message = ytsg_invocation_message_new (invocation_id,
+                                         capability,
+                                         aspect,
+                                         arguments);
+
+  _ytsg_client_send_message (client, contact, uid, message);
+
+  g_object_unref (message);
+}
+
+static void
+_proxy_destroyed (YtsgProxyService  *self,
+                  void              *stale_proxy_ptr)
+{
+  YtsgProxyServicePrivate *priv = GET_PRIVATE (self);
+  GHashTableIter   iter;
+  char const      *key;
+  gpointer         value;
+
+  g_hash_table_iter_init (&iter, priv->proxies);
+  while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
+    if (value == stale_proxy_ptr) {
+      g_hash_table_remove (priv->proxies, key);
+      break;
+    }
+  }
+}
+
 // FIXME need factory foo
 
 extern GType
 ytsg_vs_player_proxy_get_type (void);
 
-GObject *
+YtsgProxy *
 ytsg_proxy_service_create_proxy (YtsgProxyService *self,
                                  char const       *capability)
 {
+  YtsgProxyServicePrivate *priv = GET_PRIVATE (self);
+  YtsgProxy *proxy;
+
   struct {
     char const *capability;
     GType       gtype;
@@ -128,15 +190,27 @@ ytsg_proxy_service_create_proxy (YtsgProxyService *self,
 
   g_return_val_if_fail (YTSG_IS_PROXY_SERVICE (self), NULL);
 
+  proxy = NULL;
   for (i = 0; proxies[i].capability != NULL; i++) {
     if (0 == g_strcmp0 (capability, proxies[i].capability)) {
-      return g_object_new (proxies[i].gtype,
-                           "",
-                           NULL);
+      proxy = g_object_new (proxies[i].gtype,
+                            "capability", capability,
+                            NULL);
+      break;
     }
   }
 
-  return NULL;
+  if (proxy) {
+    g_hash_table_insert (priv->proxies,
+                         g_strdup (capability),
+                         proxy);
+    g_signal_connect (proxy, "invoke-service",
+                      G_CALLBACK (_proxy_invoke_service), self);
+    g_object_weak_ref (G_OBJECT (proxy),
+                       (GWeakNotify) _proxy_destroyed,
+                       self);
+  }
 
+  return proxy;
 }
 

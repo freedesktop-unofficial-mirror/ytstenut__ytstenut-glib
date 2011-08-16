@@ -40,7 +40,7 @@ enum {
 };
 
 typedef struct {
-  char              *capability;
+  char  *capability;
 } YtsgProxyPrivate;
 
 static guint _signals[N_SIGNALS] = { 0, };
@@ -176,19 +176,51 @@ ytsg_proxy_new (char const *capability)
                        NULL);
 }
 
+char const *
+ytsg_proxy_get_capability (YtsgProxy *self)
+{
+  YtsgProxyPrivate *priv = GET_PRIVATE (self);
+
+  g_return_val_if_fail (YTSG_IS_PROXY (self), NULL);
+
+  return priv->capability;
+}
+
+static char *
+create_invocation_id (YtsgProxy *self)
+{
+  static GRand  *_rand = NULL;
+  char          *invocation_id;
+
+  if (_rand == NULL) {
+    _rand = g_rand_new ();
+  }
+
+  invocation_id = g_strdup_printf ("%x", g_rand_int (_rand));
+
+  return invocation_id;
+}
+
 void
 ytsg_proxy_invoke (YtsgProxy  *self,
                    char const *invocation_id,
                    char const *aspect,
                    GVariant   *arguments)
 {
+  char *auto_id;
+
   g_return_if_fail (YTSG_IS_PROXY (self));
   g_return_if_fail (aspect);
 
+  auto_id = invocation_id ? NULL : create_invocation_id (self);
+
   g_signal_emit (self, _signals[INVOKE_SERVICE_SIGNAL], 0,
-                 invocation_id,
+                 invocation_id ? invocation_id : auto_id,
                  aspect,
                  arguments);
+
+  if (auto_id)
+    g_free (auto_id);
 
   /* This is a bit hackish, ok, but it allows for creating the variant
    * in the invocation of this function. */
