@@ -103,6 +103,20 @@ YtsgError   ytsg_contact_send_file          (const YtsgContact *item,
 gboolean    ytsg_contact_cancel_file        (const YtsgContact *item,
                                              GFile             *gfile);
 
+/* FIXME private */
+
+gboolean
+ytsg_contact_dispatch_event (YtsgContact  *self,
+                             char const   *capability,
+                             char const   *aspect,
+                             GVariant     *arguments);
+
+gboolean
+ytsg_contact_dispatch_response (YtsgContact *self,
+                                char const  *capability,
+                                char const  *invocation_id,
+                                GVariant    *response);
+
 G_END_DECLS
 
 #endif /* _YTSG_CONTACT_H */

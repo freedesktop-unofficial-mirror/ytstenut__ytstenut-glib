@@ -55,7 +55,8 @@ GType
 ytsg_response_message_get_type (void) G_GNUC_CONST;
 
 YtsgMetadata *
-ytsg_response_message_new (char const *invocation_id,
+ytsg_response_message_new (char const *capability,
+                           char const *invocation_id,
                            GVariant   *response);
 
 G_END_DECLS

@@ -23,7 +23,6 @@
 #define _YTSG_SERVICE_H
 
 #include <glib-object.h>
-
 #include <ytstenut-glib/ytsg-contact.h>
 #include <ytstenut-glib/ytsg-types.h>
 
@@ -90,6 +89,9 @@ const char  *  ytsg_service_get_service_type    (YtsgService *service);
 const char  ** ytsg_service_get_caps    (YtsgService *service);
 GHashTable  *  ytsg_service_get_names   (YtsgService *service);
 const char  *  ytsg_service_get_status_xml (YtsgService *service);
+
+gboolean       ytsg_service_has_capability (YtsgService *self,
+                                            char const  *capability);
 
 G_END_DECLS
 

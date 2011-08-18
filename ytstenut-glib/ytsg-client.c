@@ -33,6 +33,9 @@
 #include "ytsg-debug.h"
 #include "ytsg-enum-types.h"
 #include "ytsg-error.h"
+#include "ytsg-error-message.h"
+#include "ytsg-event-message.h"
+#include "ytsg-invocation-message.h"
 #include "ytsg-marshal.h"
 #include "ytsg-metadata.h"
 #include "ytsg-private.h"
@@ -142,6 +145,45 @@ enum
 };
 
 static guint signals[N_SIGNALS] = {0};
+
+/*
+ * ServiceData
+ */
+
+typedef struct {
+  YtsgClient  *client;
+  char        *capability;
+} ServiceData;
+
+static ServiceData *
+service_data_create (YtsgClient *client,
+                     char const *capability)
+{
+  ServiceData *self;
+
+  g_return_val_if_fail (YTSG_IS_CLIENT (client), NULL);
+  g_return_val_if_fail (capability, NULL);
+
+  self = g_new0 (ServiceData, 1);
+  self->client = g_object_ref (client);
+  self->capability = g_strdup (capability);
+
+  return self;
+}
+
+static void
+service_data_destroy (ServiceData *self)
+{
+  g_return_if_fail (self);
+
+  g_object_unref (self->client);
+  g_free (self->capability);
+  g_free (self);
+}
+
+/*
+ * YtsgClient
+ */
 
 static gboolean
 ytsg_client_channel_requested (TpChannel *proxy)
@@ -984,13 +1026,14 @@ ytsg_client_setup_debug  (YtsgClient *client)
 }
 
 static gboolean
-deliver_to_service (YtsgClient  *self,
-                    char const  *xml)
+dispatch_to_service (YtsgClient *self,
+                     char const *sender_jid,
+                     char const *xml)
 {
   YtsgClientPrivate *priv = self->priv;
   RestXmlParser *parser;
   RestXmlNode   *node;
-  gboolean       delivered = FALSE;
+  gboolean       dispatched = FALSE;
 
   parser = rest_xml_parser_new ();
 
@@ -1018,32 +1061,88 @@ deliver_to_service (YtsgClient  *self,
                                            invocation_id,
                                            aspect,
                                            arguments);
-              delivered = TRUE;
+
+              // TODO keep invocation id with all the info needed for responding.
+
+              dispatched = TRUE;
             }
         }
-      else if (0 == g_strcmp0 ("event", type) ||
-               0 == g_strcmp0 ("response", type))
+      else if (0 == g_strcmp0 ("event", type))
         {
           /* Deliver to matching proxy */
-          g_debug ("%s : events and responses not implemented yet", G_STRLOC);
+          YtsgContact *contact = ytsg_roster_find_contact_by_jid (priv->roster,
+                                                                  sender_jid);
+          if (contact)
+            {
+              char const *aspect = rest_xml_node_get_attr (node, "aspect");
+              char const *args = rest_xml_node_get_attr (node, "arguments");
+              GVariant *arguments = NULL;
+
+              if (args)
+                arguments = g_variant_new_parsed (args);
+
+              dispatched = ytsg_contact_dispatch_event (contact,
+                                                        capability,
+                                                        aspect,
+                                                        arguments);
+            }
+          else
+            {
+              g_warning ("%s : Did not find contact for %s", G_STRLOC, sender_jid);
+            }
         }
+      else if (0 == g_strcmp0 ("response", type))
+        {
+          /* Deliver to matching proxy */
+          YtsgContact *contact = ytsg_roster_find_contact_by_jid (priv->roster,
+                                                                  sender_jid);
+          if (contact)
+            {
+              char const *invocation_id = rest_xml_node_get_attr (node, "invocation");
+              char const *ret = rest_xml_node_get_attr (node, "response");
+              GVariant *response = NULL;
+
+              if (ret)
+                response = g_variant_new_parsed (ret);
+
+              dispatched = ytsg_contact_dispatch_response (contact,
+                                                           capability,
+                                                           invocation_id,
+                                                           response);
+            }
+          else
+            {
+              g_warning ("%s : Did not find contact for %s", G_STRLOC, sender_jid);
+            }
+        }
+      else
+        {
+          g_warning ("%s : Unknown message type '%s'", G_STRLOC, type);
+        }
+    }
+  else
+    {
+      g_warning ("%s : Failed to parse message", G_STRLOC);
     }
 
   g_object_unref (parser);
-  return delivered;
+  return dispatched;
 }
 
 static void
 ytsg_client_yts_channels_received_cb (TpYtsClient *tp_client,
                                       YtsgClient  *client)
 {
-  TpYtsChannel *ch;
+  TpYtsChannel  *ch;
 
   while ((ch = tp_yts_client_accept_channel (tp_client)))
     {
-      GHashTable     *props;
-      GHashTableIter  iter;
-      gpointer        key, value;
+      char const      *from;
+      GHashTable      *props;
+      GHashTableIter   iter;
+      gpointer         key, value;
+
+      from = tp_channel_get_initiator_identifier (TP_CHANNEL (ch));
 
       g_object_get (ch, "channel-properties", &props, NULL);
       g_assert (props);
@@ -1057,9 +1156,9 @@ ytsg_client_yts_channels_received_cb (TpYtsClient *tp_client,
           if (!strcmp (k, "com.meego.xpmn.ytstenut.Channel.RequestBody"))
             {
               const char *xml = g_value_get_string (v);
-              gboolean delivered = deliver_to_service (client, xml);
+              gboolean dispatched = dispatch_to_service (client, from, xml);
 
-              if (!delivered)
+              if (!dispatched)
                 {
                   YtsgMetadata *msg = _ytsg_metadata_new_from_xml (xml);
                   g_signal_emit (client, signals[MESSAGE], 0, msg);
@@ -1253,7 +1352,10 @@ ytsg_client_init (YtsgClient *client)
 
   ytsg_client_set_incoming_file_directory (client, NULL);
 
-  client->priv->services = g_hash_table_new (g_str_hash, g_str_equal);
+  client->priv->services = g_hash_table_new_full (g_str_hash,
+                                                  g_str_equal,
+                                                  g_free,
+                                                  g_object_unref);
 }
 
 static void
@@ -2674,6 +2776,79 @@ _ytsg_client_send_message (YtsgClient   *client,
   return e;
 }
 
+static void
+_adapter_error (YtsgServiceAdapter  *adapter,
+                char const          *invocation_id,
+                GError const        *error,
+                YtsgClient          *self)
+{
+  YtsgMetadata *message;
+
+  message = ytsg_error_message_new (g_quark_to_string (error->domain),
+                                    error->code,
+                                    error->message,
+                                    invocation_id);
+
+  // TODO
+  g_debug ("%s() not implemented at %s", __FUNCTION__, G_STRLOC);
+
+  g_object_unref (message);
+}
+
+static void
+_adapter_event (YtsgServiceAdapter  *adapter,
+                char const          *aspect,
+                GVariant            *arguments,
+                YtsgClient          *self)
+{
+  GObject       *service;
+  GParamSpec    *pspec;
+  YtsgMetadata  *message;
+
+  service = NULL;
+  g_object_get (adapter, "service", &service, NULL);
+  pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (service),
+                                        "capability");
+  if (pspec &&
+      G_IS_PARAM_SPEC_STRING (pspec))
+    {
+      char const *capability = G_PARAM_SPEC_STRING (pspec)->default_value;
+      YtsgMetadata *message = ytsg_event_message_new (capability,
+                                                      aspect,
+                                                      arguments);
+
+      // TODO
+      // dispatch to everyone who signed up
+      g_debug ("%s() not implemented at %s", __FUNCTION__, G_STRLOC);
+
+      g_object_unref (message);
+    }
+  else
+    {
+      g_critical ("%s : Failed to determine emit event, no capability", G_STRLOC);
+    }
+  g_object_unref (service);
+}
+
+static void
+_adapter_response (YtsgServiceAdapter *adapter,
+                   char const         *invocation_id,
+                   GVariant           *return_value,
+                   YtsgClient         *self)
+{
+  // todo
+}
+
+static void
+_service_destroyed (ServiceData *data,
+                    void        *stale_service_ptr)
+{
+  YtsgClientPrivate *priv = data->client->priv;
+
+  g_hash_table_remove (priv->services, data->capability);
+  service_data_destroy (data);
+}
+
 /* FIXME this should probably go into some sort of factory.
  * A bit hacky for now, so we don't need to include video-service headers here. */
 
@@ -2712,27 +2887,6 @@ create_adapter_for_service (YtsgClient  *self,
   return NULL;
 }
 
-static void
-_adapter_destroyed (YtsgClient  *self,
-                    void        *stale_adapter_ptr)
-{
-  YtsgClientPrivate *priv = self->priv;
-  GHashTableIter     iter;
-  char const        *capability;
-  gpointer           value;
-
-  g_hash_table_iter_init (&iter, priv->services);
-  while (g_hash_table_iter_next (&iter, (gpointer *) &capability, &value))
-    {
-      if (value == stale_adapter_ptr)
-        {
-          YTSG_NOTE (CLIENT, "unregistering capability %s", capability);
-          g_hash_table_remove (priv->services, capability);
-          // FIXME also no longer advertise this capability
-        }
-    }
-}
-
 /*
  * TODO add GError reporting
  * The client does not take ownership of the service, it will be
@@ -2744,6 +2898,7 @@ ytsg_client_register_service (YtsgClient  *self,
 {
   YtsgClientPrivate   *priv = self->priv;
   YtsgServiceAdapter  *adapter;
+  ServiceData         *service_data;
   GParamSpec          *pspec;
   char const          *capability;
 
@@ -2774,11 +2929,22 @@ ytsg_client_register_service (YtsgClient  *self,
   adapter = create_adapter_for_service (self, service);
   g_return_val_if_fail (adapter, FALSE);
 
-  g_object_weak_ref (G_OBJECT (adapter),
-                     (GWeakNotify) _adapter_destroyed,
-                     self);
+  service_data = service_data_create (self, capability);
+  g_object_weak_ref (G_OBJECT (service),
+                     (GWeakNotify) _service_destroyed,
+                     service_data);
 
-  g_hash_table_insert (priv->services, (char *) capability, adapter);
+  g_signal_connect (adapter, "error",
+                    G_CALLBACK (_adapter_error), self);
+  g_signal_connect (adapter, "event",
+                    G_CALLBACK (_adapter_event), self);
+  g_signal_connect (adapter, "response",
+                    G_CALLBACK (_adapter_response), self);
+
+  /* Hash table takes adapter reference */
+  g_hash_table_insert (priv->services,
+                       g_strdup (capability),
+                       adapter);
   ytsg_client_set_capabilities (self, g_quark_from_static_string (capability));
 
   return TRUE;

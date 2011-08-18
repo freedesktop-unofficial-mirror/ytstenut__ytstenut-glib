@@ -44,6 +44,7 @@
 #include "ytsg-error.h"
 #include "ytsg-marshal.h"
 #include "ytsg-private.h"
+#include "ytsg-proxy-service.h"
 #include "ytsg-types.h"
 
 #include "empathy-tp-file.h"
@@ -1208,5 +1209,71 @@ _ytsg_contact_is_empty (YtsgContact *contact)
   YtsgContactPrivate *priv = contact->priv;
 
   return (g_hash_table_size (priv->services) == 0);
+}
+
+gboolean
+ytsg_contact_dispatch_event (YtsgContact  *self,
+                             char const   *capability,
+                             char const   *aspect,
+                             GVariant     *arguments)
+{
+  YtsgContactPrivate *priv = self->priv;
+  char const      *service_uid;
+  YtsgService     *service;
+  GHashTableIter   iter;
+  gboolean         dispatched = FALSE;
+
+  g_return_val_if_fail (YTSG_IS_CONTACT (self), FALSE);
+
+  g_hash_table_iter_init (&iter, priv->services);
+  while (g_hash_table_iter_next (&iter,
+                                 (void **) &service_uid,
+                                 (void **) &service)) {
+    if (YTSG_IS_PROXY_SERVICE (service) &&
+        ytsg_service_has_capability (service, capability)) {
+
+      /* Dispatch to all matching services, be happy if one of them accepts. */
+      dispatched = dispatched ||
+              ytsg_proxy_service_dispatch_event (YTSG_PROXY_SERVICE (service),
+                                                 capability,
+                                                 aspect,
+                                                 arguments);
+    }
+  }
+  return dispatched;
+}
+
+gboolean
+ytsg_contact_dispatch_response (YtsgContact *self,
+                                char const  *capability,
+                                char const  *invocation_id,
+                                GVariant    *response)
+{
+  YtsgContactPrivate *priv = self->priv;
+  char const      *service_uid;
+  YtsgService     *service;
+  GHashTableIter   iter;
+  gboolean         dispatched = FALSE;
+
+  g_return_val_if_fail (YTSG_IS_CONTACT (self), FALSE);
+
+  g_hash_table_iter_init (&iter, priv->services);
+  while (g_hash_table_iter_next (&iter,
+                                 (void **) &service_uid,
+                                 (void **) &service)) {
+    if (YTSG_IS_PROXY_SERVICE (service) &&
+        ytsg_service_has_capability (service, capability)) {
+
+      /* Invocations are unique, so just go home after delivery. */
+      dispatched =
+            ytsg_proxy_service_dispatch_response (YTSG_PROXY_SERVICE (service),
+                                                  capability,
+                                                  invocation_id,
+                                                  response);
+      if (dispatched)
+        break;
+    }
+  }
+  return dispatched;
 }
 

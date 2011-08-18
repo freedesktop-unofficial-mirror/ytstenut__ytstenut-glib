@@ -21,6 +21,7 @@
 #ifndef YTSG_PROXY_SERVICE_H
 #define YTSG_PROXY_SERVICE_H
 
+#include <stdbool.h>
 #include <glib-object.h>
 #include <ytstenut-glib/ytsg-proxy.h>
 #include <ytstenut-glib/ytsg-service.h>
@@ -65,6 +66,20 @@ ytsg_proxy_service_new (YtsgContact  *contact,
 YtsgProxy *
 ytsg_proxy_service_create_proxy (YtsgProxyService *self,
                                  char const       *capability);
+
+/* FIXME private */
+
+bool
+ytsg_proxy_service_dispatch_event (YtsgProxyService *self,
+                                   char const       *capability,
+                                   char const       *aspect,
+                                   GVariant         *arguments);
+
+bool
+ytsg_proxy_service_dispatch_response (YtsgProxyService  *self,
+                                      char const        *capability,
+                                      char const        *invocation_id,
+                                      GVariant          *response);
 
 G_END_DECLS
 

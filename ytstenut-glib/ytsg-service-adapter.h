@@ -62,6 +62,11 @@ struct YtsgServiceAdapterInterface {
             GError const        *error);
 
   void
+  (*event) (YtsgServiceAdapter  *self,
+            char const          *aspect,
+            GVariant            *arguments);
+
+  void
   (*response) (YtsgServiceAdapter *self,
                char const         *invocation_id,
                GVariant           *return_value);

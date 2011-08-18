@@ -371,7 +371,7 @@ _ytsg_roster_find_contact_by_handle (YtsgRoster *roster, guint handle)
  *
  * Return value: (transfer none): #YtsgContact if found, or %NULL.
  */
-const YtsgContact *
+YtsgContact *
 ytsg_roster_find_contact_by_jid (YtsgRoster *roster, const char *jid)
 {
   YtsgRosterPrivate *priv;
@@ -441,7 +441,7 @@ _ytsg_roster_clear (YtsgRoster *roster)
  *
  * Return value: (transfer none): #YtsgContact if found, or %NULL.
  */
-const YtsgContact *
+YtsgContact *
 ytsg_roster_find_contact_by_capability (YtsgRoster *roster,
                                         YtsgCaps    capability)
 {

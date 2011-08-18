@@ -24,8 +24,9 @@
 G_DEFINE_INTERFACE (YtsgServiceAdapter, ytsg_service_adapter, G_TYPE_OBJECT)
 
 enum {
-  RESPONSE_SIGNAL,
   ERROR_SIGNAL,
+  EVENT_SIGNAL,
+  RESPONSE_SIGNAL,
 
   N_SIGNALS
 };
@@ -69,16 +70,6 @@ ytsg_service_adapter_default_init (YtsgServiceAdapterInterface *interface)
 
   /* Signals */
 
-  _signals[RESPONSE_SIGNAL] = g_signal_new ("response",
-                                            YTSG_TYPE_SERVICE_ADAPTER,
-                                            G_SIGNAL_RUN_LAST,
-                                            G_STRUCT_OFFSET (YtsgServiceAdapterInterface,
-                                                             response),
-                                            NULL, NULL,
-                                            ytsg_marshal_VOID__STRING_BOXED,
-                                            G_TYPE_NONE, 2,
-                                            G_TYPE_STRING, G_TYPE_VARIANT);
-
   _signals[ERROR_SIGNAL] = g_signal_new ("error",
                                          YTSG_TYPE_SERVICE_ADAPTER,
                                          G_SIGNAL_RUN_LAST,
@@ -88,6 +79,26 @@ ytsg_service_adapter_default_init (YtsgServiceAdapterInterface *interface)
                                          ytsg_marshal_VOID__STRING_BOXED,
                                          G_TYPE_NONE, 2,
                                          G_TYPE_STRING, G_TYPE_ERROR);
+
+  _signals[EVENT_SIGNAL] = g_signal_new ("event",
+                                         YTSG_TYPE_SERVICE_ADAPTER,
+                                         G_SIGNAL_RUN_LAST,
+                                         G_STRUCT_OFFSET (YtsgServiceAdapterInterface,
+                                                          event),
+                                         NULL, NULL,
+                                         ytsg_marshal_VOID__STRING_BOXED,
+                                         G_TYPE_NONE, 2,
+                                         G_TYPE_STRING, G_TYPE_VARIANT);
+
+  _signals[RESPONSE_SIGNAL] = g_signal_new ("response",
+                                            YTSG_TYPE_SERVICE_ADAPTER,
+                                            G_SIGNAL_RUN_LAST,
+                                            G_STRUCT_OFFSET (YtsgServiceAdapterInterface,
+                                                             response),
+                                            NULL, NULL,
+                                            ytsg_marshal_VOID__STRING_BOXED,
+                                            G_TYPE_NONE, 2,
+                                            G_TYPE_STRING, G_TYPE_VARIANT);
 }
 
 void

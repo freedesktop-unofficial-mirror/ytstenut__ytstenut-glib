@@ -477,3 +477,22 @@ ytsg_service_get_status_xml (YtsgService *service)
   return priv->status_xml;
 }
 
+gboolean
+ytsg_service_has_capability (YtsgService *self,
+                             char const  *capability)
+{
+  YtsgServicePrivate *priv = self->priv;
+  guint i;
+
+  g_return_val_if_fail (YTSG_IS_SERVICE (self), FALSE);
+  g_return_val_if_fail (priv->caps, FALSE);
+
+  for (i = 0; priv->caps[i] != NULL; i++) {
+    if (0 == g_strcmp0 (capability, priv->caps[i])) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+

@@ -17,3 +17,4 @@ TODO
 * It probably doesn't work when capabilities are added after connecting the client. Fix it.
 * Publish capabilities in "names", instead of using the profile as UID.
 * Implement generic service proxy and replace MetadataService with it.
+* Implement capabilities boxed type and use it everywhere.

@@ -29,7 +29,7 @@ G_DEFINE_TYPE (YtsgProxyService, ytsg_proxy_service, YTSG_TYPE_SERVICE)
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTSG_TYPE_PROXY_SERVICE, YtsgProxyServicePrivate))
 
 typedef struct {
-  GHashTable *proxies;
+  GHashTable  *proxies;
 } YtsgProxyServicePrivate;
 
 
@@ -212,5 +212,43 @@ ytsg_proxy_service_create_proxy (YtsgProxyService *self,
   }
 
   return proxy;
+}
+
+bool
+ytsg_proxy_service_dispatch_event (YtsgProxyService *self,
+                                   char const       *capability,
+                                   char const       *aspect,
+                                   GVariant         *arguments)
+{
+  YtsgProxy *proxy;
+
+  YtsgProxyServicePrivate *priv = GET_PRIVATE (self);
+
+  proxy = g_hash_table_lookup (priv->proxies, capability);
+  if (proxy) {
+    ytsg_proxy_event (proxy, aspect, arguments);
+    return true;
+  }
+
+  return false;
+}
+
+bool
+ytsg_proxy_service_dispatch_response (YtsgProxyService  *self,
+                                      char const        *capability,
+                                      char const        *invocation_id,
+                                      GVariant          *response)
+{
+  YtsgProxy *proxy;
+
+  YtsgProxyServicePrivate *priv = GET_PRIVATE (self);
+
+  proxy = g_hash_table_lookup (priv->proxies, capability);
+  if (proxy) {
+    ytsg_proxy_response (proxy, invocation_id, response);
+    return true;
+  }
+
+  return false;
 }
 
