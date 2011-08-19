@@ -131,34 +131,36 @@ ytsg_proxy_class_init (YtsgProxyClass *klass)
   /* Signals */
 
   _signals[INVOKE_SERVICE_SIGNAL] =
-                    g_signal_new ("invoke-service",
-                                  YTSG_TYPE_PROXY,
-                                  G_SIGNAL_RUN_LAST,
-                                  0,
-                                  NULL, NULL,
-                                  ytsg_marshal_VOID__STRING_STRING_BOXED,
-                                  G_TYPE_NONE, 3,
-                                  G_TYPE_STRING, G_TYPE_STRING, G_TYPE_VARIANT);
+                  g_signal_new ("invoke-service",
+                                YTSG_TYPE_PROXY,
+                                G_SIGNAL_RUN_LAST,
+                                0,
+                                NULL, NULL,
+                                ytsg_marshal_VOID__STRING_STRING_BOXED,
+                                G_TYPE_NONE, 3,
+                                G_TYPE_STRING, G_TYPE_STRING, G_TYPE_VARIANT);
+
+  _signals[SERVICE_EVENT_SIGNAL] =
+                                g_signal_new ("service-event",
+                                              YTSG_TYPE_PROXY,
+                                              G_SIGNAL_RUN_LAST,
+                                              G_STRUCT_OFFSET (YtsgProxyClass,
+                                                               service_event),
+                                              NULL, NULL,
+                                              ytsg_marshal_VOID__STRING_BOXED,
+                                              G_TYPE_NONE, 2,
+                                              G_TYPE_STRING, G_TYPE_VARIANT);
 
   _signals[SERVICE_RESPONSE_SIGNAL] =
-                g_signal_new ("service-event",
-                              YTSG_TYPE_PROXY,
-                              G_SIGNAL_RUN_LAST,
-                              G_STRUCT_OFFSET (YtsgProxyClass, service_event),
-                              NULL, NULL,
-                              ytsg_marshal_VOID__STRING_BOXED,
-                              G_TYPE_NONE, 2,
-                              G_TYPE_STRING, G_TYPE_VARIANT);
-
-  _signals[SERVICE_RESPONSE_SIGNAL] =
-              g_signal_new ("service-response",
-                            YTSG_TYPE_PROXY,
-                            G_SIGNAL_RUN_LAST,
-                            G_STRUCT_OFFSET (YtsgProxyClass, service_response),
-                            NULL, NULL,
-                            ytsg_marshal_VOID__STRING_BOXED,
-                            G_TYPE_NONE, 2,
-                            G_TYPE_STRING, G_TYPE_VARIANT);
+                              g_signal_new ("service-response",
+                                            YTSG_TYPE_PROXY,
+                                            G_SIGNAL_RUN_LAST,
+                                            G_STRUCT_OFFSET (YtsgProxyClass,
+                                                             service_response),
+                                            NULL, NULL,
+                                            ytsg_marshal_VOID__STRING_BOXED,
+                                            G_TYPE_NONE, 2,
+                                            G_TYPE_STRING, G_TYPE_VARIANT);
 }
 
 static void
@@ -231,9 +233,9 @@ ytsg_proxy_invoke (YtsgProxy  *self,
 }
 
 void
-ytsg_proxy_event (YtsgProxy   *self,
-                  char const  *aspect,
-                  GVariant    *arguments)
+ytsg_proxy_handle_service_event (YtsgProxy  *self,
+                                 char const *aspect,
+                                 GVariant   *arguments)
 {
   g_return_if_fail (YTSG_IS_PROXY (self));
   g_return_if_fail (aspect);
@@ -251,9 +253,9 @@ ytsg_proxy_event (YtsgProxy   *self,
 }
 
 void
-ytsg_proxy_response (YtsgProxy  *self,
-                    char const  *invocation_id,
-                    GVariant    *response)
+ytsg_proxy_handle_service_response (YtsgProxy   *self,
+                                    char const  *invocation_id,
+                                    GVariant    *response)
 {
   g_return_if_fail (YTSG_IS_PROXY (self));
 

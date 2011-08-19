@@ -226,7 +226,7 @@ ytsg_proxy_service_dispatch_event (YtsgProxyService *self,
 
   proxy = g_hash_table_lookup (priv->proxies, capability);
   if (proxy) {
-    ytsg_proxy_event (proxy, aspect, arguments);
+    ytsg_proxy_handle_service_event (proxy, aspect, arguments);
     return true;
   }
 
@@ -245,7 +245,7 @@ ytsg_proxy_service_dispatch_response (YtsgProxyService  *self,
 
   proxy = g_hash_table_lookup (priv->proxies, capability);
   if (proxy) {
-    ytsg_proxy_response (proxy, invocation_id, response);
+    ytsg_proxy_handle_service_response (proxy, invocation_id, response);
     return true;
   }
 

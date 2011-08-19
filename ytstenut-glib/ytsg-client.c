@@ -2803,7 +2803,7 @@ _adapter_event (YtsgServiceAdapter  *adapter,
 {
   GObject       *service;
   GParamSpec    *pspec;
-  YtsgMetadata  *message;
+//  YtsgMetadata  *message;
 
   service = NULL;
   g_object_get (adapter, "service", &service, NULL);

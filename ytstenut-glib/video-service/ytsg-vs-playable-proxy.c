@@ -111,6 +111,7 @@ _set_property (GObject      *object,
       if (position != priv->position) {
         priv->position = position;
         g_object_notify (object, "postion");
+        /* TODO send home etc */
       }
     } break;
   default:

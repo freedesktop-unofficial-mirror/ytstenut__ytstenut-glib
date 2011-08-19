@@ -1,4 +1,6 @@
 
+SUBDIRS = video-service
+
 AM_CPPFLAGS = 					\
 	-DG_DISABLE_DEPRECATED 			\
 	-DG_DISABLE_SINGLE_INCLUDES		\
@@ -10,9 +12,9 @@ AM_CFLAGS = $(YTSG_CFLAGS)
 
 AM_LDFLAGS = ../ytstenut-glib/libytstenut-glib-@YTSG_API_VERSION@.la
 
-echo_LDADD = $(YTSG_LIBS)
+LDADD = $(YTSG_LIBS)
 
-bin_PROGRAMS = \
+noinst_PROGRAMS = \
   invocation-message \
   echo \
   status \

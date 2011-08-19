@@ -23,14 +23,9 @@
 #include "ytsg-vs-player.h"
 #include "ytsg-vs-player-adapter.h"
 
-static void
-_service_adapter_interface_init (YtsgServiceAdapterInterface *interface);
-
-G_DEFINE_TYPE_WITH_CODE (YtsgVSPlayerAdapter,
-                         ytsg_vs_player_adapter,
-                         G_TYPE_OBJECT,
-                         G_IMPLEMENT_INTERFACE (YTSG_TYPE_SERVICE_ADAPTER,
-                                                _service_adapter_interface_init))
+G_DEFINE_TYPE (YtsgVSPlayerAdapter,
+               ytsg_vs_player_adapter,
+               YTSG_TYPE_SERVICE_ADAPTER)
 
 #define GET_PRIVATE(o)                                        \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o),                          \
@@ -39,6 +34,10 @@ G_DEFINE_TYPE_WITH_CODE (YtsgVSPlayerAdapter,
 
 typedef struct {
   YtsgVSPlayer  *player;
+
+  unsigned int   notify_playable_handler;
+  unsigned int   notify_playing_handler;
+  unsigned int   notify_volume_handler;
 } YtsgVSPlayerAdapterPrivate;
 
 /*
@@ -52,6 +51,35 @@ _service_adapter_invoke (YtsgServiceAdapter *self,
                          GVariant           *arguments)
 {
   YtsgVSPlayerAdapterPrivate *priv = GET_PRIVATE (self);
+
+  /* Properties */
+
+  if (0 == g_strcmp0 ("playable", aspect)) {
+
+    /* TODO */
+    g_debug ("%s : 'playable' property not implemented yet", G_STRLOC);
+
+  } else if (0 == g_strcmp0 ("playing", aspect) &&
+             arguments &&
+             g_variant_is_of_type (arguments, G_VARIANT_TYPE_BOOLEAN)) {
+
+    /* PONDERING at some point we can maybe optimize out sending back the notification */
+    // g_signal_handler_block (priv->player, priv->notify_playing_handler);
+    ytsg_vs_player_set_playing (priv->player, g_variant_get_boolean (arguments));
+    // g_signal_handler_unblock (priv->player, priv->notify_playing_handler);
+
+  } else if (0 == g_strcmp0 ("volume", aspect) &&
+             arguments &&
+             g_variant_is_of_type (arguments, G_VARIANT_TYPE_DOUBLE)) {
+
+    /* PONDERING at some point we can maybe optimize out sending back the notification */
+    // g_signal_handler_block (priv->player, priv->notify_volume_handler);
+    ytsg_vs_player_set_volume (priv->player, g_variant_get_double (arguments));
+    // g_signal_handler_unblock (priv->player, priv->notify_volume_handler);
+
+  } else
+
+  /* Methods */
 
   if (0 == g_strcmp0 ("play", aspect)) {
 
@@ -71,18 +99,16 @@ _service_adapter_invoke (YtsgServiceAdapter *self,
 
   } else {
 
-    g_warning ("%s : Unknown method %s.%s()",
+    char *arg_string = arguments ?
+                          g_variant_print (arguments, false) :
+                          g_strdup ("NULL");
+    g_warning ("%s : Unknown method %s.%s(%s)",
                G_STRLOC,
                G_OBJECT_TYPE_NAME (priv->player),
-               aspect);
+               aspect,
+               arg_string);
+    g_free (arg_string);
   }
-}
-
-static void
-_service_adapter_interface_init (YtsgServiceAdapterInterface *interface)
-{
-  /* Methods */
-  interface->invoke = _service_adapter_invoke;
 }
 
 /*
@@ -94,6 +120,41 @@ enum {
   PROP_SERVICE_ADAPTER_SERVICE_GTYPE,
   PROP_SERVICE_ADAPTER_SERVICE
 };
+
+static void
+_player_notify_playable (YtsgVSPlayer         *player,
+                         GParamSpec           *pspec,
+                         YtsgVSPlayerAdapter  *self)
+{
+  /* TODO */
+  g_debug ("%s : %s() not implemented yet", G_STRLOC, __FUNCTION__);
+}
+
+static void
+_player_notify_playing (YtsgVSPlayer         *player,
+                        GParamSpec           *pspec,
+                        YtsgVSPlayerAdapter  *self)
+{
+  bool playing;
+
+  playing = ytsg_vs_player_get_playing (player);
+  ytsg_service_adapter_send_event (YTSG_SERVICE_ADAPTER (self),
+                                   "playing",
+                                   g_variant_new_boolean (playing));
+}
+
+static void
+_player_volume_playable (YtsgVSPlayer         *player,
+                         GParamSpec           *pspec,
+                         YtsgVSPlayerAdapter  *self)
+{
+  double volume;
+
+  volume = ytsg_vs_player_get_volume (player);
+  ytsg_service_adapter_send_event (YTSG_SERVICE_ADAPTER (self),
+                                   "volume",
+                                   g_variant_new_double (volume));
+}
 
 static void
 _player_destroyed (YtsgVSPlayerAdapter  *self,
@@ -131,11 +192,27 @@ _set_property (GObject      *object,
   YtsgVSPlayerAdapterPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
+
     case PROP_SERVICE_ADAPTER_SERVICE:
+
       /* Construct-only */
+
       g_return_if_fail (priv->player == NULL);
       g_return_if_fail (YTSG_VS_IS_PLAYER (g_value_get_object (value)));
+
       priv->player = YTSG_VS_PLAYER (g_value_get_object (value));
+
+      priv->notify_playable_handler =
+              g_signal_connect (priv->player, "notify::playable",
+                                G_CALLBACK (_player_notify_playable), object);
+
+      priv->notify_playing_handler =
+              g_signal_connect (priv->player, "notify::playing",
+                                G_CALLBACK (_player_notify_playing), object);
+
+      priv->notify_volume_handler =
+              g_signal_connect (priv->player, "notify::volume",
+                                G_CALLBACK (_player_volume_playable), object);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -164,6 +241,7 @@ static void
 ytsg_vs_player_adapter_class_init (YtsgVSPlayerAdapterClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  YtsgServiceAdapterClass *adapter_class = YTSG_SERVICE_ADAPTER_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (YtsgVSPlayerAdapterPrivate));
 
@@ -171,6 +249,8 @@ ytsg_vs_player_adapter_class_init (YtsgVSPlayerAdapterClass *klass)
   object_class->get_property = _get_property;
   object_class->set_property = _set_property;
   object_class->dispose = _dispose;
+
+  adapter_class->invoke = _service_adapter_invoke;
 
   g_object_class_override_property (object_class,
                                     PROP_SERVICE_ADAPTER_SERVICE,

@@ -82,14 +82,14 @@ ytsg_proxy_invoke (YtsgProxy  *self,
 /* FIXME private */
 
 void
-ytsg_proxy_event (YtsgProxy   *self,
-                  char const  *aspect,
-                  GVariant    *arguments);
+ytsg_proxy_handle_service_event (YtsgProxy  *self,
+                                 char const *aspect,
+                                 GVariant   *arguments);
 
 void
-ytsg_proxy_response (YtsgProxy  *self,
-                    char const  *invocation_id,
-                    GVariant    *response);
+ytsg_proxy_handle_service_response (YtsgProxy   *self,
+                                    char const  *invocation_id,
+                                    GVariant    *response);
 
 G_END_DECLS
 
