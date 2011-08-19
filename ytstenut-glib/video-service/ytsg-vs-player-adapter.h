@@ -43,11 +43,11 @@ G_BEGIN_DECLS
   (G_TYPE_INSTANCE_GET_CLASS ((obj), YTSG_VS_TYPE_PLAYER_ADAPTER, YtsgVSPlayerAdapterClass))
 
 typedef struct {
-  GObject parent;
+  YtsgServiceAdapter parent;
 } YtsgVSPlayerAdapter;
 
 typedef struct {
-  GObjectClass parent;
+  YtsgServiceAdapterClass parent;
 } YtsgVSPlayerAdapterClass;
 
 GType

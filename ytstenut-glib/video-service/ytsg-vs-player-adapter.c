@@ -117,8 +117,8 @@ _service_adapter_invoke (YtsgServiceAdapter *self,
 
 enum {
   PROP_0 = 0,
-  PROP_SERVICE_ADAPTER_SERVICE_GTYPE,
-  PROP_SERVICE_ADAPTER_SERVICE
+  PROP_SERVICE_ADAPTER_SERVICE,
+  PROP_SERVICE_ADAPTER_SERVICE_GTYPE
 };
 
 static void

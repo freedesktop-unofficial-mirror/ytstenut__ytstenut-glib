@@ -92,7 +92,9 @@ ytsg_service_adapter_class_init (YtsgServiceAdapterClass *klass)
   /* Properties */
 
   param_flags = G_PARAM_READABLE |
-                G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB;
+                G_PARAM_STATIC_NAME |
+                G_PARAM_STATIC_NICK |
+                G_PARAM_STATIC_BLURB;
 
   pspec = g_param_spec_object ("service", "", "",
                                G_TYPE_OBJECT,

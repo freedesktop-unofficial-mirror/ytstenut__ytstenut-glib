@@ -2876,7 +2876,6 @@ create_adapter_for_service (YtsgClient  *self,
 
     return g_object_new (ytsg_vs_player_adapter_get_type (),
                          "service", service,
-                         "service-gtype", interface_type,
                          NULL);
   }
 

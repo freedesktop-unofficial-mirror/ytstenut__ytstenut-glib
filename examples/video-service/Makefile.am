@@ -19,6 +19,8 @@ noinst_PROGRAMS = \
 
 player_SOURCES = \
   player.c \
+  mock-player.c \
+  mock-player.h \
   $(NULL)
 
 remote_SOURCES = \
