@@ -120,17 +120,29 @@ _proxy_invoke_service (YtsgProxy        *proxy,
                        GVariant         *arguments,
                        YtsgProxyService *self)
 {
-  YtsgContact   *contact;
-  YtsgClient    *client;
-  YtsgMetadata  *message;
-  char const    *uid;
-  char const    *capability;
+  YtsgProxyServicePrivate *priv = GET_PRIVATE (self);
+  YtsgContact     *contact;
+  YtsgClient      *client;
+  YtsgMetadata    *message;
+  char const      *uid;
+  GHashTableIter   iter;
+  char const      *capability;
+  YtsgProxy const *p;
 
   contact = ytsg_service_get_contact (YTSG_SERVICE (self));
   client = ytsg_contact_get_client (contact);
   uid = ytsg_service_get_uid (YTSG_SERVICE (self));
 
-  capability = ytsg_proxy_get_capability (proxy);
+  /* FIXME not very nice, but a proxy doesn't know its capability, otherwise
+   * it conflicts with the capability property of YtsgVSPlayer et al. */
+  g_hash_table_iter_init (&iter, priv->proxies);
+  while (g_hash_table_iter_next (&iter, (void **) &capability, (void **) &p)) {
+    if (p == proxy) {
+      /* This is the capability we're looking for */
+      break;
+    }
+  }
+
   message = ytsg_invocation_message_new (invocation_id,
                                          capability,
                                          aspect,
@@ -193,9 +205,7 @@ ytsg_proxy_service_create_proxy (YtsgProxyService *self,
   proxy = NULL;
   for (i = 0; proxies[i].capability != NULL; i++) {
     if (0 == g_strcmp0 (capability, proxies[i].capability)) {
-      proxy = g_object_new (proxies[i].gtype,
-                            "capability", capability,
-                            NULL);
+      proxy = g_object_new (proxies[i].gtype, NULL);
       break;
     }
   }

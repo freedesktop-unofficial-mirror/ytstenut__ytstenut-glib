@@ -28,8 +28,7 @@ G_DEFINE_TYPE (YtsgProxy, ytsg_proxy, G_TYPE_OBJECT)
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTSG_TYPE_PROXY, YtsgProxyPrivate))
 
 enum {
-  PROP_0,
-  PROP_CAPABILITY
+  PROP_0
 };
 
 enum {
@@ -46,28 +45,12 @@ typedef struct {
 static guint _signals[N_SIGNALS] = { 0, };
 
 static void
-_constructed (GObject *object)
-{
-  YtsgProxyPrivate *priv = GET_PRIVATE (object);
-
-  if (G_OBJECT_CLASS (ytsg_proxy_parent_class)->constructed)
-    G_OBJECT_CLASS (ytsg_proxy_parent_class)->constructed (object);
-
-  g_warn_if_fail (priv->capability);
-}
-
-static void
 _get_property (GObject      *object,
                unsigned int  property_id,
                GValue       *value,
                GParamSpec   *pspec)
 {
-  YtsgProxyPrivate *priv = GET_PRIVATE (object);
-
   switch (property_id) {
-    case PROP_CAPABILITY:
-      g_value_set_string (value, priv->capability);
-      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
@@ -79,13 +62,7 @@ _set_property (GObject      *object,
                const GValue *value,
                GParamSpec   *pspec)
 {
-  YtsgProxyPrivate *priv = GET_PRIVATE (object);
-
   switch (property_id) {
-    case PROP_CAPABILITY:
-      /* construct-only */
-      priv->capability = g_value_dup_string (value);
-      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
@@ -94,13 +71,6 @@ _set_property (GObject      *object,
 static void
 _dispose (GObject *object)
 {
-  YtsgProxyPrivate *priv = GET_PRIVATE (object);
-
-  if (priv->capability) {
-    g_free (priv->capability);
-    priv->capability = NULL;
-  }
-
   G_OBJECT_CLASS (ytsg_proxy_parent_class)->dispose (object);
 }
 
@@ -108,25 +78,12 @@ static void
 ytsg_proxy_class_init (YtsgProxyClass *klass)
 {
   GObjectClass  *object_class = G_OBJECT_CLASS (klass);
-  GParamSpec    *pspec;
-  GParamFlags    param_flags;
 
   g_type_class_add_private (klass, sizeof (YtsgProxyPrivate));
 
-  object_class->constructed = _constructed;
   object_class->get_property = _get_property;
   object_class->set_property = _set_property;
   object_class->dispose = _dispose;
-
-  /* Properties */
-
-  param_flags = G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB |
-                G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY;
-
-  pspec = g_param_spec_string ("capability", "", "",
-                               NULL,
-                               param_flags);
-  g_object_class_install_property (object_class, PROP_CAPABILITY, pspec);
 
   /* Signals */
 
@@ -176,16 +133,6 @@ ytsg_proxy_new (char const *capability)
   return g_object_new (YTSG_TYPE_PROXY,
                        "capability", capability,
                        NULL);
-}
-
-char const *
-ytsg_proxy_get_capability (YtsgProxy *self)
-{
-  YtsgProxyPrivate *priv = GET_PRIVATE (self);
-
-  g_return_val_if_fail (YTSG_IS_PROXY (self), NULL);
-
-  return priv->capability;
 }
 
 static char *

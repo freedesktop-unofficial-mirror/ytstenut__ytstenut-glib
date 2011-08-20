@@ -70,9 +70,6 @@ ytsg_proxy_get_type (void);
 YtsgProxy *
 ytsg_proxy_new (char const *capability);
 
-char const *
-ytsg_proxy_get_capability (YtsgProxy *self);
-
 void
 ytsg_proxy_invoke (YtsgProxy  *self,
                    char const *invocation_id,

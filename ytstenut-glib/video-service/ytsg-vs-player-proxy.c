@@ -136,6 +136,7 @@ _proxy_service_response (YtsgProxy  *self,
 
 enum {
   PROP_0 = 0,
+  PROP_PLAYER_CAPABILITY,
   PROP_PLAYER_PLAYABLE,
   PROP_PLAYER_PLAYING,
   PROP_PLAYER_VOLUME
@@ -246,6 +247,11 @@ ytsg_vs_player_proxy_class_init (YtsgVSPlayerProxyClass *klass)
 
   proxy_class->service_event = _proxy_service_event;
   proxy_class->service_response = _proxy_service_response;
+
+  /* Just for default value, no need to handle get/set. */
+  g_object_class_override_property (object_class,
+                                    PROP_PLAYER_CAPABILITY,
+                                    "capability");
 
   g_object_class_override_property (object_class,
                                     PROP_PLAYER_PLAYABLE,
