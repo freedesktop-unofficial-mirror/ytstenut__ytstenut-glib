@@ -102,7 +102,6 @@ _roster_service_added (YtsgRoster   *roster,
     }
 
     g_object_unref (proxy);
-    g_main_loop_quit (_mainloop);
   }
 }
 

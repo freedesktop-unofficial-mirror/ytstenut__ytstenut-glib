@@ -1037,7 +1037,7 @@ dispatch_to_service (YtsgClient *self,
 
   parser = rest_xml_parser_new ();
 
-  node = rest_xml_parser_parse_from_data (parser, xml, -1);
+  node = rest_xml_parser_parse_from_data (parser, xml, strlen (xml));
   if (node)
     {
       char const *capability = rest_xml_node_get_attr (node, "capability");
