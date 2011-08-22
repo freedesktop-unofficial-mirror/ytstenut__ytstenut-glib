@@ -38,7 +38,6 @@ source_h =						\
 		$(srcdir)/ytsg-proxy-service.h \
 		$(srcdir)/ytsg-response-message.h \
 		$(srcdir)/ytsg-service-adapter.h \
-		$(srcdir)/ytsg-service-proxy.h \
 		\
 		$(srcdir)/video-profile/ytsg-vp-content.h \
 		$(srcdir)/video-profile/ytsg-vp-playable.h \
@@ -72,7 +71,6 @@ source_c =						\
 		$(srcdir)/ytsg-proxy-service.c \
 		$(srcdir)/ytsg-response-message.c \
 		$(srcdir)/ytsg-service-adapter.c \
-		$(srcdir)/ytsg-service-proxy.c \
 		\
 		$(srcdir)/video-profile/ytsg-vp-content.c \
 		$(srcdir)/video-profile/ytsg-vp-playable.c \
