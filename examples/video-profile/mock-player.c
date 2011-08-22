@@ -22,12 +22,12 @@
 #include "mock-player.h"
 
 static void
-_player_interface_init (YtsgVSPlayerInterface *interface);
+_player_interface_init (YtsgVPPlayerInterface *interface);
 
 G_DEFINE_TYPE_WITH_CODE (MockPlayer,
                          mock_player,
                          G_TYPE_OBJECT,
-                         G_IMPLEMENT_INTERFACE (YTSG_VS_TYPE_PLAYER,
+                         G_IMPLEMENT_INTERFACE (YTSG_VP_TYPE_PLAYER,
                                                 _player_interface_init))
 
 #define GET_PRIVATE(o) \
@@ -47,37 +47,37 @@ typedef struct {
 } MockPlayerPrivate;
 
 /*
- * YtsgVSPlayer
+ * YtsgVPPlayer
  */
 
 static void
-_player_play (YtsgVSPlayer *self)
+_player_play (YtsgVPPlayer *self)
 {
-  g_debug ("YtsgVSPlayer.play()");
-  ytsg_vs_player_set_playing (self, true);
+  g_debug ("YtsgVPPlayer.play()");
+  ytsg_vp_player_set_playing (self, true);
 }
 
 static void
-_player_pause (YtsgVSPlayer *self)
+_player_pause (YtsgVPPlayer *self)
 {
-  g_debug ("YtsgVSPlayer.pause()");
-  ytsg_vs_player_set_playing (self, false);
+  g_debug ("YtsgVPPlayer.pause()");
+  ytsg_vp_player_set_playing (self, false);
 }
 
 static void
-_player_next (YtsgVSPlayer *self)
+_player_next (YtsgVPPlayer *self)
 {
-  g_debug ("YtsgVSPlayer.next()");
+  g_debug ("YtsgVPPlayer.next()");
 }
 
 static void
-_player_prev (YtsgVSPlayer *self)
+_player_prev (YtsgVPPlayer *self)
 {
-  g_debug ("YtsgVSPlayer.prev()");
+  g_debug ("YtsgVPPlayer.prev()");
 }
 
 static void
-_player_interface_init (YtsgVSPlayerInterface *interface)
+_player_interface_init (YtsgVPPlayerInterface *interface)
 {
   interface->play = _player_play;
   interface->pause = _player_pause;
@@ -131,7 +131,7 @@ _set_property (GObject      *object,
     case PROP_PLAYER_PLAYING: {
       bool playing = g_value_get_boolean (value);
       if (playing != priv->playing) {
-        g_debug ("YtsgVSPlayer.playing = %s", playing ? "true" : "false");
+        g_debug ("YtsgVPPlayer.playing = %s", playing ? "true" : "false");
         priv->playing = playing;
         g_object_notify (object, "playing");
       }
@@ -140,7 +140,7 @@ _set_property (GObject      *object,
     case PROP_PLAYER_VOLUME: {
       double volume = g_value_get_double (value);
       if (volume != priv->volume) {
-        g_debug ("YtsgVSPlayer.volume = %.2f", volume);
+        g_debug ("YtsgVPPlayer.volume = %.2f", volume);
         priv->volume = volume;
         g_object_notify (object, "volume");
       }
@@ -168,7 +168,7 @@ mock_player_class_init (MockPlayerClass *klass)
   object_class->set_property = _set_property;
   object_class->dispose = _dispose;
 
-  /* YtsgVSPlayer interface */
+  /* YtsgVPPlayer interface */
 
   /* Just for default value, no need to handle get/set. */
   g_object_class_override_property (object_class,

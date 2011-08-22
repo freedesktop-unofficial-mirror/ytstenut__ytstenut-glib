@@ -20,10 +20,10 @@
 
 #include "ytsg-enum-types.h"
 #include "ytsg-marshal.h"
-#include "ytsg-vs-query.h"
+#include "ytsg-vp-query.h"
 
-G_DEFINE_INTERFACE (YtsgVSQuery,
-                    ytsg_vs_query,
+G_DEFINE_INTERFACE (YtsgVPQuery,
+                    ytsg_vp_query,
                     G_TYPE_OBJECT)
 
 enum {
@@ -35,7 +35,7 @@ enum {
 static unsigned int _signals[N_SIGNALS] = { 0, };
 
 static void
-ytsg_vs_query_default_init (YtsgVSQueryInterface *interface)
+ytsg_vp_query_default_init (YtsgVPQueryInterface *interface)
 {
   /* 0 means no limit */
   g_object_interface_install_property (interface,
@@ -48,15 +48,15 @@ ytsg_vs_query_default_init (YtsgVSQueryInterface *interface)
                                                           0, 100, 0,
                                                           G_PARAM_READABLE));
 
-  /* GList*<YtsgVSPlayable> */
+  /* GList*<YtsgVPPlayable> */
   g_object_interface_install_property (interface,
                                        g_param_spec_pointer ("results", "", "",
                                                              G_PARAM_READABLE));
 
   g_object_interface_install_property (interface,
                                        g_param_spec_enum ("result-order", "", "",
-                                                          YTSG_TYPE_VS_QUERY_RESULT_ORDER,
-                                                          YTSG_VS_QUERY_NONE,
+                                                          YTSG_TYPE_VP_QUERY_RESULT_ORDER,
+                                                          YTSG_VP_QUERY_NONE,
                                                           G_PARAM_READABLE));
 
   /* GPtrArray<char const *> */
@@ -66,9 +66,9 @@ ytsg_vs_query_default_init (YtsgVSQueryInterface *interface)
                                                            G_PARAM_READABLE));
 
   _signals[RESULT_SIGNAL] = g_signal_new ("result",
-                                          YTSG_VS_TYPE_QUERY,
+                                          YTSG_VP_TYPE_QUERY,
                                           G_SIGNAL_RUN_LAST,
-                                          G_STRUCT_OFFSET (YtsgVSQueryInterface, result),
+                                          G_STRUCT_OFFSET (YtsgVPQueryInterface, result),
                                           NULL, NULL,
                                           ytsg_marshal_BOOLEAN__POINTER_UINT,
                                           G_TYPE_BOOLEAN, 2,
@@ -76,11 +76,11 @@ ytsg_vs_query_default_init (YtsgVSQueryInterface *interface)
 }
 
 unsigned int
-ytsg_vs_get_max_results (YtsgVSQuery *self)
+ytsg_vp_get_max_results (YtsgVPQuery *self)
 {
   unsigned int max_results;
 
-  g_return_val_if_fail (YTSG_VS_IS_QUERY (self), 0);
+  g_return_val_if_fail (YTSG_VP_IS_QUERY (self), 0);
 
   max_results = 0;
   g_object_get (G_OBJECT (self), "max-results", &max_results, NULL);
@@ -88,11 +88,11 @@ ytsg_vs_get_max_results (YtsgVSQuery *self)
 }
 
 unsigned int
-ytsg_vs_get_progress (YtsgVSQuery *self)
+ytsg_vp_get_progress (YtsgVPQuery *self)
 {
   unsigned int progress;
 
-  g_return_val_if_fail (YTSG_VS_IS_QUERY (self), 0);
+  g_return_val_if_fail (YTSG_VP_IS_QUERY (self), 0);
 
   progress = 0;
   g_object_get (G_OBJECT (self), "progress", &progress, NULL);
@@ -100,25 +100,25 @@ ytsg_vs_get_progress (YtsgVSQuery *self)
 }
 
 GList *
-ytsg_vs_get_results (YtsgVSQuery *self)
+ytsg_vp_get_results (YtsgVPQuery *self)
 {
   GList *results;
 
-  g_return_val_if_fail (YTSG_VS_IS_QUERY (self), NULL);
+  g_return_val_if_fail (YTSG_VP_IS_QUERY (self), NULL);
 
   results = NULL;
   g_object_get (G_OBJECT (self), "results", &results, NULL);
   return results;
 }
 
-YtsgVSQueryResultOrder
-ytsg_vs_get_result_order (YtsgVSQuery *self)
+YtsgVPQueryResultOrder
+ytsg_vp_get_result_order (YtsgVPQuery *self)
 {
-  YtsgVSQueryResultOrder result_order;
+  YtsgVPQueryResultOrder result_order;
 
-  g_return_val_if_fail (YTSG_VS_IS_QUERY (self), YTSG_VS_QUERY_NONE);
+  g_return_val_if_fail (YTSG_VP_IS_QUERY (self), YTSG_VP_QUERY_NONE);
 
-  result_order = YTSG_VS_QUERY_NONE;
+  result_order = YTSG_VP_QUERY_NONE;
   g_object_get (G_OBJECT (self), "result-order", &result_order, NULL);
   return result_order;
 }

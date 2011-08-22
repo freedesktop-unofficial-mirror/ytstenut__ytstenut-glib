@@ -40,13 +40,13 @@ source_h =						\
 		$(srcdir)/ytsg-service-adapter.h \
 		$(srcdir)/ytsg-service-proxy.h \
 		\
-		$(srcdir)/video-service/ytsg-vs-content.h \
-		$(srcdir)/video-service/ytsg-vs-playable.h \
-		$(srcdir)/video-service/ytsg-vs-player.h \
-		$(srcdir)/video-service/ytsg-vs-query.h \
-		$(srcdir)/video-service/ytsg-vs-transcript.h \
-		$(srcdir)/video-service/ytsg-vs-transfer.h \
-		$(srcdir)/video-service/ytsg-vs-transmission.h \
+		$(srcdir)/video-profile/ytsg-vp-content.h \
+		$(srcdir)/video-profile/ytsg-vp-playable.h \
+		$(srcdir)/video-profile/ytsg-vp-player.h \
+		$(srcdir)/video-profile/ytsg-vp-query.h \
+		$(srcdir)/video-profile/ytsg-vp-transcript.h \
+		$(srcdir)/video-profile/ytsg-vp-transfer.h \
+		$(srcdir)/video-profile/ytsg-vp-transmission.h \
 		$(NULL)
 
 source_c =						\
@@ -74,22 +74,22 @@ source_c =						\
 		$(srcdir)/ytsg-service-adapter.c \
 		$(srcdir)/ytsg-service-proxy.c \
 		\
-		$(srcdir)/video-service/ytsg-vs-content.c \
-		$(srcdir)/video-service/ytsg-vs-playable.c \
-		$(srcdir)/video-service/ytsg-vs-playable-proxy.c \
-		$(srcdir)/video-service/ytsg-vs-player.c \
-		$(srcdir)/video-service/ytsg-vs-player-adapter.c \
-		$(srcdir)/video-service/ytsg-vs-player-proxy.c \
-		$(srcdir)/video-service/ytsg-vs-query.c \
-		$(srcdir)/video-service/ytsg-vs-transcript.c \
-		$(srcdir)/video-service/ytsg-vs-transfer.c \
-		$(srcdir)/video-service/ytsg-vs-transmission.c \
+		$(srcdir)/video-profile/ytsg-vp-content.c \
+		$(srcdir)/video-profile/ytsg-vp-playable.c \
+		$(srcdir)/video-profile/ytsg-vp-playable-proxy.c \
+		$(srcdir)/video-profile/ytsg-vp-player.c \
+		$(srcdir)/video-profile/ytsg-vp-player-adapter.c \
+		$(srcdir)/video-profile/ytsg-vp-player-proxy.c \
+		$(srcdir)/video-profile/ytsg-vp-query.c \
+		$(srcdir)/video-profile/ytsg-vp-transcript.c \
+		$(srcdir)/video-profile/ytsg-vp-transfer.c \
+		$(srcdir)/video-profile/ytsg-vp-transmission.c \
 		$(NULL)
 
 private_h = \
-		$(srcdir)/video-service/ytsg-vs-playable-proxy.h \
-		$(srcdir)/video-service/ytsg-vs-player-adapter.h \
-		$(srcdir)/video-service/ytsg-vs-player-proxy.h \
+		$(srcdir)/video-profile/ytsg-vp-playable-proxy.h \
+		$(srcdir)/video-profile/ytsg-vp-player-adapter.h \
+		$(srcdir)/video-profile/ytsg-vp-player-proxy.h \
 		$(NULL)
 
 libytstenut_glib_@YTSG_API_VERSION@_la_SOURCES  = 	$(source_h) 	\

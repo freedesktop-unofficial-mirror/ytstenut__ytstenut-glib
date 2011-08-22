@@ -19,60 +19,60 @@
  */
 
 #include <stdbool.h>
-#include "ytsg-vs-playable.h"
-#include "ytsg-vs-playable-proxy.h"
-#include "ytsg-vs-player.h"
-#include "ytsg-vs-player-proxy.h"
+#include "ytsg-vp-playable.h"
+#include "ytsg-vp-playable-proxy.h"
+#include "ytsg-vp-player.h"
+#include "ytsg-vp-player-proxy.h"
 
 static void
-_player_interface_init (YtsgVSPlayerInterface *interface);
+_player_interface_init (YtsgVPPlayerInterface *interface);
 
-G_DEFINE_TYPE_WITH_CODE (YtsgVSPlayerProxy,
-                         ytsg_vs_player_proxy,
+G_DEFINE_TYPE_WITH_CODE (YtsgVPPlayerProxy,
+                         ytsg_vp_player_proxy,
                          YTSG_TYPE_PROXY,
-                         G_IMPLEMENT_INTERFACE (YTSG_VS_TYPE_PLAYER,
+                         G_IMPLEMENT_INTERFACE (YTSG_VP_TYPE_PLAYER,
                                                 _player_interface_init))
 
 #define GET_PRIVATE(o) \
-  (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTSG_VS_TYPE_PLAYER_PROXY, YtsgVSPlayerProxyPrivate))
+  (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTSG_VP_TYPE_PLAYER_PROXY, YtsgVPPlayerProxyPrivate))
 
 typedef struct {
 
-  YtsgVSPlayableProxy *playable;
+  YtsgVPPlayableProxy *playable;
   bool                 playing;
   double               volume;
-} YtsgVSPlayerProxyPrivate;
+} YtsgVPPlayerProxyPrivate;
 
 /*
- * YtsgVSPlayer implementation
+ * YtsgVPPlayer implementation
  */
 
 static void
-_player_play (YtsgVSPlayer *self)
+_player_play (YtsgVPPlayer *self)
 {
   ytsg_proxy_invoke (YTSG_PROXY (self), NULL, "play", NULL);
 }
 
 static void
-_player_pause (YtsgVSPlayer *self)
+_player_pause (YtsgVPPlayer *self)
 {
   ytsg_proxy_invoke (YTSG_PROXY (self), NULL, "pause", NULL);
 }
 
 static void
-_player_next (YtsgVSPlayer *self)
+_player_next (YtsgVPPlayer *self)
 {
   ytsg_proxy_invoke (YTSG_PROXY (self), NULL, "next", NULL);
 }
 
 static void
-_player_prev (YtsgVSPlayer *self)
+_player_prev (YtsgVPPlayer *self)
 {
   ytsg_proxy_invoke (YTSG_PROXY (self), NULL, "prev", NULL);
 }
 
 static void
-_player_interface_init (YtsgVSPlayerInterface *interface)
+_player_interface_init (YtsgVPPlayerInterface *interface)
 {
   interface->play = _player_play;
   interface->pause = _player_pause;
@@ -89,7 +89,7 @@ _proxy_service_event (YtsgProxy   *self,
                       char const  *aspect,
                       GVariant    *arguments)
 {
-//  YtsgVSPlayerProxyPrivate *priv = GET_PRIVATE (self);
+//  YtsgVPPlayerProxyPrivate *priv = GET_PRIVATE (self);
 
   if (0 == g_strcmp0 ("playable", aspect)) {
 
@@ -100,13 +100,13 @@ _proxy_service_event (YtsgProxy   *self,
              g_variant_is_of_type (arguments, G_VARIANT_TYPE_BOOLEAN)) {
 
     bool playing = g_variant_get_boolean (arguments);
-    ytsg_vs_player_set_playing (YTSG_VS_PLAYER (self), playing);
+    ytsg_vp_player_set_playing (YTSG_VP_PLAYER (self), playing);
 
   } else if (0 == g_strcmp0 ("volume", aspect) &&
              g_variant_is_of_type (arguments, G_VARIANT_TYPE_DOUBLE)) {
 
     double volume = g_variant_get_boolean (arguments);
-    ytsg_vs_player_set_volume (YTSG_VS_PLAYER (self), volume);
+    ytsg_vp_player_set_volume (YTSG_VP_PLAYER (self), volume);
 
   } else {
 
@@ -131,7 +131,7 @@ _proxy_service_response (YtsgProxy  *self,
 }
 
 /*
- * YtsgVSPlayerProxy
+ * YtsgVPPlayerProxy
  */
 
 enum {
@@ -148,7 +148,7 @@ _get_property (GObject      *object,
                GValue       *value,
                GParamSpec   *pspec)
 {
-  YtsgVSPlayerProxyPrivate *priv = GET_PRIVATE (object);
+  YtsgVPPlayerProxyPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
     case PROP_PLAYER_PLAYABLE:
@@ -171,7 +171,7 @@ _set_property (GObject      *object,
                const GValue *value,
                GParamSpec   *pspec)
 {
-  YtsgVSPlayerProxyPrivate *priv = GET_PRIVATE (object);
+  YtsgVPPlayerProxyPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
 
@@ -223,23 +223,23 @@ _set_property (GObject      *object,
 static void
 _dispose (GObject *object)
 {
-  YtsgVSPlayerProxyPrivate *priv = GET_PRIVATE (object);
+  YtsgVPPlayerProxyPrivate *priv = GET_PRIVATE (object);
 
   if (priv->playable) {
     g_object_unref (G_OBJECT (priv->playable));
     priv->playable = NULL;
   }
 
-  G_OBJECT_CLASS (ytsg_vs_player_proxy_parent_class)->dispose (object);
+  G_OBJECT_CLASS (ytsg_vp_player_proxy_parent_class)->dispose (object);
 }
 
 static void
-ytsg_vs_player_proxy_class_init (YtsgVSPlayerProxyClass *klass)
+ytsg_vp_player_proxy_class_init (YtsgVPPlayerProxyClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   YtsgProxyClass  *proxy_class = YTSG_PROXY_CLASS (klass);
 
-  g_type_class_add_private (klass, sizeof (YtsgVSPlayerProxyPrivate));
+  g_type_class_add_private (klass, sizeof (YtsgVPPlayerProxyPrivate));
 
   object_class->get_property = _get_property;
   object_class->set_property = _set_property;
@@ -267,7 +267,7 @@ ytsg_vs_player_proxy_class_init (YtsgVSPlayerProxyClass *klass)
 }
 
 static void
-ytsg_vs_player_proxy_init (YtsgVSPlayerProxy *self)
+ytsg_vp_player_proxy_init (YtsgVPPlayerProxy *self)
 {
 }
 

@@ -18,36 +18,36 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
-#include "ytsg-vs-content.h"
+#include "ytsg-vp-content.h"
 
-G_DEFINE_INTERFACE (YtsgVSContent,
-                    ytsg_vs_content,
+G_DEFINE_INTERFACE (YtsgVPContent,
+                    ytsg_vp_content,
                     G_TYPE_OBJECT)
 
-YtsgVSQuery *
-_retrieve (YtsgVSContent  *self,
+YtsgVPQuery *
+_retrieve (YtsgVPContent  *self,
            char const     *uri)
 {
-  g_critical ("%s : Method YtsgVSContent.retrieve() not implemented by %s",
+  g_critical ("%s : Method YtsgVPContent.retrieve() not implemented by %s",
               G_STRLOC,
               G_OBJECT_TYPE_NAME (self));
   return NULL;
 }
 
-YtsgVSQuery *
-_search (YtsgVSContent           *self,
+YtsgVPQuery *
+_search (YtsgVPContent           *self,
          char const             **tokens,
-         YtsgVSQueryResultOrder   order,
+         YtsgVPQueryResultOrder   order,
          unsigned int             max_results)
 {
-  g_critical ("%s : Method YtsgVSContent.search() not implemented by %s",
+  g_critical ("%s : Method YtsgVPContent.search() not implemented by %s",
               G_STRLOC,
               G_OBJECT_TYPE_NAME (self));
   return NULL;
 }
 
 static void
-ytsg_vs_content_default_init (YtsgVSContentInterface *interface)
+ytsg_vp_content_default_init (YtsgVPContentInterface *interface)
 {
   interface->retrieve = _retrieve;
   interface->search = _search;
@@ -55,30 +55,30 @@ ytsg_vs_content_default_init (YtsgVSContentInterface *interface)
   /* Only to hold the default value */
   g_object_interface_install_property (interface,
                                        g_param_spec_string ("capability", "", "",
-                                                            YTSG_VS_CONTENT_CAPABILITY,
+                                                            YTSG_VP_CONTENT_CAPABILITY,
                                                             G_PARAM_STATIC_NAME |
                                                             G_PARAM_STATIC_NICK |
                                                             G_PARAM_STATIC_BLURB));
 }
 
-YtsgVSQuery *
-ytsg_vs_content_retrieve (YtsgVSContent *self,
+YtsgVPQuery *
+ytsg_vp_content_retrieve (YtsgVPContent *self,
                           char const    *uri)
 {
-  g_return_val_if_fail (YTSG_VS_IS_CONTENT (self), NULL);
+  g_return_val_if_fail (YTSG_VP_IS_CONTENT (self), NULL);
 
-  return YTSG_VS_CONTENT_GET_INTERFACE (self)->retrieve (self, uri);
+  return YTSG_VP_CONTENT_GET_INTERFACE (self)->retrieve (self, uri);
 }
 
-YtsgVSQuery *
-ytsg_vs_content_search (YtsgVSContent            *self,
+YtsgVPQuery *
+ytsg_vp_content_search (YtsgVPContent            *self,
                         char const              **tokens,
-                        YtsgVSQueryResultOrder    order,
+                        YtsgVPQueryResultOrder    order,
                         unsigned int              max_results)
 {
-  g_return_val_if_fail (YTSG_VS_IS_CONTENT (self), NULL);
+  g_return_val_if_fail (YTSG_VP_IS_CONTENT (self), NULL);
 
-  return YTSG_VS_CONTENT_GET_INTERFACE (self)->search (self,
+  return YTSG_VP_CONTENT_GET_INTERFACE (self)->search (self,
                                                        tokens,
                                                        order, 
                                                        max_results);

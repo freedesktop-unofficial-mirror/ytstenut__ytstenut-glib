@@ -18,43 +18,43 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
-#ifndef YTSG_VS_PLAYER_PROXY_H
-#define YTSG_VS_PLAYER_PROXY_H
+#ifndef YTSG_VP_PLAYER_PROXY_H
+#define YTSG_VP_PLAYER_PROXY_H
 
 #include <glib-object.h>
 #include <ytstenut-glib/ytsg-proxy.h>
 
 G_BEGIN_DECLS
 
-#define YTSG_VS_TYPE_PLAYER_PROXY ytsg_vs_player_proxy_get_type()
+#define YTSG_VP_TYPE_PLAYER_PROXY ytsg_vp_player_proxy_get_type()
 
-#define YTSG_VS_PLAYER_PROXY(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTSG_VS_TYPE_PLAYER_PROXY, YtsgVSPlayerProxy))
+#define YTSG_VP_PLAYER_PROXY(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTSG_VP_TYPE_PLAYER_PROXY, YtsgVPPlayerProxy))
 
-#define YTSG_VS_PLAYER_PROXY_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST ((klass), YTSG_VS_TYPE_PLAYER_PROXY, YtsgVSPlayerProxyClass))
+#define YTSG_VP_PLAYER_PROXY_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST ((klass), YTSG_VP_TYPE_PLAYER_PROXY, YtsgVPPlayerProxyClass))
 
-#define YTSG_VS_IS_PLAYER_PROXY(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_VS_TYPE_PLAYER_PROXY))
+#define YTSG_VP_IS_PLAYER_PROXY(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_VP_TYPE_PLAYER_PROXY))
 
-#define YTSG_VS_IS_PLAYER_PROXY_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE ((klass), YTSG_VS_TYPE_PLAYER_PROXY))
+#define YTSG_VP_IS_PLAYER_PROXY_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), YTSG_VP_TYPE_PLAYER_PROXY))
 
-#define YTSG_VS_PLAYER_PROXY_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), YTSG_VS_TYPE_PLAYER_PROXY, YtsgVSPlayerProxyClass))
+#define YTSG_VP_PLAYER_PROXY_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), YTSG_VP_TYPE_PLAYER_PROXY, YtsgVPPlayerProxyClass))
 
 typedef struct {
   YtsgProxy parent;
-} YtsgVSPlayerProxy;
+} YtsgVPPlayerProxy;
 
 typedef struct {
   YtsgProxyClass parent;
-} YtsgVSPlayerProxyClass;
+} YtsgVPPlayerProxyClass;
 
 GType
-ytsg_vs_player_proxy_get_type (void);
+ytsg_vp_player_proxy_get_type (void);
 
 G_END_DECLS
 
-#endif /* YTSG_VS_PLAYER_PROXY_H */
+#endif /* YTSG_VP_PLAYER_PROXY_H */
 

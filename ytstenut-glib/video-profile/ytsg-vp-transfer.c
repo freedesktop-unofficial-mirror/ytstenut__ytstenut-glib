@@ -18,34 +18,34 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
-#include "ytsg-vs-transfer.h"
+#include "ytsg-vp-transfer.h"
 
-G_DEFINE_INTERFACE (YtsgVSTransfer,
-                    ytsg_vs_transfer,
+G_DEFINE_INTERFACE (YtsgVPTransfer,
+                    ytsg_vp_transfer,
                     G_TYPE_OBJECT)
 
-static YtsgVSTransmission *
-_download (YtsgVSTransfer *self,
+static YtsgVPTransmission *
+_download (YtsgVPTransfer *self,
            char const     *uri)
 {
-  g_critical ("%s : Method YtsgVSTransfer.download() not implemented by %s",
+  g_critical ("%s : Method YtsgVPTransfer.download() not implemented by %s",
               G_STRLOC,
               G_OBJECT_TYPE_NAME (self));
   return NULL;
 }
 
-static YtsgVSTransmission *
-_upload (YtsgVSTransfer *self,
+static YtsgVPTransmission *
+_upload (YtsgVPTransfer *self,
          char const     *uri)
 {
-  g_critical ("%s : Method YtsgVSTransfer.download() not implemented by %s",
+  g_critical ("%s : Method YtsgVPTransfer.download() not implemented by %s",
               G_STRLOC,
               G_OBJECT_TYPE_NAME (self));
   return NULL;
 }
 
 static void
-ytsg_vs_transfer_default_init (YtsgVSTransferInterface *interface)
+ytsg_vp_transfer_default_init (YtsgVPTransferInterface *interface)
 {
   /* Methods */
   interface->download = _download;
@@ -54,27 +54,27 @@ ytsg_vs_transfer_default_init (YtsgVSTransferInterface *interface)
   /* Only to hold the default value */
   g_object_interface_install_property (interface,
                                        g_param_spec_string ("capability", "", "",
-                                                            YTSG_VS_TRANSFER_CAPABILITY,
+                                                            YTSG_VP_TRANSFER_CAPABILITY,
                                                             G_PARAM_STATIC_NAME |
                                                             G_PARAM_STATIC_NICK |
                                                             G_PARAM_STATIC_BLURB));
 }
 
-YtsgVSTransmission *
-ytsg_vs_transfer_download (YtsgVSTransfer *self,
+YtsgVPTransmission *
+ytsg_vp_transfer_download (YtsgVPTransfer *self,
                            char const     *uri)
 {
-  g_return_val_if_fail (YTSG_VS_IS_TRANSFER (self), NULL);
+  g_return_val_if_fail (YTSG_VP_IS_TRANSFER (self), NULL);
 
-  return YTSG_VS_TRANSFER_GET_INTERFACE (self)->download (self, uri);
+  return YTSG_VP_TRANSFER_GET_INTERFACE (self)->download (self, uri);
 }
 
-YtsgVSTransmission *
-ytsg_vs_transfer_upload (YtsgVSTransfer *self,
+YtsgVPTransmission *
+ytsg_vp_transfer_upload (YtsgVPTransfer *self,
                          char const     *uri)
 {
-  g_return_val_if_fail (YTSG_VS_IS_TRANSFER (self), NULL);
+  g_return_val_if_fail (YTSG_VP_IS_TRANSFER (self), NULL);
 
-  return YTSG_VS_TRANSFER_GET_INTERFACE (self)->upload (self, uri);
+  return YTSG_VP_TRANSFER_GET_INTERFACE (self)->upload (self, uri);
 }
 

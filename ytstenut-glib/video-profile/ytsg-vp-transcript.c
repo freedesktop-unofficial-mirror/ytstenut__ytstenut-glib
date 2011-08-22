@@ -18,19 +18,19 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
-#include "ytsg-vs-transcript.h"
+#include "ytsg-vp-transcript.h"
 
-G_DEFINE_INTERFACE (YtsgVSTranscript,
-                    ytsg_vs_transcript,
+G_DEFINE_INTERFACE (YtsgVPTranscript,
+                    ytsg_vp_transcript,
                     G_TYPE_OBJECT)
 
 static void
-ytsg_vs_transcript_default_init (YtsgVSTranscriptInterface *interface)
+ytsg_vp_transcript_default_init (YtsgVPTranscriptInterface *interface)
 {
   /* Only to hold the default value */
   g_object_interface_install_property (interface,
                                        g_param_spec_string ("capability", "", "",
-                                                            YTSG_VS_TRANSCRIPT_CAPABILITY,
+                                                            YTSG_VP_TRANSCRIPT_CAPABILITY,
                                                             G_PARAM_STATIC_NAME |
                                                             G_PARAM_STATIC_NICK |
                                                             G_PARAM_STATIC_BLURB));
@@ -52,11 +52,11 @@ ytsg_vs_transcript_default_init (YtsgVSTranscriptInterface *interface)
 }
 
 GPtrArray *
-ytsg_vs_transcript_get_available_locales (YtsgVSTranscript *self)
+ytsg_vp_transcript_get_available_locales (YtsgVPTranscript *self)
 {
   GPtrArray *available_locales;
 
-  g_return_val_if_fail (YTSG_VS_IS_TRANSCRIPT (self), NULL);
+  g_return_val_if_fail (YTSG_VP_IS_TRANSCRIPT (self), NULL);
 
   available_locales = NULL;
   g_object_get (G_OBJECT (self), "available-locales", &available_locales, NULL);
@@ -64,11 +64,11 @@ ytsg_vs_transcript_get_available_locales (YtsgVSTranscript *self)
 }
 
 char *
-ytsg_vs_transcript_get_current_text (YtsgVSTranscript *self)
+ytsg_vp_transcript_get_current_text (YtsgVPTranscript *self)
 {
   char *current_text;
 
-  g_return_val_if_fail (YTSG_VS_IS_TRANSCRIPT (self), NULL);
+  g_return_val_if_fail (YTSG_VP_IS_TRANSCRIPT (self), NULL);
 
   current_text = NULL;
   g_object_get (G_OBJECT (self), "current-text", &current_text, NULL);
@@ -76,11 +76,11 @@ ytsg_vs_transcript_get_current_text (YtsgVSTranscript *self)
 }
 
 char *
-ytsg_vs_transcript_get_locale (YtsgVSTranscript *self)
+ytsg_vp_transcript_get_locale (YtsgVPTranscript *self)
 {
   char *locale;
 
-  g_return_val_if_fail (YTSG_VS_IS_TRANSCRIPT (self), NULL);
+  g_return_val_if_fail (YTSG_VP_IS_TRANSCRIPT (self), NULL);
 
   locale = NULL;
   g_object_get (G_OBJECT (self), "locale", &locale, NULL);
@@ -88,10 +88,10 @@ ytsg_vs_transcript_get_locale (YtsgVSTranscript *self)
 }
 
 void
-ytsg_vs_transcript_set_locale (YtsgVSTranscript *self,
+ytsg_vp_transcript_set_locale (YtsgVPTranscript *self,
                                char const       *locale)
 {
-  g_return_if_fail (YTSG_VS_IS_TRANSCRIPT (self));
+  g_return_if_fail (YTSG_VP_IS_TRANSCRIPT (self));
 
   g_object_set (G_OBJECT (self), "locale", locale, NULL);
 }

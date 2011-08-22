@@ -18,14 +18,14 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
-#include "ytsg-vs-playable.h"
+#include "ytsg-vp-playable.h"
 
-G_DEFINE_INTERFACE (YtsgVSPlayable,
-                    ytsg_vs_playable,
+G_DEFINE_INTERFACE (YtsgVPPlayable,
+                    ytsg_vp_playable,
                     G_TYPE_OBJECT)
 
 static void
-ytsg_vs_playable_default_init (YtsgVSPlayableInterface *interface)
+ytsg_vp_playable_default_init (YtsgVPPlayableInterface *interface)
 {
   GParamFlags param_flags;
 
@@ -67,11 +67,11 @@ ytsg_vs_playable_default_init (YtsgVSPlayableInterface *interface)
 }
 
 double
-ytsg_vs_playable_get_duration (YtsgVSPlayable *self)
+ytsg_vp_playable_get_duration (YtsgVPPlayable *self)
 {
   double duration;
 
-  g_return_val_if_fail (YTSG_VS_IS_PLAYABLE (self), 0.0);
+  g_return_val_if_fail (YTSG_VP_IS_PLAYABLE (self), 0.0);
 
   duration = 0.0;
   g_object_get (G_OBJECT (self), "duration", &duration, NULL);
@@ -79,11 +79,11 @@ ytsg_vs_playable_get_duration (YtsgVSPlayable *self)
 }
 
 GHashTable *
-ytsg_vs_playable_get_metadata (YtsgVSPlayable *self)
+ytsg_vp_playable_get_metadata (YtsgVPPlayable *self)
 {
   GHashTable *metadata;
 
-  g_return_val_if_fail (YTSG_VS_IS_PLAYABLE (self), NULL);
+  g_return_val_if_fail (YTSG_VP_IS_PLAYABLE (self), NULL);
 
   metadata = NULL;
   g_object_get (G_OBJECT (self), "metadata", &metadata, NULL);
@@ -91,16 +91,16 @@ ytsg_vs_playable_get_metadata (YtsgVSPlayable *self)
 }
 
 char const *
-ytsg_vs_playable_get_metadata_attribute (YtsgVSPlayable *self,
+ytsg_vp_playable_get_metadata_attribute (YtsgVPPlayable *self,
                                          char const     *attribute)
 {
   GHashTable  *metadata;
   char const  *value;
 
-  g_return_val_if_fail (YTSG_VS_IS_PLAYABLE (self), NULL);
-  g_return_val_if_fail (YTSG_VS_IS_PLAYABLE (attribute), NULL);
+  g_return_val_if_fail (YTSG_VP_IS_PLAYABLE (self), NULL);
+  g_return_val_if_fail (YTSG_VP_IS_PLAYABLE (attribute), NULL);
 
-  metadata = ytsg_vs_playable_get_metadata (self);
+  metadata = ytsg_vp_playable_get_metadata (self);
   g_return_val_if_fail (metadata, NULL);
 
   value = (char const *) g_hash_table_lookup (metadata, attribute);
@@ -110,11 +110,11 @@ ytsg_vs_playable_get_metadata_attribute (YtsgVSPlayable *self,
 }
 
 double
-ytsg_vs_playable_get_position (YtsgVSPlayable *self)
+ytsg_vp_playable_get_position (YtsgVPPlayable *self)
 {
   double position;
 
-  g_return_val_if_fail (YTSG_VS_IS_PLAYABLE (self), 0.0);
+  g_return_val_if_fail (YTSG_VP_IS_PLAYABLE (self), 0.0);
 
   position = 0.0;
   g_object_get (G_OBJECT (self), "position", &position, NULL);
@@ -122,20 +122,20 @@ ytsg_vs_playable_get_position (YtsgVSPlayable *self)
 }
 
 void
-ytsg_vs_playable_set_position (YtsgVSPlayable *self,
+ytsg_vp_playable_set_position (YtsgVPPlayable *self,
                                double          position)
 {
-  g_return_if_fail (YTSG_VS_IS_PLAYABLE (self));
+  g_return_if_fail (YTSG_VP_IS_PLAYABLE (self));
 
   g_object_set (G_OBJECT (self), "position", position, NULL);
 }
 
 char *
-ytsg_vs_playable_get_thumbnail (YtsgVSPlayable *self)
+ytsg_vp_playable_get_thumbnail (YtsgVPPlayable *self)
 {
   char *thumbnail;
 
-  g_return_val_if_fail (YTSG_VS_IS_PLAYABLE (self), NULL);
+  g_return_val_if_fail (YTSG_VP_IS_PLAYABLE (self), NULL);
 
   thumbnail = NULL;
   g_object_get (G_OBJECT (self), "thumbnail", &thumbnail, NULL);
@@ -143,11 +143,11 @@ ytsg_vs_playable_get_thumbnail (YtsgVSPlayable *self)
 }
 
 char *
-ytsg_vs_playable_get_title (YtsgVSPlayable *self)
+ytsg_vp_playable_get_title (YtsgVPPlayable *self)
 {
   char *title;
 
-  g_return_val_if_fail (YTSG_VS_IS_PLAYABLE (self), NULL);
+  g_return_val_if_fail (YTSG_VP_IS_PLAYABLE (self), NULL);
 
   title = NULL;
   g_object_get (G_OBJECT (self), "title", &title, NULL);
@@ -155,11 +155,11 @@ ytsg_vs_playable_get_title (YtsgVSPlayable *self)
 }
 
 char *
-ytsg_vs_playable_get_uri (YtsgVSPlayable *self)
+ytsg_vp_playable_get_uri (YtsgVPPlayable *self)
 {
   char *uri;
 
-  g_return_val_if_fail (YTSG_VS_IS_PLAYABLE (self), NULL);
+  g_return_val_if_fail (YTSG_VP_IS_PLAYABLE (self), NULL);
 
   uri = NULL;
   g_object_get (G_OBJECT (self), "uri", &uri, NULL);

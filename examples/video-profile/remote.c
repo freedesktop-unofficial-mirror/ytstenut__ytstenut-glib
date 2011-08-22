@@ -85,21 +85,21 @@ _roster_service_added (YtsgRoster   *roster,
   if (0 == g_strcmp0 (uid, "org.freedesktop.ytstenut.MockPlayer")) {
 
     proxy = ytsg_proxy_service_create_proxy (YTSG_PROXY_SERVICE (service),
-                                             YTSG_VS_PLAYER_CAPABILITY);
+                                             YTSG_VP_PLAYER_CAPABILITY);
     g_return_if_fail (proxy);
 
     switch (_command) {
       case COMMAND_PLAY:
-        ytsg_vs_player_play (YTSG_VS_PLAYER (proxy));
+        ytsg_vp_player_play (YTSG_VP_PLAYER (proxy));
         break;
       case COMMAND_PAUSE:
-        ytsg_vs_player_pause (YTSG_VS_PLAYER (proxy));
+        ytsg_vp_player_pause (YTSG_VP_PLAYER (proxy));
         break;
       case COMMAND_NEXT:
-        ytsg_vs_player_next (YTSG_VS_PLAYER (proxy));
+        ytsg_vp_player_next (YTSG_VP_PLAYER (proxy));
         break;
       case COMMAND_PREV:
-        ytsg_vs_player_prev (YTSG_VS_PLAYER (proxy));
+        ytsg_vp_player_prev (YTSG_VP_PLAYER (proxy));
         break;
       default:
         g_debug ("%s : command %i not handled", G_STRLOC, _command);

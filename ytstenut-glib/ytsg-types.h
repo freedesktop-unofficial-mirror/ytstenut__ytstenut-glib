@@ -71,13 +71,13 @@ typedef enum { /*< prefix=YTSG_PRESENCE >*/
 } YtsgPresence;
 
 /* FIXME maybe create an ytsg-vs-type.h 
- * so YTSG_TYPE_VS_QUERY_RESULT_ORDER can become YTSG_VS_TYPE_QUERY_RESULT_ORDER */
-typedef enum { /*< prefix=YTSG_VS_QUERY >*/
-  YTSG_VS_QUERY_NONE = 0,
-  YTSG_VS_QUERY_CHRONOLOGICAL,
-  YTSG_VS_QUERY_DATE,
-  YTSG_VS_QUERY_RELEVANCE
-} YtsgVSQueryResultOrder;
+ * so YTSG_TYPE_VS_QUERY_RESULT_ORDER can become YTSG_VP_TYPE_QUERY_RESULT_ORDER */
+typedef enum { /*< prefix=YTSG_VP_QUERY >*/
+  YTSG_VP_QUERY_NONE = 0,
+  YTSG_VP_QUERY_CHRONOLOGICAL,
+  YTSG_VP_QUERY_DATE,
+  YTSG_VP_QUERY_RELEVANCE
+} YtsgVPQueryResultOrder;
 
 G_END_DECLS
 

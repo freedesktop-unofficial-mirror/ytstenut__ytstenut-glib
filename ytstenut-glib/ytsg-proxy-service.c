@@ -174,7 +174,7 @@ _proxy_destroyed (YtsgProxyService  *self,
 // FIXME need factory foo
 
 extern GType
-ytsg_vs_player_proxy_get_type (void);
+ytsg_vp_player_proxy_get_type (void);
 
 YtsgProxy *
 ytsg_proxy_service_create_proxy (YtsgProxyService *self,
@@ -188,13 +188,13 @@ ytsg_proxy_service_create_proxy (YtsgProxyService *self,
     GType       gtype;
   } proxies[] = {
 //    { "org.freedesktop.ytstenut.VideoService.Content",
-//      ytsg_vs_content_proxy_get_type () },
+//      ytsg_vp_content_proxy_get_type () },
     { "org.freedesktop.ytstenut.VideoService.Player",
-      ytsg_vs_player_proxy_get_type () },
+      ytsg_vp_player_proxy_get_type () },
 //    { "org.freedesktop.ytstenut.VideoService.Transcript",
-//      ytsg_vs_transcript_proxy_get_type () },
+//      ytsg_vp_transcript_proxy_get_type () },
 //    { "org.freedesktop.ytstenut.VideoService.Transfer",
-//      ytsg_vs_transfer_proxy_get_type () },
+//      ytsg_vp_transfer_proxy_get_type () },
     { NULL }
   };
 

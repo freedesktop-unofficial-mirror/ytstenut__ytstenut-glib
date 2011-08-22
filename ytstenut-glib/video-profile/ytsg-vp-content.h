@@ -18,61 +18,61 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
-#ifndef YTSG_VS_CONTENT_H
-#define YTSG_VS_CONTENT_H
+#ifndef YTSG_VP_CONTENT_H
+#define YTSG_VP_CONTENT_H
 
 #include <glib-object.h>
-#include <ytstenut-glib/video-service/ytsg-vs-query.h>
+#include <ytstenut-glib/video-profile/ytsg-vp-query.h>
 
 G_BEGIN_DECLS
 
-#define YTSG_VS_CONTENT_CAPABILITY "org.freedesktop.ytstenut.VideoService.Content"
+#define YTSG_VP_CONTENT_CAPABILITY "org.freedesktop.ytstenut.VideoService.Content"
 
-#define YTSG_VS_TYPE_CONTENT \
-  (ytsg_vs_content_get_type ())
+#define YTSG_VP_TYPE_CONTENT \
+  (ytsg_vp_content_get_type ())
 
-#define YTSG_VS_CONTENT(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTSG_VS_TYPE_CONTENT, YtsgVSContent))
+#define YTSG_VP_CONTENT(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTSG_VP_TYPE_CONTENT, YtsgVPContent))
 
-#define YTSG_VS_IS_CONTENT(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_VS_TYPE_CONTENT))
+#define YTSG_VP_IS_CONTENT(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_VP_TYPE_CONTENT))
 
-#define YTSG_VS_CONTENT_GET_INTERFACE(obj) \
-  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), YTSG_VS_TYPE_CONTENT, YtsgVSContentInterface))
+#define YTSG_VP_CONTENT_GET_INTERFACE(obj) \
+  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), YTSG_VP_TYPE_CONTENT, YtsgVPContentInterface))
 
-typedef struct YtsgVSContent YtsgVSContent;
-typedef struct YtsgVSContentInterface YtsgVSContentInterface;
+typedef struct YtsgVPContent YtsgVPContent;
+typedef struct YtsgVPContentInterface YtsgVPContentInterface;
 
-struct YtsgVSContentInterface {
+struct YtsgVPContentInterface {
 
   /*< private >*/
   GTypeInterface parent;
 
-  YtsgVSQuery *
-  (*retrieve) (YtsgVSContent  *self,
+  YtsgVPQuery *
+  (*retrieve) (YtsgVPContent  *self,
                char const     *uri);
 
-  YtsgVSQuery *
-  (*search) (YtsgVSContent           *self,
+  YtsgVPQuery *
+  (*search) (YtsgVPContent           *self,
              char const             **tokens,
-             YtsgVSQueryResultOrder   order,
+             YtsgVPQueryResultOrder   order,
              unsigned int             max_results);
 };
 
 GType
-ytsg_vs_content_get_type (void) G_GNUC_CONST;
+ytsg_vp_content_get_type (void) G_GNUC_CONST;
 
-YtsgVSQuery *
-ytsg_vs_content_retrieve (YtsgVSContent *self,
+YtsgVPQuery *
+ytsg_vp_content_retrieve (YtsgVPContent *self,
                           char const    *uri);
 
-YtsgVSQuery *
-ytsg_vs_content_search (YtsgVSContent            *self,
+YtsgVPQuery *
+ytsg_vp_content_search (YtsgVPContent            *self,
                         char const              **tokens,
-                        YtsgVSQueryResultOrder    order,
+                        YtsgVPQueryResultOrder    order,
                         unsigned int              max_results);
 
 G_END_DECLS
 
-#endif /* YTSG_VS_CONTENT_H */
+#endif /* YTSG_VP_CONTENT_H */
 

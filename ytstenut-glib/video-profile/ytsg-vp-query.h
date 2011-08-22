@@ -18,8 +18,8 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
-#ifndef YTSG_VS_QUERY_H
-#define YTSG_VS_QUERY_H
+#ifndef YTSG_VP_QUERY_H
+#define YTSG_VP_QUERY_H
 
 #include <stdbool.h>
 #include <glib-object.h>
@@ -27,49 +27,49 @@
 
 G_BEGIN_DECLS
 
-#define YTSG_VS_TYPE_QUERY \
-  (ytsg_vs_query_get_type ())
+#define YTSG_VP_TYPE_QUERY \
+  (ytsg_vp_query_get_type ())
 
-#define YTSG_VS_QUERY(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTSG_VS_TYPE_QUERY, YtsgVSQuery))
+#define YTSG_VP_QUERY(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTSG_VP_TYPE_QUERY, YtsgVPQuery))
 
-#define YTSG_VS_IS_QUERY(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_VS_TYPE_QUERY))
+#define YTSG_VP_IS_QUERY(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_VP_TYPE_QUERY))
 
-#define YTSG_VS_QUERY_GET_INTERFACE(obj) \
-  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), YTSG_VS_TYPE_QUERY, YtsgVSQueryInterface))
+#define YTSG_VP_QUERY_GET_INTERFACE(obj) \
+  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), YTSG_VP_TYPE_QUERY, YtsgVPQueryInterface))
 
-typedef struct YtsgVSQuery YtsgVSQuery;
-typedef struct YtsgVSQueryInterface YtsgVSQueryInterface;
+typedef struct YtsgVPQuery YtsgVPQuery;
+typedef struct YtsgVPQueryInterface YtsgVPQueryInterface;
 
-struct YtsgVSQueryInterface {
+struct YtsgVPQueryInterface {
 
   /*< private >*/
   GTypeInterface parent;
 
   /* Signals */
   bool
-  (*result) (YtsgVSQuery  *self,
+  (*result) (YtsgVPQuery  *self,
              GList        *playables,
              unsigned int  progress);
 };
 
 GType
-ytsg_vs_query_get_type (void) G_GNUC_CONST;
+ytsg_vp_query_get_type (void) G_GNUC_CONST;
 
 unsigned int
-ytsg_vs_get_max_results (YtsgVSQuery *self);
+ytsg_vp_get_max_results (YtsgVPQuery *self);
 
 unsigned int
-ytsg_vs_get_progress (YtsgVSQuery *self);
+ytsg_vp_get_progress (YtsgVPQuery *self);
 
 GList *
-ytsg_vs_get_results (YtsgVSQuery *self);
+ytsg_vp_get_results (YtsgVPQuery *self);
 
-YtsgVSQueryResultOrder
-ytsg_vs_get_result_order (YtsgVSQuery *self);
+YtsgVPQueryResultOrder
+ytsg_vp_get_result_order (YtsgVPQuery *self);
 
 G_END_DECLS
 
-#endif /* YTSG_VS_QUERY_H */
+#endif /* YTSG_VP_QUERY_H */
 

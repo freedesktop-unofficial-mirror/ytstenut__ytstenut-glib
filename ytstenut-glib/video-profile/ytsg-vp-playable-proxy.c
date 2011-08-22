@@ -18,20 +18,20 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
-#include "ytsg-vs-playable.h"
-#include "ytsg-vs-playable-proxy.h"
+#include "ytsg-vp-playable.h"
+#include "ytsg-vp-playable-proxy.h"
 
 static void
-_playable_interface_init (YtsgVSPlayableInterface *interface);
+_playable_interface_init (YtsgVPPlayableInterface *interface);
 
-G_DEFINE_TYPE_WITH_CODE (YtsgVSPlayableProxy,
-                         ytsg_vs_playable_proxy,
+G_DEFINE_TYPE_WITH_CODE (YtsgVPPlayableProxy,
+                         ytsg_vp_playable_proxy,
                          G_TYPE_OBJECT,
-                         G_IMPLEMENT_INTERFACE (YTSG_VS_TYPE_PLAYABLE,
+                         G_IMPLEMENT_INTERFACE (YTSG_VP_TYPE_PLAYABLE,
                                                 _playable_interface_init))
 
 #define GET_PRIVATE(o) \
-  (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTSG_VS_TYPE_PLAYABLE_PROXY, YtsgVSPlayableProxyPrivate))
+  (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTSG_VP_TYPE_PLAYABLE_PROXY, YtsgVPPlayableProxyPrivate))
 
 typedef struct {
   double       duration;
@@ -40,19 +40,19 @@ typedef struct {
   char        *thumbnail;
   char        *title;
   char        *uri;
-} YtsgVSPlayableProxyPrivate;
+} YtsgVPPlayableProxyPrivate;
 
 /*
- * YtsgVSPlayable implementation
+ * YtsgVPPlayable implementation
  */
 
 static void
-_playable_interface_init (YtsgVSPlayableInterface *interface)
+_playable_interface_init (YtsgVPPlayableInterface *interface)
 {
 }
 
 /*
- * YtsgVSPlayableProxy
+ * YtsgVPPlayableProxy
  */
 
 enum {
@@ -71,7 +71,7 @@ _get_property (GObject      *object,
                GValue       *value,
                GParamSpec   *pspec)
 {
-  YtsgVSPlayableProxyPrivate *priv = GET_PRIVATE (object);
+  YtsgVPPlayableProxyPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
     case PROP_PLAYABLE_DURATION:
@@ -103,7 +103,7 @@ _set_property (GObject      *object,
                const GValue *value,
                GParamSpec   *pspec)
 {
-  YtsgVSPlayableProxyPrivate *priv = GET_PRIVATE (object);
+  YtsgVPPlayableProxyPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
     case PROP_PLAYABLE_POSITION: {
@@ -122,7 +122,7 @@ _set_property (GObject      *object,
 static void
 _dispose (GObject *object)
 {
-  YtsgVSPlayableProxyPrivate *priv = GET_PRIVATE (object);
+  YtsgVPPlayableProxyPrivate *priv = GET_PRIVATE (object);
 
   if (priv->metadata) {
     g_hash_table_unref (priv->metadata);
@@ -139,15 +139,15 @@ _dispose (GObject *object)
     priv->uri = NULL;
   }
 
-  G_OBJECT_CLASS (ytsg_vs_playable_proxy_parent_class)->dispose (object);
+  G_OBJECT_CLASS (ytsg_vp_playable_proxy_parent_class)->dispose (object);
 }
 
 static void
-ytsg_vs_playable_proxy_class_init (YtsgVSPlayableProxyClass *klass)
+ytsg_vp_playable_proxy_class_init (YtsgVPPlayableProxyClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-  g_type_class_add_private (klass, sizeof (YtsgVSPlayableProxyPrivate));
+  g_type_class_add_private (klass, sizeof (YtsgVPPlayableProxyPrivate));
 
   object_class->get_property = _get_property;
   object_class->set_property = _set_property;
@@ -179,19 +179,19 @@ ytsg_vs_playable_proxy_class_init (YtsgVSPlayableProxyClass *klass)
 }
 
 static void
-ytsg_vs_playable_proxy_init (YtsgVSPlayableProxy *self)
+ytsg_vp_playable_proxy_init (YtsgVPPlayableProxy *self)
 {
 }
 
-YtsgVSPlayableProxy *
-ytsg_vs_playable_proxy_new (double       duration,
+YtsgVPPlayableProxy *
+ytsg_vp_playable_proxy_new (double       duration,
                             GHashTable  *metadata,
                             double       position,
                             char const  *thumbnail,
                             char const  *title,
                             char const  *uri)
 {
-  return g_object_new (YTSG_VS_TYPE_PLAYABLE_PROXY,
+  return g_object_new (YTSG_VP_TYPE_PLAYABLE_PROXY,
                        "duration",  duration,
                        "metadata",  metadata,
                        "position",  position,

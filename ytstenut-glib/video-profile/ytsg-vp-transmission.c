@@ -18,14 +18,14 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
-#include "ytsg-vs-transmission.h"
+#include "ytsg-vp-transmission.h"
 
-G_DEFINE_INTERFACE (YtsgVSTransmission,
-                    ytsg_vs_transmission,
+G_DEFINE_INTERFACE (YtsgVPTransmission,
+                    ytsg_vp_transmission,
                     G_TYPE_OBJECT)
 
 static void
-ytsg_vs_transmission_default_init (YtsgVSTransmissionInterface *interface)
+ytsg_vp_transmission_default_init (YtsgVPTransmissionInterface *interface)
 {
   g_object_interface_install_property (interface,
                                        g_param_spec_string ("local-uri", "", "",
@@ -44,11 +44,11 @@ ytsg_vs_transmission_default_init (YtsgVSTransmissionInterface *interface)
 }
 
 char *
-ytsg_vs_transmission_get_local_uri (YtsgVSTransmission *self)
+ytsg_vp_transmission_get_local_uri (YtsgVPTransmission *self)
 {
   char *local_uri;
 
-  g_return_val_if_fail (YTSG_VS_IS_TRANSMISSION (self), NULL);
+  g_return_val_if_fail (YTSG_VP_IS_TRANSMISSION (self), NULL);
 
   local_uri = NULL;
   g_object_get (G_OBJECT (self), "local-uri", &local_uri, NULL);
@@ -56,11 +56,11 @@ ytsg_vs_transmission_get_local_uri (YtsgVSTransmission *self)
 }
 
 unsigned int
-ytsg_vs_transmission_get_progress (YtsgVSTransmission *self)
+ytsg_vp_transmission_get_progress (YtsgVPTransmission *self)
 {
   unsigned int progress;
 
-  g_return_val_if_fail (YTSG_VS_IS_TRANSMISSION (self), 0);
+  g_return_val_if_fail (YTSG_VP_IS_TRANSMISSION (self), 0);
 
   progress = 0;
   g_object_get (G_OBJECT (self), "progress", &progress, NULL);
@@ -68,11 +68,11 @@ ytsg_vs_transmission_get_progress (YtsgVSTransmission *self)
 }
 
 char *
-ytsg_vs_transmission_get_remote_uri (YtsgVSTransmission *self)
+ytsg_vp_transmission_get_remote_uri (YtsgVPTransmission *self)
 {
   char *remote_uri;
 
-  g_return_val_if_fail (YTSG_VS_IS_TRANSMISSION (self), NULL);
+  g_return_val_if_fail (YTSG_VP_IS_TRANSMISSION (self), NULL);
 
   remote_uri = NULL;
   g_object_get (G_OBJECT (self), "remote-uri", &remote_uri, NULL);

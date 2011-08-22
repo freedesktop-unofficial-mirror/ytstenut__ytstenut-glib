@@ -20,25 +20,25 @@
 
 #include <stdbool.h>
 #include "ytsg-service-adapter.h"
-#include "ytsg-vs-player.h"
-#include "ytsg-vs-player-adapter.h"
+#include "ytsg-vp-player.h"
+#include "ytsg-vp-player-adapter.h"
 
-G_DEFINE_TYPE (YtsgVSPlayerAdapter,
-               ytsg_vs_player_adapter,
+G_DEFINE_TYPE (YtsgVPPlayerAdapter,
+               ytsg_vp_player_adapter,
                YTSG_TYPE_SERVICE_ADAPTER)
 
 #define GET_PRIVATE(o)                                        \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o),                          \
-                                YTSG_VS_TYPE_PLAYER_ADAPTER,  \
-                                YtsgVSPlayerAdapterPrivate))
+                                YTSG_VP_TYPE_PLAYER_ADAPTER,  \
+                                YtsgVPPlayerAdapterPrivate))
 
 typedef struct {
-  YtsgVSPlayer  *player;
+  YtsgVPPlayer  *player;
 
   unsigned int   notify_playable_handler;
   unsigned int   notify_playing_handler;
   unsigned int   notify_volume_handler;
-} YtsgVSPlayerAdapterPrivate;
+} YtsgVPPlayerAdapterPrivate;
 
 /*
  * YtsgServiceAdapter implementation
@@ -50,7 +50,7 @@ _service_adapter_invoke (YtsgServiceAdapter *self,
                          char const         *aspect,
                          GVariant           *arguments)
 {
-  YtsgVSPlayerAdapterPrivate *priv = GET_PRIVATE (self);
+  YtsgVPPlayerAdapterPrivate *priv = GET_PRIVATE (self);
 
   /* Properties */
 
@@ -65,7 +65,7 @@ _service_adapter_invoke (YtsgServiceAdapter *self,
 
     /* PONDERING at some point we can maybe optimize out sending back the notification */
     // g_signal_handler_block (priv->player, priv->notify_playing_handler);
-    ytsg_vs_player_set_playing (priv->player, g_variant_get_boolean (arguments));
+    ytsg_vp_player_set_playing (priv->player, g_variant_get_boolean (arguments));
     // g_signal_handler_unblock (priv->player, priv->notify_playing_handler);
 
   } else if (0 == g_strcmp0 ("volume", aspect) &&
@@ -74,7 +74,7 @@ _service_adapter_invoke (YtsgServiceAdapter *self,
 
     /* PONDERING at some point we can maybe optimize out sending back the notification */
     // g_signal_handler_block (priv->player, priv->notify_volume_handler);
-    ytsg_vs_player_set_volume (priv->player, g_variant_get_double (arguments));
+    ytsg_vp_player_set_volume (priv->player, g_variant_get_double (arguments));
     // g_signal_handler_unblock (priv->player, priv->notify_volume_handler);
 
   } else
@@ -83,19 +83,19 @@ _service_adapter_invoke (YtsgServiceAdapter *self,
 
   if (0 == g_strcmp0 ("play", aspect)) {
 
-    ytsg_vs_player_play (priv->player);
+    ytsg_vp_player_play (priv->player);
 
   } else if (0 == g_strcmp0 ("pause", aspect)) {
 
-    ytsg_vs_player_pause (priv->player);
+    ytsg_vp_player_pause (priv->player);
 
   } else if (0 == g_strcmp0 ("next", aspect)) {
 
-    ytsg_vs_player_next (priv->player);
+    ytsg_vp_player_next (priv->player);
 
   } else if (0 == g_strcmp0 ("prev", aspect)) {
 
-    ytsg_vs_player_prev (priv->player);
+    ytsg_vp_player_prev (priv->player);
 
   } else {
 
@@ -112,7 +112,7 @@ _service_adapter_invoke (YtsgServiceAdapter *self,
 }
 
 /*
- * YtsgVSPlayerAdapter
+ * YtsgVPPlayerAdapter
  */
 
 enum {
@@ -122,42 +122,42 @@ enum {
 };
 
 static void
-_player_notify_playable (YtsgVSPlayer         *player,
+_player_notify_playable (YtsgVPPlayer         *player,
                          GParamSpec           *pspec,
-                         YtsgVSPlayerAdapter  *self)
+                         YtsgVPPlayerAdapter  *self)
 {
   /* TODO */
   g_debug ("%s : %s() not implemented yet", G_STRLOC, __FUNCTION__);
 }
 
 static void
-_player_notify_playing (YtsgVSPlayer         *player,
+_player_notify_playing (YtsgVPPlayer         *player,
                         GParamSpec           *pspec,
-                        YtsgVSPlayerAdapter  *self)
+                        YtsgVPPlayerAdapter  *self)
 {
   bool playing;
 
-  playing = ytsg_vs_player_get_playing (player);
+  playing = ytsg_vp_player_get_playing (player);
   ytsg_service_adapter_send_event (YTSG_SERVICE_ADAPTER (self),
                                    "playing",
                                    g_variant_new_boolean (playing));
 }
 
 static void
-_player_volume_playable (YtsgVSPlayer         *player,
+_player_volume_playable (YtsgVPPlayer         *player,
                          GParamSpec           *pspec,
-                         YtsgVSPlayerAdapter  *self)
+                         YtsgVPPlayerAdapter  *self)
 {
   double volume;
 
-  volume = ytsg_vs_player_get_volume (player);
+  volume = ytsg_vp_player_get_volume (player);
   ytsg_service_adapter_send_event (YTSG_SERVICE_ADAPTER (self),
                                    "volume",
                                    g_variant_new_double (volume));
 }
 
 static void
-_player_destroyed (YtsgVSPlayerAdapter  *self,
+_player_destroyed (YtsgVPPlayerAdapter  *self,
                    void                 *stale_player_ptr)
 {
   g_object_unref (self);
@@ -169,11 +169,11 @@ _get_property (GObject      *object,
                GValue       *value,
                GParamSpec   *pspec)
 {
-  YtsgVSPlayerAdapterPrivate *priv = GET_PRIVATE (object);
+  YtsgVPPlayerAdapterPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
     case PROP_SERVICE_ADAPTER_SERVICE_GTYPE:
-      g_value_set_gtype (value, YTSG_VS_TYPE_PLAYER);
+      g_value_set_gtype (value, YTSG_VP_TYPE_PLAYER);
       break;
     case PROP_SERVICE_ADAPTER_SERVICE:
       g_value_set_object (value, priv->player);
@@ -189,7 +189,7 @@ _set_property (GObject      *object,
                const GValue *value,
                GParamSpec   *pspec)
 {
-  YtsgVSPlayerAdapterPrivate *priv = GET_PRIVATE (object);
+  YtsgVPPlayerAdapterPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
 
@@ -198,9 +198,9 @@ _set_property (GObject      *object,
       /* Construct-only */
 
       g_return_if_fail (priv->player == NULL);
-      g_return_if_fail (YTSG_VS_IS_PLAYER (g_value_get_object (value)));
+      g_return_if_fail (YTSG_VP_IS_PLAYER (g_value_get_object (value)));
 
-      priv->player = YTSG_VS_PLAYER (g_value_get_object (value));
+      priv->player = YTSG_VP_PLAYER (g_value_get_object (value));
 
       priv->notify_playable_handler =
               g_signal_connect (priv->player, "notify::playable",
@@ -222,7 +222,7 @@ _set_property (GObject      *object,
 static void
 _constructed (GObject *object)
 {
-  YtsgVSPlayerAdapterPrivate *priv = GET_PRIVATE (object);
+  YtsgVPPlayerAdapterPrivate *priv = GET_PRIVATE (object);
 
   g_return_if_fail (priv->player);
 
@@ -234,16 +234,16 @@ _constructed (GObject *object)
 static void
 _dispose (GObject *object)
 {
-  G_OBJECT_CLASS (ytsg_vs_player_adapter_parent_class)->dispose (object);
+  G_OBJECT_CLASS (ytsg_vp_player_adapter_parent_class)->dispose (object);
 }
 
 static void
-ytsg_vs_player_adapter_class_init (YtsgVSPlayerAdapterClass *klass)
+ytsg_vp_player_adapter_class_init (YtsgVPPlayerAdapterClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   YtsgServiceAdapterClass *adapter_class = YTSG_SERVICE_ADAPTER_CLASS (klass);
 
-  g_type_class_add_private (klass, sizeof (YtsgVSPlayerAdapterPrivate));
+  g_type_class_add_private (klass, sizeof (YtsgVPPlayerAdapterPrivate));
 
   object_class->constructed = _constructed;
   object_class->get_property = _get_property;
@@ -262,7 +262,7 @@ ytsg_vs_player_adapter_class_init (YtsgVSPlayerAdapterClass *klass)
 }
 
 static void
-ytsg_vs_player_adapter_init (YtsgVSPlayerAdapter *self)
+ytsg_vp_player_adapter_init (YtsgVPPlayerAdapter *self)
 {
 }
 

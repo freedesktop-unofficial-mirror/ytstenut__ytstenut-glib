@@ -2867,16 +2867,16 @@ _service_destroyed (ServiceData *data,
  * A bit hacky for now, so we don't need to include video-service headers here. */
 
 extern GType
-ytsg_vs_content_adapter_get_type (void);
+ytsg_vp_content_adapter_get_type (void);
 
 extern GType
-ytsg_vs_player_adapter_get_type (void);
+ytsg_vp_player_adapter_get_type (void);
 
 extern GType
-ytsg_vs_query_get_adapter_type (void);
+ytsg_vp_query_get_adapter_type (void);
 
 extern GType
-ytsg_vs_transfer_get_adapter_type (void);
+ytsg_vp_transfer_get_adapter_type (void);
 
 static YtsgServiceAdapter *
 create_adapter_for_service (YtsgClient  *self,
@@ -2884,11 +2884,11 @@ create_adapter_for_service (YtsgClient  *self,
 {
   GType interface_type;
 
-  interface_type = g_type_from_name ("YtsgVSPlayer");
+  interface_type = g_type_from_name ("YtsgVPPlayer");
   if (interface_type &&
       g_type_is_a (G_OBJECT_TYPE (service), interface_type)) {
 
-    return g_object_new (ytsg_vs_player_adapter_get_type (),
+    return g_object_new (ytsg_vp_player_adapter_get_type (),
                          "service", service,
                          NULL);
   }

@@ -18,48 +18,48 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
-#ifndef YTSG_VS_TRANSMISSION_H
-#define YTSG_VS_TRANSMISSION_H
+#ifndef YTSG_VP_TRANSMISSION_H
+#define YTSG_VP_TRANSMISSION_H
 
 #include <stdbool.h>
 #include <glib-object.h>
 
 G_BEGIN_DECLS
 
-#define YTSG_VS_TYPE_TRANSMISSION \
-  (ytsg_vs_transmission_get_type ())
+#define YTSG_VP_TYPE_TRANSMISSION \
+  (ytsg_vp_transmission_get_type ())
 
-#define YTSG_VS_TRANSMISSION(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTSG_VS_TYPE_TRANSMISSION, YtsgVSTransmission))
+#define YTSG_VP_TRANSMISSION(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTSG_VP_TYPE_TRANSMISSION, YtsgVPTransmission))
 
-#define YTSG_VS_IS_TRANSMISSION(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_VS_TYPE_TRANSMISSION))
+#define YTSG_VP_IS_TRANSMISSION(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_VP_TYPE_TRANSMISSION))
 
-#define YTSG_VS_TRANSMISSION_GET_INTERFACE(obj) \
-  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), YTSG_VS_TYPE_TRANSMISSION, YtsgVSTransmissionInterface))
+#define YTSG_VP_TRANSMISSION_GET_INTERFACE(obj) \
+  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), YTSG_VP_TYPE_TRANSMISSION, YtsgVPTransmissionInterface))
 
-typedef struct YtsgVSTransmission YtsgVSTransmission;
-typedef struct YtsgVSTransmissionInterface YtsgVSTransmissionInterface;
+typedef struct YtsgVPTransmission YtsgVPTransmission;
+typedef struct YtsgVPTransmissionInterface YtsgVPTransmissionInterface;
 
-struct YtsgVSTransmissionInterface {
+struct YtsgVPTransmissionInterface {
 
   /*< private >*/
   GTypeInterface parent;
 };
 
 GType
-ytsg_vs_transmission_get_type (void) G_GNUC_CONST;
+ytsg_vp_transmission_get_type (void) G_GNUC_CONST;
 
 char *
-ytsg_vs_transmission_get_local_uri (YtsgVSTransmission *self);
+ytsg_vp_transmission_get_local_uri (YtsgVPTransmission *self);
 
 unsigned int
-ytsg_vs_transmission_get_progress (YtsgVSTransmission *self);
+ytsg_vp_transmission_get_progress (YtsgVPTransmission *self);
 
 char *
-ytsg_vs_transmission_get_remote_uri (YtsgVSTransmission *self);
+ytsg_vp_transmission_get_remote_uri (YtsgVPTransmission *self);
 
 G_END_DECLS
 
-#endif /* YTSG_VS_TRANSMISSION_H */
+#endif /* YTSG_VP_TRANSMISSION_H */
 
