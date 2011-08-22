@@ -1,5 +1,5 @@
 
-SUBDIRS = video-service
+SUBDIRS = video-profile
 
 AM_CPPFLAGS = 					\
 	-DG_DISABLE_DEPRECATED 			\
