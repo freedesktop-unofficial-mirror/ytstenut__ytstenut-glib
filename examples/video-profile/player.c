@@ -157,7 +157,7 @@ main (int     argc,
   ytsg_client_register_service (client, G_OBJECT (player));
 
   /* Activate the client. */
-  ytsg_client_connect_to_mesh (client);
+  ytsg_client_connect (client);
 
   /* Run application. */
   mainloop = g_main_loop_new (NULL, false);

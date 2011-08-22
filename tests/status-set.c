@@ -136,7 +136,7 @@ main (int argc, char **argv)
   roster1 = ytsg_client_get_roster (client1);
   g_signal_connect (roster1, "service-added",
                     G_CALLBACK (service_added_cb), NULL);
-  ytsg_client_connect_to_mesh (client1);
+  ytsg_client_connect (client1);
 
   client2 = ytsg_client_new (YTSG_PROTOCOL_LOCAL_XMPP,
                              "com.meego.ytstenut.SetStatusTest2");
@@ -146,7 +146,7 @@ main (int argc, char **argv)
   roster2 = ytsg_client_get_roster (client2);
   g_signal_connect (roster2, "service-added",
                     G_CALLBACK (service_added_cb), NULL);
-  ytsg_client_connect_to_mesh (client2);
+  ytsg_client_connect (client2);
 
   g_timeout_add_seconds (TEST_LENGTH, timeout_test_cb, loop);
 

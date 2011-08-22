@@ -4,8 +4,8 @@
 YtsgClient
 YtsgClientClass
 ytsg_client_new
-ytsg_client_disconnect_from_mesh
-ytsg_client_connect_to_mesh
+ytsg_client_disconnect
+ytsg_client_connect
 ytsg_client_set_capabilities
 ytsg_client_get_roster
 ytsg_client_emit_error

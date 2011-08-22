@@ -167,7 +167,7 @@ main (int     argc,
   g_signal_connect (roster, "service-added",
                     G_CALLBACK (_roster_service_added), NULL);
 
-  ytsg_client_connect_to_mesh (client);
+  ytsg_client_connect (client);
 
   _mainloop = g_main_loop_new (NULL, false);
   g_main_loop_run (_mainloop);

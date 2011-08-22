@@ -1441,13 +1441,13 @@ ytsg_client_finalize (GObject *object)
 }
 
 /**
- * ytsg_client_disconnect_from_mesh:
+ * ytsg_client_disconnect:
  * @client: #YtsgClient
  *
  * Disconnects #YtsgClient from Ytstenut mesh.
  */
 void
-ytsg_client_disconnect_from_mesh (YtsgClient *client)
+ytsg_client_disconnect (YtsgClient *client)
 {
   YtsgClientPrivate *priv;
 
@@ -1483,7 +1483,7 @@ ytsg_client_reconnect_cb (gpointer data)
 
   client->priv->reconnect_id = 0;
 
-  ytsg_client_connect_to_mesh (client);
+  ytsg_client_connect (client);
 
   /* one off */
   return FALSE;
@@ -1524,7 +1524,7 @@ ytsg_client_connected_cb (TpConnection *proxy,
     {
       g_warning (G_STRLOC ": %s: %s", __FUNCTION__, error->message);
 
-      ytsg_client_disconnect_from_mesh (client);
+      ytsg_client_disconnect (client);
       _ytsg_client_reconnect_after (client, RECONNECT_DELAY);
     }
 }
@@ -2126,7 +2126,7 @@ ytsg_client_make_connection (YtsgClient *client)
 }
 
 /**
- * ytsg_client_connect_to_mesh:
+ * ytsg_client_connect:
  * @client: #YtsgClient
  *
  * Initiates connection to the mesh. Once the connection is established,
@@ -2136,7 +2136,7 @@ ytsg_client_make_connection (YtsgClient *client)
  *     connection method.
  */
 void
-ytsg_client_connect_to_mesh (YtsgClient *client)
+ytsg_client_connect (YtsgClient *client)
 {
   YtsgClientPrivate *priv;
 

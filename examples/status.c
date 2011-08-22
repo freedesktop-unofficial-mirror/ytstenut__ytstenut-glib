@@ -125,7 +125,7 @@ run_client (void)
   g_signal_connect (roster, "service-added",
                     G_CALLBACK (_client_roster_service_added), NULL);
 
-  ytsg_client_connect_to_mesh (client);
+  ytsg_client_connect (client);
 
   mainloop = g_main_loop_new (NULL, false);
   g_main_loop_run (mainloop);
@@ -208,7 +208,7 @@ run_server (void)
   g_signal_connect (client, "incoming-file",
                     G_CALLBACK (_server_incoming_file), NULL);
 
-  ytsg_client_connect_to_mesh (client);
+  ytsg_client_connect (client);
 
   mainloop = g_main_loop_new (NULL, false);
   g_main_loop_run (mainloop);

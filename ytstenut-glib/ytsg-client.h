@@ -104,8 +104,8 @@ GType ytsg_client_get_type (void) G_GNUC_CONST;
 
 YtsgClient *ytsg_client_new (YtsgProtocol protocol, const char *uid);
 
-void        ytsg_client_disconnect_from_mesh (YtsgClient *client);
-void        ytsg_client_connect_to_mesh (YtsgClient *client);
+void        ytsg_client_disconnect (YtsgClient *client);
+void        ytsg_client_connect (YtsgClient *client);
 void        ytsg_client_set_capabilities (YtsgClient *client, YtsgCaps caps);
 YtsgRoster *ytsg_client_get_roster (YtsgClient *client);
 void        ytsg_client_emit_error (YtsgClient *client, YtsgError error);

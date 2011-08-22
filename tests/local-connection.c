@@ -215,7 +215,7 @@ main (int argc, char **argv)
   /*
    * Initiate network connection.
    */
-  ytsg_client_connect_to_mesh (client);
+  ytsg_client_connect (client);
 
   g_timeout_add_seconds (TEST_LENGTH, timeout_test_cb, loop);
 
