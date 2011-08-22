@@ -1657,6 +1657,17 @@ ytsg_client_service_added_cb (TpYtsStatus       *self,
 }
 
 static void
+ytsg_client_service_removed_cb (TpYtsStatus *self,
+                                const gchar *jid,
+                                const gchar *sid,
+                                YtsgClient  *client)
+{
+  YtsgClientPrivate *priv = client->priv;
+
+  _ytsg_roster_remove_service_by_id (priv->roster, jid, sid);
+}
+
+static void
 ytsg_client_process_status (YtsgClient *client)
 {
   YtsgClientPrivate *priv = client->priv;
@@ -1767,6 +1778,9 @@ ytsg_client_yts_status_cb (GObject      *obj,
 
   tp_g_signal_connect_object (status, "service-added",
                               G_CALLBACK (ytsg_client_service_added_cb),
+                              client, 0);
+  tp_g_signal_connect_object (status, "service-removed",
+                              G_CALLBACK (ytsg_client_service_removed_cb),
                               client, 0);
 
   if (priv->status)

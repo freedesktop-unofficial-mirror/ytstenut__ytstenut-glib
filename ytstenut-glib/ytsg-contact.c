@@ -121,7 +121,9 @@ ytsg_contact_service_added (YtsgContact *contact, YtsgService *service)
   g_return_if_fail (uid && *uid);
   g_return_if_fail (!g_hash_table_lookup (priv->services, uid));
 
-  g_hash_table_insert (priv->services, (gpointer)uid, g_object_ref (service));
+  g_hash_table_insert (priv->services,
+                       g_strdup (uid),
+                       g_object_ref (service));
 }
 
 static void
@@ -462,9 +464,9 @@ ytsg_contact_init (YtsgContact *self)
 
   priv = self->priv = YTSG_CONTACT_GET_PRIVATE (self);
 
-  priv->services = g_hash_table_new_full (g_direct_hash,
-                                          g_direct_equal,
-                                          NULL,
+  priv->services = g_hash_table_new_full (g_str_hash,
+                                          g_str_equal,
+                                          g_free,
                                           g_object_unref);
 
   priv->pending_files = g_queue_new ();
@@ -1197,9 +1199,16 @@ _ytsg_contact_remove_service_by_uid (YtsgContact *contact, const char *uid)
    * Look up the service and emit the service-removed signal; the signal closure
    *  will take care of the rest.
    */
-  if ((service = g_hash_table_lookup (priv->services, (gpointer)uid)))
+  service = g_hash_table_lookup (priv->services, uid);
+  if (service)
     {
       g_signal_emit (contact, signals[SERVICE_REMOVED], 0, service);
+    }
+  else
+    {
+      g_warning ("%s : Trying to remove service %s but not found?!",
+                 G_STRLOC,
+                 uid);
     }
 }
 

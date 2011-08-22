@@ -18,4 +18,5 @@ TODO
 * Publish capabilities in "names", instead of using the profile as UID.
 * Implement generic service proxy and replace MetadataService with it.
 * Implement capabilities boxed type and use it everywhere.
-* Implement error message handling on the client side, or do away with it altogether, or maybe rename to exception.
+* Implement error message handling on the client side, or do away with it altogether, or maybe rename to exception. Or maybe just make it an event?
+

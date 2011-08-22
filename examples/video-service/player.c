@@ -26,6 +26,10 @@
 
 #include "mock-player.h"
 
+/*
+ * Client object signal handlers for illustration and debugging purpose.
+ */
+
 static void
 _client_authenticated (YtsgClient *client,
                        void       *data)
@@ -47,6 +51,7 @@ _client_disconnected (YtsgClient  *client,
   g_debug ("%s()", __FUNCTION__);
 }
 
+/* Messages that are not handled by any service are emitted by the client. */
 static void
 _client_message (YtsgClient   *client,
                  YtsgMessage  *message,
@@ -59,12 +64,53 @@ _client_message (YtsgClient   *client,
   g_free (message_xml);
 }
 
+/*
+ * Roster object signal handlers for illustration and debugging purpose.
+ */
+
+static void
+_roster_contact_added (YtsgRoster   *roster,
+                       YtsgContact  *contact,
+                       void         *data)
+{
+  g_debug ("%s()", __FUNCTION__);
+}
+
+static void
+_roster_contact_removed (YtsgRoster   *roster,
+                         YtsgContact  *contact,
+                         void         *data)
+{
+  g_debug ("%s()", __FUNCTION__);
+}
+
+static void
+_roster_service_added (YtsgRoster   *roster,
+                       YtsgService  *service,
+                       void         *data)
+{
+  g_debug ("%s()", __FUNCTION__);
+}
+
+static void
+_roster_service_removed (YtsgRoster   *roster,
+                         YtsgService  *contact,
+                         void         *data)
+{
+  g_debug ("%s()", __FUNCTION__);
+}
+
+/*
+ * Main. What else.
+ */
+
 int
 main (int     argc,
       char  **argv)
 {
   GOptionContext  *context;
   YtsgClient      *client;
+  YtsgRoster      *roster;
   MockPlayer      *player;
   GMainLoop       *mainloop;
   GError          *error = NULL;
@@ -72,6 +118,7 @@ main (int     argc,
     { NULL, }
   };
 
+  /* Initialisation and command-line argument handling. */
   context = g_option_context_new ("- mock player");
   g_option_context_add_main_entries (context, entries, NULL);
   g_option_context_add_group (context, ytsg_get_option_group ());
@@ -82,6 +129,7 @@ main (int     argc,
     return EXIT_FAILURE;
   }
 
+  /* The client object represents an ytstenut application. */
   client = ytsg_client_new (YTSG_PROTOCOL_LOCAL_XMPP,
                             "org.freedesktop.ytstenut.MockPlayer");
   g_signal_connect (client, "authenticated",
@@ -93,11 +141,25 @@ main (int     argc,
   g_signal_connect (client, "message",
                     G_CALLBACK (_client_message), NULL);
 
+  /* The roster object tracks other devices and services as they come and go. */
+  roster = ytsg_client_get_roster (client);
+  g_signal_connect (roster, "contact-added",
+                    G_CALLBACK (_roster_contact_added), NULL);
+  g_signal_connect (roster, "contact-removed",
+                    G_CALLBACK (_roster_contact_removed), NULL);
+  g_signal_connect (roster, "service-added",
+                    G_CALLBACK (_roster_service_added), NULL);
+  g_signal_connect (roster, "contact-added",
+                    G_CALLBACK (_roster_service_removed), NULL);
+
+  /* Instantiate and publish example player object so others can access it. */
   player = mock_player_new ();
   ytsg_client_register_service (client, G_OBJECT (player));
 
+  /* Activate the client. */
   ytsg_client_connect_to_mesh (client);
 
+  /* Run application. */
   mainloop = g_main_loop_new (NULL, false);
   g_main_loop_run (mainloop);
   g_main_loop_unref (mainloop);

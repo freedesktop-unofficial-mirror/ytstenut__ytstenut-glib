@@ -32,7 +32,6 @@ typedef enum {
   COMMAND_NEXT
 } PlayerCommand;
 
-static bool           _hello = false;
 static PlayerCommand  _command = COMMAND_NONE;
 static GMainLoop     *_mainloop = NULL;
 
@@ -89,13 +88,18 @@ _roster_service_added (YtsgRoster   *roster,
                                              YTSG_VS_PLAYER_CAPABILITY);
     g_return_if_fail (proxy);
 
-    if (_hello) {
-      // TODO
-    }
-
     switch (_command) {
       case COMMAND_PLAY:
         ytsg_vs_player_play (YTSG_VS_PLAYER (proxy));
+        break;
+      case COMMAND_PAUSE:
+        ytsg_vs_player_pause (YTSG_VS_PLAYER (proxy));
+        break;
+      case COMMAND_NEXT:
+        ytsg_vs_player_next (YTSG_VS_PLAYER (proxy));
+        break;
+      case COMMAND_PREV:
+        ytsg_vs_player_prev (YTSG_VS_PLAYER (proxy));
         break;
       default:
         g_debug ("%s : command %i not handled", G_STRLOC, _command);
@@ -114,11 +118,15 @@ main (int     argc,
   YtsgRoster      *roster;
   GError          *error = NULL;
 
-  bool         hello = false;
   bool         play = false;
+  bool         pause = false;
+  bool         next = false;
+  bool         prev = false;
   GOptionEntry entries[] = {
-    { "hello", '\0', 0, G_OPTION_ARG_NONE, &hello, "Send 'hello' message", NULL },
     { "play", 'p', 0, G_OPTION_ARG_NONE, &play, "Invoke 'play'", NULL },
+    { "pause", 'a', 0, G_OPTION_ARG_NONE, &pause, "Invoke 'pause'", NULL },
+    { "next", 'n', 0, G_OPTION_ARG_NONE, &next, "Invoke 'next'", NULL },
+    { "prev", 'r', 0, G_OPTION_ARG_NONE, &prev, "Invoke 'prev'", NULL },
     { NULL }
   };
 
@@ -132,12 +140,14 @@ main (int     argc,
     return EXIT_FAILURE;
   }
 
-  if (hello) {
-    _hello = true;
-  }
-
   if (play) {
     _command = COMMAND_PLAY;
+  } else if (pause) {
+    _command = COMMAND_PAUSE;
+  } else if (next) {
+    _command = COMMAND_NEXT;
+  } else if (prev) {
+    _command = COMMAND_PREV;
   } else {
     g_debug ("No command given, use --help to display commands.");
   }
