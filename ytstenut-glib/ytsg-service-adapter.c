@@ -103,6 +103,7 @@ ytsg_service_adapter_class_init (YtsgServiceAdapterClass *klass)
                                G_PARAM_CONSTRUCT_ONLY);
   g_object_class_install_property (object_class, PROP_SERVICE, pspec);
 
+  // FIXME this is probably not needed at all
   pspec = g_param_spec_gtype ("service-gtype", "", "",
                               G_TYPE_NONE,
                               param_flags);

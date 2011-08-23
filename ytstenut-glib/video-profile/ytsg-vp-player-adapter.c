@@ -34,14 +34,10 @@ G_DEFINE_TYPE (YtsgVPPlayerAdapter,
 
 typedef struct {
   YtsgVPPlayer  *player;
-
-  unsigned int   notify_playable_handler;
-  unsigned int   notify_playing_handler;
-  unsigned int   notify_volume_handler;
 } YtsgVPPlayerAdapterPrivate;
 
 /*
- * YtsgServiceAdapter implementation
+ * YtsgServiceAdapter overrides
  */
 
 static void
@@ -64,18 +60,14 @@ _service_adapter_invoke (YtsgServiceAdapter *self,
              g_variant_is_of_type (arguments, G_VARIANT_TYPE_BOOLEAN)) {
 
     /* PONDERING at some point we can maybe optimize out sending back the notification */
-    // g_signal_handler_block (priv->player, priv->notify_playing_handler);
     ytsg_vp_player_set_playing (priv->player, g_variant_get_boolean (arguments));
-    // g_signal_handler_unblock (priv->player, priv->notify_playing_handler);
 
   } else if (0 == g_strcmp0 ("volume", aspect) &&
              arguments &&
              g_variant_is_of_type (arguments, G_VARIANT_TYPE_DOUBLE)) {
 
     /* PONDERING at some point we can maybe optimize out sending back the notification */
-    // g_signal_handler_block (priv->player, priv->notify_volume_handler);
     ytsg_vp_player_set_volume (priv->player, g_variant_get_double (arguments));
-    // g_signal_handler_unblock (priv->player, priv->notify_volume_handler);
 
   } else
 
@@ -202,23 +194,19 @@ _set_property (GObject      *object,
 
       priv->player = YTSG_VP_PLAYER (g_value_get_object (value));
 
-      priv->notify_playable_handler =
-              g_signal_connect (priv->player, "notify::playable",
-                                G_CALLBACK (_player_notify_playable), object);
-
-      priv->notify_playing_handler =
-              g_signal_connect (priv->player, "notify::playing",
-                                G_CALLBACK (_player_notify_playing), object);
-
-      priv->notify_volume_handler =
-              g_signal_connect (priv->player, "notify::volume",
-                                G_CALLBACK (_player_volume_playable), object);
+      g_signal_connect (priv->player, "notify::playable",
+                        G_CALLBACK (_player_notify_playable), object);
+      g_signal_connect (priv->player, "notify::playing",
+                        G_CALLBACK (_player_notify_playing), object);
+      g_signal_connect (priv->player, "notify::volume",
+                        G_CALLBACK (_player_volume_playable), object);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
 }
 
+/* FIXME move to _set_property() */
 static void
 _constructed (GObject *object)
 {
@@ -251,6 +239,8 @@ ytsg_vp_player_adapter_class_init (YtsgVPPlayerAdapterClass *klass)
   object_class->dispose = _dispose;
 
   adapter_class->invoke = _service_adapter_invoke;
+
+  /* Properties */
 
   g_object_class_override_property (object_class,
                                     PROP_SERVICE_ADAPTER_SERVICE,
