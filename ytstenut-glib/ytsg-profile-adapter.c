@@ -137,7 +137,6 @@ _set_property (GObject      *object,
       g_object_weak_ref (G_OBJECT (priv->profile),
                          (GWeakNotify) _profile_destroyed,
                          object);
-
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);

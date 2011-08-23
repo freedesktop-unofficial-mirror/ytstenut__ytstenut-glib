@@ -196,6 +196,9 @@ _set_property (GObject      *object,
       g_return_if_fail (YTSG_VP_IS_PLAYER (g_value_get_object (value)));
 
       priv->player = YTSG_VP_PLAYER (g_value_get_object (value));
+      g_object_weak_ref (G_OBJECT (priv->player),
+                         (GWeakNotify) _player_destroyed,
+                         object);
 
       g_signal_connect (priv->player, "notify::playable",
                         G_CALLBACK (_player_notify_playable), object);
@@ -207,19 +210,6 @@ _set_property (GObject      *object,
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
-}
-
-/* FIXME move to _set_property() */
-static void
-_constructed (GObject *object)
-{
-  YtsgVPPlayerAdapterPrivate *priv = GET_PRIVATE (object);
-
-  g_return_if_fail (priv->player);
-
-  g_object_weak_ref (G_OBJECT (priv->player),
-                     (GWeakNotify) _player_destroyed,
-                     object);
 }
 
 static void
@@ -247,7 +237,6 @@ ytsg_vp_player_adapter_class_init (YtsgVPPlayerAdapterClass *klass)
 
   g_type_class_add_private (klass, sizeof (YtsgVPPlayerAdapterPrivate));
 
-  object_class->constructed = _constructed;
   object_class->get_property = _get_property;
   object_class->set_property = _set_property;
   object_class->dispose = _dispose;
