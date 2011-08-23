@@ -68,6 +68,7 @@ source_c =						\
 		$(srcdir)/ytsg-event-message.c \
 		$(srcdir)/ytsg-invocation-message.c \
 		$(srcdir)/ytsg-profile.c \
+		$(srcdir)/ytsg-profile-impl.c \
 		$(srcdir)/ytsg-profile-adapter.c \
 		$(srcdir)/ytsg-proxy.c \
 		$(srcdir)/ytsg-proxy-service.c \
@@ -88,6 +89,7 @@ source_c =						\
 
 private_h = \
 		$(srcdir)/ytsg-profile.h \
+		$(srcdir)/ytsg-profile-impl.h \
 		$(srcdir)/ytsg-profile-adapter.h \
 		$(srcdir)/video-profile/ytsg-vp-playable-proxy.h \
 		$(srcdir)/video-profile/ytsg-vp-player-adapter.h \

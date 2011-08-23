@@ -1066,6 +1066,10 @@ dispatch_to_service (YtsgClient *self,
 
               dispatched = TRUE;
             }
+          else
+            {
+              // FIXME we should probably report back that there's no adapter?
+            }
         }
       else if (0 == g_strcmp0 ("event", type))
         {
@@ -1088,7 +1092,7 @@ dispatch_to_service (YtsgClient *self,
             }
           else
             {
-              g_warning ("%s : Did not find contact for %s", G_STRLOC, sender_jid);
+              g_critical ("%s : Did not find contact for %s", G_STRLOC, sender_jid);
             }
         }
       else if (0 == g_strcmp0 ("response", type))
@@ -1112,17 +1116,17 @@ dispatch_to_service (YtsgClient *self,
             }
           else
             {
-              g_warning ("%s : Did not find contact for %s", G_STRLOC, sender_jid);
+              g_critical ("%s : Did not find contact for %s", G_STRLOC, sender_jid);
             }
         }
       else
         {
-          g_warning ("%s : Unknown message type '%s'", G_STRLOC, type);
+          g_critical ("%s : Unknown message type '%s'", G_STRLOC, type);
         }
     }
   else
     {
-      g_warning ("%s : Failed to parse message", G_STRLOC);
+      g_critical ("%s : Failed to parse message", G_STRLOC);
     }
 
   g_object_unref (parser);

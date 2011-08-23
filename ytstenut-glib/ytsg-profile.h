@@ -52,10 +52,12 @@ struct YtsgProfileInterface {
 
   void
   (*register_proxy) (YtsgProfile  *self,
+                     char const   *invocation_id,
                      char const   *capability);
 
   void
   (*unregister_proxy) (YtsgProfile  *self,
+                       char const   *invocation_id,
                        char const   *capability);
 };
 
@@ -67,10 +69,12 @@ ytsg_profile_get_capabilities (YtsgProfile  *self);
 
 void
 ytsg_profile_register_proxy (YtsgProfile  *self,
+                             char const   *invocation_id,
                              char const   *capability);
 
 void
 ytsg_profile_unregister_proxy (YtsgProfile  *self,
+                               char const   *invocation_id,
                                char const   *capability);
 
 G_END_DECLS

@@ -27,6 +27,7 @@ G_DEFINE_INTERFACE (YtsgProfile,
 
 static void
 _register_proxy (YtsgProfile  *self,
+                 char const   *invocation_id,
                  char const   *capability)
 {
   g_critical ("%s : Method YtsgProfile.register_proxy() not implemented by %s",
@@ -36,6 +37,7 @@ _register_proxy (YtsgProfile  *self,
 
 static void
 _unregister_proxy (YtsgProfile  *self,
+                   char const   *invocation_id,
                    char const   *capability)
 {
   g_critical ("%s : Method YtsgProfile.unregister_proxy() not implemented by %s",
@@ -80,19 +82,25 @@ ytsg_profile_get_capabilities (YtsgProfile  *self)
 
 void
 ytsg_profile_register_proxy (YtsgProfile  *self,
+                             char const   *invocation_id,
                              char const   *capability)
 {
   g_return_if_fail (YTSG_IS_PROFILE (self));
 
-  YTSG_PROFILE_GET_INTERFACE (self)->register_proxy (self, capability);
+  YTSG_PROFILE_GET_INTERFACE (self)->register_proxy (self,
+                                                     invocation_id,
+                                                     capability);
 }
 
 void
 ytsg_profile_unregister_proxy (YtsgProfile  *self,
+                               char const   *invocation_id,
                                char const   *capability)
 {
   g_return_if_fail (YTSG_IS_PROFILE (self));
 
-  YTSG_PROFILE_GET_INTERFACE (self)->unregister_proxy (self, capability);
+  YTSG_PROFILE_GET_INTERFACE (self)->unregister_proxy (self,
+                                                       invocation_id,
+                                                       capability);
 }
 

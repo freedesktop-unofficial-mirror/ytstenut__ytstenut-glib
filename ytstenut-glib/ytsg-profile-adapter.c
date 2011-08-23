@@ -53,14 +53,18 @@ _service_adapter_invoke (YtsgServiceAdapter *self,
       g_variant_is_of_type (arguments, G_VARIANT_TYPE_STRING)) {
 
     char const *capability = g_variant_get_string (arguments, NULL);
-    ytsg_profile_register_proxy (priv->profile, capability);
+    ytsg_profile_register_proxy (priv->profile,
+                                 invocation_id,
+                                 capability);
 
   } else if (0 == g_strcmp0 ("unregister-proxy", aspect) &&
              arguments &&
              g_variant_is_of_type (arguments, G_VARIANT_TYPE_STRING)) {
 
     char const *capability = g_variant_get_string (arguments, NULL);
-    ytsg_profile_unregister_proxy (priv->profile, capability);
+    ytsg_profile_unregister_proxy (priv->profile,
+                                   invocation_id,
+                                   capability);
 
   } else {
 
