@@ -152,6 +152,9 @@ static void
 _player_destroyed (YtsgVPPlayerAdapter  *self,
                    void                 *stale_player_ptr)
 {
+  YtsgVPPlayerAdapterPrivate *priv = GET_PRIVATE (self);
+
+  priv->player = NULL;
   g_object_unref (self);
 }
 
@@ -222,6 +225,17 @@ _constructed (GObject *object)
 static void
 _dispose (GObject *object)
 {
+  YtsgVPPlayerAdapterPrivate *priv = GET_PRIVATE (object);
+
+  if (priv->player) {
+    g_warning ("%s : Adapter disposed with adaptee still referenced.",
+               G_STRLOC);
+    g_object_weak_unref (G_OBJECT (priv->player),
+                         (GWeakNotify) _player_destroyed,
+                         object);
+    priv->player = NULL;
+  }
+
   G_OBJECT_CLASS (ytsg_vp_player_adapter_parent_class)->dispose (object);
 }
 

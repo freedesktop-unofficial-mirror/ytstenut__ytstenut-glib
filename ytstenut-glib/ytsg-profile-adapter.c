@@ -90,6 +90,9 @@ static void
 _profile_destroyed (YtsgProfileAdapter  *self,
                     void                *stale_profile_ptr)
 {
+  YtsgProfileAdapterPrivate *priv = GET_PRIVATE (self);
+
+  priv->profile = NULL;
   g_object_unref (self);
 }
 
@@ -142,6 +145,23 @@ _set_property (GObject      *object,
 }
 
 static void
+_dispose (GObject *object)
+{
+  YtsgProfileAdapterPrivate *priv = GET_PRIVATE (object);
+
+  if (priv->profile) {
+    g_warning ("%s : Adapter disposed with adaptee still referenced.",
+               G_STRLOC);
+    g_object_weak_unref (G_OBJECT (priv->profile),
+                         (GWeakNotify) _profile_destroyed,
+                         object);
+    priv->profile = NULL;
+  }
+
+  G_OBJECT_CLASS (ytsg_profile_adapter_parent_class)->dispose (object);
+}
+
+static void
 ytsg_profile_adapter_class_init (YtsgProfileAdapterClass *klass)
 {
   GObjectClass  *object_class = G_OBJECT_CLASS (klass);
@@ -151,6 +171,7 @@ ytsg_profile_adapter_class_init (YtsgProfileAdapterClass *klass)
 
   object_class->get_property = _get_property;
   object_class->set_property = _set_property;
+  object_class->dispose = _dispose;
 
   adapter_class->invoke = _service_adapter_invoke;
 
