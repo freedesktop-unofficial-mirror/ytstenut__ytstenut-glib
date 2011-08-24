@@ -52,7 +52,7 @@ typedef struct {
 
   /* Methods */
 
-  void
+  bool
   (*invoke) (YtsgServiceAdapter *self,
              char const         *invocation_id,
              char const         *aspect,
@@ -80,7 +80,7 @@ typedef struct {
 GType
 ytsg_service_adapter_get_type (void) G_GNUC_CONST;
 
-void
+bool
 ytsg_service_adapter_invoke (YtsgServiceAdapter *self,
                              char const         *invocation_id,
                              char const         *aspect,

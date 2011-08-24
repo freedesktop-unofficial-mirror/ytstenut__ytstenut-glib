@@ -20,3 +20,11 @@ TODO
 * Implement capabilities boxed type and use it everywhere.
 * Implement error message handling on the client side, or do away with it altogether, or maybe rename to exception. Or maybe just make it an event?
 * Use exported symbols list when linking and generate sections.txt from it and, say, sections.txt.in, using "ytsg_client_*" and the like.
+
+Code Review
+-----------
+
++ Consistent naming: jid ... contact_id; sid/uid ... service_id; caps ... capabilities (do away with the quarks)
++ Use "FooBar * const" when not handing out references
++ Coding style.
++ Create -protected headers for internal methods

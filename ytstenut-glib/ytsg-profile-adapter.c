@@ -18,6 +18,8 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include <stdbool.h>
+
 #include "ytsg-profile.h"
 #include "ytsg-profile-adapter.h"
 
@@ -38,7 +40,7 @@ typedef struct {
  * YtsgServiceAdapter overrides
  */
 
-static void
+static bool
 _service_adapter_invoke (YtsgServiceAdapter *self,
                          char const         *invocation_id,
                          char const         *aspect,
@@ -78,6 +80,9 @@ _service_adapter_invoke (YtsgServiceAdapter *self,
                arg_string);
     g_free (arg_string);
   }
+
+  /* No need to keep the return SAE. */
+  return false;
 }
 
 /*

@@ -4,6 +4,7 @@
  * Copyright (c) 2011 Intel Corp.
  *
  * Author: Tomas Frydrych <tf@linux.intel.com>
+ *         Rob Staudinger <robsta@linux.intel.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -110,6 +111,9 @@ struct _YtsgClientPrivate
   /* Implemented services */
   GHashTable  *services;
 
+  /* Ongoing invocations */
+  GHashTable  *invocations;
+
   /* callback ids */
   guint reconnect_id;
 
@@ -179,6 +183,151 @@ service_data_destroy (ServiceData *self)
   g_object_unref (self->client);
   g_free (self->capability);
   g_free (self);
+}
+
+/*
+ * InvocationData
+ */
+
+/* PONDERING this should probably be configurable. */
+#define INVOCATION_RESPONSE_TIMEOUT_S 20
+
+typedef struct {
+  YtsgClient    *client;        /* free pointer, no ref */
+  YtsgContact   *contact;       /* free pointer, no ref */
+  char          *invocation_id;
+  unsigned int   timeout_s;
+  unsigned int   timeout_id;
+} InvocationData;
+
+static void
+invocation_data_destroy (InvocationData *self)
+{
+  g_return_if_fail (self);
+
+  if (self->timeout_id) {
+    g_source_remove (self->timeout_id);
+    self->timeout_id = 0;
+  }
+
+  g_free (self->invocation_id);
+  g_free (self);
+}
+
+static bool
+client_conclude_invocation (YtsgClient  *self,
+                            char const  *invocation_id)
+{
+  YtsgClientPrivate *priv = self->priv;
+  InvocationData  *data;
+
+  data = g_hash_table_lookup (priv->invocations, invocation_id);
+  if (data) {
+    invocation_data_destroy (data);
+  } else {
+    g_warning ("%s : Pending invocation for ID %s not found",
+               G_STRLOC,
+               invocation_id);
+    return false;
+  }
+
+  return true;
+}
+
+static bool
+_invocation_timeout (InvocationData *self)
+{
+  g_critical ("%s : Invocation %s timed out after %i seconds",
+              G_STRLOC,
+              self->invocation_id,
+              self->timeout_s);
+
+  /* This destroys self */
+  client_conclude_invocation (self->client, self->invocation_id);
+
+  // TODO emit timeout / error
+
+  /* Remove timeout */
+  return false;
+}
+
+static InvocationData *
+invocation_data_create (YtsgClient    *client,
+                        YtsgContact   *contact,
+                        char const    *invocation_id,
+                        unsigned int   timeout_s)
+{
+  InvocationData *self;
+
+  self = g_new0 (InvocationData, 1);
+  self->client = client;
+  self->contact = contact;
+  self->invocation_id = g_strdup (invocation_id);
+  self->timeout_s = timeout_s;
+  self->timeout_id = g_timeout_add_seconds (timeout_s,
+                                            (GSourceFunc) _invocation_timeout,
+                                            self);
+
+  return self;
+}
+
+static bool
+client_establish_invocation (YtsgClient   *self,
+                             char const   *invocation_id,
+                             YtsgContact  *contact)
+{
+  YtsgClientPrivate *priv = self->priv;
+  InvocationData *invocation_data;
+
+  invocation_data = g_hash_table_lookup (priv->invocations,
+                                         invocation_id);
+  if (invocation_data) {
+    /* Already an invocation running with this ID, bail out. */
+    g_critical ("%s: Already have an invocation for ID %s",
+                G_STRLOC,
+                invocation_id);
+    return false;
+  }
+
+  invocation_data = invocation_data_create (self,
+                                            contact,
+                                            invocation_id,
+                                            INVOCATION_RESPONSE_TIMEOUT_S);
+  g_hash_table_insert (priv->invocations,
+                       g_strdup (invocation_id),
+                       invocation_data);
+
+  return true;
+}
+
+unsigned int
+ytsg_client_clear_pending_responses (YtsgClient   *self,
+                                     YtsgContact  *contact)
+{
+  YtsgClientPrivate *priv = self->priv;
+  GHashTableIter   iter;
+  char const      *invocation_id;
+  InvocationData  *data;
+  bool             found;
+  unsigned int     n_removals = 0;
+
+  // FIXME this would be better solved using g_hash_table_foreach_remove().
+  do {
+    found = false;
+    g_hash_table_iter_init (&iter, priv->invocations);
+    while (g_hash_table_iter_next (&iter,
+                                   (void **) &invocation_id,
+                                   (void **) &data)) {
+      if (data->contact == contact) {
+        n_removals++;
+        found = true;
+        break;
+      }
+    }
+
+  } while (found);
+
+  return n_removals;
 }
 
 /*
@@ -1033,100 +1182,101 @@ dispatch_to_service (YtsgClient *self,
   YtsgClientPrivate *priv = self->priv;
   RestXmlParser *parser;
   RestXmlNode   *node;
+  char const    *capability;
+  char const    *type;
+  YtsgContact   *contact;
   gboolean       dispatched = FALSE;
 
   parser = rest_xml_parser_new ();
-
   node = rest_xml_parser_parse_from_data (parser, xml, strlen (xml));
-  if (node)
+  if (NULL == node) {
+    // FIXME report error
+    g_critical ("%s : Failed to parse message '%s'", G_STRLOC, xml);
+    return false;
+  }
+
+  capability = rest_xml_node_get_attr (node, "capability");
+  if (NULL == capability) {
+    // FIXME report error
+    g_critical ("%s : Malformed message, 'capability' missing in '%s'",
+                G_STRLOC,
+                xml);
+    return false;
+  }
+
+  type = rest_xml_node_get_attr (node, "type");
+  if (NULL == type) {
+    // FIXME report error
+    g_critical ("%s : Malformed message, 'type' missing in '%s'",
+                G_STRLOC,
+                xml);
+    return false;
+  }
+
+  contact = ytsg_roster_find_contact_by_jid (priv->roster, sender_jid);
+  if (NULL == contact) {
+    // FIXME report error
+    g_critical ("%s : Contact for '%s' not found",
+                G_STRLOC,
+                sender_jid);
+    return false;
+  }
+
+  if (0 == g_strcmp0 ("invocation", type))
     {
-      char const *capability = rest_xml_node_get_attr (node, "capability");
-      char const *type = rest_xml_node_get_attr (node, "type");
-      if (0 == g_strcmp0 ("invocation", type))
+      /* Deliver to service */
+      YtsgServiceAdapter *adapter = g_hash_table_lookup (priv->services,
+                                                         capability);
+      if (adapter)
         {
-          /* Deliver to service */
-          YtsgServiceAdapter *adapter = g_hash_table_lookup (priv->services,
-                                                             capability);
-          if (adapter)
-            {
-              char const *invocation_id = rest_xml_node_get_attr (node, "invocation");
-              char const *aspect = rest_xml_node_get_attr (node, "aspect");
-              char const *args = rest_xml_node_get_attr (node, "arguments");
-              GVariant *arguments = NULL;
+          bool keep_sae;
+          char const *invocation_id = rest_xml_node_get_attr (node, "invocation");
+          char const *aspect = rest_xml_node_get_attr (node, "aspect");
+          char const *args = rest_xml_node_get_attr (node, "arguments");
+          GVariant *arguments = args ? g_variant_new_parsed (args) : NULL;
 
-              if (args)
-                arguments = g_variant_new_parsed (args);
+          client_establish_invocation (self, invocation_id, contact);
+          keep_sae = ytsg_service_adapter_invoke (adapter,
+                                                  invocation_id,
+                                                  aspect,
+                                                  arguments);
+          if (!keep_sae) {
+            client_conclude_invocation (self, invocation_id);
+          }
 
-              ytsg_service_adapter_invoke (adapter,
-                                           invocation_id,
-                                           aspect,
-                                           arguments);
-
-              // TODO keep invocation id with all the info needed for responding.
-
-              dispatched = TRUE;
-            }
-          else
-            {
-              // FIXME we should probably report back that there's no adapter?
-            }
-        }
-      else if (0 == g_strcmp0 ("event", type))
-        {
-          /* Deliver to matching proxy */
-          YtsgContact *contact = ytsg_roster_find_contact_by_jid (priv->roster,
-                                                                  sender_jid);
-          if (contact)
-            {
-              char const *aspect = rest_xml_node_get_attr (node, "aspect");
-              char const *args = rest_xml_node_get_attr (node, "arguments");
-              GVariant *arguments = NULL;
-
-              if (args)
-                arguments = g_variant_new_parsed (args);
-
-              dispatched = ytsg_contact_dispatch_event (contact,
-                                                        capability,
-                                                        aspect,
-                                                        arguments);
-            }
-          else
-            {
-              g_critical ("%s : Did not find contact for %s", G_STRLOC, sender_jid);
-            }
-        }
-      else if (0 == g_strcmp0 ("response", type))
-        {
-          /* Deliver to matching proxy */
-          YtsgContact *contact = ytsg_roster_find_contact_by_jid (priv->roster,
-                                                                  sender_jid);
-          if (contact)
-            {
-              char const *invocation_id = rest_xml_node_get_attr (node, "invocation");
-              char const *ret = rest_xml_node_get_attr (node, "response");
-              GVariant *response = NULL;
-
-              if (ret)
-                response = g_variant_new_parsed (ret);
-
-              dispatched = ytsg_contact_dispatch_response (contact,
-                                                           capability,
-                                                           invocation_id,
-                                                           response);
-            }
-          else
-            {
-              g_critical ("%s : Did not find contact for %s", G_STRLOC, sender_jid);
-            }
+          dispatched = TRUE;
         }
       else
         {
-          g_critical ("%s : Unknown message type '%s'", G_STRLOC, type);
+          // FIXME we should probably report back that there's no adapter?
         }
+    }
+  else if (0 == g_strcmp0 ("event", type))
+    {
+      char const *aspect = rest_xml_node_get_attr (node, "aspect");
+      char const *args = rest_xml_node_get_attr (node, "arguments");
+      GVariant *arguments = args ? g_variant_new_parsed (args) : NULL;
+
+      dispatched = ytsg_contact_dispatch_event (contact,
+                                                capability,
+                                                aspect,
+                                                arguments);
+    }
+  else if (0 == g_strcmp0 ("response", type))
+    {
+      char const *invocation_id = rest_xml_node_get_attr (node, "invocation");
+      char const *ret = rest_xml_node_get_attr (node, "response");
+      GVariant *response = ret ? g_variant_new_parsed (ret) : NULL;
+
+      dispatched = ytsg_contact_dispatch_response (contact,
+                                                   capability,
+                                                   invocation_id,
+                                                   response);
     }
   else
     {
-      g_critical ("%s : Failed to parse message", G_STRLOC);
+      // FIXME report error
+      g_critical ("%s : Unknown message type '%s'", G_STRLOC, type);
     }
 
   g_object_unref (parser);
@@ -1353,13 +1503,19 @@ static void
 ytsg_client_init (YtsgClient *client)
 {
   client->priv = YTSG_CLIENT_GET_PRIVATE (client);
+  YtsgClientPrivate *priv = client->priv;
 
   ytsg_client_set_incoming_file_directory (client, NULL);
 
-  client->priv->services = g_hash_table_new_full (g_str_hash,
-                                                  g_str_equal,
-                                                  g_free,
-                                                  g_object_unref);
+  priv->services = g_hash_table_new_full (g_str_hash,
+                                          g_str_equal,
+                                          g_free,
+                                          g_object_unref);
+
+  priv->invocations = g_hash_table_new_full (g_str_hash,
+                                             g_str_equal,
+                                             g_free,
+                                             (GDestroyNotify) invocation_data_destroy);
 }
 
 static void
@@ -1418,6 +1574,12 @@ ytsg_client_dispose (GObject *object)
     {
       g_hash_table_destroy (priv->services);
       priv->services = NULL;
+    }
+
+  if (priv->invocations)
+    {
+      g_hash_table_destroy (priv->invocations);
+      priv->invocations = NULL;
     }
 
   G_OBJECT_CLASS (ytsg_client_parent_class)->dispose (object);

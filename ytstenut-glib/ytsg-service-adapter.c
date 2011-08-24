@@ -39,7 +39,7 @@ enum {
 
 static unsigned int _signals[N_SIGNALS] = { 0, };
 
-static void
+static bool
 _invoke (YtsgServiceAdapter *self,
          char const         *invocation_id,
          char const         *aspect,
@@ -49,6 +49,8 @@ _invoke (YtsgServiceAdapter *self,
               G_STRLOC,
               __FUNCTION__,
               G_OBJECT_TYPE_NAME (self));
+
+  return false;
 }
 
 /* Stub, the properties need to be implemented by the subclass. */
@@ -103,7 +105,7 @@ ytsg_service_adapter_class_init (YtsgServiceAdapterClass *klass)
                                G_PARAM_CONSTRUCT_ONLY);
   g_object_class_install_property (object_class, PROP_SERVICE, pspec);
 
-  // FIXME this is probably not needed at all
+  // TODO this is probably not needed at all
   pspec = g_param_spec_gtype ("service-gtype", "", "",
                               G_TYPE_NONE,
                               param_flags);
@@ -147,18 +149,29 @@ ytsg_service_adapter_init (YtsgServiceAdapter *self)
 {
 }
 
-void
+bool
 ytsg_service_adapter_invoke (YtsgServiceAdapter *self,
                              char const         *invocation_id,
                              char const         *aspect,
                              GVariant           *arguments)
 {
-  g_return_if_fail (YTSG_IS_SERVICE_ADAPTER (self));
+  bool keep_sae;
 
-  YTSG_SERVICE_ADAPTER_GET_CLASS (self)->invoke (self,
-                                                 invocation_id,
-                                                 aspect,
-                                                 arguments);
+  g_return_val_if_fail (YTSG_IS_SERVICE_ADAPTER (self), false);
+
+  keep_sae = YTSG_SERVICE_ADAPTER_GET_CLASS (self)->invoke (self,
+                                                            invocation_id,
+                                                            aspect,
+                                                            arguments);
+
+  /* This is a bit hackish, ok, but it allows for creating the variant
+   * in the invocation of this function. */
+  if (arguments &&
+      g_variant_is_floating (arguments)) {
+    g_variant_unref (arguments);
+  }
+
+  return keep_sae;
 }
 
 void

@@ -123,6 +123,12 @@ gboolean
 ytsg_client_register_service (YtsgClient  *self,
                               GObject     *service);
 
+/* Protected */
+
+unsigned int
+ytsg_client_clear_pending_responses (YtsgClient   *self,
+                                     YtsgContact  *contact);
+
 G_END_DECLS
 
 #endif /* _YTSG_CLIENT_H */

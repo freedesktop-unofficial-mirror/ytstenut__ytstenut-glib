@@ -40,7 +40,7 @@ typedef struct {
  * YtsgServiceAdapter overrides
  */
 
-static void
+static bool
 _service_adapter_invoke (YtsgServiceAdapter *self,
                          char const         *invocation_id,
                          char const         *aspect,
@@ -101,6 +101,9 @@ _service_adapter_invoke (YtsgServiceAdapter *self,
                arg_string);
     g_free (arg_string);
   }
+
+  /* No need to keep the return SAE. */
+  return false;
 }
 
 /*

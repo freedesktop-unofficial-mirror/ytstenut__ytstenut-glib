@@ -488,7 +488,10 @@ ytsg_contact_dispose (GObject *object)
 
   priv->disposed = TRUE;
 
-  priv->client = NULL;
+  if (priv->client) {
+    ytsg_client_clear_pending_responses (priv->client, YTSG_CONTACT (object));
+    priv->client = NULL;
+  }
 
   g_hash_table_destroy (priv->services);
   priv->services = NULL;
