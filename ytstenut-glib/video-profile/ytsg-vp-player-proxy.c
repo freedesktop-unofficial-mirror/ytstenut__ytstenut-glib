@@ -38,9 +38,14 @@ G_DEFINE_TYPE_WITH_CODE (YtsgVPPlayerProxy,
 
 typedef struct {
 
+  /* Properties */
   YtsgVPPlayableProxy *playable;
   bool                 playing;
   double               volume;
+
+  /* Data */
+  GHashTable  *invocations;
+
 } YtsgVPPlayerProxyPrivate;
 
 /*
@@ -50,25 +55,56 @@ typedef struct {
 static void
 _player_play (YtsgVPPlayer *self)
 {
-  ytsg_proxy_invoke (YTSG_PROXY (self), NULL, "play", NULL);
+  char *invocation_id;
+
+  invocation_id = ytsg_proxy_create_invocation_id (YTSG_PROXY (self));
+  ytsg_proxy_invoke (YTSG_PROXY (self), invocation_id, "play", NULL);
+  g_free (invocation_id);
 }
 
 static void
 _player_pause (YtsgVPPlayer *self)
 {
-  ytsg_proxy_invoke (YTSG_PROXY (self), NULL, "pause", NULL);
+  char *invocation_id;
+
+  invocation_id = ytsg_proxy_create_invocation_id (YTSG_PROXY (self));
+  ytsg_proxy_invoke (YTSG_PROXY (self), invocation_id, "pause", NULL);
+  g_free (invocation_id);
 }
 
 static void
-_player_next (YtsgVPPlayer *self)
+_player_next (YtsgVPPlayer  *self,
+              char const    *invocation_id_)
 {
-  ytsg_proxy_invoke (YTSG_PROXY (self), NULL, "next", NULL);
+  YtsgVPPlayerProxyPrivate *priv = GET_PRIVATE (self);
+  char *invocation_id;
+
+  invocation_id = invocation_id_ ?
+                    g_strdup (invocation_id_) :
+                    ytsg_proxy_create_invocation_id (YTSG_PROXY (self));
+  /* Hash takes invocation_id. */
+  g_hash_table_insert (priv->invocations,
+                       invocation_id, _player_next);
+  // TODO set timeout, well, probably in ytsg-proxy-service.c
+
+  ytsg_proxy_invoke (YTSG_PROXY (self), invocation_id, "next", NULL);
 }
 
 static void
-_player_prev (YtsgVPPlayer *self)
+_player_prev (YtsgVPPlayer  *self,
+              char const    *invocation_id_)
 {
-  ytsg_proxy_invoke (YTSG_PROXY (self), NULL, "prev", NULL);
+  YtsgVPPlayerProxyPrivate *priv = GET_PRIVATE (self);
+  char *invocation_id;
+
+  invocation_id = invocation_id_ ?
+                    g_strdup (invocation_id_) :
+                    ytsg_proxy_create_invocation_id (YTSG_PROXY (self));
+  /* Hash takes invocation_id. */
+  g_hash_table_insert (priv->invocations, invocation_id, _player_prev);
+  // TODO set timeout, well, probably in ytsg-proxy-service.c
+
+  ytsg_proxy_invoke (YTSG_PROXY (self), invocation_id, "prev", NULL);
 }
 
 static void
@@ -124,10 +160,42 @@ _proxy_service_response (YtsgProxy  *self,
                          char const *invocation_id,
                          GVariant   *response)
 {
-  /* TODO */
-    g_debug ("%s : '%s()' property not implemented yet",
-             G_STRLOC,
-             __FUNCTION__);
+  YtsgVPPlayerProxyPrivate *priv = GET_PRIVATE (self);
+  void *call;
+
+  call = g_hash_table_lookup (priv->invocations, invocation_id);
+  // TODO clear timeout, well, probably in ytsg-proxy-service.c
+
+  if (call == _player_next) {
+
+    ytsg_vp_player_next_return (YTSG_VP_PLAYER (self),
+                                invocation_id,
+                                g_variant_get_boolean (response));
+
+  } else if (call == _player_prev) {
+
+    ytsg_vp_player_prev_return (YTSG_VP_PLAYER (self),
+                                invocation_id,
+                                g_variant_get_boolean (response));
+
+  } else if (call == NULL) {
+
+    // TODO emit general response
+    g_critical ("%s : Response not found for invocation %s",
+                G_STRLOC,
+                invocation_id);
+
+  } else {
+
+    g_critical ("%s : Unknown call %p for invocation %s",
+                G_STRLOC,
+                call,
+                invocation_id);
+  }
+
+  if (call) {
+    g_hash_table_remove (priv->invocations, invocation_id);
+  }
 }
 
 /*
@@ -230,6 +298,11 @@ _dispose (GObject *object)
     priv->playable = NULL;
   }
 
+  if (priv->invocations) {
+    g_hash_table_destroy (priv->invocations);
+    priv->invocations = NULL;
+  }
+
   G_OBJECT_CLASS (ytsg_vp_player_proxy_parent_class)->dispose (object);
 }
 
@@ -269,5 +342,11 @@ ytsg_vp_player_proxy_class_init (YtsgVPPlayerProxyClass *klass)
 static void
 ytsg_vp_player_proxy_init (YtsgVPPlayerProxy *self)
 {
+  YtsgVPPlayerProxyPrivate *priv = GET_PRIVATE (self);
+
+  priv->invocations = g_hash_table_new_full (g_str_hash,
+                                             g_str_equal,
+                                             g_free,
+                                             NULL);
 }
 

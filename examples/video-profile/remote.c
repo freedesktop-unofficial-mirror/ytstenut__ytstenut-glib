@@ -69,11 +69,29 @@ _client_message (YtsgClient   *client,
 }
 
 static void
+_player_next_response (YtsgVPPlayer *player,
+                       char const   *invocation_id,
+                       bool          return_value,
+                       void         *data)
+{
+  g_debug ("YtsgVPPlayer.next() returned %s", return_value ? "true" : "false");
+}
+
+static void
+_player_prev_response (YtsgVPPlayer *player,
+                       char const   *invocation_id,
+                       bool          return_value,
+                       void         *data)
+{
+  g_debug ("YtsgVPPlayer.prev() returned %s", return_value ? "true" : "false");
+}
+
+static void
 _roster_service_added (YtsgRoster   *roster,
                        YtsgService  *service,
                        void         *data)
 {
-  YtsgProxy   *proxy;
+  YtsgProxy   *player;
   char const  *uid;
   char const  *jid;
 
@@ -84,28 +102,34 @@ _roster_service_added (YtsgRoster   *roster,
 
   if (0 == g_strcmp0 (uid, "org.freedesktop.ytstenut.MockPlayer")) {
 
-    proxy = ytsg_proxy_service_create_proxy (YTSG_PROXY_SERVICE (service),
-                                             YTSG_VP_PLAYER_CAPABILITY);
-    g_return_if_fail (proxy);
+    player = ytsg_proxy_service_create_proxy (YTSG_PROXY_SERVICE (service),
+                                              YTSG_VP_PLAYER_CAPABILITY);
+    g_return_if_fail (player);
+
+    g_signal_connect (player, "next-response",
+                      G_CALLBACK (_player_next_response), NULL);
+    g_signal_connect (player, "prev-response",
+                      G_CALLBACK (_player_prev_response), NULL);
 
     switch (_command) {
       case COMMAND_PLAY:
-        ytsg_vp_player_play (YTSG_VP_PLAYER (proxy));
+        ytsg_vp_player_play (YTSG_VP_PLAYER (player));
         break;
       case COMMAND_PAUSE:
-        ytsg_vp_player_pause (YTSG_VP_PLAYER (proxy));
+        ytsg_vp_player_pause (YTSG_VP_PLAYER (player));
         break;
       case COMMAND_NEXT:
-        ytsg_vp_player_next (YTSG_VP_PLAYER (proxy));
+        ytsg_vp_player_next (YTSG_VP_PLAYER (player), NULL);
         break;
       case COMMAND_PREV:
-        ytsg_vp_player_prev (YTSG_VP_PLAYER (proxy));
+        ytsg_vp_player_prev (YTSG_VP_PLAYER (player), NULL);
         break;
       default:
         g_debug ("%s : command %i not handled", G_STRLOC, _command);
     }
 
-    g_object_unref (proxy);
+    /* Waiting for the response */
+    /* g_object_unref (proxy); */
   }
 }
 

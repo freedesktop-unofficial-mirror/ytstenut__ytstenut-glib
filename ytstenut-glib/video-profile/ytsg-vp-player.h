@@ -56,10 +56,12 @@ struct YtsgVPPlayerInterface {
   (*pause) (YtsgVPPlayer *self);
 
   void
-  (*next) (YtsgVPPlayer *self);
+  (*next) (YtsgVPPlayer *self,
+           char const   *invocation_id);
 
   void
-  (*prev) (YtsgVPPlayer *self);
+  (*prev) (YtsgVPPlayer *self,
+           char const   *invocation_id);
 };
 
 GType
@@ -94,10 +96,24 @@ void
 ytsg_vp_player_pause (YtsgVPPlayer *self);
 
 void
-ytsg_vp_player_next (YtsgVPPlayer *self);
+ytsg_vp_player_next (YtsgVPPlayer *self,
+                     char const   *invocation_id);
 
 void
-ytsg_vp_player_prev (YtsgVPPlayer *self);
+ytsg_vp_player_prev (YtsgVPPlayer *self,
+                     char const   *invocation_id);
+
+/* Protected */
+
+void
+ytsg_vp_player_next_return (YtsgVPPlayer  *self,
+                            char const    *invocation_id,
+                            bool           response);
+
+void
+ytsg_vp_player_prev_return (YtsgVPPlayer  *self,
+                            char const    *invocation_id,
+                            bool           response);
 
 G_END_DECLS
 

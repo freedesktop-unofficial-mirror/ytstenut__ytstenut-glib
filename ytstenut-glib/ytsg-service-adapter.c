@@ -25,6 +25,7 @@ G_DEFINE_TYPE (YtsgServiceAdapter, ytsg_service_adapter, G_TYPE_OBJECT)
 
 enum {
   PROP_0,
+  PROP_CAPABILITY,
   PROP_SERVICE,
   PROP_SERVICE_GTYPE
 };
@@ -53,7 +54,6 @@ _invoke (YtsgServiceAdapter *self,
   return false;
 }
 
-/* Stub, the properties need to be implemented by the subclass. */
 static void
 _get_property (GObject      *object,
                unsigned int  property_id,
@@ -61,6 +61,12 @@ _get_property (GObject      *object,
                GParamSpec   *pspec)
 {
   switch (property_id) {
+    case PROP_CAPABILITY:
+      g_value_set_string (value,
+                          ytsg_service_adapter_get_capability (
+                            YTSG_SERVICE_ADAPTER (object)));
+      break;
+    /* Other properties need to be implemented by the subclass. */
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
@@ -84,7 +90,6 @@ ytsg_service_adapter_class_init (YtsgServiceAdapterClass *klass)
 {
   GObjectClass  *object_class = G_OBJECT_CLASS (klass);
   GParamSpec    *pspec;
-  GParamFlags param_flags;
 
   object_class->get_property = _get_property;
   object_class->set_property = _set_property;
@@ -93,22 +98,24 @@ ytsg_service_adapter_class_init (YtsgServiceAdapterClass *klass)
 
   /* Properties */
 
-  param_flags = G_PARAM_READABLE |
-                G_PARAM_STATIC_NAME |
-                G_PARAM_STATIC_NICK |
-                G_PARAM_STATIC_BLURB;
+  pspec = g_param_spec_string ("capability", "", "",
+                               NULL,
+                               G_PARAM_READABLE |
+                               G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CAPABILITY, pspec);
 
   pspec = g_param_spec_object ("service", "", "",
                                G_TYPE_OBJECT,
-                               param_flags |
-                               G_PARAM_WRITABLE |
-                               G_PARAM_CONSTRUCT_ONLY);
+                               G_PARAM_READWRITE |
+                               G_PARAM_CONSTRUCT_ONLY |
+                               G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SERVICE, pspec);
 
   // TODO this is probably not needed at all
   pspec = g_param_spec_gtype ("service-gtype", "", "",
                               G_TYPE_NONE,
-                              param_flags);
+                              G_PARAM_READABLE |
+                              G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SERVICE_GTYPE, pspec);
 
   /* Signals */
@@ -147,6 +154,28 @@ ytsg_service_adapter_class_init (YtsgServiceAdapterClass *klass)
 static void
 ytsg_service_adapter_init (YtsgServiceAdapter *self)
 {
+}
+
+char const *
+ytsg_service_adapter_get_capability (YtsgServiceAdapter *self)
+{
+  GObject     *service;
+  GParamSpec  *pspec;
+
+  g_return_val_if_fail (YTSG_IS_SERVICE_ADAPTER (self), NULL);
+
+  /* Get service object from our subclass. */
+  service = NULL;
+  g_object_get (self, "service", &service, NULL);
+  g_return_val_if_fail (service, NULL);
+
+  /* The service object implements a capability property,
+   * holding the capability as default value. */
+  pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (service),
+                                        "capability");
+  g_return_val_if_fail (G_IS_PARAM_SPEC_STRING (pspec), NULL);
+
+  return G_PARAM_SPEC_STRING (pspec)->default_value;
 }
 
 bool

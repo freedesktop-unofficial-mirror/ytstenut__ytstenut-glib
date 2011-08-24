@@ -42,8 +42,10 @@ enum {
 };
 
 typedef struct {
-  bool    playing;
-  double  volume;
+  char const    **playlist;
+  unsigned int    current;
+  bool            playing;
+  double          volume;
 } MockPlayerPrivate;
 
 /*
@@ -53,27 +55,63 @@ typedef struct {
 static void
 _player_play (YtsgVPPlayer *self)
 {
-  g_debug ("YtsgVPPlayer.play()");
+  MockPlayerPrivate *priv = GET_PRIVATE (self);
+
+  g_debug ("YtsgVPPlayer.play() with playing=%s",
+           priv->playing ? "true" : "false");
+
+  /* Let the property setter do the work. */
   ytsg_vp_player_set_playing (self, true);
 }
 
 static void
 _player_pause (YtsgVPPlayer *self)
 {
-  g_debug ("YtsgVPPlayer.pause()");
+  MockPlayerPrivate *priv = GET_PRIVATE (self);
+
+  g_debug ("YtsgVPPlayer.pause() with playing=%s",
+           priv->playing ? "true" : "false");
+
+  /* Let the property setter do the work. */
   ytsg_vp_player_set_playing (self, false);
 }
 
 static void
-_player_next (YtsgVPPlayer *self)
+_player_next (YtsgVPPlayer  *self,
+              char const    *invocation_id)
 {
-  g_debug ("YtsgVPPlayer.next()");
+  MockPlayerPrivate *priv = GET_PRIVATE (self);
+  char const  *next;
+
+  next = priv->playlist[priv->current + 1];
+  if (next) {
+    priv->current++;
+  }
+
+  g_debug ("YtsgVPPlayer.next() -- %s", next);
+
+  /* Return true if we skipped to the next item in the playlist. */
+  ytsg_vp_player_next_return (self, invocation_id, (bool) next);
 }
 
 static void
-_player_prev (YtsgVPPlayer *self)
+_player_prev (YtsgVPPlayer  *self,
+              char const    *invocation_id)
 {
-  g_debug ("YtsgVPPlayer.prev()");
+  MockPlayerPrivate *priv = GET_PRIVATE (self);
+  char const  *prev;
+
+  prev = priv->current > 0 ?
+            priv->playlist[priv->current - 1] :
+            NULL;
+  if (prev) {
+    priv->current--;
+  }
+
+  g_debug ("YtsgVPPlayer.prev() -- %s", prev);
+
+  /* Return true if we skipped to the previous item in the playlist. */
+  ytsg_vp_player_prev_return (self, invocation_id, (bool) prev);
 }
 
 static void
@@ -191,6 +229,15 @@ mock_player_class_init (MockPlayerClass *klass)
 static void
 mock_player_init (MockPlayer *self)
 {
+  MockPlayerPrivate *priv = GET_PRIVATE (self);
+  static char const *_playlist[] = {
+    "#1 foo",
+    "#2 bar",
+    "#3 baz",
+    NULL
+  };
+
+  priv->playlist = _playlist;
 }
 
 MockPlayer *

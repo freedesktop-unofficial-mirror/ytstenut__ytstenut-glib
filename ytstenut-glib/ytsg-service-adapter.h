@@ -80,6 +80,9 @@ typedef struct {
 GType
 ytsg_service_adapter_get_type (void) G_GNUC_CONST;
 
+char const *
+ytsg_service_adapter_get_capability (YtsgServiceAdapter *self);
+
 bool
 ytsg_service_adapter_invoke (YtsgServiceAdapter *self,
                              char const         *invocation_id,

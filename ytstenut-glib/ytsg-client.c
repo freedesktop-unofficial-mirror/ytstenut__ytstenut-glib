@@ -40,6 +40,7 @@
 #include "ytsg-marshal.h"
 #include "ytsg-metadata.h"
 #include "ytsg-private.h"
+#include "ytsg-response-message.h"
 #include "ytsg-roster.h"
 #include "ytsg-service-adapter.h"
 #include "ytsg-types.h"
@@ -193,8 +194,9 @@ service_data_destroy (ServiceData *self)
 #define INVOCATION_RESPONSE_TIMEOUT_S 20
 
 typedef struct {
-  YtsgClient    *client;        /* free pointer, no ref */
-  YtsgContact   *contact;       /* free pointer, no ref */
+  YtsgClient    *client;            /* free pointer, no ref */
+  YtsgContact   *contact;           /* free pointer, no ref */
+  char          *sender_service_id;
   char          *invocation_id;
   unsigned int   timeout_s;
   unsigned int   timeout_id;
@@ -210,6 +212,7 @@ invocation_data_destroy (InvocationData *self)
     self->timeout_id = 0;
   }
 
+  g_free (self->sender_service_id);
   g_free (self->invocation_id);
   g_free (self);
 }
@@ -219,12 +222,10 @@ client_conclude_invocation (YtsgClient  *self,
                             char const  *invocation_id)
 {
   YtsgClientPrivate *priv = self->priv;
-  InvocationData  *data;
+  bool found;
 
-  data = g_hash_table_lookup (priv->invocations, invocation_id);
-  if (data) {
-    invocation_data_destroy (data);
-  } else {
+  found = g_hash_table_remove (priv->invocations, invocation_id);
+  if (!found) {
     g_warning ("%s : Pending invocation for ID %s not found",
                G_STRLOC,
                invocation_id);
@@ -254,6 +255,7 @@ _invocation_timeout (InvocationData *self)
 static InvocationData *
 invocation_data_create (YtsgClient    *client,
                         YtsgContact   *contact,
+                        char const    *sender_service_id,
                         char const    *invocation_id,
                         unsigned int   timeout_s)
 {
@@ -262,6 +264,7 @@ invocation_data_create (YtsgClient    *client,
   self = g_new0 (InvocationData, 1);
   self->client = client;
   self->contact = contact;
+  self->sender_service_id = g_strdup (sender_service_id);
   self->invocation_id = g_strdup (invocation_id);
   self->timeout_s = timeout_s;
   self->timeout_id = g_timeout_add_seconds (timeout_s,
@@ -274,7 +277,8 @@ invocation_data_create (YtsgClient    *client,
 static bool
 client_establish_invocation (YtsgClient   *self,
                              char const   *invocation_id,
-                             YtsgContact  *contact)
+                             YtsgContact  *contact,
+                             char const   *sender_service_id)
 {
   YtsgClientPrivate *priv = self->priv;
   InvocationData *invocation_data;
@@ -291,6 +295,7 @@ client_establish_invocation (YtsgClient   *self,
 
   invocation_data = invocation_data_create (self,
                                             contact,
+                                            sender_service_id,
                                             invocation_id,
                                             INVOCATION_RESPONSE_TIMEOUT_S);
   g_hash_table_insert (priv->invocations,
@@ -1182,6 +1187,7 @@ dispatch_to_service (YtsgClient *self,
   YtsgClientPrivate *priv = self->priv;
   RestXmlParser *parser;
   RestXmlNode   *node;
+  char const    *sender_service_id;
   char const    *capability;
   char const    *type;
   YtsgContact   *contact;
@@ -1192,6 +1198,15 @@ dispatch_to_service (YtsgClient *self,
   if (NULL == node) {
     // FIXME report error
     g_critical ("%s : Failed to parse message '%s'", G_STRLOC, xml);
+    return false;
+  }
+
+  sender_service_id = rest_xml_node_get_attr (node, "from-service");
+  if (NULL == sender_service_id) {
+    // FIXME report error
+    g_critical ("%s : Malformed message, 'from-service' missing in '%s'",
+                G_STRLOC,
+                xml);
     return false;
   }
 
@@ -1235,7 +1250,11 @@ dispatch_to_service (YtsgClient *self,
           char const *args = rest_xml_node_get_attr (node, "arguments");
           GVariant *arguments = args ? g_variant_new_parsed (args) : NULL;
 
-          client_establish_invocation (self, invocation_id, contact);
+          // FIXME check return value
+          client_establish_invocation (self,
+                                       invocation_id,
+                                       contact,
+                                       sender_service_id);
           keep_sae = ytsg_service_adapter_invoke (adapter,
                                                   invocation_id,
                                                   aspect,
@@ -3016,7 +3035,31 @@ _adapter_response (YtsgServiceAdapter *adapter,
                    GVariant           *return_value,
                    YtsgClient         *self)
 {
-  // todo
+  YtsgClientPrivate *priv = self->priv;
+  InvocationData  *invocation;
+  char const      *capability;
+  YtsgMetadata    *message;
+
+  invocation = g_hash_table_lookup (priv->invocations, invocation_id);
+  if (NULL == invocation) {
+    // FIXME report error
+    g_critical ("%s : Data not found to respond to invocation %s",
+                G_STRLOC,
+                invocation_id);
+  }
+
+  capability = ytsg_service_adapter_get_capability (adapter);
+  message = ytsg_response_message_new (capability,
+                                       invocation_id,
+                                       return_value);
+
+  _ytsg_client_send_message (self,
+                             invocation->contact,
+                             invocation->sender_service_id,
+                             message);
+  g_object_unref (message);
+
+  client_conclude_invocation (self, invocation_id);
 }
 
 static void

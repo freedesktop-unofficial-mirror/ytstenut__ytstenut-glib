@@ -20,6 +20,9 @@ TODO
 * Implement capabilities boxed type and use it everywhere.
 * Implement error message handling on the client side, or do away with it altogether, or maybe rename to exception. Or maybe just make it an event?
 * Use exported symbols list when linking and generate sections.txt from it and, say, sections.txt.in, using "ytsg_client_*" and the like.
+* Merge Event and Response classes, and use them instead of InvocationData, so they just need to be filled and sent out.
+* Maybe the message class should be initially unowned as well.
+* ServiceAdapater and Proxy classes should probably be abstract, maybe have a generic implementation subclass one day.
 
 Code Review
 -----------

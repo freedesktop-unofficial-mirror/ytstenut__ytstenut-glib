@@ -125,21 +125,13 @@ ytsg_proxy_init (YtsgProxy *self)
 {
 }
 
-YtsgProxy *
-ytsg_proxy_new (char const *capability)
-{
-  g_return_val_if_fail (capability, NULL);
-
-  return g_object_new (YTSG_TYPE_PROXY,
-                       "capability", capability,
-                       NULL);
-}
-
-static char *
-create_invocation_id (YtsgProxy *self)
+char *
+ytsg_proxy_create_invocation_id (YtsgProxy *self)
 {
   static GRand  *_rand = NULL;
   char          *invocation_id;
+
+  /* PONDERING: introduce a typedef for the invocation-id and GSlice it. */
 
   if (_rand == NULL) {
     _rand = g_rand_new ();
@@ -150,26 +142,30 @@ create_invocation_id (YtsgProxy *self)
   return invocation_id;
 }
 
+YtsgProxy *
+ytsg_proxy_new (char const *capability)
+{
+  g_return_val_if_fail (capability, NULL);
+
+  return g_object_new (YTSG_TYPE_PROXY,
+                       "capability", capability,
+                       NULL);
+}
+
 void
 ytsg_proxy_invoke (YtsgProxy  *self,
                    char const *invocation_id,
                    char const *aspect,
                    GVariant   *arguments)
 {
-  char *auto_id;
-
   g_return_if_fail (YTSG_IS_PROXY (self));
+  g_return_if_fail (invocation_id);
   g_return_if_fail (aspect);
 
-  auto_id = invocation_id ? NULL : create_invocation_id (self);
-
   g_signal_emit (self, _signals[INVOKE_SERVICE_SIGNAL], 0,
-                 invocation_id ? invocation_id : auto_id,
+                 invocation_id,
                  aspect,
                  arguments);
-
-  if (auto_id)
-    g_free (auto_id);
 
   /* This is a bit hackish, ok, but it allows for creating the variant
    * in the invocation of this function. */

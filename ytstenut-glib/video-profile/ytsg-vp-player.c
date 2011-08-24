@@ -18,12 +18,21 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include "ytsg-marshal.h"
 #include "ytsg-vp-playable.h"
 #include "ytsg-vp-player.h"
 
 G_DEFINE_INTERFACE (YtsgVPPlayer,
                     ytsg_vp_player,
                     G_TYPE_OBJECT)
+
+enum {
+  SIG_NEXT_RESPONSE,
+  SIG_PREV_RESPONSE,
+  N_SIGNALS
+};
+
+unsigned int _signals[N_SIGNALS] = { 0, };
 
 static void
 _play (YtsgVPPlayer *self)
@@ -42,7 +51,8 @@ _pause (YtsgVPPlayer *self)
 }
 
 static void
-_next (YtsgVPPlayer *self)
+_next (YtsgVPPlayer *self,
+       char const   *invocation_id)
 {
   g_critical ("%s : Method YtsgVPPlayer.next() not implemented by %s",
               G_STRLOC,
@@ -50,7 +60,8 @@ _next (YtsgVPPlayer *self)
 }
 
 static void
-_prev (YtsgVPPlayer *self)
+_prev (YtsgVPPlayer *self,
+       char const   *invocation_id)
 {
   g_critical ("%s : Method YtsgVPPlayer.prev() not implemented by %s",
               G_STRLOC,
@@ -87,6 +98,24 @@ ytsg_vp_player_default_init (YtsgVPPlayerInterface *interface)
                                        g_param_spec_double ("volume", "", "",
                                                             0.0, 1.0, 0.5,
                                                             G_PARAM_READWRITE));
+
+  /* Signals */
+
+  _signals[SIG_NEXT_RESPONSE] = g_signal_new ("next-response",
+                                              YTSG_VP_TYPE_PLAYER,
+                                              G_SIGNAL_RUN_LAST,
+                                              0, NULL, NULL,
+                                              ytsg_marshal_VOID__STRING_BOOLEAN,
+                                              G_TYPE_NONE,
+                                              2, G_TYPE_STRING, G_TYPE_BOOLEAN);
+
+  _signals[SIG_PREV_RESPONSE] = g_signal_new ("prev-response",
+                                               YTSG_VP_TYPE_PLAYER,
+                                               G_SIGNAL_RUN_LAST,
+                                               0, NULL, NULL,
+                                               ytsg_marshal_VOID__STRING_BOOLEAN,
+                                               G_TYPE_NONE,
+                                               2, G_TYPE_STRING, G_TYPE_BOOLEAN);
 }
 
 YtsgVPPlayable *
@@ -169,18 +198,42 @@ ytsg_vp_player_pause (YtsgVPPlayer *self)
 }
 
 void
-ytsg_vp_player_next (YtsgVPPlayer *self)
+ytsg_vp_player_next (YtsgVPPlayer *self,
+                     char const   *invocation_id)
 {
   g_return_if_fail (YTSG_VP_IS_PLAYER (self));
 
-  YTSG_VP_PLAYER_GET_INTERFACE (self)->next (self);
+  YTSG_VP_PLAYER_GET_INTERFACE (self)->next (self, invocation_id);
 }
 
 void
-ytsg_vp_player_prev (YtsgVPPlayer *self)
+ytsg_vp_player_next_return (YtsgVPPlayer  *self,
+                            char const    *invocation_id,
+                            bool           response)
 {
   g_return_if_fail (YTSG_VP_IS_PLAYER (self));
 
-  YTSG_VP_PLAYER_GET_INTERFACE (self)->prev (self);
+  g_signal_emit (self, _signals[SIG_NEXT_RESPONSE], 0,
+                 invocation_id, response);
+}
+
+void
+ytsg_vp_player_prev (YtsgVPPlayer *self,
+                     char const   *invocation_id)
+{
+  g_return_if_fail (YTSG_VP_IS_PLAYER (self));
+
+  YTSG_VP_PLAYER_GET_INTERFACE (self)->prev (self, invocation_id);
+}
+
+void
+ytsg_vp_player_prev_return (YtsgVPPlayer  *self,
+                            char const    *invocation_id,
+                            bool           response)
+{
+  g_return_if_fail (YTSG_VP_IS_PLAYER (self));
+
+  g_signal_emit (self, _signals[SIG_PREV_RESPONSE], 0,
+                 invocation_id, response);
 }
 

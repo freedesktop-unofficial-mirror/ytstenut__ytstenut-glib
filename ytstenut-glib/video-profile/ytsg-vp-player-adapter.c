@@ -47,6 +47,7 @@ _service_adapter_invoke (YtsgServiceAdapter *self,
                          GVariant           *arguments)
 {
   YtsgVPPlayerAdapterPrivate *priv = GET_PRIVATE (self);
+  bool keep_sae = false;
 
   /* Properties */
 
@@ -83,11 +84,17 @@ _service_adapter_invoke (YtsgServiceAdapter *self,
 
   } else if (0 == g_strcmp0 ("next", aspect)) {
 
-    ytsg_vp_player_next (priv->player);
+    ytsg_vp_player_next (priv->player, invocation_id);
+    /* This method responds whether it could skip to next,
+     * so keep the return envelope. */
+    keep_sae = true;
 
   } else if (0 == g_strcmp0 ("prev", aspect)) {
 
-    ytsg_vp_player_prev (priv->player);
+    ytsg_vp_player_prev (priv->player, invocation_id);
+    /* This method responds whether it could skip to next,
+     * so keep the return envelope. */
+    keep_sae = true;
 
   } else {
 
@@ -102,8 +109,7 @@ _service_adapter_invoke (YtsgServiceAdapter *self,
     g_free (arg_string);
   }
 
-  /* No need to keep the return SAE. */
-  return false;
+  return keep_sae;
 }
 
 /*
@@ -139,9 +145,9 @@ _player_notify_playing (YtsgVPPlayer         *player,
 }
 
 static void
-_player_volume_playable (YtsgVPPlayer         *player,
-                         GParamSpec           *pspec,
-                         YtsgVPPlayerAdapter  *self)
+_player_notify_volume (YtsgVPPlayer         *player,
+                       GParamSpec           *pspec,
+                       YtsgVPPlayerAdapter  *self)
 {
   double volume;
 
@@ -149,6 +155,28 @@ _player_volume_playable (YtsgVPPlayer         *player,
   ytsg_service_adapter_send_event (YTSG_SERVICE_ADAPTER (self),
                                    "volume",
                                    g_variant_new_double (volume));
+}
+
+static void
+_player_next_response (YtsgVPPlayer         *player,
+                       char const           *invocation_id,
+                       bool                  return_value,
+                       YtsgVPPlayerAdapter  *self)
+{
+  ytsg_service_adapter_send_response (YTSG_SERVICE_ADAPTER (self),
+                                      invocation_id,
+                                      g_variant_new_boolean (return_value));
+}
+
+static void
+_player_prev_response (YtsgVPPlayer         *player,
+                       char const           *invocation_id,
+                       bool                  return_value,
+                       YtsgVPPlayerAdapter  *self)
+{
+  ytsg_service_adapter_send_response (YTSG_SERVICE_ADAPTER (self),
+                                      invocation_id,
+                                      g_variant_new_boolean (return_value));
 }
 
 static void
@@ -208,7 +236,12 @@ _set_property (GObject      *object,
       g_signal_connect (priv->player, "notify::playing",
                         G_CALLBACK (_player_notify_playing), object);
       g_signal_connect (priv->player, "notify::volume",
-                        G_CALLBACK (_player_volume_playable), object);
+                        G_CALLBACK (_player_notify_volume), object);
+
+      g_signal_connect (priv->player, "next-response",
+                        G_CALLBACK (_player_next_response), object);
+      g_signal_connect (priv->player, "prev-response",
+                        G_CALLBACK (_player_prev_response), object);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);

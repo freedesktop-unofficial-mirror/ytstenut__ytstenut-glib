@@ -148,6 +148,9 @@ _proxy_invoke_service (YtsgProxy        *proxy,
                                          aspect,
                                          arguments);
 
+  // TODO maybe we should attach the invocation-id to the contact
+  // and handle the timeout here, so handling the response is simpler.
+
   _ytsg_client_send_message (client, contact, uid, message);
 
   g_object_unref (message);
