@@ -118,8 +118,7 @@ _service_adapter_invoke (YtsgServiceAdapter *self,
 
 enum {
   PROP_0 = 0,
-  PROP_SERVICE_ADAPTER_SERVICE,
-  PROP_SERVICE_ADAPTER_SERVICE_GTYPE
+  PROP_SERVICE_ADAPTER_SERVICE
 };
 
 static void
@@ -198,9 +197,6 @@ _get_property (GObject      *object,
   YtsgVPPlayerAdapterPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
-    case PROP_SERVICE_ADAPTER_SERVICE_GTYPE:
-      g_value_set_gtype (value, YTSG_VP_TYPE_PLAYER);
-      break;
     case PROP_SERVICE_ADAPTER_SERVICE:
       g_value_set_object (value, priv->player);
       break;
@@ -284,10 +280,6 @@ ytsg_vp_player_adapter_class_init (YtsgVPPlayerAdapterClass *klass)
   g_object_class_override_property (object_class,
                                     PROP_SERVICE_ADAPTER_SERVICE,
                                     "service");
-
-  g_object_class_override_property (object_class,
-                                    PROP_SERVICE_ADAPTER_SERVICE_GTYPE,
-                                    "service-gtype");
 }
 
 static void

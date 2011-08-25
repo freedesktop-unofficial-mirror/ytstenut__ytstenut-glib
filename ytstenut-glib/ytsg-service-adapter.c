@@ -26,8 +26,7 @@ G_DEFINE_TYPE (YtsgServiceAdapter, ytsg_service_adapter, G_TYPE_OBJECT)
 enum {
   PROP_0,
   PROP_CAPABILITY,
-  PROP_SERVICE,
-  PROP_SERVICE_GTYPE
+  PROP_SERVICE
 };
 
 enum {
@@ -110,13 +109,6 @@ ytsg_service_adapter_class_init (YtsgServiceAdapterClass *klass)
                                G_PARAM_CONSTRUCT_ONLY |
                                G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SERVICE, pspec);
-
-  // TODO this is probably not needed at all
-  pspec = g_param_spec_gtype ("service-gtype", "", "",
-                              G_TYPE_NONE,
-                              G_PARAM_READABLE |
-                              G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_SERVICE_GTYPE, pspec);
 
   /* Signals */
 

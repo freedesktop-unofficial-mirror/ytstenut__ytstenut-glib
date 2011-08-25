@@ -91,8 +91,7 @@ _service_adapter_invoke (YtsgServiceAdapter *self,
 
 enum {
   PROP_0 = 0,
-  PROP_SERVICE_ADAPTER_SERVICE,
-  PROP_SERVICE_ADAPTER_SERVICE_GTYPE
+  PROP_SERVICE_ADAPTER_SERVICE
 };
 
 static void
@@ -116,9 +115,6 @@ _get_property (GObject      *object,
   switch (property_id) {
     case PROP_SERVICE_ADAPTER_SERVICE:
       g_value_set_gtype (value, YTSG_TYPE_PROFILE);
-      break;
-    case PROP_SERVICE_ADAPTER_SERVICE_GTYPE:
-      g_value_set_object (value, priv->profile);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -188,10 +184,6 @@ ytsg_profile_adapter_class_init (YtsgProfileAdapterClass *klass)
   g_object_class_override_property (object_class,
                                     PROP_SERVICE_ADAPTER_SERVICE,
                                     "service");
-
-  g_object_class_override_property (object_class,
-                                    PROP_SERVICE_ADAPTER_SERVICE_GTYPE,
-                                    "service-gtype");
 }
 
 static void
