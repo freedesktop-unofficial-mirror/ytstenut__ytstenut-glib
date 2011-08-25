@@ -23,6 +23,8 @@ TODO
 * Merge Event and Response classes, and use them instead of InvocationData, so they just need to be filled and sent out.
 * Maybe the message class should be initially unowned as well.
 * ServiceAdapater and Proxy classes should probably be abstract, maybe have a generic implementation subclass one day.
+* Every response should possibly be an error I guess.
+* Should there be a response for void returning invocations, and should it just be a NULL error if all went well? -- probably not, but there should be a response signal for every method in case an error occurred.
 
 Code Review
 -----------
