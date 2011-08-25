@@ -67,14 +67,15 @@ source_c =						\
 		$(srcdir)/ytsg-error-message.c \
 		$(srcdir)/ytsg-event-message.c \
 		$(srcdir)/ytsg-invocation-message.c \
-		$(srcdir)/ytsg-profile.c \
-		$(srcdir)/ytsg-profile-impl.c \
-		$(srcdir)/ytsg-profile-adapter.c \
 		$(srcdir)/ytsg-proxy.c \
 		$(srcdir)/ytsg-proxy-service.c \
 		$(srcdir)/ytsg-response-message.c \
 		$(srcdir)/ytsg-service-adapter.c \
 		\
+		$(srcdir)/profile/ytsg-profile.c \
+		$(srcdir)/profile/ytsg-profile-impl.c \
+		$(srcdir)/profile/ytsg-profile-adapter.c \
+    \
 		$(srcdir)/video-profile/ytsg-vp-content.c \
 		$(srcdir)/video-profile/ytsg-vp-playable.c \
 		$(srcdir)/video-profile/ytsg-vp-playable-proxy.c \
@@ -88,9 +89,9 @@ source_c =						\
 		$(NULL)
 
 private_h = \
-		$(srcdir)/ytsg-profile.h \
-		$(srcdir)/ytsg-profile-impl.h \
-		$(srcdir)/ytsg-profile-adapter.h \
+		$(srcdir)/profile/ytsg-profile.h \
+		$(srcdir)/profile/ytsg-profile-impl.h \
+		$(srcdir)/profile/ytsg-profile-adapter.h \
 		$(srcdir)/video-profile/ytsg-vp-playable-proxy.h \
 		$(srcdir)/video-profile/ytsg-vp-player-adapter.h \
 		$(srcdir)/video-profile/ytsg-vp-player-proxy.h \
