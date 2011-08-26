@@ -18,12 +18,21 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include "ytsg-marshal.h"
 #include "ytsg-profile.h"
+#include "ytsg-proxy.h"
 
 G_DEFINE_INTERFACE (YtsgProfile,
                     ytsg_profile,
                     G_TYPE_OBJECT)
 
+enum {
+  SIG_REGISTER_PROXY_RESPONSE,
+  SIG_UNREGISTER_PROXY_RESPONSE,
+  N_SIGNALS
+};
+
+static unsigned int _signals[N_SIGNALS] = { 0, };
 
 static void
 _register_proxy (YtsgProfile  *self,
@@ -65,6 +74,26 @@ ytsg_profile_default_init (YtsgProfileInterface *interface)
                               G_PARAM_CONSTRUCT_ONLY |
                               G_PARAM_STATIC_STRINGS);
   g_object_interface_install_property (interface, pspec);
+
+  /* Signals */
+
+  _signals[SIG_REGISTER_PROXY_RESPONSE] = g_signal_new (
+                                              "register-proxy-response",
+                                              YTSG_TYPE_PROFILE,
+                                              G_SIGNAL_RUN_LAST,
+                                              0, NULL, NULL,
+                                              ytsg_marshal_VOID__STRING_BOOLEAN,
+                                              G_TYPE_NONE,
+                                              2, G_TYPE_STRING, G_TYPE_BOOLEAN);
+
+  _signals[SIG_UNREGISTER_PROXY_RESPONSE] = g_signal_new (
+                                              "unregister-proxy-response",
+                                              YTSG_TYPE_PROFILE,
+                                              G_SIGNAL_RUN_LAST,
+                                              0, NULL, NULL,
+                                              ytsg_marshal_VOID__STRING_BOOLEAN,
+                                              G_TYPE_NONE,
+                                              2, G_TYPE_STRING, G_TYPE_BOOLEAN);
 }
 
 GStrv
@@ -102,5 +131,27 @@ ytsg_profile_unregister_proxy (YtsgProfile  *self,
   YTSG_PROFILE_GET_INTERFACE (self)->unregister_proxy (self,
                                                        invocation_id,
                                                        capability);
+}
+
+void
+ytsg_profile_register_proxy_return (YtsgProfile *self,
+                                    char const  *invocation_id,
+                                    bool         return_value)
+{
+  g_return_if_fail (YTSG_IS_PROFILE (self));
+
+  g_signal_emit (self, _signals[SIG_REGISTER_PROXY_RESPONSE], 0,
+                 invocation_id, return_value);
+}
+
+void
+ytsg_profile_unregister_proxy_return (YtsgProfile *self,
+                                      char const  *invocation_id,
+                                      bool         return_value)
+{
+  g_return_if_fail (YTSG_IS_PROFILE (self));
+
+  g_signal_emit (self, _signals[SIG_UNREGISTER_PROXY_RESPONSE], 0,
+                 invocation_id, return_value);
 }
 

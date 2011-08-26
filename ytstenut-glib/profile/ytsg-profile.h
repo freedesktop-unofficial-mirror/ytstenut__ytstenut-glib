@@ -77,6 +77,18 @@ ytsg_profile_unregister_proxy (YtsgProfile  *self,
                                char const   *invocation_id,
                                char const   *capability);
 
+/* Protected */
+
+void
+ytsg_profile_register_proxy_return (YtsgProfile *self,
+                                    char const  *invocation_id,
+                                    bool         return_value);
+
+void
+ytsg_profile_unregister_proxy_return (YtsgProfile *self,
+                                      char const  *invocation_id,
+                                      bool         return_value);
+
 G_END_DECLS
 
 #endif /* YTSG_PROFILE_H */

@@ -524,10 +524,10 @@ create_service (YtsgRoster   *self,
                 GHashTable   *names)
 {
   static char const *known_caps[] = {
-    "org.freedesktop.ytstenut.VideoService.Content",
-    "org.freedesktop.ytstenut.VideoService.Player",
-    "org.freedesktop.ytstenut.VideoService.Transcript",
-    "org.freedesktop.ytstenut.VideoService.Transfer",
+    "org.freedesktop.ytstenut.VideoProfile.Content",
+    "org.freedesktop.ytstenut.VideoProfile.Player",
+    "org.freedesktop.ytstenut.VideoProfile.Transcript",
+    "org.freedesktop.ytstenut.VideoProfile.Transfer",
     NULL
   };
 

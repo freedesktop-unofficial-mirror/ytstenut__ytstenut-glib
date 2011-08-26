@@ -25,6 +25,8 @@ TODO
 * ServiceAdapater and Proxy classes should probably be abstract, maybe have a generic implementation subclass one day.
 * Every response should possibly be an error I guess.
 * Should there be a response for void returning invocations, and should it just be a NULL error if all went well? -- probably not, but there should be a response signal for every method in case an error occurred.
+* Service should probably be called something else. Probably Facet. A Profile is made up of Facets, consisting of Aspects. Liking it. Very leet.
+* Should probably pull out all of the profile handling of YtsgClient into a class of its own. YtsgServiceManager?
 
 Code Review
 -----------

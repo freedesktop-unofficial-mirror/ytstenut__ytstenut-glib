@@ -25,7 +25,7 @@
 
 G_DEFINE_TYPE (YtsgProfileAdapter,
                ytsg_profile_adapter,
-               YTSG_TYPE_PROFILE_ADAPTER)
+               YTSG_TYPE_SERVICE_ADAPTER)
 
 #define GET_PRIVATE(o)                                      \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o),                        \
@@ -95,6 +95,28 @@ enum {
 };
 
 static void
+_profile_register_proxy_response (YtsgProfile         *profile,
+                                  char const          *invocation_id,
+                                  bool                 return_value,
+                                  YtsgProfileAdapter  *self)
+{
+  ytsg_service_adapter_send_response (YTSG_SERVICE_ADAPTER (self),
+                                      invocation_id,
+                                      g_variant_new_boolean (return_value));
+}
+
+static void
+_profile_unregister_proxy_response (YtsgProfile         *profile,
+                                    char const          *invocation_id,
+                                    bool                 return_value,
+                                    YtsgProfileAdapter  *self)
+{
+  ytsg_service_adapter_send_response (YTSG_SERVICE_ADAPTER (self),
+                                      invocation_id,
+                                      g_variant_new_boolean (return_value));
+}
+
+static void
 _profile_destroyed (YtsgProfileAdapter  *self,
                     void                *stale_profile_ptr)
 {
@@ -110,8 +132,6 @@ _get_property (GObject      *object,
                GValue       *value,
                GParamSpec   *pspec)
 {
-  YtsgProfileAdapterPrivate *priv = GET_PRIVATE (object);
-
   switch (property_id) {
     case PROP_SERVICE_ADAPTER_SERVICE:
       g_value_set_gtype (value, YTSG_TYPE_PROFILE);
@@ -142,6 +162,12 @@ _set_property (GObject      *object,
       g_object_weak_ref (G_OBJECT (priv->profile),
                          (GWeakNotify) _profile_destroyed,
                          object);
+
+      g_signal_connect (priv->profile, "register-proxy-response",
+                        G_CALLBACK (_profile_register_proxy_response), object);
+      g_signal_connect (priv->profile, "unregister-proxy-response",
+                        G_CALLBACK (_profile_unregister_proxy_response), object);
+
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);

@@ -31,7 +31,7 @@ G_DEFINE_TYPE_WITH_CODE (YtsgProfileImpl,
                                                 _profile_interface_init))
 
 #define GET_PRIVATE(o) \
-  (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTSG_TYPE_PROFILE, YtsgProfileImplPrivate))
+  (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTSG_TYPE_PROFILE_IMPL, YtsgProfileImplPrivate))
 
 enum {
   PROP_0,
@@ -43,8 +43,8 @@ enum {
 };
 
 typedef struct {
-  GStrv       *capabilities;
-  YtsgClient  *client;
+  GStrv        capabilities;
+  YtsgClient  *client;        /* free pointer */
 } YtsgProfileImplPrivate;
 
 /*
@@ -56,7 +56,56 @@ _register_proxy (YtsgProfile  *self,
                  char const   *invocation_id,
                  char const   *capability)
 {
-  // TODO
+  YtsgProfileImplPrivate *priv = GET_PRIVATE (self);
+  YtsgContact const *contact;
+  char const        *proxy_id;
+  bool               found;
+  bool               ret;
+  int                i;
+
+  found = false;
+  for (i = 0; priv->capabilities[i]; i++) {
+    if (0 == g_strcmp0 (priv->capabilities[i], capability)) {
+      found = true;
+      break;
+    }
+  }
+
+  if (!found) {
+    g_critical ("%s : Capability %s not available in profile",
+                G_STRLOC,
+                capability);
+    ytsg_profile_register_proxy_return (self, invocation_id, false);
+    return;
+  }
+
+  ret = ytsg_client_get_invocation_proxy (priv->client,
+                                          invocation_id,
+                                          &contact,
+                                          &proxy_id);
+  if (!ret) {
+    g_critical ("%s : Failed to get proxy info for %s",
+                G_STRLOC,
+                capability);
+    ytsg_profile_register_proxy_return (self, invocation_id, false);
+    return;
+  }
+
+  ret = ytsg_client_register_proxy (priv->client,
+                                    capability,
+                                    contact,
+                                    proxy_id);
+  if (!ret) {
+    g_critical ("%s : Failed to register proxy %s:%s for %s",
+                G_STRLOC,
+                ytsg_contact_get_jid (contact),
+                proxy_id,
+                capability);
+    ytsg_profile_register_proxy_return (self, invocation_id, false);
+    return;
+  }
+
+  ytsg_profile_register_proxy_return (self, invocation_id, true);
 }
 
 static void
@@ -64,7 +113,56 @@ _unregister_proxy (YtsgProfile  *self,
                    char const   *invocation_id,
                    char const   *capability)
 {
-  // TODO
+  YtsgProfileImplPrivate *priv = GET_PRIVATE (self);
+  YtsgContact const *contact;
+  char const        *proxy_id;
+  bool               found;
+  bool               ret;
+  int                i;
+
+  found = false;
+  for (i = 0; priv->capabilities[i]; i++) {
+    if (0 == g_strcmp0 (priv->capabilities[i], capability)) {
+      found = true;
+      break;
+    }
+  }
+
+  if (!found) {
+    g_critical ("%s : Capability %s not available in profile",
+                G_STRLOC,
+                capability);
+    ytsg_profile_unregister_proxy_return (self, invocation_id, false);
+    return;
+  }
+
+  ret = ytsg_client_get_invocation_proxy (priv->client,
+                                          invocation_id,
+                                          &contact,
+                                          &proxy_id);
+  if (!ret) {
+    g_critical ("%s : Failed to get proxy info for %s",
+                G_STRLOC,
+                capability);
+    ytsg_profile_unregister_proxy_return (self, invocation_id, false);
+    return;
+  }
+
+  ret = ytsg_client_unregister_proxy (priv->client,
+                                      capability,
+                                      contact,
+                                      proxy_id);
+  if (!ret) {
+    g_critical ("%s : Failed to unregister proxy %s:%s for %s",
+                G_STRLOC,
+                ytsg_contact_get_jid (contact),
+                proxy_id,
+                capability);
+    ytsg_profile_unregister_proxy_return (self, invocation_id, false);
+    return;
+  }
+
+  ytsg_profile_unregister_proxy_return (self, invocation_id, true);
 }
 
 static void
@@ -108,6 +206,10 @@ _set_property (GObject      *object,
       /* Construct-only */
       g_return_if_fail (priv->capabilities == NULL);
       priv->capabilities = g_value_dup_boxed (value);
+      break;
+    case PROP_CLIENT:
+      /* Construct-only */
+      priv->client = g_value_get_object (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -171,7 +273,7 @@ YtsgProfileImpl *
 ytsg_profile_impl_new (GStrv const   capabilities,
                        YtsgClient   *client)
 {
-  return g_object_new (YTSG_TYPE_PROFILE,
+  return g_object_new (YTSG_TYPE_PROFILE_IMPL,
                        "capabilities",  capabilities,
                        "client",        client,
                        NULL);

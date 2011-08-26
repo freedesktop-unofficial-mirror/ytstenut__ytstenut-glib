@@ -190,13 +190,13 @@ ytsg_proxy_service_create_proxy (YtsgProxyService *self,
     char const *capability;
     GType       gtype;
   } proxies[] = {
-//    { "org.freedesktop.ytstenut.VideoService.Content",
+//    { "org.freedesktop.ytstenut.VideoProfile.Content",
 //      ytsg_vp_content_proxy_get_type () },
-    { "org.freedesktop.ytstenut.VideoService.Player",
+    { "org.freedesktop.ytstenut.VideoProfile.Player",
       ytsg_vp_player_proxy_get_type () },
-//    { "org.freedesktop.ytstenut.VideoService.Transcript",
+//    { "org.freedesktop.ytstenut.VideoProfile.Transcript",
 //      ytsg_vp_transcript_proxy_get_type () },
-//    { "org.freedesktop.ytstenut.VideoService.Transfer",
+//    { "org.freedesktop.ytstenut.VideoProfile.Transfer",
 //      ytsg_vp_transfer_proxy_get_type () },
     { NULL }
   };

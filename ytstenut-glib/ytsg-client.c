@@ -47,6 +47,9 @@
 
 #include "empathy-tp-file.h"
 
+#include "profile/ytsg-profile-adapter.h"
+#include "profile/ytsg-profile-impl.h"
+
 #include <string.h>
 #include <rest/rest-xml-parser.h>
 #include <telepathy-glib/telepathy-glib.h>
@@ -114,6 +117,9 @@ struct _YtsgClientPrivate
 
   /* Ongoing invocations */
   GHashTable  *invocations;
+
+  /* Registered proxies */
+  GHashTable *proxies;
 
   /* callback ids */
   guint reconnect_id;
@@ -196,7 +202,7 @@ service_data_destroy (ServiceData *self)
 typedef struct {
   YtsgClient    *client;            /* free pointer, no ref */
   YtsgContact   *contact;           /* free pointer, no ref */
-  char          *sender_service_id;
+  char          *proxy_id;
   char          *invocation_id;
   unsigned int   timeout_s;
   unsigned int   timeout_id;
@@ -212,7 +218,7 @@ invocation_data_destroy (InvocationData *self)
     self->timeout_id = 0;
   }
 
-  g_free (self->sender_service_id);
+  g_free (self->proxy_id);
   g_free (self->invocation_id);
   g_free (self);
 }
@@ -255,7 +261,7 @@ _invocation_timeout (InvocationData *self)
 static InvocationData *
 invocation_data_create (YtsgClient    *client,
                         YtsgContact   *contact,
-                        char const    *sender_service_id,
+                        char const    *proxy_id,
                         char const    *invocation_id,
                         unsigned int   timeout_s)
 {
@@ -264,7 +270,7 @@ invocation_data_create (YtsgClient    *client,
   self = g_new0 (InvocationData, 1);
   self->client = client;
   self->contact = contact;
-  self->sender_service_id = g_strdup (sender_service_id);
+  self->proxy_id = g_strdup (proxy_id);
   self->invocation_id = g_strdup (invocation_id);
   self->timeout_s = timeout_s;
   self->timeout_id = g_timeout_add_seconds (timeout_s,
@@ -278,7 +284,7 @@ static bool
 client_establish_invocation (YtsgClient   *self,
                              char const   *invocation_id,
                              YtsgContact  *contact,
-                             char const   *sender_service_id)
+                             char const   *proxy_id)
 {
   YtsgClientPrivate *priv = self->priv;
   InvocationData *invocation_data;
@@ -295,7 +301,7 @@ client_establish_invocation (YtsgClient   *self,
 
   invocation_data = invocation_data_create (self,
                                             contact,
-                                            sender_service_id,
+                                            proxy_id,
                                             invocation_id,
                                             INVOCATION_RESPONSE_TIMEOUT_S);
   g_hash_table_insert (priv->invocations,
@@ -305,34 +311,139 @@ client_establish_invocation (YtsgClient   *self,
   return true;
 }
 
-unsigned int
-ytsg_client_clear_pending_responses (YtsgClient   *self,
-                                     YtsgContact  *contact)
-{
-  YtsgClientPrivate *priv = self->priv;
-  GHashTableIter   iter;
-  char const      *invocation_id;
-  InvocationData  *data;
-  bool             found;
-  unsigned int     n_removals = 0;
+/*
+ * ProxyData
+ */
 
-  // FIXME this would be better solved using g_hash_table_foreach_remove().
+typedef struct {
+  YtsgContact const *contact;    /* free pointer, no ref. */
+  char              *proxy_id;
+} ProxyData;
+
+static ProxyData *
+proxy_data_create (YtsgContact const  *contact,
+                   char const         *proxy_id)
+{
+  ProxyData *self;
+
+  self = g_new0 (ProxyData, 1);
+  self->contact = contact;
+  self->proxy_id = g_strdup (proxy_id);
+
+  return self;
+}
+
+static void
+proxy_data_destroy (ProxyData *self)
+{
+  g_free (self->proxy_id);
+  g_free (self);
+}
+
+/*
+ * ProxyList
+ */
+
+typedef struct {
+  GList *list;
+} ProxyList;
+
+static ProxyList *
+proxy_list_create_with_proxy (YtsgContact const *contact,
+                              char const        *proxy_id)
+{
+  ProxyList *self;
+  ProxyData *data;
+
+  self = g_new0 (ProxyList, 1);
+
+  data = proxy_data_create (contact, proxy_id);
+
+  self->list = g_list_append (NULL, data);
+
+  return self;
+}
+
+static bool
+proxy_list_ensure_proxy (ProxyList          *self,
+                         YtsgContact const  *contact,
+                         char const         *proxy_id)
+{
+  GList const *iter;
+  ProxyData   *proxy_data;
+
+  g_return_val_if_fail (self, false);
+  g_warn_if_fail (self->list);
+
+  for (iter = self->list; iter; iter = iter->next) {
+    proxy_data = (ProxyData *) iter->data;
+    if (proxy_data->contact == contact &&
+        0 == g_strcmp0 (proxy_data->proxy_id, proxy_id)) {
+      /* Proxy already in list */
+      return false;
+    }
+  }
+
+  proxy_data = proxy_data_create (contact, proxy_id);
+  self->list = g_list_prepend (self->list, proxy_data);
+
+  return true;
+}
+
+static void
+proxy_list_purge (ProxyList         *self,
+                  YtsgContact const *contact,
+                  char const        *proxy_id /* optional */)
+{
+  GList *iter;
+  bool   found;
+
+  g_return_if_fail (self);
+  g_return_if_fail (self->list);
+
+  // FIXME need to do this in a smarter way.
   do {
     found = false;
-    g_hash_table_iter_init (&iter, priv->invocations);
-    while (g_hash_table_iter_next (&iter,
-                                   (void **) &invocation_id,
-                                   (void **) &data)) {
-      if (data->contact == contact) {
-        n_removals++;
+    for (iter = self->list; iter; iter = iter->next) {
+      ProxyData *data = (ProxyData *) iter->data;
+      bool proxy_id_matches = proxy_id ?
+                                  0 == g_strcmp0 (data->proxy_id, proxy_id) :
+                                  true; /* NULL proxy_id means don't test */
+      if (data->contact == contact &&
+          proxy_id_matches) {
+
+        proxy_data_destroy (data);
+        iter->data = NULL;
+        self->list = g_list_delete_link (self->list, iter);
         found = true;
         break;
       }
     }
-
   } while (found);
+}
 
-  return n_removals;
+static bool
+proxy_list_is_empty (ProxyList  *self)
+{
+  g_return_val_if_fail (self, true);
+
+  return self->list == NULL;
+}
+
+static void
+proxy_list_destroy (ProxyList *self)
+{
+  g_return_if_fail (self);
+
+  if (self->list) {
+    do {
+      ProxyData *data = (ProxyData *) self->list->data;
+      proxy_data_destroy (data);
+      self->list->data = NULL;
+    } while (NULL != (self->list = g_list_delete_link (self->list, self->list)));
+  }
+
+  g_free (self);
 }
 
 /*
@@ -1187,7 +1298,7 @@ dispatch_to_service (YtsgClient *self,
   YtsgClientPrivate *priv = self->priv;
   RestXmlParser *parser;
   RestXmlNode   *node;
-  char const    *sender_service_id;
+  char const    *proxy_id;
   char const    *capability;
   char const    *type;
   YtsgContact   *contact;
@@ -1201,8 +1312,8 @@ dispatch_to_service (YtsgClient *self,
     return false;
   }
 
-  sender_service_id = rest_xml_node_get_attr (node, "from-service");
-  if (NULL == sender_service_id) {
+  proxy_id = rest_xml_node_get_attr (node, "from-service");
+  if (NULL == proxy_id) {
     // FIXME report error
     g_critical ("%s : Malformed message, 'from-service' missing in '%s'",
                 G_STRLOC,
@@ -1254,7 +1365,7 @@ dispatch_to_service (YtsgClient *self,
           client_establish_invocation (self,
                                        invocation_id,
                                        contact,
-                                       sender_service_id);
+                                       proxy_id);
           keep_sae = ytsg_service_adapter_invoke (adapter,
                                                   invocation_id,
                                                   aspect,
@@ -1535,6 +1646,11 @@ ytsg_client_init (YtsgClient *client)
                                              g_str_equal,
                                              g_free,
                                              (GDestroyNotify) invocation_data_destroy);
+
+  priv->proxies = g_hash_table_new_full (g_str_hash,
+                                         g_str_equal,
+                                         g_free,
+                                         (GDestroyNotify) proxy_list_destroy);
 }
 
 static void
@@ -1599,6 +1715,12 @@ ytsg_client_dispose (GObject *object)
     {
       g_hash_table_destroy (priv->invocations);
       priv->invocations = NULL;
+    }
+
+  if (priv->proxies)
+    {
+      g_hash_table_destroy (priv->proxies);
+      priv->proxies = NULL;
     }
 
   G_OBJECT_CLASS (ytsg_client_parent_class)->dispose (object);
@@ -3000,9 +3122,9 @@ _adapter_event (YtsgServiceAdapter  *adapter,
                 GVariant            *arguments,
                 YtsgClient          *self)
 {
-  GObject       *service;
-  GParamSpec    *pspec;
-//  YtsgMetadata  *message;
+  YtsgClientPrivate *priv = self->priv;
+  GObject     *service;
+  GParamSpec  *pspec;
 
   service = NULL;
   g_object_get (adapter, "service", &service, NULL);
@@ -3015,11 +3137,18 @@ _adapter_event (YtsgServiceAdapter  *adapter,
       YtsgMetadata *message = ytsg_event_message_new (capability,
                                                       aspect,
                                                       arguments);
-
-      // TODO
-      // dispatch to everyone who signed up
-      g_debug ("%s() not implemented at %s", __FUNCTION__, G_STRLOC);
-
+      /* Dispatch to all registered proxies. */
+      ProxyList *proxy_list = g_hash_table_lookup (priv->proxies, capability);
+      if (proxy_list) {
+        GList const *iter;
+        for (iter = proxy_list->list; iter; iter = iter->next) {
+          ProxyData const *proxy_data = (ProxyData const *) iter->data;
+          _ytsg_client_send_message (self,
+                                     YTSG_CONTACT (proxy_data->contact),
+                                     proxy_data->proxy_id,
+                                     message);
+        }
+      }
       g_object_unref (message);
     }
   else
@@ -3055,7 +3184,7 @@ _adapter_response (YtsgServiceAdapter *adapter,
 
   _ytsg_client_send_message (self,
                              invocation->contact,
-                             invocation->sender_service_id,
+                             invocation->proxy_id,
                              message);
   g_object_unref (message);
 
@@ -3116,6 +3245,7 @@ create_adapter_for_service (YtsgClient  *self,
  */
 gboolean
 ytsg_client_register_service (YtsgClient  *self,
+                              char const  *profile_id,
                               GObject     *service)
 {
   YtsgClientPrivate   *priv = self->priv;
@@ -3169,6 +3299,157 @@ ytsg_client_register_service (YtsgClient  *self,
                        adapter);
   ytsg_client_set_capabilities (self, g_quark_from_static_string (capability));
 
+  /* TODO only Player supported, add others */
+  if (0 == g_strcmp0 ("org.freedesktop.ytstenut.VideoProfile.Player", capability)) {
+    // TODO do away with the hard-coding
+    char const *capabilities[] = {
+      capability,
+      NULL
+    };
+    YtsgProfileImpl *profile_impl = ytsg_profile_impl_new ((GStrv const) capabilities,
+                                                            self);
+    adapter = g_object_new (YTSG_TYPE_PROFILE_ADAPTER,
+                            "service", profile_impl,
+                            NULL);
+    g_hash_table_insert (priv->services,
+                         g_strdup ("org.freedesktop.ytstenut.VideoProfile"),
+                         adapter);
+    /* FIXME should the profile also be advertised as capability? */
+  } else {
+    g_critical ("%s : Unsupported capability %s",
+                G_STRLOC,
+                capability);
+    return FALSE;
+  }
+
   return TRUE;
+}
+
+void
+ytsg_client_cleanup_contact (YtsgClient         *self,
+                             YtsgContact const  *contact)
+{
+  YtsgClientPrivate *priv = self->priv;
+  GHashTableIter   iter;
+  bool             start_over;
+
+  /*
+   * Clear pending responses.
+   */
+
+  // FIXME this would be better solved using g_hash_table_foreach_remove().
+  do {
+    char const *invocation_id;
+    InvocationData *data;
+    start_over = false;
+    g_hash_table_iter_init (&iter, priv->invocations);
+    while (g_hash_table_iter_next (&iter,
+                                   (void **) &invocation_id,
+                                   (void **) &data)) {
+
+      if (data->contact == contact) {
+        g_hash_table_remove (priv->invocations, invocation_id);
+        start_over = true;
+        break;
+      }
+    }
+  } while (start_over);
+
+  /*
+   * Unregister proxies
+   */
+
+  // FIXME this would be better solved using g_hash_table_foreach_remove().
+  do {
+    char const *capability;
+    ProxyList *proxy_list;
+    start_over = false;
+    g_hash_table_iter_init (&iter, priv->proxies);
+    while (g_hash_table_iter_next (&iter,
+                                   (void **) &capability,
+                                   (void **) &proxy_list)) {
+
+      proxy_list_purge (proxy_list, contact, NULL);
+      if (proxy_list_is_empty (proxy_list)) {
+        g_hash_table_remove (priv->proxies, capability);
+        start_over = true;
+        break;
+      }
+    }
+  } while (start_over);
+}
+
+bool
+ytsg_client_get_invocation_proxy (YtsgClient         *self,
+                                  char const         *invocation_id,
+                                  YtsgContact const **contact,
+                                  char const        **proxy_id)
+{
+  YtsgClientPrivate *priv = self->priv;
+  InvocationData const *invocation;
+
+  g_return_val_if_fail (YTSG_IS_CLIENT (self), false);
+  g_return_val_if_fail (contact, false);
+  g_return_val_if_fail (proxy_id, false);
+
+  invocation = g_hash_table_lookup (priv->invocations, invocation_id);
+  g_return_val_if_fail (invocation, false);
+
+  *contact = invocation->contact;
+  *proxy_id = invocation->proxy_id;
+
+  return true;
+}
+
+bool
+ytsg_client_register_proxy (YtsgClient        *self,
+                            char const        *capability,
+                            YtsgContact const *contact,
+                            char const        *proxy_id)
+{
+  YtsgClientPrivate *priv = self->priv;
+  ProxyList *proxy_list;
+
+  g_return_val_if_fail (YTSG_IS_CLIENT (self), false);
+
+  proxy_list = g_hash_table_lookup (priv->proxies, capability);
+  if (NULL == proxy_list) {
+    proxy_list = proxy_list_create_with_proxy (contact, proxy_id);
+    g_hash_table_insert (priv->proxies,
+                         g_strdup (capability),
+                         proxy_list);
+    return true;
+  } else {
+    return proxy_list_ensure_proxy (proxy_list, contact, proxy_id);
+  }
+}
+
+bool
+ytsg_client_unregister_proxy (YtsgClient        *self,
+                              char const        *capability,
+                              YtsgContact const *contact,
+                              char const        *proxy_id)
+{
+  YtsgClientPrivate *priv = self->priv;
+  ProxyList *proxy_list;
+
+  g_return_val_if_fail (YTSG_IS_CLIENT (self), false);
+
+  proxy_list = g_hash_table_lookup (priv->proxies, capability);
+  if (NULL == proxy_list) {
+    g_warning ("%s : No proxy for %s:%s:%s",
+               G_STRLOC,
+               ytsg_contact_get_jid (contact),
+               proxy_id,
+               capability);
+    return false;
+  }
+
+  proxy_list_purge (proxy_list, contact, proxy_id);
+  if (proxy_list_is_empty (proxy_list)) {
+    g_hash_table_remove (priv->proxies, capability);
+  }
+
+  return true;
 }
 

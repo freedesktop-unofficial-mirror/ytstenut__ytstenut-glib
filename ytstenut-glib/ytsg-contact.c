@@ -489,7 +489,7 @@ ytsg_contact_dispose (GObject *object)
   priv->disposed = TRUE;
 
   if (priv->client) {
-    ytsg_client_clear_pending_responses (priv->client, YTSG_CONTACT (object));
+    ytsg_client_cleanup_contact (priv->client, YTSG_CONTACT (object));
     priv->client = NULL;
   }
 

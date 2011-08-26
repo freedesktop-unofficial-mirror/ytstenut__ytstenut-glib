@@ -22,6 +22,7 @@
 #ifndef _YTSG_CLIENT_H
 #define _YTSG_CLIENT_H
 
+#include <stdbool.h>
 #include <glib-object.h>
 #include <telepathy-glib/channel.h>
 
@@ -121,14 +122,34 @@ void        ytsg_client_set_status_by_capability (YtsgClient *client,
 
 gboolean
 ytsg_client_register_service (YtsgClient  *self,
+                              char const  *profile,
                               GObject     *service);
 
 /* Protected */
 
-unsigned int
-ytsg_client_clear_pending_responses (YtsgClient   *self,
-                                     YtsgContact  *contact);
+void
+ytsg_client_cleanup_contact (YtsgClient         *self,
+                             YtsgContact const  *contact);
+
+bool
+ytsg_client_get_invocation_proxy (YtsgClient         *self,
+                                  char const         *invocation_id,
+                                  YtsgContact const **contact,
+                                  char const        **proxy_id);
+
+bool
+ytsg_client_register_proxy (YtsgClient        *self,
+                            char const        *capability,
+                            YtsgContact const *contact,
+                            char const        *proxy_id);
+
+bool
+ytsg_client_unregister_proxy (YtsgClient        *self,
+                              char const        *capability,
+                              YtsgContact const *contact,
+                              char const        *proxy_id);
 
 G_END_DECLS
 
 #endif /* _YTSG_CLIENT_H */
+

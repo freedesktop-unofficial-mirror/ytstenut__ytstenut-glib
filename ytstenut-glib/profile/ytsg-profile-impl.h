@@ -26,22 +26,22 @@
 
 G_BEGIN_DECLS
 
-#define MOCK_TYPE_PLAYER ytsg_profile_impl_get_type()
+#define YTSG_TYPE_PROFILE_IMPL ytsg_profile_impl_get_type()
 
 #define YTSG_PROFILE_IMPL(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj), MOCK_TYPE_PLAYER, YtsgProfileImpl))
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTSG_TYPE_PROFILE_IMPL, YtsgProfileImpl))
 
 #define YTSG_PROFILE_IMPL_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST ((klass), MOCK_TYPE_PLAYER, YtsgProfileImplClass))
+  (G_TYPE_CHECK_CLASS_CAST ((klass), YTSG_TYPE_PROFILE_IMPL, YtsgProfileImplClass))
 
-#define MOCK_IS_PLAYER(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), MOCK_TYPE_PLAYER))
+#define YTSG_IS_PROFILE_IMPL(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_TYPE_PROFILE_IMPL))
 
-#define MOCK_IS_PLAYER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE ((klass), MOCK_TYPE_PLAYER))
+#define YTSG_IS_PROFILE_IMPL_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), YTSG_TYPE_PROFILE_IMPL))
 
 #define YTSG_PROFILE_IMPL_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), MOCK_TYPE_PLAYER, YtsgProfileImplClass))
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), YTSG_TYPE_PROFILE_IMPL, YtsgProfileImplClass))
 
 typedef struct {
   GObject parent;

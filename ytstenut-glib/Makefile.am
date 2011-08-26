@@ -74,6 +74,7 @@ source_c =						\
 		\
 		$(srcdir)/profile/ytsg-profile.c \
 		$(srcdir)/profile/ytsg-profile-impl.c \
+		$(srcdir)/profile/ytsg-profile-proxy.c \
 		$(srcdir)/profile/ytsg-profile-adapter.c \
     \
 		$(srcdir)/video-profile/ytsg-vp-content.c \
@@ -91,7 +92,9 @@ source_c =						\
 private_h = \
 		$(srcdir)/profile/ytsg-profile.h \
 		$(srcdir)/profile/ytsg-profile-impl.h \
+		$(srcdir)/profile/ytsg-profile-proxy.h \
 		$(srcdir)/profile/ytsg-profile-adapter.h \
+		\
 		$(srcdir)/video-profile/ytsg-vp-playable-proxy.h \
 		$(srcdir)/video-profile/ytsg-vp-player-adapter.h \
 		$(srcdir)/video-profile/ytsg-vp-player-proxy.h \
