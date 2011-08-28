@@ -36,7 +36,9 @@ G_DEFINE_TYPE_WITH_CODE (YtsgProfileProxy,
 
 typedef struct {
 
-  // TODO mirror properties
+  /* Properties */
+  // FIXME hook this property up
+  GPtrArray *capabilities;
 
   /* Data */
   GHashTable  *invocations;
@@ -167,10 +169,12 @@ _get_property (GObject      *object,
                GValue       *value,
                GParamSpec   *pspec)
 {
-  // YtsgProfileProxyPrivate *priv = GET_PRIVATE (object);
+  YtsgProfileProxyPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
-    // TODO mirror properties
+    case PROP_PROFILE_CAPABILITIES:
+      g_value_set_boxed (value, priv->capabilities);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
@@ -185,7 +189,6 @@ _set_property (GObject      *object,
   // YtsgProfileProxyPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
-    // TODO mirror properties
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
@@ -224,7 +227,9 @@ ytsg_profile_proxy_class_init (YtsgProfileProxyClass *klass)
                                     PROP_PROFILE_CAPABILITY,
                                     "capability");
 
-    // TODO mirror properties
+  g_object_class_override_property (object_class,
+                                    PROP_PROFILE_CAPABILITIES,
+                                    "capabilities");
 }
 
 static void

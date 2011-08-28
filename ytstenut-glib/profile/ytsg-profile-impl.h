@@ -55,8 +55,15 @@ GType
 ytsg_profile_impl_get_type (void) G_GNUC_CONST;
 
 YtsgProfileImpl *
-ytsg_profile_impl_new (GStrv const   capabilities,
-                       YtsgClient   *client);
+ytsg_profile_impl_new (YtsgClient *client);
+
+bool
+ytsg_profile_impl_add_capability (YtsgProfileImpl *self,
+                                  char const      *capability);
+
+bool
+ytsg_profile_impl_remove_capability (YtsgProfileImpl  *self,
+                                     char const       *capability);
 
 G_END_DECLS
 

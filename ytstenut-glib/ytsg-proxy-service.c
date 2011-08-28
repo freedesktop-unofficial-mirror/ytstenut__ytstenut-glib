@@ -23,12 +23,16 @@
 #include "ytsg-private.h"
 #include "ytsg-proxy-service.h"
 
+#include "profile/ytsg-profile.h"
+#include "profile/ytsg-profile-proxy.h"
+
 G_DEFINE_TYPE (YtsgProxyService, ytsg_proxy_service, YTSG_TYPE_SERVICE)
 
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTSG_TYPE_PROXY_SERVICE, YtsgProxyServicePrivate))
 
 typedef struct {
+  YtsgProfile *profile;
   GHashTable  *proxies;
 } YtsgProxyServicePrivate;
 
@@ -67,8 +71,30 @@ _dispose (GObject *object)
   YtsgProxyServicePrivate *priv = GET_PRIVATE (object);
 
   if (priv->proxies) {
+
+    GHashTableIter iter;
+    char const *capability;
+    YtsgProxy *proxy;
+
+    g_hash_table_iter_init (&iter, priv->proxies);
+    while (g_hash_table_iter_next (&iter,
+                                   (void **) &capability,
+                                   (void **) &proxy)) {
+
+      char *invocation_id = ytsg_proxy_create_invocation_id (YTSG_PROXY (proxy));
+      ytsg_profile_unregister_proxy (priv->profile,
+                                     invocation_id,
+                                     capability);
+      g_free (invocation_id);
+    }
+
     g_hash_table_unref (priv->proxies);
     priv->proxies = NULL;
+  }
+
+  if (priv->profile) {
+    g_object_unref (priv->profile);
+    priv->profile = NULL;
   }
 
   G_OBJECT_CLASS (ytsg_proxy_service_parent_class)->dispose (object);
@@ -114,6 +140,50 @@ ytsg_proxy_service_new (YtsgContact  *contact,
 }
 
 static void
+_profile_invoke_service (YtsgProfile      *profile,
+                         char const       *invocation_id,
+                         char const       *aspect,
+                         GVariant         *arguments,
+                         YtsgProxyService *self)
+{
+  YtsgContact     *contact;
+  YtsgClient      *client;
+  YtsgMetadata    *message;
+  char const      *uid;
+  GParamSpec      *pspec;
+  char const      *capability;
+
+  contact = ytsg_service_get_contact (YTSG_SERVICE (self));
+  client = ytsg_contact_get_client (contact);
+  uid = ytsg_service_get_uid (YTSG_SERVICE (self));
+
+  pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (profile),
+                                        "capability");
+  if (pspec &&
+      G_IS_PARAM_SPEC_STRING (pspec)) {
+
+    capability = G_PARAM_SPEC_STRING (pspec)->default_value;
+
+  } else {
+
+    g_critical ("%s : Could not determine capability", G_STRLOC);
+    return;
+  }
+
+  message = ytsg_invocation_message_new (invocation_id,
+                                         capability,
+                                         aspect,
+                                         arguments);
+
+  // TODO maybe we should attach the invocation-id to the contact
+  // and handle the timeout here, so handling the response is simpler.
+
+  _ytsg_client_send_message (client, contact, uid, message);
+
+  g_object_unref (message);
+}
+
+static void
 _proxy_invoke_service (YtsgProxy        *proxy,
                        char const       *invocation_id,
                        char const       *aspect,
@@ -135,6 +205,7 @@ _proxy_invoke_service (YtsgProxy        *proxy,
 
   /* FIXME not very nice, but a proxy doesn't know its capability, otherwise
    * it conflicts with the capability property of YtsgVSPlayer et al. */
+  // TODO get capability from proxy parameter instead.
   g_hash_table_iter_init (&iter, priv->proxies);
   while (g_hash_table_iter_next (&iter, (void **) &capability, (void **) &p)) {
     if (p == proxy) {
@@ -224,6 +295,22 @@ ytsg_proxy_service_create_proxy (YtsgProxyService *self,
                        self);
   }
 
+  if (NULL == priv->profile) {
+
+    char *invocation_id = ytsg_proxy_create_invocation_id (YTSG_PROXY (priv->profile));
+
+    priv->profile = g_object_new (YTSG_TYPE_PROFILE_PROXY, NULL);
+    g_signal_connect (priv->profile, "invoke-service",
+                      G_CALLBACK (_profile_invoke_service), self);
+
+    /* Register new proxy with the service. */
+    ytsg_profile_register_proxy (priv->profile,
+                                 invocation_id,
+                                 capability);
+
+    g_free (invocation_id);
+  }
+
   return proxy;
 }
 
@@ -233,14 +320,23 @@ ytsg_proxy_service_dispatch_event (YtsgProxyService *self,
                                    char const       *aspect,
                                    GVariant         *arguments)
 {
-  YtsgProxy *proxy;
-
   YtsgProxyServicePrivate *priv = GET_PRIVATE (self);
 
-  proxy = g_hash_table_lookup (priv->proxies, capability);
-  if (proxy) {
-    ytsg_proxy_handle_service_event (proxy, aspect, arguments);
+  if (0 == g_strcmp0 (YTSG_PROFILE_CAPABILITY, capability)) {
+
+    /* This one comes from the Profile / Meta interface */
+    ytsg_proxy_handle_service_event (YTSG_PROXY (priv->profile),
+                                     aspect,
+                                     arguments);
     return true;
+
+  } else {
+
+    YtsgProxy *proxy = g_hash_table_lookup (priv->proxies, capability);
+    if (proxy) {
+      ytsg_proxy_handle_service_event (proxy, aspect, arguments);
+      return true;
+    }
   }
 
   return false;
@@ -252,14 +348,23 @@ ytsg_proxy_service_dispatch_response (YtsgProxyService  *self,
                                       char const        *invocation_id,
                                       GVariant          *response)
 {
-  YtsgProxy *proxy;
-
   YtsgProxyServicePrivate *priv = GET_PRIVATE (self);
 
-  proxy = g_hash_table_lookup (priv->proxies, capability);
-  if (proxy) {
-    ytsg_proxy_handle_service_response (proxy, invocation_id, response);
+  if (0 == g_strcmp0 (YTSG_PROFILE_CAPABILITY, capability)) {
+
+    /* This one comes from the Profile / Meta interface */
+    ytsg_proxy_handle_service_response (YTSG_PROXY (priv->profile),
+                                        invocation_id,
+                                        response);
     return true;
+
+  } else {
+
+    YtsgProxy *proxy = g_hash_table_lookup (priv->proxies, capability);
+    if (proxy) {
+      ytsg_proxy_handle_service_response (proxy, invocation_id, response);
+      return true;
+    }
   }
 
   return false;

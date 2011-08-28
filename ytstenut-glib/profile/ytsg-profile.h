@@ -26,7 +26,7 @@
 
 G_BEGIN_DECLS
 
-#define YTSG_PROFILE_CAPABILITY "org.freedesktop.ytstenut.Profile"
+#define YTSG_PROFILE_CAPABILITY "org.freedesktop.Ytstenut"
 
 #define YTSG_TYPE_PROFILE \
   (ytsg_profile_get_type ())
@@ -64,7 +64,7 @@ struct YtsgProfileInterface {
 GType
 ytsg_profile_get_type (void) G_GNUC_CONST;
 
-GStrv
+GPtrArray *
 ytsg_profile_get_capabilities (YtsgProfile  *self);
 
 void

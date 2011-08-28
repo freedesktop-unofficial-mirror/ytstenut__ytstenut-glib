@@ -69,9 +69,8 @@ ytsg_profile_default_init (YtsgProfileInterface *interface)
                                                             G_PARAM_STATIC_STRINGS));
 
   pspec = g_param_spec_boxed ("capabilities", "", "",
-                              G_TYPE_STRV,
-                              G_PARAM_READWRITE |
-                              G_PARAM_CONSTRUCT_ONLY |
+                              G_TYPE_PTR_ARRAY,
+                              G_PARAM_READABLE |
                               G_PARAM_STATIC_STRINGS);
   g_object_interface_install_property (interface, pspec);
 
@@ -96,10 +95,10 @@ ytsg_profile_default_init (YtsgProfileInterface *interface)
                                               2, G_TYPE_STRING, G_TYPE_BOOLEAN);
 }
 
-GStrv
+GPtrArray *
 ytsg_profile_get_capabilities (YtsgProfile  *self)
 {
-  GStrv capabilities;
+  GPtrArray *capabilities;
 
   g_return_val_if_fail (YTSG_IS_PROFILE (self), NULL);
 

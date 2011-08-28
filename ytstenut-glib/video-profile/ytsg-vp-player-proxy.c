@@ -240,6 +240,7 @@ _set_property (GObject      *object,
                GParamSpec   *pspec)
 {
   YtsgVPPlayerProxyPrivate *priv = GET_PRIVATE (object);
+  char *invocation_id;
 
   switch (property_id) {
 
@@ -267,8 +268,10 @@ _set_property (GObject      *object,
         priv->playing = playing;
         g_object_notify (object, "playing");
         /* PONDERING maybe we could spare ourselves the answer */
-        ytsg_proxy_invoke (YTSG_PROXY (object), NULL,
+        invocation_id = ytsg_proxy_create_invocation_id (YTSG_PROXY (object));
+        ytsg_proxy_invoke (YTSG_PROXY (object), invocation_id,
                            "playing", g_variant_new_boolean (playing));
+        g_free (invocation_id);
       }
     } break;
 
@@ -278,8 +281,10 @@ _set_property (GObject      *object,
         priv->volume = volume;
         g_object_notify (object, "volume");
         /* PONDERING maybe we could spare ourselves the answer */
-        ytsg_proxy_invoke (YTSG_PROXY (object), NULL,
+        invocation_id = ytsg_proxy_create_invocation_id (YTSG_PROXY (object));
+        ytsg_proxy_invoke (YTSG_PROXY (object), invocation_id,
                            "volume", g_variant_new_double (volume));
+        g_free (invocation_id);
       }
     } break;
 

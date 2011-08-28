@@ -69,6 +69,23 @@ _client_message (YtsgClient   *client,
 }
 
 static void
+_player_notify_playing (YtsgVPPlayer  *player,
+                        GParamSpec    *pspec,
+                        void          *data)
+{
+  g_debug ("YtsgVPPlayer.playing = %s",
+           ytsg_vp_player_get_playing (player) ? "true" : "false");
+}
+
+static void
+_player_notify_volume (YtsgVPPlayer *player,
+                       GParamSpec   *pspec,
+                       void         *data)
+{
+  g_debug ("YtsgVPPlayer.volume = %.2f", ytsg_vp_player_get_volume (player));
+}
+
+static void
 _player_next_response (YtsgVPPlayer *player,
                        char const   *invocation_id,
                        bool          return_value,
@@ -106,6 +123,10 @@ _roster_service_added (YtsgRoster   *roster,
                                               YTSG_VP_PLAYER_CAPABILITY);
     g_return_if_fail (player);
 
+    g_signal_connect (player, "notify::playing",
+                      G_CALLBACK (_player_notify_playing), NULL);
+    g_signal_connect (player, "notify::volume",
+                      G_CALLBACK (_player_notify_volume), NULL);
     g_signal_connect (player, "next-response",
                       G_CALLBACK (_player_next_response), NULL);
     g_signal_connect (player, "prev-response",

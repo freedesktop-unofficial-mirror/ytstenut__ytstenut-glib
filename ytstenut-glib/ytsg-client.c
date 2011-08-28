@@ -47,6 +47,7 @@
 
 #include "empathy-tp-file.h"
 
+#include "profile/ytsg-profile.h"
 #include "profile/ytsg-profile-adapter.h"
 #include "profile/ytsg-profile-impl.h"
 
@@ -1290,6 +1291,19 @@ ytsg_client_setup_debug  (YtsgClient *client)
   g_free (busname);
 }
 
+static GVariant *
+variant_new_from_escaped_literal (char const *string)
+{
+  GVariant  *v;
+  char      *unescaped;
+
+  unescaped = g_uri_unescape_string (string, NULL);
+  v = g_variant_new_parsed (unescaped);
+  g_free (unescaped);
+
+  return v;
+}
+
 static gboolean
 dispatch_to_service (YtsgClient *self,
                      char const *sender_jid,
@@ -1359,7 +1373,7 @@ dispatch_to_service (YtsgClient *self,
           char const *invocation_id = rest_xml_node_get_attr (node, "invocation");
           char const *aspect = rest_xml_node_get_attr (node, "aspect");
           char const *args = rest_xml_node_get_attr (node, "arguments");
-          GVariant *arguments = args ? g_variant_new_parsed (args) : NULL;
+          GVariant *arguments = args ? variant_new_from_escaped_literal (args) : NULL;
 
           // FIXME check return value
           client_establish_invocation (self,
@@ -1385,7 +1399,7 @@ dispatch_to_service (YtsgClient *self,
     {
       char const *aspect = rest_xml_node_get_attr (node, "aspect");
       char const *args = rest_xml_node_get_attr (node, "arguments");
-      GVariant *arguments = args ? g_variant_new_parsed (args) : NULL;
+      GVariant *arguments = args ? variant_new_from_escaped_literal (args) : NULL;
 
       dispatched = ytsg_contact_dispatch_event (contact,
                                                 capability,
@@ -1396,7 +1410,7 @@ dispatch_to_service (YtsgClient *self,
     {
       char const *invocation_id = rest_xml_node_get_attr (node, "invocation");
       char const *ret = rest_xml_node_get_attr (node, "response");
-      GVariant *response = ret ? g_variant_new_parsed (ret) : NULL;
+      GVariant *response = ret ? variant_new_from_escaped_literal (ret) : NULL;
 
       dispatched = ytsg_contact_dispatch_response (contact,
                                                    capability,
@@ -3245,11 +3259,11 @@ create_adapter_for_service (YtsgClient  *self,
  */
 gboolean
 ytsg_client_register_service (YtsgClient  *self,
-                              char const  *profile_id,
                               GObject     *service)
 {
   YtsgClientPrivate   *priv = self->priv;
   YtsgServiceAdapter  *adapter;
+  YtsgProfileImpl     *profile_impl;
   ServiceData         *service_data;
   GParamSpec          *pspec;
   char const          *capability;
@@ -3299,28 +3313,24 @@ ytsg_client_register_service (YtsgClient  *self,
                        adapter);
   ytsg_client_set_capabilities (self, g_quark_from_static_string (capability));
 
-  /* TODO only Player supported, add others */
-  if (0 == g_strcmp0 ("org.freedesktop.ytstenut.VideoProfile.Player", capability)) {
-    // TODO do away with the hard-coding
-    char const *capabilities[] = {
-      capability,
-      NULL
-    };
-    YtsgProfileImpl *profile_impl = ytsg_profile_impl_new ((GStrv const) capabilities,
-                                                            self);
+  /* Keep the proxy management service up to date. */
+  adapter = g_hash_table_lookup (priv->services, YTSG_PROFILE_CAPABILITY);
+  if (NULL == adapter) {
+    profile_impl = ytsg_profile_impl_new (self);
     adapter = g_object_new (YTSG_TYPE_PROFILE_ADAPTER,
                             "service", profile_impl,
                             NULL);
     g_hash_table_insert (priv->services,
-                         g_strdup ("org.freedesktop.ytstenut.VideoProfile"),
+                         g_strdup (YTSG_PROFILE_CAPABILITY),
                          adapter);
-    /* FIXME should the profile also be advertised as capability? */
   } else {
-    g_critical ("%s : Unsupported capability %s",
-                G_STRLOC,
-                capability);
-    return FALSE;
+    profile_impl = NULL;
+    g_object_get (adapter, "service", &profile_impl, NULL);
+    // FIXME not nice, but object still referenced by adapter.
+    g_object_unref (profile_impl);
   }
+
+  ytsg_profile_impl_add_capability (profile_impl, capability);
 
   return TRUE;
 }

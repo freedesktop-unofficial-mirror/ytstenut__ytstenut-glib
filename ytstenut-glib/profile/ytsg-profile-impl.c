@@ -43,7 +43,7 @@ enum {
 };
 
 typedef struct {
-  GStrv        capabilities;
+  GPtrArray   *capabilities;
   YtsgClient  *client;        /* free pointer */
 } YtsgProfileImplPrivate;
 
@@ -64,8 +64,8 @@ _register_proxy (YtsgProfile  *self,
   int                i;
 
   found = false;
-  for (i = 0; priv->capabilities[i]; i++) {
-    if (0 == g_strcmp0 (priv->capabilities[i], capability)) {
+  for (i = 0; i < priv->capabilities->len; i++) {
+    if (0 == g_strcmp0 (priv->capabilities->pdata[i], capability)) {
       found = true;
       break;
     }
@@ -121,8 +121,8 @@ _unregister_proxy (YtsgProfile  *self,
   int                i;
 
   found = false;
-  for (i = 0; priv->capabilities[i]; i++) {
-    if (0 == g_strcmp0 (priv->capabilities[i], capability)) {
+  for (i = 0; i < priv->capabilities->len; i++) {
+    if (0 == g_strcmp0 (priv->capabilities->pdata[i], capability)) {
       found = true;
       break;
     }
@@ -202,11 +202,6 @@ _set_property (GObject      *object,
   YtsgProfileImplPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
-    case PROP_PROFILE_CAPABILITIES:
-      /* Construct-only */
-      g_return_if_fail (priv->capabilities == NULL);
-      priv->capabilities = g_value_dup_boxed (value);
-      break;
     case PROP_CLIENT:
       /* Construct-only */
       priv->client = g_value_get_object (value);
@@ -222,7 +217,7 @@ _dispose (GObject *object)
   YtsgProfileImplPrivate *priv = GET_PRIVATE (object);
 
   if (priv->capabilities) {
-    g_boxed_free (G_TYPE_STRV, priv->capabilities);
+    g_ptr_array_free (priv->capabilities, TRUE);
     priv->capabilities = NULL;
   }
 
@@ -267,15 +262,55 @@ ytsg_profile_impl_class_init (YtsgProfileImplClass *klass)
 static void
 ytsg_profile_impl_init (YtsgProfileImpl *self)
 {
+  YtsgProfileImplPrivate *priv = GET_PRIVATE (self);
+
+  priv->capabilities = g_ptr_array_new_with_free_func (g_free);
 }
 
 YtsgProfileImpl *
-ytsg_profile_impl_new (GStrv const   capabilities,
-                       YtsgClient   *client)
+ytsg_profile_impl_new (YtsgClient   *client)
 {
   return g_object_new (YTSG_TYPE_PROFILE_IMPL,
-                       "capabilities",  capabilities,
                        "client",        client,
                        NULL);
+}
+
+bool
+ytsg_profile_impl_add_capability (YtsgProfileImpl *self,
+                                  char const      *capability)
+{
+  YtsgProfileImplPrivate *priv = GET_PRIVATE (self);
+  unsigned int i;
+
+  g_return_val_if_fail (YTSG_IS_PROFILE_IMPL (self), false);
+
+  for (i = 0; i < priv->capabilities->len; i++) {
+    if (0 == g_strcmp0 (capability, priv->capabilities->pdata[i])) {
+      return false;
+    }
+  }
+
+  g_ptr_array_add (priv->capabilities, g_strdup (capability));
+
+  return true;
+}
+
+bool
+ytsg_profile_impl_remove_capability (YtsgProfileImpl  *self,
+                                     char const       *capability)
+{
+  YtsgProfileImplPrivate *priv = GET_PRIVATE (self);
+  unsigned int i;
+
+  g_return_val_if_fail (YTSG_IS_PROFILE_IMPL (self), false);
+
+  for (i = 0; i < priv->capabilities->len; i++) {
+    if (0 == g_strcmp0 (capability, priv->capabilities->pdata[i])) {
+      g_ptr_array_remove_index (priv->capabilities, i);
+      return true;
+    }
+  }
+
+  return false;
 }
 

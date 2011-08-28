@@ -122,7 +122,6 @@ void        ytsg_client_set_status_by_capability (YtsgClient *client,
 
 gboolean
 ytsg_client_register_service (YtsgClient  *self,
-                              char const  *profile,
                               GObject     *service);
 
 /* Protected */
