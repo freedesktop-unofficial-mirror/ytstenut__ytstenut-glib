@@ -57,11 +57,11 @@ _register_proxy (YtsgProfile  *self,
                  char const   *capability)
 {
   YtsgProfileImplPrivate *priv = GET_PRIVATE (self);
-  YtsgContact const *contact;
-  char const        *proxy_id;
-  bool               found;
-  bool               ret;
-  int                i;
+  YtsgContact *contact;
+  char const  *proxy_id;
+  bool         found;
+  bool         ret;
+  int          i;
 
   found = false;
   for (i = 0; i < priv->capabilities->len; i++) {
@@ -114,11 +114,11 @@ _unregister_proxy (YtsgProfile  *self,
                    char const   *capability)
 {
   YtsgProfileImplPrivate *priv = GET_PRIVATE (self);
-  YtsgContact const *contact;
-  char const        *proxy_id;
-  bool               found;
-  bool               ret;
-  int                i;
+  YtsgContact *contact;
+  char const  *proxy_id;
+  bool         found;
+  bool         ret;
+  int          i;
 
   found = false;
   for (i = 0; i < priv->capabilities->len; i++) {

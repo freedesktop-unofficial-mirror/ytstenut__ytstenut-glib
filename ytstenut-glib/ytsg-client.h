@@ -131,16 +131,16 @@ ytsg_client_cleanup_contact (YtsgClient         *self,
                              YtsgContact const  *contact);
 
 bool
-ytsg_client_get_invocation_proxy (YtsgClient         *self,
-                                  char const         *invocation_id,
-                                  YtsgContact const **contact,
-                                  char const        **proxy_id);
+ytsg_client_get_invocation_proxy (YtsgClient   *self,
+                                  char const   *invocation_id,
+                                  YtsgContact **contact,
+                                  char const  **proxy_id);
 
 bool
-ytsg_client_register_proxy (YtsgClient        *self,
-                            char const        *capability,
-                            YtsgContact const *contact,
-                            char const        *proxy_id);
+ytsg_client_register_proxy (YtsgClient  *self,
+                            char const  *capability,
+                            YtsgContact *contact,
+                            char const  *proxy_id);
 
 bool
 ytsg_client_unregister_proxy (YtsgClient        *self,

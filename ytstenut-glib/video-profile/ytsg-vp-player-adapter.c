@@ -40,6 +40,32 @@ typedef struct {
  * YtsgServiceAdapter overrides
  */
 
+static GHashTable *
+_service_adapter_collect_properties (YtsgServiceAdapter *self)
+{
+  YtsgVPPlayerAdapterPrivate *priv = GET_PRIVATE (self);
+  GHashTable *properties;
+  bool        playing;
+  double      volume;
+
+  properties = g_hash_table_new_full (g_str_hash,
+                                      g_str_equal,
+                                      g_free,
+                                      g_variant_unref);
+
+  playing = ytsg_vp_player_get_playing (priv->player);
+  g_hash_table_insert (properties,
+                       g_strdup ("playing"),
+                       g_variant_new_boolean (playing));
+
+  volume = ytsg_vp_player_get_volume (priv->player);
+  g_hash_table_insert (properties,
+                       g_strdup ("volume"),
+                       g_variant_new_double (volume));
+
+  return properties;
+}
+
 static bool
 _service_adapter_invoke (YtsgServiceAdapter *self,
                          char const         *invocation_id,
@@ -273,6 +299,7 @@ ytsg_vp_player_adapter_class_init (YtsgVPPlayerAdapterClass *klass)
   object_class->set_property = _set_property;
   object_class->dispose = _dispose;
 
+  adapter_class->collect_properties = _service_adapter_collect_properties;
   adapter_class->invoke = _service_adapter_invoke;
 
   /* Properties */

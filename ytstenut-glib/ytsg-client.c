@@ -3390,10 +3390,10 @@ ytsg_client_cleanup_contact (YtsgClient         *self,
 }
 
 bool
-ytsg_client_get_invocation_proxy (YtsgClient         *self,
-                                  char const         *invocation_id,
-                                  YtsgContact const **contact,
-                                  char const        **proxy_id)
+ytsg_client_get_invocation_proxy (YtsgClient   *self,
+                                  char const   *invocation_id,
+                                  YtsgContact **contact,
+                                  char const  **proxy_id)
 {
   YtsgClientPrivate *priv = self->priv;
   InvocationData const *invocation;
@@ -3412,13 +3412,14 @@ ytsg_client_get_invocation_proxy (YtsgClient         *self,
 }
 
 bool
-ytsg_client_register_proxy (YtsgClient        *self,
-                            char const        *capability,
-                            YtsgContact const *contact,
-                            char const        *proxy_id)
+ytsg_client_register_proxy (YtsgClient  *self,
+                            char const  *capability,
+                            YtsgContact *contact,
+                            char const  *proxy_id)
 {
   YtsgClientPrivate *priv = self->priv;
   ProxyList *proxy_list;
+  bool       ret = false;
 
   g_return_val_if_fail (YTSG_IS_CLIENT (self), false);
 
@@ -3428,10 +3429,57 @@ ytsg_client_register_proxy (YtsgClient        *self,
     g_hash_table_insert (priv->proxies,
                          g_strdup (capability),
                          proxy_list);
-    return true;
+    ret = true;
   } else {
-    return proxy_list_ensure_proxy (proxy_list, contact, proxy_id);
+    ret = proxy_list_ensure_proxy (proxy_list, contact, proxy_id);
   }
+
+  if (ret) {
+
+    /* Sync the proxy's properties. */
+    YtsgServiceAdapter *adapter = g_hash_table_lookup (priv->services,
+                                                       capability);
+    if (adapter) {
+
+      GHashTable *properties = ytsg_service_adapter_collect_properties (adapter);
+
+      if (properties) {
+
+        GHashTableIter iter;
+        char const *key;
+        GVariant *value;
+
+        g_hash_table_iter_init (&iter, properties);
+        while (g_hash_table_iter_next (&iter,
+                                       (void **) &key,
+                                       (void **) &value)) {
+
+          YtsgMetadata *message = ytsg_event_message_new (capability,
+                                                          key,
+                                                          value);
+          _ytsg_client_send_message (self,
+                                     contact,
+                                     proxy_id,
+                                     message);
+          g_object_unref (message);
+        }
+        g_hash_table_unref (properties);
+
+      } else {
+        g_critical ("%s : Failed to collect properties for capability %s",
+                    G_STRLOC,
+                    capability);
+        ret = false;
+      }
+    } else {
+      g_critical ("%s : Could not find adapter for capability %s",
+                  G_STRLOC,
+                  capability);
+      ret = false;
+    }
+  }
+
+  return ret;
 }
 
 bool

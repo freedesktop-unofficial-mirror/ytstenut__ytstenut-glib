@@ -141,7 +141,7 @@ _proxy_service_event (YtsgProxy   *self,
   } else if (0 == g_strcmp0 ("volume", aspect) &&
              g_variant_is_of_type (arguments, G_VARIANT_TYPE_DOUBLE)) {
 
-    double volume = g_variant_get_boolean (arguments);
+    double volume = g_variant_get_double (arguments);
     ytsg_vp_player_set_volume (YTSG_VP_PLAYER (self), volume);
 
   } else {

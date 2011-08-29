@@ -39,15 +39,24 @@ enum {
 
 static unsigned int _signals[N_SIGNALS] = { 0, };
 
+static GHashTable *
+_collect_properties (YtsgServiceAdapter *self)
+{
+  g_critical ("%s : Method YtsgServiceAdapter.collect_properties() not implemented by %s",
+              G_STRLOC,
+              G_OBJECT_TYPE_NAME (self));
+
+  return NULL;
+}
+
 static bool
 _invoke (YtsgServiceAdapter *self,
          char const         *invocation_id,
          char const         *aspect,
          GVariant           *arguments)
 {
-  g_critical ("%s : Method YtsgServiceAdapter.%s() not implemented by %s",
+  g_critical ("%s : Method YtsgServiceAdapter.invoke() not implemented by %s",
               G_STRLOC,
-              __FUNCTION__,
               G_OBJECT_TYPE_NAME (self));
 
   return false;
@@ -93,6 +102,7 @@ ytsg_service_adapter_class_init (YtsgServiceAdapterClass *klass)
   object_class->get_property = _get_property;
   object_class->set_property = _set_property;
 
+  klass->collect_properties = _collect_properties;
   klass->invoke = _invoke;
 
   /* Properties */
@@ -168,6 +178,14 @@ ytsg_service_adapter_get_capability (YtsgServiceAdapter *self)
   g_return_val_if_fail (G_IS_PARAM_SPEC_STRING (pspec), NULL);
 
   return G_PARAM_SPEC_STRING (pspec)->default_value;
+}
+
+GHashTable *
+ytsg_service_adapter_collect_properties (YtsgServiceAdapter *self)
+{
+  g_return_val_if_fail (YTSG_IS_SERVICE_ADAPTER (self), NULL);
+
+  return YTSG_SERVICE_ADAPTER_GET_CLASS (self)->collect_properties (self);
 }
 
 bool
