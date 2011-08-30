@@ -25,13 +25,17 @@
 
 G_BEGIN_DECLS
 
-#define YTSG_VP_TYPE_PLAYER_ADAPTER ytsg_vp_player_adapter_get_type()
+#define YTSG_VP_TYPE_PLAYER_ADAPTER (ytsg_vp_player_adapter_get_type ())
 
-#define YTSG_VP_PLAYER_ADAPTER(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTSG_VP_TYPE_PLAYER_ADAPTER, YtsgVPPlayerAdapter))
+#define YTSG_VP_PLAYER_ADAPTER(obj)                         \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj),                       \
+                               YTSG_VP_TYPE_PLAYER_ADAPTER, \
+                               YtsgVPPlayerAdapter))
 
-#define YTSG_VP_PLAYER_ADAPTER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST ((klass), YTSG_VP_TYPE_PLAYER_ADAPTER, YtsgVPPlayerAdapterClass))
+#define YTSG_VP_PLAYER_ADAPTER_CLASS(klass)               \
+  (G_TYPE_CHECK_CLASS_CAST ((klass),                      \
+                            YTSG_VP_TYPE_PLAYER_ADAPTER,  \
+                            YtsgVPPlayerAdapterClass))
 
 #define YTSG_VP_IS_PLAYER_ADAPTER(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_VP_TYPE_PLAYER_ADAPTER))
@@ -39,8 +43,10 @@ G_BEGIN_DECLS
 #define YTSG_VP_IS_PLAYER_ADAPTER_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_TYPE ((klass), YTSG_VP_TYPE_PLAYER_ADAPTER))
 
-#define YTSG_VP_PLAYER_ADAPTER_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), YTSG_VP_TYPE_PLAYER_ADAPTER, YtsgVPPlayerAdapterClass))
+#define YTSG_VP_PLAYER_ADAPTER_GET_CLASS(obj)               \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj),                        \
+                              YTSG_VP_TYPE_PLAYER_ADAPTER,  \
+                              YtsgVPPlayerAdapterClass))
 
 typedef struct {
   YtsgServiceAdapter parent;

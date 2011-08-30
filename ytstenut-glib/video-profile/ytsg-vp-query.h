@@ -27,8 +27,7 @@
 
 G_BEGIN_DECLS
 
-#define YTSG_VP_TYPE_QUERY \
-  (ytsg_vp_query_get_type ())
+#define YTSG_VP_TYPE_QUERY  (ytsg_vp_query_get_type ())
 
 #define YTSG_VP_QUERY(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTSG_VP_TYPE_QUERY, YtsgVPQuery))
@@ -36,13 +35,14 @@ G_BEGIN_DECLS
 #define YTSG_VP_IS_QUERY(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_VP_TYPE_QUERY))
 
-#define YTSG_VP_QUERY_GET_INTERFACE(obj) \
-  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), YTSG_VP_TYPE_QUERY, YtsgVPQueryInterface))
+#define YTSG_VP_QUERY_GET_INTERFACE(obj)                  \
+  (G_TYPE_INSTANCE_GET_INTERFACE ((obj),                  \
+                                  YTSG_VP_TYPE_QUERY,     \
+                                  YtsgVPQueryInterface))
 
 typedef struct YtsgVPQuery YtsgVPQuery;
-typedef struct YtsgVPQueryInterface YtsgVPQueryInterface;
 
-struct YtsgVPQueryInterface {
+typedef struct {
 
   /*< private >*/
   GTypeInterface parent;
@@ -51,16 +51,17 @@ struct YtsgVPQueryInterface {
   bool
   (*result) (YtsgVPQuery  *self,
              GList        *playables,
-             unsigned int  progress);
-};
+             unsigned      progress);
+
+} YtsgVPQueryInterface;
 
 GType
 ytsg_vp_query_get_type (void) G_GNUC_CONST;
 
-unsigned int
+unsigned
 ytsg_vp_get_max_results (YtsgVPQuery *self);
 
-unsigned int
+unsigned
 ytsg_vp_get_progress (YtsgVPQuery *self);
 
 GList *

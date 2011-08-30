@@ -21,17 +21,15 @@
 #ifndef YTSG_VP_TRANSFER_H
 #define YTSG_VP_TRANSFER_H
 
-#include <stdbool.h>
 #include <glib-object.h>
-#include <ytstenut-glib/video-profile/ytsg-vp-transfer.h>
 #include <ytstenut-glib/video-profile/ytsg-vp-transmission.h>
 
 G_BEGIN_DECLS
 
-#define YTSG_VP_TRANSFER_CAPABILITY "org.freedesktop.ytstenut.VideoService.Transfer"
+#define YTSG_VP_TRANSFER_CAPABILITY \
+  "org.freedesktop.ytstenut.VideoProfile.Transfer"
 
-#define YTSG_VP_TYPE_TRANSFER \
-  (ytsg_vp_transfer_get_type ())
+#define YTSG_VP_TYPE_TRANSFER (ytsg_vp_transfer_get_type ())
 
 #define YTSG_VP_TRANSFER(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTSG_VP_TYPE_TRANSFER, YtsgVPTransfer))
@@ -39,13 +37,14 @@ G_BEGIN_DECLS
 #define YTSG_VP_IS_TRANSFER(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_VP_TYPE_TRANSFER))
 
-#define YTSG_VP_TRANSFER_GET_INTERFACE(obj) \
-  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), YTSG_VP_TYPE_TRANSFER, YtsgVPTransferInterface))
+#define YTSG_VP_TRANSFER_GET_INTERFACE(obj)                 \
+  (G_TYPE_INSTANCE_GET_INTERFACE ((obj),                    \
+                                  YTSG_VP_TYPE_TRANSFER,    \
+                                  YtsgVPTransferInterface))
 
 typedef struct YtsgVPTransfer YtsgVPTransfer;
-typedef struct YtsgVPTransferInterface YtsgVPTransferInterface;
 
-struct YtsgVPTransferInterface {
+typedef struct  {
 
   /*< private >*/
   GTypeInterface parent;
@@ -57,7 +56,8 @@ struct YtsgVPTransferInterface {
   YtsgVPTransmission *
   (*upload) (YtsgVPTransfer *self,
              char const     *uri);
-};
+
+} YtsgVPTransferInterface;
 
 GType
 ytsg_vp_transfer_get_type (void) G_GNUC_CONST;

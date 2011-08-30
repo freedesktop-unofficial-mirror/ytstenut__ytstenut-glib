@@ -25,28 +25,32 @@
 
 G_BEGIN_DECLS
 
-#define YTSG_VP_TRANSCRIPT_CAPABILITY "org.freedesktop.ytstenut.VideoService.Transcript"
+#define YTSG_VP_TRANSCRIPT_CAPABILITY \
+  "org.freedesktop.ytstenut.VideoProfile.Transcript"
 
-#define YTSG_VP_TYPE_TRANSCRIPT \
-  (ytsg_vp_transcript_get_type ())
+#define YTSG_VP_TYPE_TRANSCRIPT (ytsg_vp_transcript_get_type ())
 
-#define YTSG_VP_TRANSCRIPT(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTSG_VP_TYPE_TRANSCRIPT, YtsgVPTranscript))
+#define YTSG_VP_TRANSCRIPT(obj)                         \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj),                   \
+                               YTSG_VP_TYPE_TRANSCRIPT, \
+                               YtsgVPTranscript))
 
 #define YTSG_VP_IS_TRANSCRIPT(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_VP_TYPE_TRANSCRIPT))
 
-#define YTSG_VP_TRANSCRIPT_GET_INTERFACE(obj) \
-  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), YTSG_VP_TYPE_TRANSCRIPT, YtsgVPTranscriptInterface))
+#define YTSG_VP_TRANSCRIPT_GET_INTERFACE(obj)                 \
+  (G_TYPE_INSTANCE_GET_INTERFACE ((obj),                      \
+                                  YTSG_VP_TYPE_TRANSCRIPT,    \
+                                  YtsgVPTranscriptInterface))
 
 typedef struct YtsgVPTranscript YtsgVPTranscript;
-typedef struct YtsgVPTranscriptInterface YtsgVPTranscriptInterface;
 
-struct YtsgVPTranscriptInterface {
+typedef struct  {
 
   /*< private >*/
   GTypeInterface parent;
-};
+
+} YtsgVPTranscriptInterface;
 
 GType
 ytsg_vp_transcript_get_type (void) G_GNUC_CONST;

@@ -21,31 +21,33 @@
 #ifndef YTSG_VP_TRANSMISSION_H
 #define YTSG_VP_TRANSMISSION_H
 
-#include <stdbool.h>
 #include <glib-object.h>
 
 G_BEGIN_DECLS
 
-#define YTSG_VP_TYPE_TRANSMISSION \
-  (ytsg_vp_transmission_get_type ())
+#define YTSG_VP_TYPE_TRANSMISSION (ytsg_vp_transmission_get_type ())
 
-#define YTSG_VP_TRANSMISSION(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTSG_VP_TYPE_TRANSMISSION, YtsgVPTransmission))
+#define YTSG_VP_TRANSMISSION(obj)                         \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj),                     \
+                               YTSG_VP_TYPE_TRANSMISSION, \
+                               YtsgVPTransmission))
 
-#define YTSG_VP_IS_TRANSMISSION(obj) \
+#define YTSG_VP_IS_TRANSMISSION(obj)  \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_VP_TYPE_TRANSMISSION))
 
-#define YTSG_VP_TRANSMISSION_GET_INTERFACE(obj) \
-  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), YTSG_VP_TYPE_TRANSMISSION, YtsgVPTransmissionInterface))
+#define YTSG_VP_TRANSMISSION_GET_INTERFACE(obj)                 \
+  (G_TYPE_INSTANCE_GET_INTERFACE ((obj),                        \
+                                  YTSG_VP_TYPE_TRANSMISSION,    \
+                                  YtsgVPTransmissionInterface))
 
 typedef struct YtsgVPTransmission YtsgVPTransmission;
-typedef struct YtsgVPTransmissionInterface YtsgVPTransmissionInterface;
 
-struct YtsgVPTransmissionInterface {
+typedef struct {
 
   /*< private >*/
   GTypeInterface parent;
-};
+
+} YtsgVPTransmissionInterface;
 
 GType
 ytsg_vp_transmission_get_type (void) G_GNUC_CONST;
@@ -53,7 +55,7 @@ ytsg_vp_transmission_get_type (void) G_GNUC_CONST;
 char *
 ytsg_vp_transmission_get_local_uri (YtsgVPTransmission *self);
 
-unsigned int
+unsigned
 ytsg_vp_transmission_get_progress (YtsgVPTransmission *self);
 
 char *

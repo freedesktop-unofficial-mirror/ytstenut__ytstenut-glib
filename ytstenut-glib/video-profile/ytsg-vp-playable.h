@@ -25,8 +25,7 @@
 
 G_BEGIN_DECLS
 
-#define YTSG_VP_TYPE_PLAYABLE \
-  (ytsg_vp_playable_get_type ())
+#define YTSG_VP_TYPE_PLAYABLE (ytsg_vp_playable_get_type ())
 
 #define YTSG_VP_PLAYABLE(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTSG_VP_TYPE_PLAYABLE, YtsgVPPlayable))
@@ -34,17 +33,19 @@ G_BEGIN_DECLS
 #define YTSG_VP_IS_PLAYABLE(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_VP_TYPE_PLAYABLE))
 
-#define YTSG_VP_PLAYABLE_GET_INTERFACE(obj) \
-  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), YTSG_VP_TYPE_PLAYABLE, YtsgVPPlayableInterface))
+#define YTSG_VP_PLAYABLE_GET_INTERFACE(obj)                 \
+  (G_TYPE_INSTANCE_GET_INTERFACE ((obj),                    \
+                                  YTSG_VP_TYPE_PLAYABLE,    \
+                                  YtsgVPPlayableInterface))
 
 typedef struct YtsgVPPlayable YtsgVPPlayable;
-typedef struct YtsgVPPlayableInterface YtsgVPPlayableInterface;
 
-struct YtsgVPPlayableInterface {
+typedef struct {
 
   /*< private >*/
   GTypeInterface parent;
-};
+
+} YtsgVPPlayableInterface;
 
 GType
 ytsg_vp_playable_get_type (void) G_GNUC_CONST;

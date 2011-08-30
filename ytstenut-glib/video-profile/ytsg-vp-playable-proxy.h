@@ -25,13 +25,17 @@
 
 G_BEGIN_DECLS
 
-#define YTSG_VP_TYPE_PLAYABLE_PROXY ytsg_vp_playable_proxy_get_type()
+#define YTSG_VP_TYPE_PLAYABLE_PROXY (ytsg_vp_playable_proxy_get_type ())
 
-#define YTSG_VP_PLAYABLE_PROXY(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTSG_VP_TYPE_PLAYABLE_PROXY, YtsgVPPlayableProxy))
+#define YTSG_VP_PLAYABLE_PROXY(obj)                         \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj),                       \
+                               YTSG_VP_TYPE_PLAYABLE_PROXY, \
+                               YtsgVPPlayableProxy))
 
-#define YTSG_VP_PLAYABLE_PROXY_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST ((klass), YTSG_VP_TYPE_PLAYABLE_PROXY, YtsgVPPlayableProxyClass))
+#define YTSG_VP_PLAYABLE_PROXY_CLASS(klass)               \
+  (G_TYPE_CHECK_CLASS_CAST ((klass),                      \
+                            YTSG_VP_TYPE_PLAYABLE_PROXY,  \
+                            YtsgVPPlayableProxyClass))
 
 #define YTSG_VP_IS_PLAYABLE_PROXY(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_VP_TYPE_PLAYABLE_PROXY))
@@ -39,8 +43,10 @@ G_BEGIN_DECLS
 #define YTSG_VP_IS_PLAYABLE_PROXY_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_TYPE ((klass), YTSG_VP_TYPE_PLAYABLE_PROXY))
 
-#define YTSG_VP_PLAYABLE_PROXY_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), YTSG_VP_TYPE_PLAYABLE_PROXY, YtsgVPPlayableProxyClass))
+#define YTSG_VP_PLAYABLE_PROXY_GET_CLASS(obj)               \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj),                        \
+                              YTSG_VP_TYPE_PLAYABLE_PROXY,  \
+                              YtsgVPPlayableProxyClass))
 
 typedef struct {
   GObject parent;

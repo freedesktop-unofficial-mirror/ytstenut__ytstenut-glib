@@ -26,10 +26,10 @@
 
 G_BEGIN_DECLS
 
-#define YTSG_VP_CONTENT_CAPABILITY "org.freedesktop.ytstenut.VideoService.Content"
+#define YTSG_VP_CONTENT_CAPABILITY  \
+  "org.freedesktop.ytstenut.VideoProfile.Content"
 
-#define YTSG_VP_TYPE_CONTENT \
-  (ytsg_vp_content_get_type ())
+#define YTSG_VP_TYPE_CONTENT  (ytsg_vp_content_get_type ())
 
 #define YTSG_VP_CONTENT(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTSG_VP_TYPE_CONTENT, YtsgVPContent))
@@ -37,13 +37,14 @@ G_BEGIN_DECLS
 #define YTSG_VP_IS_CONTENT(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTSG_VP_TYPE_CONTENT))
 
-#define YTSG_VP_CONTENT_GET_INTERFACE(obj) \
-  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), YTSG_VP_TYPE_CONTENT, YtsgVPContentInterface))
+#define YTSG_VP_CONTENT_GET_INTERFACE(obj)                  \
+  (G_TYPE_INSTANCE_GET_INTERFACE ((obj),                    \
+                                  YTSG_VP_TYPE_CONTENT,     \
+                                  YtsgVPContentInterface))
 
 typedef struct YtsgVPContent YtsgVPContent;
-typedef struct YtsgVPContentInterface YtsgVPContentInterface;
 
-struct YtsgVPContentInterface {
+typedef struct {
 
   /*< private >*/
   GTypeInterface parent;
@@ -56,8 +57,9 @@ struct YtsgVPContentInterface {
   (*search) (YtsgVPContent           *self,
              char const             **tokens,
              YtsgVPQueryResultOrder   order,
-             unsigned int             max_results);
-};
+             unsigned                 max_results);
+
+} YtsgVPContentInterface;
 
 GType
 ytsg_vp_content_get_type (void) G_GNUC_CONST;
@@ -70,7 +72,7 @@ YtsgVPQuery *
 ytsg_vp_content_search (YtsgVPContent            *self,
                         char const              **tokens,
                         YtsgVPQueryResultOrder    order,
-                        unsigned int              max_results);
+                        unsigned                  max_results);
 
 G_END_DECLS
 
