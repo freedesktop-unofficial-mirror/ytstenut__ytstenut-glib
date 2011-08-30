@@ -52,7 +52,7 @@ typedef struct {
 
   /* Methods */
 
-  GHashTable *
+  GVariant *
   (*collect_properties) (YtsgServiceAdapter *self);
 
   bool
@@ -86,7 +86,7 @@ ytsg_service_adapter_get_type (void) G_GNUC_CONST;
 char const *
 ytsg_service_adapter_get_capability (YtsgServiceAdapter *self);
 
-GHashTable *
+GVariant *
 ytsg_service_adapter_collect_properties (YtsgServiceAdapter *self);
 
 bool

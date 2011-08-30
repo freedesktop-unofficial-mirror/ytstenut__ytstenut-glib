@@ -136,7 +136,7 @@ ytsg_client_get_invocation_proxy (YtsgClient   *self,
                                   YtsgContact **contact,
                                   char const  **proxy_id);
 
-bool
+GVariant *
 ytsg_client_register_proxy (YtsgClient  *self,
                             char const  *capability,
                             YtsgContact *contact,

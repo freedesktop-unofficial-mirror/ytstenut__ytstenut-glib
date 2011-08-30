@@ -40,30 +40,34 @@ typedef struct {
  * YtsgServiceAdapter overrides
  */
 
-static GHashTable *
+static GVariant *
 _service_adapter_collect_properties (YtsgServiceAdapter *self)
 {
   YtsgVPPlayerAdapterPrivate *priv = GET_PRIVATE (self);
-  GHashTable *properties;
-  bool        playing;
-  double      volume;
+  GVariantBuilder  builder;
+  bool             playing;
+  double           volume;
+  char            *playable_uri;
 
-  properties = g_hash_table_new_full (g_str_hash,
-                                      g_str_equal,
-                                      g_free,
-                                      g_variant_unref);
+  g_variant_builder_init (&builder, G_VARIANT_TYPE_ARRAY);
 
   playing = ytsg_vp_player_get_playing (priv->player);
-  g_hash_table_insert (properties,
-                       g_strdup ("playing"),
-                       g_variant_new_boolean (playing));
+  g_variant_builder_add (&builder, "{sv}", "playing",
+                                           g_variant_new_boolean (playing));
 
   volume = ytsg_vp_player_get_volume (priv->player);
-  g_hash_table_insert (properties,
-                       g_strdup ("volume"),
-                       g_variant_new_double (volume));
+  g_variant_builder_add (&builder, "{sv}", "volume",
+                                           g_variant_new_double (volume));
 
-  return properties;
+  /* PONDERING should NULL properties be synched or assumed default? */
+  playable_uri = ytsg_vp_player_get_playable_uri (priv->player);
+  if (playable_uri) {
+    g_variant_builder_add (&builder, "{sv}", "playable-uri",
+                                             g_variant_new_string (playable_uri));
+    g_free (playable_uri);
+  }
+
+  return g_variant_builder_end (&builder);
 }
 
 static bool
@@ -87,14 +91,24 @@ _service_adapter_invoke (YtsgServiceAdapter *self,
              g_variant_is_of_type (arguments, G_VARIANT_TYPE_BOOLEAN)) {
 
     /* PONDERING at some point we can maybe optimize out sending back the notification */
-    ytsg_vp_player_set_playing (priv->player, g_variant_get_boolean (arguments));
+    ytsg_vp_player_set_playing (priv->player,
+                                g_variant_get_boolean (arguments));
 
   } else if (0 == g_strcmp0 ("volume", aspect) &&
              arguments &&
              g_variant_is_of_type (arguments, G_VARIANT_TYPE_DOUBLE)) {
 
     /* PONDERING at some point we can maybe optimize out sending back the notification */
-    ytsg_vp_player_set_volume (priv->player, g_variant_get_double (arguments));
+    ytsg_vp_player_set_volume (priv->player,
+                               g_variant_get_double (arguments));
+
+  } else if (0 == g_strcmp0 ("playable-uri", aspect) &&
+             arguments &&
+             g_variant_is_of_type (arguments, G_VARIANT_TYPE_STRING)) {
+
+    /* PONDERING at some point we can maybe optimize out sending back the notification */
+    ytsg_vp_player_set_playable_uri (priv->player,
+                                     g_variant_get_string (arguments, NULL));
 
   } else
 
@@ -183,6 +197,20 @@ _player_notify_volume (YtsgVPPlayer         *player,
 }
 
 static void
+_player_notify_playable_uri (YtsgVPPlayer         *player,
+                             GParamSpec           *pspec,
+                             YtsgVPPlayerAdapter  *self)
+{
+  char *playable_uri;
+
+  playable_uri = ytsg_vp_player_get_playable_uri (player);
+  ytsg_service_adapter_send_event (YTSG_SERVICE_ADAPTER (self),
+                                   "playable-uri",
+                                   g_variant_new_string (playable_uri));
+  g_free (playable_uri);
+}
+
+static void
 _player_next_response (YtsgVPPlayer         *player,
                        char const           *invocation_id,
                        bool                  return_value,
@@ -259,6 +287,8 @@ _set_property (GObject      *object,
                         G_CALLBACK (_player_notify_playing), object);
       g_signal_connect (priv->player, "notify::volume",
                         G_CALLBACK (_player_notify_volume), object);
+      g_signal_connect (priv->player, "notify::playable-uri",
+                        G_CALLBACK (_player_notify_playable_uri), object);
 
       g_signal_connect (priv->player, "next-response",
                         G_CALLBACK (_player_next_response), object);

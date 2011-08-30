@@ -97,12 +97,12 @@ enum {
 static void
 _profile_register_proxy_response (YtsgProfile         *profile,
                                   char const          *invocation_id,
-                                  bool                 return_value,
+                                  GVariant            *return_value,
                                   YtsgProfileAdapter  *self)
 {
   ytsg_service_adapter_send_response (YTSG_SERVICE_ADAPTER (self),
                                       invocation_id,
-                                      g_variant_new_boolean (return_value));
+                                      return_value);
 }
 
 static void
@@ -132,9 +132,11 @@ _get_property (GObject      *object,
                GValue       *value,
                GParamSpec   *pspec)
 {
+  YtsgProfileAdapterPrivate *priv = GET_PRIVATE (object);
+
   switch (property_id) {
     case PROP_SERVICE_ADAPTER_SERVICE:
-      g_value_set_gtype (value, YTSG_TYPE_PROFILE);
+      g_value_set_object (value, priv->profile);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);

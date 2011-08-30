@@ -42,6 +42,7 @@ typedef struct {
   YtsgVPPlayableProxy *playable;
   bool                 playing;
   double               volume;
+  char                *playable_uri;
 
   /* Data */
   GHashTable  *invocations;
@@ -144,6 +145,12 @@ _proxy_service_event (YtsgProxy   *self,
     double volume = g_variant_get_double (arguments);
     ytsg_vp_player_set_volume (YTSG_VP_PLAYER (self), volume);
 
+  } else if (0 == g_strcmp0 ("playable-uri", aspect) &&
+             g_variant_is_of_type (arguments, G_VARIANT_TYPE_STRING)) {
+
+    char const *playable_uri = g_variant_get_string (arguments, NULL);
+    ytsg_vp_player_set_playable_uri (YTSG_VP_PLAYER (self), playable_uri);
+
   } else {
 
     g_critical ("%s : Unhandled event '%s' of type '%s'",
@@ -207,7 +214,8 @@ enum {
   PROP_PLAYER_CAPABILITY,
   PROP_PLAYER_PLAYABLE,
   PROP_PLAYER_PLAYING,
-  PROP_PLAYER_VOLUME
+  PROP_PLAYER_VOLUME,
+  PROP_PLAYER_PLAYABLE_URI
 };
 
 static void
@@ -227,6 +235,9 @@ _get_property (GObject      *object,
       break;
     case PROP_PLAYER_VOLUME:
       g_value_set_double (value, priv->volume);
+      break;
+    case PROP_PLAYER_PLAYABLE_URI:
+      g_value_set_string (value, priv->playable_uri);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -257,7 +268,8 @@ _set_property (GObject      *object,
         }
         g_object_notify (object, "playable");
         /* FIXME send home playable URI */
-        /* PONDERING maybe we could spare ourselves the answer */
+        /* PONDERING maybe we could spare ourselves the answer or just pass onto
+         * the server and do all the property foo on the return. */
         g_debug ("%s : 'playable' property not implemented yet", G_STRLOC);
       }
     } break;
@@ -280,10 +292,31 @@ _set_property (GObject      *object,
       if (volume != priv->volume) {
         priv->volume = volume;
         g_object_notify (object, "volume");
-        /* PONDERING maybe we could spare ourselves the answer */
+        /* PONDERING maybe we could spare ourselves the answer or just pass onto
+         * the server and do all the property foo on the return. */
         invocation_id = ytsg_proxy_create_invocation_id (YTSG_PROXY (object));
         ytsg_proxy_invoke (YTSG_PROXY (object), invocation_id,
                            "volume", g_variant_new_double (volume));
+        g_free (invocation_id);
+      }
+    } break;
+
+    case PROP_PLAYER_PLAYABLE_URI: {
+      char const *playable_uri = g_value_get_string (value);
+      if (0 != g_strcmp0 (playable_uri, priv->playable_uri)) {
+        if (priv->playable_uri) {
+          g_free (priv->playable_uri);
+          priv->playable_uri = NULL;
+        }
+        if (playable_uri) {
+          priv->playable_uri = g_strdup (playable_uri);
+        }
+        g_object_notify (object, "playable-uri");
+        /* PONDERING maybe we could spare ourselves the answer or just pass onto
+         * the server and do all the property foo on the return. */
+        invocation_id = ytsg_proxy_create_invocation_id (YTSG_PROXY (object));
+        ytsg_proxy_invoke (YTSG_PROXY (object), invocation_id,
+                           "playable-uri", g_variant_new_string (playable_uri));
         g_free (invocation_id);
       }
     } break;
@@ -342,6 +375,10 @@ ytsg_vp_player_proxy_class_init (YtsgVPPlayerProxyClass *klass)
   g_object_class_override_property (object_class,
                                     PROP_PLAYER_VOLUME,
                                     "volume");
+
+  g_object_class_override_property (object_class,
+                                    PROP_PLAYER_PLAYABLE_URI,
+                                    "playable-uri");
 }
 
 static void

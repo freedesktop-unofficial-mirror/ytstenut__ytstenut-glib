@@ -52,7 +52,7 @@ typedef struct {
 } YtsgVPPlayerProxyClass;
 
 GType
-ytsg_vp_player_proxy_get_type (void);
+ytsg_vp_player_proxy_get_type (void) G_GNUC_CONST;
 
 G_END_DECLS
 

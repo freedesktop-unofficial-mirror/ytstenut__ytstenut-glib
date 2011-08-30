@@ -63,7 +63,7 @@ ytsg_proxy_service_new (YtsgContact  *contact,
                         char const  **capabilities,
                         GHashTable   *names);
 
-YtsgProxy *
+bool
 ytsg_proxy_service_create_proxy (YtsgProxyService *self,
                                  char const       *capability);
 

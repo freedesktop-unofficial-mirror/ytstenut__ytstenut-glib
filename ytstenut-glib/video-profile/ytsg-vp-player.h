@@ -81,6 +81,13 @@ void
 ytsg_vp_player_set_playing (YtsgVPPlayer *self,
                             bool          playing);
 
+char *
+ytsg_vp_player_get_playable_uri (YtsgVPPlayer *self);
+
+void
+ytsg_vp_player_set_playable_uri (YtsgVPPlayer *self,
+                                 char const   *playable_uri);
+
 double
 ytsg_vp_player_get_volume (YtsgVPPlayer *self);
 

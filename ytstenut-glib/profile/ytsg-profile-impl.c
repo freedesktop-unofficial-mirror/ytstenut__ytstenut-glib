@@ -18,8 +18,10 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include "ytsg-private.h"
 #include "ytsg-profile.h"
 #include "ytsg-profile-impl.h"
+#include "ytsg-response-message.h"
 
 static void
 _profile_interface_init (YtsgProfileInterface *interface);
@@ -57,11 +59,12 @@ _register_proxy (YtsgProfile  *self,
                  char const   *capability)
 {
   YtsgProfileImplPrivate *priv = GET_PRIVATE (self);
-  YtsgContact *contact;
-  char const  *proxy_id;
-  bool         found;
-  bool         ret;
-  int          i;
+  YtsgContact   *contact;
+  char const    *proxy_id;
+  bool           found;
+  int            i;
+  GVariant      *return_value = NULL;
+  YtsgMetadata  *message;
 
   found = false;
   for (i = 0; i < priv->capabilities->len; i++) {
@@ -71,41 +74,50 @@ _register_proxy (YtsgProfile  *self,
     }
   }
 
-  if (!found) {
+  if (found) {
+
+    bool have_proxy = ytsg_client_get_invocation_proxy (priv->client,
+                                                        invocation_id,
+                                                        &contact,
+                                                        &proxy_id);
+    if (have_proxy) {
+
+      return_value = ytsg_client_register_proxy (priv->client,
+                                                 capability,
+                                                 contact,
+                                                 proxy_id);
+
+      if (NULL == return_value) {
+        g_critical ("%s : Failed to register proxy %s:%s for %s",
+                    G_STRLOC,
+                    ytsg_contact_get_jid (contact),
+                    proxy_id,
+                    capability);
+        return_value = g_variant_new_boolean (false);
+      }
+    } else {
+      g_critical ("%s : Failed to get proxy info for %s",
+                  G_STRLOC,
+                  capability);
+      return_value = g_variant_new_boolean (false);
+    }
+
+  } else {
     g_critical ("%s : Capability %s not available in profile",
                 G_STRLOC,
                 capability);
-    ytsg_profile_register_proxy_return (self, invocation_id, false);
-    return;
+    return_value = g_variant_new_boolean (false);
   }
 
-  ret = ytsg_client_get_invocation_proxy (priv->client,
-                                          invocation_id,
-                                          &contact,
-                                          &proxy_id);
-  if (!ret) {
-    g_critical ("%s : Failed to get proxy info for %s",
-                G_STRLOC,
-                capability);
-    ytsg_profile_register_proxy_return (self, invocation_id, false);
-    return;
-  }
-
-  ret = ytsg_client_register_proxy (priv->client,
-                                    capability,
-                                    contact,
-                                    proxy_id);
-  if (!ret) {
-    g_critical ("%s : Failed to register proxy %s:%s for %s",
-                G_STRLOC,
-                ytsg_contact_get_jid (contact),
-                proxy_id,
-                capability);
-    ytsg_profile_register_proxy_return (self, invocation_id, false);
-    return;
-  }
-
-  ytsg_profile_register_proxy_return (self, invocation_id, true);
+  /* This is one big HACK. The request was made to org.freedesktop.Ytstenut
+   * but the response goes to the actual capability that was registered,
+   * so it ends up in the right place. */
+  message = ytsg_response_message_new (capability,
+                                       invocation_id,
+                                       return_value);
+  _ytsg_client_send_message (priv->client, contact, proxy_id, message);
+  g_object_unref (message);
+  g_variant_unref (return_value);
 }
 
 static void

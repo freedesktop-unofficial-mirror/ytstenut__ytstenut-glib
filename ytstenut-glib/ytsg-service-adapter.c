@@ -39,7 +39,7 @@ enum {
 
 static unsigned int _signals[N_SIGNALS] = { 0, };
 
-static GHashTable *
+static GVariant *
 _collect_properties (YtsgServiceAdapter *self)
 {
   g_critical ("%s : Method YtsgServiceAdapter.collect_properties() not implemented by %s",
@@ -180,7 +180,7 @@ ytsg_service_adapter_get_capability (YtsgServiceAdapter *self)
   return G_PARAM_SPEC_STRING (pspec)->default_value;
 }
 
-GHashTable *
+GVariant *
 ytsg_service_adapter_collect_properties (YtsgServiceAdapter *self)
 {
   g_return_val_if_fail (YTSG_IS_SERVICE_ADAPTER (self), NULL);

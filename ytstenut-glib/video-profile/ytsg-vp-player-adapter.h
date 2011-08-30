@@ -51,7 +51,7 @@ typedef struct {
 } YtsgVPPlayerAdapterClass;
 
 GType
-ytsg_vp_player_adapter_get_type (void);
+ytsg_vp_player_adapter_get_type (void) G_GNUC_CONST;
 
 G_END_DECLS
 

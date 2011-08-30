@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include "ytsg-invocation-message.h"
+#include "ytsg-marshal.h"
 #include "ytsg-private.h"
 #include "ytsg-proxy-service.h"
 
@@ -31,11 +32,18 @@ G_DEFINE_TYPE (YtsgProxyService, ytsg_proxy_service, YTSG_TYPE_SERVICE)
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTSG_TYPE_PROXY_SERVICE, YtsgProxyServicePrivate))
 
+enum {
+  SIG_PROXY_CREATED,
+  N_SIGNALS
+};
+
 typedef struct {
   YtsgProfile *profile;
+  GHashTable  *invocations;
   GHashTable  *proxies;
 } YtsgProxyServicePrivate;
 
+static unsigned _signals[N_SIGNALS] = { 0, };
 
 static void
 _get_property (GObject      *object,
@@ -97,6 +105,11 @@ _dispose (GObject *object)
     priv->profile = NULL;
   }
 
+  if (priv->invocations) {
+    g_hash_table_destroy (priv->invocations);
+    priv->invocations = NULL;
+  }
+
   G_OBJECT_CLASS (ytsg_proxy_service_parent_class)->dispose (object);
 }
 
@@ -110,6 +123,16 @@ ytsg_proxy_service_class_init (YtsgProxyServiceClass *klass)
   object_class->get_property = _get_property;
   object_class->set_property = _set_property;
   object_class->dispose = _dispose;
+
+  /* Signals */
+
+  _signals[SIG_PROXY_CREATED] = g_signal_new ("proxy-created",
+                                              YTSG_TYPE_PROXY_SERVICE,
+                                              G_SIGNAL_RUN_LAST,
+                                              0, NULL, NULL,
+                                              ytsg_marshal_VOID__OBJECT,
+                                              G_TYPE_NONE, 1,
+                                              YTSG_TYPE_PROXY);
 }
 
 static void
@@ -121,6 +144,11 @@ ytsg_proxy_service_init (YtsgProxyService *self)
                                          g_str_equal,
                                          g_free,
                                          NULL);
+
+  priv->invocations = g_hash_table_new_full (g_str_hash,
+                                             g_str_equal,
+                                             g_free,
+                                             g_object_unref);
 }
 
 YtsgService *
@@ -250,12 +278,15 @@ _proxy_destroyed (YtsgProxyService  *self,
 extern GType
 ytsg_vp_player_proxy_get_type (void);
 
-YtsgProxy *
+// TODO instantiate proxy only on response
+//  an move from invocations hash to proxies
+bool
 ytsg_proxy_service_create_proxy (YtsgProxyService *self,
                                  char const       *capability)
 {
   YtsgProxyServicePrivate *priv = GET_PRIVATE (self);
   YtsgProxy *proxy;
+  char      *invocation_id;
 
   struct {
     char const *capability;
@@ -284,35 +315,41 @@ ytsg_proxy_service_create_proxy (YtsgProxyService *self,
     }
   }
 
-  if (proxy) {
-    g_hash_table_insert (priv->proxies,
-                         g_strdup (capability),
-                         proxy);
-    g_signal_connect (proxy, "invoke-service",
-                      G_CALLBACK (_proxy_invoke_service), self);
-    g_object_weak_ref (G_OBJECT (proxy),
-                       (GWeakNotify) _proxy_destroyed,
-                       self);
+  if (NULL == proxy) {
+    // FIXME GError
+    return false;
   }
 
+  g_hash_table_insert (priv->proxies,
+                       g_strdup (capability),
+                       proxy);
+  g_signal_connect (proxy, "invoke-service",
+                    G_CALLBACK (_proxy_invoke_service), self);
+  g_object_weak_ref (G_OBJECT (proxy),
+                     (GWeakNotify) _proxy_destroyed,
+                     self);
+
   if (NULL == priv->profile) {
-
-    char *invocation_id = ytsg_proxy_create_invocation_id (YTSG_PROXY (priv->profile));
-
+    /* Lazily create the profile proxy. */
     priv->profile = g_object_new (YTSG_TYPE_PROFILE_PROXY, NULL);
     g_signal_connect (priv->profile, "invoke-service",
                       G_CALLBACK (_profile_invoke_service), self);
-
-    /* Register new proxy with the service. */
-    ytsg_profile_register_proxy (priv->profile,
-                                 invocation_id,
-                                 capability);
-
-    g_free (invocation_id);
   }
 
-  return proxy;
+  invocation_id = ytsg_proxy_create_invocation_id (YTSG_PROXY (priv->profile));
+
+  /* Register new proxy with the service. */
+  // TODO timeout
+  ytsg_profile_register_proxy (priv->profile,
+                               invocation_id,
+                               capability);
+
+  g_hash_table_insert (priv->invocations, invocation_id, proxy);
+
+  return true;
 }
+
+// todo break here
 
 bool
 ytsg_proxy_service_dispatch_event (YtsgProxyService *self,
@@ -349,6 +386,37 @@ ytsg_proxy_service_dispatch_response (YtsgProxyService  *self,
                                       GVariant          *response)
 {
   YtsgProxyServicePrivate *priv = GET_PRIVATE (self);
+  YtsgProxy *proxy;
+
+  if (priv->invocations &&
+      g_hash_table_size (priv->invocations) > 0 &&
+      NULL != (proxy = g_hash_table_lookup (priv->invocations, invocation_id))) {
+
+    /* Initial properties for the proxy */
+    GVariantIter iter;
+    char *name;
+    GVariant *value;
+
+    if (!g_variant_is_of_type (response, G_VARIANT_TYPE_DICTIONARY)) {
+      g_critical ("%s : Registering proxy for capability %s failed",
+                  G_STRLOC,
+                  capability);
+      return false;
+    }
+
+    g_variant_iter_init (&iter, response);
+    while (g_variant_iter_next (&iter, "{sv}", &name, &value)) {
+      /* Pass the properties to the proxy through the standard mechanism. */
+      ytsg_proxy_handle_service_event (proxy, name, value);
+      g_free (name);
+      g_variant_unref (value);
+    }
+
+    g_signal_emit (self, _signals[SIG_PROXY_CREATED], 0,
+                   proxy);
+    g_hash_table_remove (priv->invocations, invocation_id);
+    return true;
+  }
 
   if (0 == g_strcmp0 (YTSG_PROFILE_CAPABILITY, capability)) {
 

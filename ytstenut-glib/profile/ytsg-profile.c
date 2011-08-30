@@ -81,9 +81,9 @@ ytsg_profile_default_init (YtsgProfileInterface *interface)
                                               YTSG_TYPE_PROFILE,
                                               G_SIGNAL_RUN_LAST,
                                               0, NULL, NULL,
-                                              ytsg_marshal_VOID__STRING_BOOLEAN,
+                                              ytsg_marshal_VOID__STRING_BOXED,
                                               G_TYPE_NONE,
-                                              2, G_TYPE_STRING, G_TYPE_BOOLEAN);
+                                              2, G_TYPE_STRING, G_TYPE_VARIANT);
 
   _signals[SIG_UNREGISTER_PROXY_RESPONSE] = g_signal_new (
                                               "unregister-proxy-response",
@@ -135,12 +135,16 @@ ytsg_profile_unregister_proxy (YtsgProfile  *self,
 void
 ytsg_profile_register_proxy_return (YtsgProfile *self,
                                     char const  *invocation_id,
-                                    bool         return_value)
+                                    GVariant    *return_value)
 {
   g_return_if_fail (YTSG_IS_PROFILE (self));
 
   g_signal_emit (self, _signals[SIG_REGISTER_PROXY_RESPONSE], 0,
                  invocation_id, return_value);
+
+  if (g_variant_is_floating (return_value)) {
+    g_variant_unref (return_value);
+  }
 }
 
 void

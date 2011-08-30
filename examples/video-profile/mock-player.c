@@ -38,7 +38,8 @@ enum {
   PROP_PLAYER_CAPABILITY,
   PROP_PLAYER_PLAYABLE,
   PROP_PLAYER_PLAYING,
-  PROP_PLAYER_VOLUME
+  PROP_PLAYER_VOLUME,
+  PROP_PLAYER_PLAYABLE_URI
 };
 
 typedef struct {
@@ -46,6 +47,7 @@ typedef struct {
   unsigned int    current;
   bool            playing;
   double          volume;
+  char           *playable_uri;
 } MockPlayerPrivate;
 
 /*
@@ -146,6 +148,9 @@ _get_property (GObject      *object,
     case PROP_PLAYER_VOLUME:
       g_value_set_double (value, priv->volume);
       break;
+    case PROP_PLAYER_PLAYABLE_URI:
+      g_value_set_string (value, priv->playable_uri);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
@@ -184,6 +189,21 @@ _set_property (GObject      *object,
       }
     } break;
 
+    case PROP_PLAYER_PLAYABLE_URI: {
+      char const *playable_uri = g_value_get_string (value);
+      if (0 != g_strcmp0 (playable_uri, priv->playable_uri)) {
+        if (priv->playable_uri) {
+          g_free (priv->playable_uri);
+          priv->playable_uri = NULL;
+        }
+        if (playable_uri) {
+          priv->playable_uri = g_strdup (playable_uri);
+        }
+        g_debug ("YtsgVPPlayer.playable-uri = %s", priv->playable_uri);
+        g_object_notify (object, "playable-uri");
+      }
+    } break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
@@ -192,6 +212,13 @@ _set_property (GObject      *object,
 static void
 _dispose (GObject *object)
 {
+  MockPlayerPrivate *priv = GET_PRIVATE (object);
+
+  if (priv->playable_uri) {
+    g_free (priv->playable_uri);
+    priv->playable_uri = NULL;
+  }
+
   G_OBJECT_CLASS (mock_player_parent_class)->dispose (object);
 }
 
@@ -224,6 +251,10 @@ mock_player_class_init (MockPlayerClass *klass)
   g_object_class_override_property (object_class,
                                     PROP_PLAYER_VOLUME,
                                     "volume");
+
+  g_object_class_override_property (object_class,
+                                    PROP_PLAYER_PLAYABLE_URI,
+                                    "playable-uri");
 }
 
 static void

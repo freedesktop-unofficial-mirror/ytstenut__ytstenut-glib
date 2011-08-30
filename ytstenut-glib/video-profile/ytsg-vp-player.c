@@ -32,7 +32,7 @@ enum {
   N_SIGNALS
 };
 
-unsigned int _signals[N_SIGNALS] = { 0, };
+static unsigned _signals[N_SIGNALS] = { 0, };
 
 static void
 _play (YtsgVPPlayer *self)
@@ -80,24 +80,31 @@ ytsg_vp_player_default_init (YtsgVPPlayerInterface *interface)
   g_object_interface_install_property (interface,
                                        g_param_spec_string ("capability", "", "",
                                                             YTSG_VP_PLAYER_CAPABILITY,
-                                                            G_PARAM_STATIC_NAME |
-                                                            G_PARAM_STATIC_NICK |
-                                                            G_PARAM_STATIC_BLURB));
+                                                            G_PARAM_STATIC_STRINGS));
 
   g_object_interface_install_property (interface,
                                        g_param_spec_object ("playable", "", "",
                                                             YTSG_VP_TYPE_PLAYABLE,
-                                                            G_PARAM_READWRITE));
+                                                            G_PARAM_READWRITE |
+                                                            G_PARAM_STATIC_STRINGS));
 
   g_object_interface_install_property (interface,
                                        g_param_spec_boolean ("playing", "", "",
                                                              false,
-                                                             G_PARAM_READWRITE));
+                                                             G_PARAM_READWRITE |
+                                                             G_PARAM_STATIC_STRINGS));
 
   g_object_interface_install_property (interface,
                                        g_param_spec_double ("volume", "", "",
                                                             0.0, 1.0, 0.5,
-                                                            G_PARAM_READWRITE));
+                                                            G_PARAM_READWRITE |
+                                                            G_PARAM_STATIC_STRINGS));
+
+  g_object_interface_install_property (interface,
+                                       g_param_spec_string ("playable-uri", "", "",
+                                                            NULL,
+                                                            G_PARAM_READWRITE |
+                                                            G_PARAM_STATIC_STRINGS));
 
   /* Signals */
 
@@ -179,6 +186,27 @@ ytsg_vp_player_set_volume (YtsgVPPlayer *self,
   g_return_if_fail (YTSG_VP_IS_PLAYER (self));
 
   g_object_set (G_OBJECT (self), "volume", volume, NULL);
+}
+
+char *
+ytsg_vp_player_get_playable_uri (YtsgVPPlayer *self)
+{
+  char *playable_uri;
+
+  g_return_val_if_fail (YTSG_VP_IS_PLAYER (self), NULL);
+
+  playable_uri = NULL;
+  g_object_get (G_OBJECT (self), "playable-uri", &playable_uri, NULL);
+  return playable_uri;
+}
+
+void
+ytsg_vp_player_set_playable_uri (YtsgVPPlayer *self,
+                                 char const   *playable_uri)
+{
+  g_return_if_fail (YTSG_VP_IS_PLAYER (self));
+
+  g_object_set (G_OBJECT (self), "playable-uri", playable_uri, NULL);
 }
 
 void

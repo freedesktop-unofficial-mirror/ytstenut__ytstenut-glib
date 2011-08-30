@@ -20,19 +20,37 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 #include <glib.h>
 
 #include <ytstenut-glib/ytstenut-glib.h>
 
 typedef enum {
   COMMAND_NONE,
-  COMMAND_PLAY,
-  COMMAND_PAUSE,
-  COMMAND_PREV,
-  COMMAND_NEXT
-} PlayerCommand;
+  COMMAND_PLAYER_PLAYING,
+  COMMAND_PLAYER_VOLUME,
+  COMMAND_PLAYER_PLAYABLE_URI,
+  COMMAND_PLAYER_PLAY,
+  COMMAND_PLAYER_PAUSE,
+  COMMAND_PLAYER_PREV,
+  COMMAND_PLAYER_NEXT
+} Command;
 
-static PlayerCommand  _command = COMMAND_NONE;
+typedef struct {
+
+  Command command;
+
+  /* Player */
+  char const  *player_playing;
+  double       player_volume;
+  char const  *player_playable_uri;
+  bool         player_play;
+  bool         player_pause;
+  bool         player_next;
+  bool         player_prev;
+
+} Options;
+
 static GMainLoop     *_mainloop = NULL;
 
 static void
@@ -43,8 +61,8 @@ _client_authenticated (YtsgClient *client,
 }
 
 static void
-_client_ready (YtsgClient     *client,
-               PlayerCommand   command)
+_client_ready (YtsgClient *client,
+               void       *data)
 {
   g_debug ("%s()", __FUNCTION__);
 }
@@ -86,6 +104,18 @@ _player_notify_volume (YtsgVPPlayer *player,
 }
 
 static void
+_player_notify_playable_uri (YtsgVPPlayer *player,
+                             GParamSpec   *pspec,
+                             void         *data)
+{
+  char *playable_uri;
+
+  playable_uri = ytsg_vp_player_get_playable_uri (player);
+  g_debug ("YtsgVPPlayer.playable-uri = %s", playable_uri);
+  g_free (playable_uri);
+}
+
+static void
 _player_next_response (YtsgVPPlayer *player,
                        char const   *invocation_id,
                        bool          return_value,
@@ -104,11 +134,82 @@ _player_prev_response (YtsgVPPlayer *player,
 }
 
 static void
+_proxy_service_player_created (YtsgProxyService *service,
+                               YtsgVPPlayer     *player,
+                               Options          *options)
+{
+  if (!YTSG_VP_IS_PLAYER (player)) {
+    g_critical ("%s : Failed to create player", G_STRLOC);
+    return;
+  }
+
+  // FIXME
+  g_object_ref (player);
+
+  g_signal_connect (player, "notify::playing",
+                    G_CALLBACK (_player_notify_playing), NULL);
+  g_signal_connect (player, "notify::volume",
+                    G_CALLBACK (_player_notify_volume), NULL);
+  g_signal_connect (player, "notify::playable-uri",
+                    G_CALLBACK (_player_notify_playable_uri), NULL);
+  g_signal_connect (player, "next-response",
+                    G_CALLBACK (_player_next_response), NULL);
+  g_signal_connect (player, "prev-response",
+                    G_CALLBACK (_player_prev_response), NULL);
+
+  switch (options->command) {
+    case COMMAND_PLAYER_PLAYING:
+      if (0 == g_strcmp0 (options->player_playing, "true")) {
+        ytsg_vp_player_set_playing (YTSG_VP_PLAYER (player), true);
+      } else if (0 == g_strcmp0 (options->player_playing, "false")) {
+        ytsg_vp_player_set_playing (YTSG_VP_PLAYER (player), false);
+      } else {
+        bool playing = ytsg_vp_player_get_playing (YTSG_VP_PLAYER (player));
+        g_debug ("YtsgVPPlayer.playing = %s", playing ? "true" : "false");
+      }
+      break;
+    case COMMAND_PLAYER_VOLUME:
+      if (options->player_volume >= 0.0) {
+        ytsg_vp_player_set_volume (YTSG_VP_PLAYER (player),
+                                   options->player_volume);
+      } else {
+        double volume = ytsg_vp_player_get_volume (YTSG_VP_PLAYER (player));
+        g_debug ("YtsgVPPlayer.volume = %.2f", volume);
+      }
+      break;
+    case COMMAND_PLAYER_PLAYABLE_URI:
+      if (options->player_playable_uri) {
+        ytsg_vp_player_set_playable_uri (YTSG_VP_PLAYER (player),
+                                         options->player_playable_uri);
+      } else {
+        char *playable_uri = ytsg_vp_player_get_playable_uri (
+                                YTSG_VP_PLAYER (player));
+        g_debug ("YtsgVPPlayer.playable_uri = %s", playable_uri);
+        g_free (playable_uri);
+      }
+      break;
+    case COMMAND_PLAYER_PLAY:
+      ytsg_vp_player_play (YTSG_VP_PLAYER (player));
+      break;
+    case COMMAND_PLAYER_PAUSE:
+      ytsg_vp_player_pause (YTSG_VP_PLAYER (player));
+      break;
+    case COMMAND_PLAYER_NEXT:
+      ytsg_vp_player_next (YTSG_VP_PLAYER (player), NULL);
+      break;
+    case COMMAND_PLAYER_PREV:
+      ytsg_vp_player_prev (YTSG_VP_PLAYER (player), NULL);
+      break;
+    default:
+      g_debug ("%s : command %i not handled", G_STRLOC, options->command);
+  }
+}
+
+static void
 _roster_service_added (YtsgRoster   *roster,
                        YtsgService  *service,
-                       void         *data)
+                       Options      *options)
 {
-  YtsgProxy   *player;
   char const  *uid;
   char const  *jid;
 
@@ -119,38 +220,16 @@ _roster_service_added (YtsgRoster   *roster,
 
   if (0 == g_strcmp0 (uid, "org.freedesktop.ytstenut.MockPlayer")) {
 
-    player = ytsg_proxy_service_create_proxy (YTSG_PROXY_SERVICE (service),
-                                              YTSG_VP_PLAYER_CAPABILITY);
-    g_return_if_fail (player);
+    bool ret;
 
-    g_signal_connect (player, "notify::playing",
-                      G_CALLBACK (_player_notify_playing), NULL);
-    g_signal_connect (player, "notify::volume",
-                      G_CALLBACK (_player_notify_volume), NULL);
-    g_signal_connect (player, "next-response",
-                      G_CALLBACK (_player_next_response), NULL);
-    g_signal_connect (player, "prev-response",
-                      G_CALLBACK (_player_prev_response), NULL);
+    g_signal_connect (service, "proxy-created",
+                      G_CALLBACK (_proxy_service_player_created), options);
 
-    switch (_command) {
-      case COMMAND_PLAY:
-        ytsg_vp_player_play (YTSG_VP_PLAYER (player));
-        break;
-      case COMMAND_PAUSE:
-        ytsg_vp_player_pause (YTSG_VP_PLAYER (player));
-        break;
-      case COMMAND_NEXT:
-        ytsg_vp_player_next (YTSG_VP_PLAYER (player), NULL);
-        break;
-      case COMMAND_PREV:
-        ytsg_vp_player_prev (YTSG_VP_PLAYER (player), NULL);
-        break;
-      default:
-        g_debug ("%s : command %i not handled", G_STRLOC, _command);
+    ret = ytsg_proxy_service_create_proxy (YTSG_PROXY_SERVICE (service),
+                                           YTSG_VP_PLAYER_CAPABILITY);
+    if (!ret) {
+      g_critical ("%s : Failed to create player", G_STRLOC);
     }
-
-    /* Waiting for the response */
-    /* g_object_unref (proxy); */
   }
 }
 
@@ -159,24 +238,38 @@ main (int     argc,
       char  **argv)
 {
   GOptionContext  *context;
+  GOptionGroup    *group;
   YtsgClient      *client;
   YtsgRoster      *roster;
   GError          *error = NULL;
 
-  bool         play = false;
-  bool         pause = false;
-  bool         next = false;
-  bool         prev = false;
-  GOptionEntry entries[] = {
-    { "play", 'p', 0, G_OPTION_ARG_NONE, &play, "Invoke 'play'", NULL },
-    { "pause", 'a', 0, G_OPTION_ARG_NONE, &pause, "Invoke 'pause'", NULL },
-    { "next", 'n', 0, G_OPTION_ARG_NONE, &next, "Invoke 'next'", NULL },
-    { "prev", 'r', 0, G_OPTION_ARG_NONE, &prev, "Invoke 'prev'", NULL },
+  Options options;
+
+  GOptionEntry player_entries[] = {
+    { "playing", 0, 0, G_OPTION_ARG_STRING, &options.player_playing, "Property 'playing'", "<true/false/get>" },
+    { "volume", 0, 0, G_OPTION_ARG_DOUBLE, &options.player_volume, "Property 'volume'", NULL },
+    { "playable-uri", 0, 0, G_OPTION_ARG_STRING, &options.player_playable_uri, "Property 'playable-uri'", NULL },
+
+    { "play", 0, 0, G_OPTION_ARG_NONE, &options.player_play, "Invoke 'play'", NULL },
+    { "pause", 0, 0, G_OPTION_ARG_NONE, &options.player_pause, "Invoke 'pause'", NULL },
+    { "next", 0, 0, G_OPTION_ARG_NONE, &options.player_next, "Invoke 'next'", NULL },
+    { "prev", 0, 0, G_OPTION_ARG_NONE, &options.player_prev, "Invoke 'prev'", NULL },
     { NULL }
   };
 
+  memset (&options, 0, sizeof (options));
+  options.player_volume = -1.0;
+
   context = g_option_context_new ("- mock player remote");
-  g_option_context_add_main_entries (context, entries, NULL);
+
+  group = g_option_group_new ("player",
+                              "VideoProfile.Player options",
+                              "This set of options can be used to exercise the Player interface.",
+                              NULL,
+                              NULL);
+  g_option_group_add_entries (group, player_entries);
+  g_option_context_set_main_group (context, group);
+
   g_option_context_add_group (context, ytsg_get_option_group ());
   g_option_context_parse (context, &argc, &argv, &error);
   if (error) {
@@ -185,14 +278,20 @@ main (int     argc,
     return EXIT_FAILURE;
   }
 
-  if (play) {
-    _command = COMMAND_PLAY;
-  } else if (pause) {
-    _command = COMMAND_PAUSE;
-  } else if (next) {
-    _command = COMMAND_NEXT;
-  } else if (prev) {
-    _command = COMMAND_PREV;
+  if (options.player_playing) {
+    options.command = COMMAND_PLAYER_PLAYING;
+  } else if (options.player_volume >= 0.0) {
+    options.command = COMMAND_PLAYER_VOLUME;
+  } else if (options.player_playable_uri) {
+    options.command = COMMAND_PLAYER_PLAYABLE_URI;
+  } else if (options.player_play) {
+    options.command = COMMAND_PLAYER_PLAY;
+  } else if (options.player_pause) {
+    options.command = COMMAND_PLAYER_PAUSE;
+  } else if (options.player_next) {
+    options.command = COMMAND_PLAYER_NEXT;
+  } else if (options.player_prev) {
+    options.command = COMMAND_PLAYER_PREV;
   } else {
     g_debug ("No command given, use --help to display commands.");
   }
@@ -200,17 +299,17 @@ main (int     argc,
   client = ytsg_client_new (YTSG_PROTOCOL_LOCAL_XMPP,
                             "org.freedesktop.ytstenut.MockPlayerRemote");
   g_signal_connect (client, "authenticated",
-                    G_CALLBACK (_client_authenticated), NULL);
+                    G_CALLBACK (_client_authenticated), &options);
   g_signal_connect (client, "ready",
-                    G_CALLBACK (_client_ready), NULL);
+                    G_CALLBACK (_client_ready), &options);
   g_signal_connect (client, "disconnected",
-                    G_CALLBACK (_client_disconnected), NULL);
+                    G_CALLBACK (_client_disconnected), &options);
   g_signal_connect (client, "message",
-                    G_CALLBACK (_client_message), NULL);
+                    G_CALLBACK (_client_message), &options);
 
   roster = ytsg_client_get_roster (client);
   g_signal_connect (roster, "service-added",
-                    G_CALLBACK (_roster_service_added), NULL);
+                    G_CALLBACK (_roster_service_added), &options);
 
   ytsg_client_connect (client);
 
