@@ -586,10 +586,6 @@ _ytsg_roster_add_service (YtsgRoster  *roster,
 
   YTSG_NOTE (ROSTER, "Adding service %s:%s", jid, sid);
 
-  char *caps_str = g_strjoinv (", ", (char **) caps);
-  g_debug ("%s(): sid %s, jid %s, type %s, caps: %s", __FUNCTION__, sid, jid, type, caps_str);
-  g_free (caps_str);
-
   service = create_service (roster, contact, sid, type, caps, names);
 
   _ytsg_contact_add_service (contact, service);
