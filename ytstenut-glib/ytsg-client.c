@@ -392,9 +392,8 @@ proxy_list_ensure_proxy (ProxyList          *self,
 }
 
 static void
-proxy_list_purge (ProxyList         *self,
-                  YtsgContact const *contact,
-                  char const        *proxy_id /* optional */)
+proxy_list_purge_contact (ProxyList         *self,
+                          YtsgContact const *contact)
 {
   GList *iter;
   bool   found;
@@ -406,13 +405,38 @@ proxy_list_purge (ProxyList         *self,
   do {
     found = false;
     for (iter = self->list; iter; iter = iter->next) {
-      ProxyData *data = (ProxyData *) iter->data;
-      bool proxy_id_matches = proxy_id ?
-                                  0 == g_strcmp0 (data->proxy_id, proxy_id) :
-                                  true; /* NULL proxy_id means don't test */
-      if (data->contact == contact &&
-          proxy_id_matches) {
 
+      ProxyData *data = (ProxyData *) iter->data;
+
+      if (data->contact == contact) {
+        proxy_data_destroy (data);
+        iter->data = NULL;
+        self->list = g_list_delete_link (self->list, iter);
+        found = true;
+        break;
+      }
+    }
+  } while (found);
+}
+
+static void
+proxy_list_purge_proxy_id (ProxyList  *self,
+                           char const *proxy_id)
+{
+  GList *iter;
+  bool   found;
+
+  g_return_if_fail (self);
+  g_return_if_fail (self->list);
+
+  // FIXME need to do this in a smarter way.
+  do {
+    found = false;
+    for (iter = self->list; iter; iter = iter->next) {
+
+      ProxyData *data = (ProxyData *) iter->data;
+
+      if (0 == g_strcmp0 (data->proxy_id, proxy_id)) {
         proxy_data_destroy (data);
         iter->data = NULL;
         self->list = g_list_delete_link (self->list, iter);
@@ -3387,7 +3411,64 @@ ytsg_client_cleanup_contact (YtsgClient         *self,
                                    (void **) &capability,
                                    (void **) &proxy_list)) {
 
-      proxy_list_purge (proxy_list, contact, NULL);
+      proxy_list_purge_contact (proxy_list, contact);
+      if (proxy_list_is_empty (proxy_list)) {
+        g_hash_table_remove (priv->proxies, capability);
+        start_over = true;
+        break;
+      }
+    }
+  } while (start_over);
+}
+
+void
+ytsg_client_cleanup_service (YtsgClient   *self,
+                             YtsgService  *service)
+{
+  YtsgClientPrivate *priv = self->priv;
+  char const      *service_id;
+  GHashTableIter   iter;
+  bool             start_over;
+
+  service_id = ytsg_service_get_uid (service);
+
+  /*
+   * Clear pending responses.
+   */
+
+  // FIXME this would be better solved using g_hash_table_foreach_remove().
+  do {
+    char const *invocation_id;
+    InvocationData *data;
+    start_over = false;
+    g_hash_table_iter_init (&iter, priv->invocations);
+    while (g_hash_table_iter_next (&iter,
+                                   (void **) &invocation_id,
+                                   (void **) &data)) {
+
+      if (0 == g_strcmp0 (data->proxy_id, service_id)) {
+        g_hash_table_remove (priv->invocations, invocation_id);
+        start_over = true;
+        break;
+      }
+    }
+  } while (start_over);
+
+  /*
+   * Unregister proxies
+   */
+
+  // FIXME this would be better solved using g_hash_table_foreach_remove().
+  do {
+    char const *capability;
+    ProxyList *proxy_list;
+    start_over = false;
+    g_hash_table_iter_init (&iter, priv->proxies);
+    while (g_hash_table_iter_next (&iter,
+                                   (void **) &capability,
+                                   (void **) &proxy_list)) {
+
+      proxy_list_purge_proxy_id (proxy_list, service_id);
       if (proxy_list_is_empty (proxy_list)) {
         g_hash_table_remove (priv->proxies, capability);
         start_over = true;
@@ -3460,10 +3541,9 @@ ytsg_client_register_proxy (YtsgClient  *self,
 }
 
 bool
-ytsg_client_unregister_proxy (YtsgClient        *self,
-                              char const        *capability,
-                              YtsgContact const *contact,
-                              char const        *proxy_id)
+ytsg_client_unregister_proxy (YtsgClient  *self,
+                              char const  *capability,
+                              char const  *proxy_id)
 {
   YtsgClientPrivate *priv = self->priv;
   ProxyList *proxy_list;
@@ -3472,15 +3552,14 @@ ytsg_client_unregister_proxy (YtsgClient        *self,
 
   proxy_list = g_hash_table_lookup (priv->proxies, capability);
   if (NULL == proxy_list) {
-    g_warning ("%s : No proxy for %s:%s:%s",
+    g_warning ("%s : No proxy for %s:%s",
                G_STRLOC,
-               ytsg_contact_get_jid (contact),
                proxy_id,
                capability);
     return false;
   }
 
-  proxy_list_purge (proxy_list, contact, proxy_id);
+  proxy_list_purge_proxy_id (proxy_list, proxy_id);
   if (proxy_list_is_empty (proxy_list)) {
     g_hash_table_remove (priv->proxies, capability);
   }

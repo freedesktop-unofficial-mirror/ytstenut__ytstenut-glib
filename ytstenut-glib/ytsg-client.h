@@ -130,6 +130,10 @@ void
 ytsg_client_cleanup_contact (YtsgClient         *self,
                              YtsgContact const  *contact);
 
+void
+ytsg_client_cleanup_service (YtsgClient   *self,
+                             YtsgService  *service);
+
 bool
 ytsg_client_get_invocation_proxy (YtsgClient   *self,
                                   char const   *invocation_id,
@@ -143,10 +147,9 @@ ytsg_client_register_proxy (YtsgClient  *self,
                             char const  *proxy_id);
 
 bool
-ytsg_client_unregister_proxy (YtsgClient        *self,
-                              char const        *capability,
-                              YtsgContact const *contact,
-                              char const        *proxy_id);
+ytsg_client_unregister_proxy (YtsgClient  *self,
+                              char const  *capability,
+                              char const  *proxy_id);
 
 G_END_DECLS
 

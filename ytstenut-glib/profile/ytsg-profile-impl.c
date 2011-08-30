@@ -162,7 +162,6 @@ _unregister_proxy (YtsgProfile  *self,
 
   ret = ytsg_client_unregister_proxy (priv->client,
                                       capability,
-                                      contact,
                                       proxy_id);
   if (!ret) {
     g_critical ("%s : Failed to unregister proxy %s:%s for %s",
