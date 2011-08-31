@@ -348,7 +348,7 @@ ytsg_proxy_service_dispatch_event (YtsgProxyService *self,
 {
   YtsgProxyServicePrivate *priv = GET_PRIVATE (self);
 
-  if (0 == g_strcmp0 (YTSG_PROFILE_CAPABILITY, capability)) {
+  if (0 == g_strcmp0 (YTSG_PROFILE_FQC_ID, capability)) {
 
     /* This one comes from the Profile / Meta interface */
     ytsg_proxy_handle_service_event (YTSG_PROXY (priv->profile),
@@ -407,7 +407,7 @@ ytsg_proxy_service_dispatch_response (YtsgProxyService  *self,
     return true;
   }
 
-  if (0 == g_strcmp0 (YTSG_PROFILE_CAPABILITY, capability)) {
+  if (0 == g_strcmp0 (YTSG_PROFILE_FQC_ID, capability)) {
 
     /* This one comes from the Profile / Meta interface */
     ytsg_proxy_handle_service_response (YTSG_PROXY (priv->profile),

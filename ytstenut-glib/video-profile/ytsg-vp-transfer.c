@@ -18,11 +18,12 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include "ytsg-capability.h"
 #include "ytsg-vp-transfer.h"
 
 G_DEFINE_INTERFACE (YtsgVPTransfer,
                     ytsg_vp_transfer,
-                    G_TYPE_OBJECT)
+                    YTSG_TYPE_CAPABILITY)
 
 static YtsgVPTransmission *
 _download (YtsgVPTransfer *self,
@@ -50,14 +51,6 @@ ytsg_vp_transfer_default_init (YtsgVPTransferInterface *interface)
   /* Methods */
   interface->download = _download;
   interface->upload = _upload;
-
-  /* Only to hold the default value */
-  g_object_interface_install_property (interface,
-                                       g_param_spec_string ("capability", "", "",
-                                                            YTSG_VP_TRANSFER_CAPABILITY,
-                                                            G_PARAM_STATIC_NAME |
-                                                            G_PARAM_STATIC_NICK |
-                                                            G_PARAM_STATIC_BLURB));
 }
 
 YtsgVPTransmission *

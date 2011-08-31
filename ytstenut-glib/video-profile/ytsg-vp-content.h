@@ -26,8 +26,7 @@
 
 G_BEGIN_DECLS
 
-#define YTSG_VP_CONTENT_CAPABILITY  \
-  "org.freedesktop.ytstenut.VideoProfile.Content"
+#define YTSG_VP_CONTENT_FQC_ID "org.freedesktop.ytstenut.VideoProfile.Content"
 
 #define YTSG_VP_TYPE_CONTENT  (ytsg_vp_content_get_type ())
 

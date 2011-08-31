@@ -26,7 +26,7 @@
 
 G_BEGIN_DECLS
 
-#define YTSG_PROFILE_CAPABILITY "org.freedesktop.Ytstenut"
+#define YTSG_PROFILE_FQC_ID "org.freedesktop.Ytstenut"
 
 #define YTSG_TYPE_PROFILE \
   (ytsg_profile_get_type ())

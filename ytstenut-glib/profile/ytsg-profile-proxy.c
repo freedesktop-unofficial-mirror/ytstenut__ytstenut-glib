@@ -190,7 +190,7 @@ _get_property (GObject      *object,
 
   switch (property_id) {
     case PROP_CAPABILITY_FQC_ID:
-      g_value_set_string (value, YTSG_PROFILE_CAPABILITY);
+      g_value_set_string (value, YTSG_PROFILE_FQC_ID);
       break;
     case PROP_PROFILE_CAPABILITIES:
       g_value_set_boxed (value, priv->capabilities);

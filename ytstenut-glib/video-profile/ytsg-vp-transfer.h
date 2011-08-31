@@ -26,7 +26,7 @@
 
 G_BEGIN_DECLS
 
-#define YTSG_VP_TRANSFER_CAPABILITY \
+#define YTSG_VP_TRANSFER_FQC_ID \
   "org.freedesktop.ytstenut.VideoProfile.Transfer"
 
 #define YTSG_VP_TYPE_TRANSFER (ytsg_vp_transfer_get_type ())

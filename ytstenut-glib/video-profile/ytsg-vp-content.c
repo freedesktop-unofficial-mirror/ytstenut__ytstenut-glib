@@ -18,11 +18,12 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include "ytsg-capability.h"
 #include "ytsg-vp-content.h"
 
 G_DEFINE_INTERFACE (YtsgVPContent,
                     ytsg_vp_content,
-                    G_TYPE_OBJECT)
+                    YTSG_TYPE_CAPABILITY)
 
 YtsgVPQuery *
 _retrieve (YtsgVPContent  *self,
@@ -51,14 +52,6 @@ ytsg_vp_content_default_init (YtsgVPContentInterface *interface)
 {
   interface->retrieve = _retrieve;
   interface->search = _search;
-
-  /* Only to hold the default value */
-  g_object_interface_install_property (interface,
-                                       g_param_spec_string ("capability", "", "",
-                                                            YTSG_VP_CONTENT_CAPABILITY,
-                                                            G_PARAM_STATIC_NAME |
-                                                            G_PARAM_STATIC_NICK |
-                                                            G_PARAM_STATIC_BLURB));
 }
 
 YtsgVPQuery *

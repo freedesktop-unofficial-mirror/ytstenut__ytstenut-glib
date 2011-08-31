@@ -25,7 +25,7 @@
 
 G_BEGIN_DECLS
 
-#define YTSG_VP_TRANSCRIPT_CAPABILITY \
+#define YTSG_VP_TRANSCRIPT_FQC_ID \
   "org.freedesktop.ytstenut.VideoProfile.Transcript"
 
 #define YTSG_VP_TYPE_TRANSCRIPT (ytsg_vp_transcript_get_type ())

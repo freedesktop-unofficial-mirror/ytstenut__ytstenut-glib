@@ -27,8 +27,7 @@
 
 G_BEGIN_DECLS
 
-#define YTSG_VP_PLAYER_CAPABILITY \
-  "org.freedesktop.ytstenut.VideoProfile.Player"
+#define YTSG_VP_PLAYER_FQC_ID "org.freedesktop.ytstenut.VideoProfile.Player"
 
 #define YTSG_VP_TYPE_PLAYER (ytsg_vp_player_get_type ())
 

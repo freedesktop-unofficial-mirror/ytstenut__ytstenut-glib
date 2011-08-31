@@ -226,7 +226,7 @@ _roster_service_added (YtsgRoster   *roster,
                       G_CALLBACK (_proxy_service_player_created), options);
 
     ret = ytsg_proxy_service_create_proxy (YTSG_PROXY_SERVICE (service),
-                                           YTSG_VP_PLAYER_CAPABILITY);
+                                           YTSG_VP_PLAYER_FQC_ID);
     if (!ret) {
       g_critical ("%s : Failed to create player", G_STRLOC);
     }

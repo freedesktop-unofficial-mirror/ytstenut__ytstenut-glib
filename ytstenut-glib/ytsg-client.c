@@ -3313,14 +3313,14 @@ ytsg_client_register_service (YtsgClient      *self,
   ytsg_client_set_capabilities (self, g_quark_from_string (fqc_id));
 
   /* Keep the proxy management service up to date. */
-  adapter = g_hash_table_lookup (priv->services, YTSG_PROFILE_CAPABILITY);
+  adapter = g_hash_table_lookup (priv->services, YTSG_PROFILE_FQC_ID);
   if (NULL == adapter) {
     profile_impl = ytsg_profile_impl_new (self);
     adapter = g_object_new (YTSG_TYPE_PROFILE_ADAPTER,
                             "service", profile_impl,
                             NULL);
     g_hash_table_insert (priv->services,
-                         g_strdup (YTSG_PROFILE_CAPABILITY),
+                         g_strdup (YTSG_PROFILE_FQC_ID),
                          adapter);
 
     g_signal_connect (adapter, "error",
