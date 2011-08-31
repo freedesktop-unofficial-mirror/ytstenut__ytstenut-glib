@@ -32,7 +32,7 @@ enum {
   N_SIGNALS
 };
 
-static unsigned int _signals[N_SIGNALS] = { 0, };
+static unsigned _signals[N_SIGNALS] = { 0, };
 
 static void
 ytsg_vp_query_default_init (YtsgVPQueryInterface *interface)
@@ -75,10 +75,10 @@ ytsg_vp_query_default_init (YtsgVPQueryInterface *interface)
                                           G_TYPE_POINTER, G_TYPE_UINT);
 }
 
-unsigned int
+unsigned
 ytsg_vp_get_max_results (YtsgVPQuery *self)
 {
-  unsigned int max_results;
+  unsigned max_results;
 
   g_return_val_if_fail (YTSG_VP_IS_QUERY (self), 0);
 
@@ -87,10 +87,10 @@ ytsg_vp_get_max_results (YtsgVPQuery *self)
   return max_results;
 }
 
-unsigned int
+unsigned
 ytsg_vp_get_progress (YtsgVPQuery *self)
 {
-  unsigned int progress;
+  unsigned progress;
 
   g_return_val_if_fail (YTSG_VP_IS_QUERY (self), 0);
 

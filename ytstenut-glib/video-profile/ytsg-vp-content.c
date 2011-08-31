@@ -39,7 +39,7 @@ YtsgVPQuery *
 _search (YtsgVPContent           *self,
          char const             **tokens,
          YtsgVPQueryResultOrder   order,
-         unsigned int             max_results)
+         unsigned                 max_results)
 {
   g_critical ("%s : Method YtsgVPContent.search() not implemented by %s",
               G_STRLOC,
@@ -67,7 +67,7 @@ YtsgVPQuery *
 ytsg_vp_content_search (YtsgVPContent            *self,
                         char const              **tokens,
                         YtsgVPQueryResultOrder    order,
-                        unsigned int              max_results)
+                        unsigned                  max_results)
 {
   g_return_val_if_fail (YTSG_VP_IS_CONTENT (self), NULL);
 

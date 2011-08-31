@@ -197,10 +197,10 @@ _transcript_destroyed (YtsgVPTranscriptAdapter  *self,
 }
 
 static void
-_get_property (GObject      *object,
-               unsigned int  property_id,
-               GValue       *value,
-               GParamSpec   *pspec)
+_get_property (GObject    *object,
+               unsigned    property_id,
+               GValue     *value,
+               GParamSpec *pspec)
 {
   YtsgVPTranscriptAdapterPrivate *priv = GET_PRIVATE (object);
 
@@ -215,7 +215,7 @@ _get_property (GObject      *object,
 
 static void
 _set_property (GObject      *object,
-               unsigned int  property_id,
+               unsigned      property_id,
                const GValue *value,
                GParamSpec   *pspec)
 {

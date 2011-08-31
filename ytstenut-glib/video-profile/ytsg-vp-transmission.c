@@ -55,10 +55,10 @@ ytsg_vp_transmission_get_local_uri (YtsgVPTransmission *self)
   return local_uri;
 }
 
-unsigned int
+unsigned
 ytsg_vp_transmission_get_progress (YtsgVPTransmission *self)
 {
-  unsigned int progress;
+  unsigned progress;
 
   g_return_val_if_fail (YTSG_VP_IS_TRANSMISSION (self), 0);
 

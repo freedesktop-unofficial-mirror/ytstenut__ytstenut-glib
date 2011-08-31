@@ -50,11 +50,11 @@ enum {
 };
 
 typedef struct {
-  char const    **playlist;
-  unsigned int    current;
-  bool            playing;
-  double          volume;
-  char           *playable_uri;
+  char const  **playlist;
+  unsigned      current;
+  bool          playing;
+  double        volume;
+  char         *playable_uri;
 } MockPlayerPrivate;
 
 /*
@@ -147,10 +147,10 @@ _player_interface_init (YtsgVPPlayerInterface *interface)
  */
 
 static void
-_get_property (GObject      *object,
-               unsigned int  property_id,
-               GValue       *value,
-               GParamSpec   *pspec)
+_get_property (GObject    *object,
+               unsigned    property_id,
+               GValue     *value,
+               GParamSpec *pspec)
 {
   MockPlayerPrivate *priv = GET_PRIVATE (object);
 
@@ -178,7 +178,7 @@ _get_property (GObject      *object,
 
 static void
 _set_property (GObject      *object,
-               unsigned int  property_id,
+               unsigned      property_id,
                const GValue *value,
                GParamSpec   *pspec)
 {
