@@ -22,6 +22,7 @@
 #ifndef _YTSG_H
 #define _YTSG_H
 
+#include <ytstenut-glib/ytsg-capability.h>
 #include <ytstenut-glib/ytsg-caps.h>
 #include <ytstenut-glib/ytsg-client.h>
 #include <ytstenut-glib/ytsg-contact.h>

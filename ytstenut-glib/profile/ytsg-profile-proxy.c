@@ -18,9 +18,12 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
-#include <stdbool.h>
+#include "ytsg-capability.h"
 #include "ytsg-profile.h"
 #include "ytsg-profile-proxy.h"
+
+static void
+_capability_interface_init (YtsgCapability *interface);
 
 static void
 _profile_interface_init (YtsgProfileInterface *interface);
@@ -28,6 +31,8 @@ _profile_interface_init (YtsgProfileInterface *interface);
 G_DEFINE_TYPE_WITH_CODE (YtsgProfileProxy,
                          ytsg_profile_proxy,
                          YTSG_TYPE_PROXY,
+                         G_IMPLEMENT_INTERFACE (YTSG_TYPE_CAPABILITY,
+                                                _capability_interface_init)
                          G_IMPLEMENT_INTERFACE (YTSG_TYPE_PROFILE,
                                                 _profile_interface_init))
 
@@ -44,6 +49,16 @@ typedef struct {
   GHashTable  *invocations;
 
 } YtsgProfileProxyPrivate;
+
+/*
+ * YtsgCapability implementation
+ */
+
+static void
+_capability_interface_init (YtsgCapability *interface)
+{
+  /* Nothing to do, it's just about overriding the "fqc-id" property */
+}
 
 /*
  * YtsgProfile implementation
@@ -125,7 +140,7 @@ _proxy_service_response (YtsgProxy  *self,
 
     ytsg_profile_register_proxy_return (YTSG_PROFILE (self),
                                         invocation_id,
-                                        g_variant_get_boolean (response));
+                                        response);
 
   } else if (call == _unregister_proxy) {
 
@@ -159,7 +174,9 @@ _proxy_service_response (YtsgProxy  *self,
 
 enum {
   PROP_0 = 0,
-  PROP_PROFILE_CAPABILITY,
+
+  PROP_CAPABILITY_FQC_ID,
+
   PROP_PROFILE_CAPABILITIES
 };
 
@@ -172,6 +189,9 @@ _get_property (GObject      *object,
   YtsgProfileProxyPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
+    case PROP_CAPABILITY_FQC_ID:
+      g_value_set_string (value, YTSG_PROFILE_CAPABILITY);
+      break;
     case PROP_PROFILE_CAPABILITIES:
       g_value_set_boxed (value, priv->capabilities);
       break;
@@ -222,10 +242,13 @@ ytsg_profile_proxy_class_init (YtsgProfileProxyClass *klass)
   proxy_class->service_event = _proxy_service_event;
   proxy_class->service_response = _proxy_service_response;
 
-  /* Just for default value, no need to handle get/set. */
+  /* YtsgCapability */
+
   g_object_class_override_property (object_class,
-                                    PROP_PROFILE_CAPABILITY,
-                                    "capability");
+                                    PROP_CAPABILITY_FQC_ID,
+                                    "fqc-id");
+
+  /* YtsgProfile */
 
   g_object_class_override_property (object_class,
                                     PROP_PROFILE_CAPABILITIES,

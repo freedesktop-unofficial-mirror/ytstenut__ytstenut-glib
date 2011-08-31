@@ -83,8 +83,8 @@ typedef struct {
 GType
 ytsg_service_adapter_get_type (void) G_GNUC_CONST;
 
-char const *
-ytsg_service_adapter_get_capability (YtsgServiceAdapter *self);
+char *
+ytsg_service_adapter_get_fqc_id (YtsgServiceAdapter *self);
 
 GVariant *
 ytsg_service_adapter_collect_properties (YtsgServiceAdapter *self);

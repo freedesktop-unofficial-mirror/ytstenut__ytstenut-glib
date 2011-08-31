@@ -18,6 +18,7 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include "ytsg-capability.h"
 #include "ytsg-marshal.h"
 #include "ytsg-service-adapter.h"
 
@@ -70,9 +71,9 @@ _get_property (GObject      *object,
 {
   switch (property_id) {
     case PROP_CAPABILITY:
-      g_value_set_string (value,
-                          ytsg_service_adapter_get_capability (
-                            YTSG_SERVICE_ADAPTER (object)));
+      g_value_take_string (value,
+                           ytsg_service_adapter_get_fqc_id (
+                              YTSG_SERVICE_ADAPTER (object)));
       break;
     /* Other properties need to be implemented by the subclass. */
     default:
@@ -158,11 +159,11 @@ ytsg_service_adapter_init (YtsgServiceAdapter *self)
 {
 }
 
-char const *
-ytsg_service_adapter_get_capability (YtsgServiceAdapter *self)
+char *
+ytsg_service_adapter_get_fqc_id (YtsgServiceAdapter *self)
 {
-  GObject     *service;
-  GParamSpec  *pspec;
+  GObject *service;
+  char    *fqc_id;
 
   g_return_val_if_fail (YTSG_IS_SERVICE_ADAPTER (self), NULL);
 
@@ -171,13 +172,11 @@ ytsg_service_adapter_get_capability (YtsgServiceAdapter *self)
   g_object_get (self, "service", &service, NULL);
   g_return_val_if_fail (service, NULL);
 
-  /* The service object implements a capability property,
-   * holding the capability as default value. */
-  pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (service),
-                                        "capability");
-  g_return_val_if_fail (G_IS_PARAM_SPEC_STRING (pspec), NULL);
+  fqc_id = ytsg_capability_get_fqc_id (YTSG_CAPABILITY (service));
 
-  return G_PARAM_SPEC_STRING (pspec)->default_value;
+  g_object_unref (service);
+
+  return fqc_id;
 }
 
 GVariant *

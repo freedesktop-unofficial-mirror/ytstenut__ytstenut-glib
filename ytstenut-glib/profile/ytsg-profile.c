@@ -18,13 +18,14 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include "ytsg-capability.h"
 #include "ytsg-marshal.h"
 #include "ytsg-profile.h"
 #include "ytsg-proxy.h"
 
 G_DEFINE_INTERFACE (YtsgProfile,
                     ytsg_profile,
-                    G_TYPE_OBJECT)
+                    YTSG_TYPE_CAPABILITY)
 
 enum {
   SIG_REGISTER_PROXY_RESPONSE,
@@ -61,12 +62,6 @@ ytsg_profile_default_init (YtsgProfileInterface *interface)
 
   interface->register_proxy = _register_proxy;
   interface->unregister_proxy = _unregister_proxy;
-
-  /* Only to hold the default value */
-  g_object_interface_install_property (interface,
-                                       g_param_spec_string ("capability", "", "",
-                                                            YTSG_PROFILE_CAPABILITY,
-                                                            G_PARAM_STATIC_STRINGS));
 
   pspec = g_param_spec_boxed ("capabilities", "", "",
                               G_TYPE_PTR_ARRAY,

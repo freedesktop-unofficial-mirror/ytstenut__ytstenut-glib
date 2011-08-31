@@ -26,6 +26,7 @@
 #include <glib-object.h>
 #include <telepathy-glib/channel.h>
 
+#include <ytstenut-glib/ytsg-capability.h>
 #include <ytstenut-glib/ytsg-caps.h>
 #include <ytstenut-glib/ytsg-error.h>
 #include <ytstenut-glib/ytsg-message.h>
@@ -121,8 +122,8 @@ void        ytsg_client_set_status_by_capability (YtsgClient *client,
                                                   const char *activity);
 
 gboolean
-ytsg_client_register_service (YtsgClient  *self,
-                              GObject     *service);
+ytsg_client_register_service (YtsgClient      *self,
+                              YtsgCapability  *service);
 
 /* Protected */
 

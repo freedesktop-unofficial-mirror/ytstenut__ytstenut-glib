@@ -154,7 +154,7 @@ main (int     argc,
 
   /* Instantiate and publish example player object so others can access it. */
   player = mock_player_new ();
-  ytsg_client_register_service (client, G_OBJECT (player));
+  ytsg_client_register_service (client, YTSG_CAPABILITY (player));
 
   /* Activate the client. */
   ytsg_client_connect (client);

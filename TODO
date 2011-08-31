@@ -30,7 +30,7 @@ TODO
 * InvocationID should carry the info to find back the method, obsoleting the hash tables. Would that work?
 * After registering the proxy, the server side should notify all properties so they are synched. Hmm but that would sync them to all listeners, need a special mode for that. Also should have batch synch later probably.
 * When proxy dies, should not the server be aware of it through TP? Seems ytsg_client_cleanup_contact does not run. Maybe a refcounting thing?
-* Have a common interface for services that implements a yts-capability property?
+* fqc-id should probably be a quark and named fqc-quark.
 
 Code Review
 -----------

@@ -18,13 +18,14 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include "ytsg-capability.h"
 #include "ytsg-marshal.h"
 #include "ytsg-vp-playable.h"
 #include "ytsg-vp-player.h"
 
 G_DEFINE_INTERFACE (YtsgVPPlayer,
                     ytsg_vp_player,
-                    G_TYPE_OBJECT)
+                    YTSG_TYPE_CAPABILITY)
 
 enum {
   SIG_NEXT_RESPONSE,
@@ -75,12 +76,6 @@ ytsg_vp_player_default_init (YtsgVPPlayerInterface *interface)
   interface->pause = _pause;
   interface->next = _next;
   interface->prev = _prev;
-
-  /* Only to hold the default value */
-  g_object_interface_install_property (interface,
-                                       g_param_spec_string ("capability", "", "",
-                                                            YTSG_VP_PLAYER_CAPABILITY,
-                                                            G_PARAM_STATIC_STRINGS));
 
   g_object_interface_install_property (interface,
                                        g_param_spec_object ("playable", "", "",

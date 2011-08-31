@@ -30,6 +30,20 @@
  * the mesh.
  */
 
+#include <string.h>
+#include <rest/rest-xml-parser.h>
+#include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/connection-manager.h>
+#include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/connection.h>
+#include <telepathy-glib/account.h>
+#include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/util.h>
+#include <telepathy-glib/contact.h>
+#include <telepathy-glib/debug.h>
+#include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
+
 #include "ytsg-client.h"
 #include "ytsg-debug.h"
 #include "ytsg-enum-types.h"
@@ -50,20 +64,6 @@
 #include "profile/ytsg-profile.h"
 #include "profile/ytsg-profile-adapter.h"
 #include "profile/ytsg-profile-impl.h"
-
-#include <string.h>
-#include <rest/rest-xml-parser.h>
-#include <telepathy-glib/telepathy-glib.h>
-#include <telepathy-glib/connection-manager.h>
-#include <telepathy-glib/gtypes.h>
-#include <telepathy-glib/connection.h>
-#include <telepathy-glib/account.h>
-#include <telepathy-glib/interfaces.h>
-#include <telepathy-glib/util.h>
-#include <telepathy-glib/contact.h>
-#include <telepathy-glib/debug.h>
-#include <telepathy-glib/proxy-subclass.h>
-#include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
 
 #define RECONNECT_DELAY 20 /* in seconds */
 
@@ -3161,39 +3161,27 @@ _adapter_event (YtsgServiceAdapter  *adapter,
                 YtsgClient          *self)
 {
   YtsgClientPrivate *priv = self->priv;
-  GObject     *service;
-  GParamSpec  *pspec;
+  YtsgMetadata  *message;
+  char          *fqc_id;
 
-  service = NULL;
-  g_object_get (adapter, "service", &service, NULL);
-  pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (service),
-                                        "capability");
-  if (pspec &&
-      G_IS_PARAM_SPEC_STRING (pspec))
-    {
-      char const *capability = G_PARAM_SPEC_STRING (pspec)->default_value;
-      YtsgMetadata *message = ytsg_event_message_new (capability,
-                                                      aspect,
-                                                      arguments);
-      /* Dispatch to all registered proxies. */
-      ProxyList *proxy_list = g_hash_table_lookup (priv->proxies, capability);
-      if (proxy_list) {
-        GList const *iter;
-        for (iter = proxy_list->list; iter; iter = iter->next) {
-          ProxyData const *proxy_data = (ProxyData const *) iter->data;
-          _ytsg_client_send_message (self,
-                                     YTSG_CONTACT (proxy_data->contact),
-                                     proxy_data->proxy_id,
-                                     message);
-        }
-      }
-      g_object_unref (message);
+  fqc_id = ytsg_service_adapter_get_fqc_id (adapter);
+
+  message = ytsg_event_message_new (fqc_id, aspect, arguments);
+
+  /* Dispatch to all registered proxies. */
+  ProxyList *proxy_list = g_hash_table_lookup (priv->proxies, fqc_id);
+  if (proxy_list) {
+    GList const *iter;
+    for (iter = proxy_list->list; iter; iter = iter->next) {
+      ProxyData const *proxy_data = (ProxyData const *) iter->data;
+      _ytsg_client_send_message (self,
+                                 YTSG_CONTACT (proxy_data->contact),
+                                 proxy_data->proxy_id,
+                                 message);
     }
-  else
-    {
-      g_critical ("%s : Failed to determine emit event, no capability", G_STRLOC);
-    }
-  g_object_unref (service);
+  }
+  g_object_unref (message);
+  g_free (fqc_id);
 }
 
 static void
@@ -3204,7 +3192,7 @@ _adapter_response (YtsgServiceAdapter *adapter,
 {
   YtsgClientPrivate *priv = self->priv;
   InvocationData  *invocation;
-  char const      *capability;
+  char            *fqc_id;
   YtsgMetadata    *message;
 
   invocation = g_hash_table_lookup (priv->invocations, invocation_id);
@@ -3215,16 +3203,16 @@ _adapter_response (YtsgServiceAdapter *adapter,
                 invocation_id);
   }
 
-  capability = ytsg_service_adapter_get_capability (adapter);
-  message = ytsg_response_message_new (capability,
+  fqc_id = ytsg_service_adapter_get_fqc_id (adapter);
+  message = ytsg_response_message_new (fqc_id,
                                        invocation_id,
                                        return_value);
-
   _ytsg_client_send_message (self,
                              invocation->contact,
                              invocation->proxy_id,
                              message);
   g_object_unref (message);
+  g_free (fqc_id);
 
   client_conclude_invocation (self, invocation_id);
 }
@@ -3255,8 +3243,8 @@ extern GType
 ytsg_vp_transfer_get_adapter_type (void);
 
 static YtsgServiceAdapter *
-create_adapter_for_service (YtsgClient  *self,
-                            GObject     *service)
+create_adapter_for_service (YtsgClient      *self,
+                            YtsgCapability  *service)
 {
   GType interface_type;
 
@@ -3282,44 +3270,31 @@ create_adapter_for_service (YtsgClient  *self,
  * unregistered upon destruction.
  */
 gboolean
-ytsg_client_register_service (YtsgClient  *self,
-                              GObject     *service)
+ytsg_client_register_service (YtsgClient      *self,
+                              YtsgCapability  *service)
 {
   YtsgClientPrivate   *priv = self->priv;
   YtsgServiceAdapter  *adapter;
   YtsgProfileImpl     *profile_impl;
   ServiceData         *service_data;
-  GParamSpec          *pspec;
-  char const          *capability;
+  char                *fqc_id;
 
   g_return_val_if_fail (YTSG_IS_CLIENT (self), FALSE);
 
-  pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (service),
-                                        "capability");
-  if (NULL == pspec ||
-      !G_IS_PARAM_SPEC_STRING (pspec))
-    {
-      g_critical ("%s : Service of type %s does not implement 'capability' "
-                  "property of type string",
-                  G_STRLOC,
-                  G_OBJECT_TYPE_NAME (service));
-      return FALSE;
-    }
-
-  capability = G_PARAM_SPEC_STRING (pspec)->default_value;
-  adapter = g_hash_table_lookup (priv->services, capability);
+  fqc_id = ytsg_capability_get_fqc_id (service);
+  adapter = g_hash_table_lookup (priv->services, fqc_id);
   if (adapter)
     {
       g_critical ("%s : Service for capability %s already registered",
                   G_STRLOC,
-                  capability);
+                  fqc_id);
       return FALSE;
     }
 
   adapter = create_adapter_for_service (self, service);
   g_return_val_if_fail (adapter, FALSE);
 
-  service_data = service_data_create (self, capability);
+  service_data = service_data_create (self, fqc_id);
   g_object_weak_ref (G_OBJECT (service),
                      (GWeakNotify) _service_destroyed,
                      service_data);
@@ -3333,9 +3308,9 @@ ytsg_client_register_service (YtsgClient  *self,
 
   /* Hash table takes adapter reference */
   g_hash_table_insert (priv->services,
-                       g_strdup (capability),
+                       g_strdup (fqc_id),
                        adapter);
-  ytsg_client_set_capabilities (self, g_quark_from_static_string (capability));
+  ytsg_client_set_capabilities (self, g_quark_from_string (fqc_id));
 
   /* Keep the proxy management service up to date. */
   adapter = g_hash_table_lookup (priv->services, YTSG_PROFILE_CAPABILITY);
@@ -3362,7 +3337,9 @@ ytsg_client_register_service (YtsgClient  *self,
     g_object_unref (profile_impl);
   }
 
-  ytsg_profile_impl_add_capability (profile_impl, capability);
+  ytsg_profile_impl_add_capability (profile_impl, fqc_id);
+
+  g_free (fqc_id);
 
   return TRUE;
 }

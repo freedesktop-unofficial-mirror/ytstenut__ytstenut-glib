@@ -30,8 +30,7 @@ G_BEGIN_DECLS
 #define YTSG_VP_PLAYER_CAPABILITY \
   "org.freedesktop.ytstenut.VideoProfile.Player"
 
-#define YTSG_VP_TYPE_PLAYER \
-  (ytsg_vp_player_get_type ())
+#define YTSG_VP_TYPE_PLAYER (ytsg_vp_player_get_type ())
 
 #define YTSG_VP_PLAYER(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTSG_VP_TYPE_PLAYER, YtsgVPPlayer))

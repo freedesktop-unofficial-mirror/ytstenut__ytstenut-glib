@@ -19,10 +19,14 @@
  */
 
 #include <stdbool.h>
+#include "ytsg-capability.h"
 #include "ytsg-vp-playable.h"
 #include "ytsg-vp-playable-proxy.h"
 #include "ytsg-vp-player.h"
 #include "ytsg-vp-player-proxy.h"
+
+static void
+_capability_interface_init (YtsgCapability *interface);
 
 static void
 _player_interface_init (YtsgVPPlayerInterface *interface);
@@ -30,6 +34,8 @@ _player_interface_init (YtsgVPPlayerInterface *interface);
 G_DEFINE_TYPE_WITH_CODE (YtsgVPPlayerProxy,
                          ytsg_vp_player_proxy,
                          YTSG_TYPE_PROXY,
+                         G_IMPLEMENT_INTERFACE (YTSG_TYPE_CAPABILITY,
+                                                _capability_interface_init)
                          G_IMPLEMENT_INTERFACE (YTSG_VP_TYPE_PLAYER,
                                                 _player_interface_init))
 
@@ -48,6 +54,16 @@ typedef struct {
   GHashTable  *invocations;
 
 } YtsgVPPlayerProxyPrivate;
+
+/*
+ * YtsgCapability implementation
+ */
+
+static void
+_capability_interface_init (YtsgCapability *interface)
+{
+  /* Nothing to do, it's just about overriding the "fqc-id" property */
+}
 
 /*
  * YtsgVPPlayer implementation
@@ -211,7 +227,9 @@ _proxy_service_response (YtsgProxy  *self,
 
 enum {
   PROP_0 = 0,
-  PROP_PLAYER_CAPABILITY,
+
+  PROP_CAPABILITY_FQC_ID,
+
   PROP_PLAYER_PLAYABLE,
   PROP_PLAYER_PLAYING,
   PROP_PLAYER_VOLUME,
@@ -227,6 +245,9 @@ _get_property (GObject      *object,
   YtsgVPPlayerProxyPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
+    case PROP_CAPABILITY_FQC_ID:
+      g_value_set_string (value, YTSG_VP_PLAYER_CAPABILITY);
+      break;
     case PROP_PLAYER_PLAYABLE:
       g_value_set_object (value, priv->playable);
       break;
@@ -359,10 +380,13 @@ ytsg_vp_player_proxy_class_init (YtsgVPPlayerProxyClass *klass)
   proxy_class->service_event = _proxy_service_event;
   proxy_class->service_response = _proxy_service_response;
 
-  /* Just for default value, no need to handle get/set. */
+  /* YtsgCapability */
+
   g_object_class_override_property (object_class,
-                                    PROP_PLAYER_CAPABILITY,
-                                    "capability");
+                                    PROP_CAPABILITY_FQC_ID,
+                                    "fqc-id");
+
+  /* YtsgVPPlayer */
 
   g_object_class_override_property (object_class,
                                     PROP_PLAYER_PLAYABLE,

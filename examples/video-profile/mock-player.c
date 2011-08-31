@@ -22,11 +22,16 @@
 #include "mock-player.h"
 
 static void
+_capability_interface_init (YtsgCapability *interface);
+
+static void
 _player_interface_init (YtsgVPPlayerInterface *interface);
 
 G_DEFINE_TYPE_WITH_CODE (MockPlayer,
                          mock_player,
                          G_TYPE_OBJECT,
+                         G_IMPLEMENT_INTERFACE (YTSG_TYPE_CAPABILITY,
+                                                _capability_interface_init)
                          G_IMPLEMENT_INTERFACE (YTSG_VP_TYPE_PLAYER,
                                                 _player_interface_init))
 
@@ -35,7 +40,9 @@ G_DEFINE_TYPE_WITH_CODE (MockPlayer,
 
 enum {
   PROP_0,
-  PROP_PLAYER_CAPABILITY,
+
+  PROP_CAPABILITY_FQC_ID,
+
   PROP_PLAYER_PLAYABLE,
   PROP_PLAYER_PLAYING,
   PROP_PLAYER_VOLUME,
@@ -49,6 +56,16 @@ typedef struct {
   double          volume;
   char           *playable_uri;
 } MockPlayerPrivate;
+
+/*
+ * YtsgCapability implementation
+ */
+
+static void
+_capability_interface_init (YtsgCapability *interface)
+{
+  /* Nothing to do, it's just about overriding the "fqc-id" property */
+}
 
 /*
  * YtsgVPPlayer
@@ -138,6 +155,9 @@ _get_property (GObject      *object,
   MockPlayerPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
+    case PROP_CAPABILITY_FQC_ID:
+      g_value_set_string (value, YTSG_VP_PLAYER_CAPABILITY);
+      break;
     case PROP_PLAYER_PLAYABLE:
       /* TODO */
       g_critical ("%s: property MockPlayer.playable not implemented", G_STRLOC);
@@ -233,12 +253,13 @@ mock_player_class_init (MockPlayerClass *klass)
   object_class->set_property = _set_property;
   object_class->dispose = _dispose;
 
-  /* YtsgVPPlayer interface */
+  /* YtsgCapability */
 
-  /* Just for default value, no need to handle get/set. */
   g_object_class_override_property (object_class,
-                                    PROP_PLAYER_CAPABILITY,
-                                    "capability");
+                                    PROP_CAPABILITY_FQC_ID,
+                                    "fqc-id");
+
+  /* YtsgVPPlayer */
 
   g_object_class_override_property (object_class,
                                     PROP_PLAYER_PLAYABLE,

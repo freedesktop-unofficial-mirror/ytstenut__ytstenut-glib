@@ -19,6 +19,7 @@
  */
 
 #include <stdbool.h>
+#include "ytsg-capability.h"
 #include "ytsg-invocation-message.h"
 #include "ytsg-marshal.h"
 #include "ytsg-private.h"
@@ -174,32 +175,19 @@ _profile_invoke_service (YtsgProfile      *profile,
                          GVariant         *arguments,
                          YtsgProxyService *self)
 {
-  YtsgContact     *contact;
-  YtsgClient      *client;
-  YtsgMetadata    *message;
-  char const      *uid;
-  GParamSpec      *pspec;
-  char const      *capability;
+  YtsgContact   *contact;
+  YtsgClient    *client;
+  YtsgMetadata  *message;
+  char const    *uid;
+  char          *fqc_id;
 
+  fqc_id = ytsg_capability_get_fqc_id (YTSG_CAPABILITY (profile));
   contact = ytsg_service_get_contact (YTSG_SERVICE (self));
   client = ytsg_contact_get_client (contact);
   uid = ytsg_service_get_uid (YTSG_SERVICE (self));
 
-  pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (profile),
-                                        "capability");
-  if (pspec &&
-      G_IS_PARAM_SPEC_STRING (pspec)) {
-
-    capability = G_PARAM_SPEC_STRING (pspec)->default_value;
-
-  } else {
-
-    g_critical ("%s : Could not determine capability", G_STRLOC);
-    return;
-  }
-
   message = ytsg_invocation_message_new (invocation_id,
-                                         capability,
+                                         fqc_id,
                                          aspect,
                                          arguments);
 
@@ -209,6 +197,7 @@ _profile_invoke_service (YtsgProfile      *profile,
   _ytsg_client_send_message (client, contact, uid, message);
 
   g_object_unref (message);
+  g_free (fqc_id);
 }
 
 static void

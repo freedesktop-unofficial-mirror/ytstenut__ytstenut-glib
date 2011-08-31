@@ -18,10 +18,14 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include "ytsg-capability.h"
 #include "ytsg-private.h"
 #include "ytsg-profile.h"
 #include "ytsg-profile-impl.h"
 #include "ytsg-response-message.h"
+
+static void
+_capability_interface_init (YtsgCapability *interface);
 
 static void
 _profile_interface_init (YtsgProfileInterface *interface);
@@ -29,25 +33,28 @@ _profile_interface_init (YtsgProfileInterface *interface);
 G_DEFINE_TYPE_WITH_CODE (YtsgProfileImpl,
                          ytsg_profile_impl,
                          G_TYPE_OBJECT,
+                         G_IMPLEMENT_INTERFACE (YTSG_TYPE_CAPABILITY,
+                                                _capability_interface_init)
                          G_IMPLEMENT_INTERFACE (YTSG_TYPE_PROFILE,
                                                 _profile_interface_init))
 
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTSG_TYPE_PROFILE_IMPL, YtsgProfileImplPrivate))
 
-enum {
-  PROP_0,
-
-  PROP_PROFILE_CAPABILITY,
-  PROP_PROFILE_CAPABILITIES,
-
-  PROP_CLIENT
-};
-
 typedef struct {
   GPtrArray   *capabilities;
   YtsgClient  *client;        /* free pointer */
 } YtsgProfileImplPrivate;
+
+/*
+ * YtsgCapability implementation
+ */
+
+static void
+_capability_interface_init (YtsgCapability *interface)
+{
+  /* Nothing to do, it's just about overriding the "fqc-id" property */
+}
 
 /*
  * YtsgProfile
@@ -187,6 +194,16 @@ _profile_interface_init (YtsgProfileInterface *interface)
  * YtsgProfileImpl
  */
 
+enum {
+  PROP_0 = 0,
+
+  PROP_CAPABILITY_FQC_ID,
+
+  PROP_PROFILE_CAPABILITIES,
+
+  PROP_CLIENT
+};
+
 static void
 _get_property (GObject      *object,
                unsigned int  property_id,
@@ -196,6 +213,9 @@ _get_property (GObject      *object,
   YtsgProfileImplPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
+    case   PROP_CAPABILITY_FQC_ID:
+      g_value_set_string (value, YTSG_PROFILE_CAPABILITY);
+      break;
     case PROP_PROFILE_CAPABILITIES:
       g_value_set_boxed (value, priv->capabilities);
       break;
@@ -247,12 +267,13 @@ ytsg_profile_impl_class_init (YtsgProfileImplClass *klass)
   object_class->set_property = _set_property;
   object_class->dispose = _dispose;
 
-  /* YtsgProfile interface */
+  /* YtsgCapability */
 
-  /* Just for default value, no need to handle get/set. */
   g_object_class_override_property (object_class,
-                                    PROP_PROFILE_CAPABILITY,
-                                    "capability");
+                                    PROP_CAPABILITY_FQC_ID,
+                                    "fqc-id");
+
+  /* YtsgProfile interface */
 
   g_object_class_override_property (object_class,
                                     PROP_PROFILE_CAPABILITIES,
