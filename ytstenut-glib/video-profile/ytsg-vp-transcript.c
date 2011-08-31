@@ -28,26 +28,28 @@ G_DEFINE_INTERFACE (YtsgVPTranscript,
 static void
 ytsg_vp_transcript_default_init (YtsgVPTranscriptInterface *interface)
 {
-  g_object_interface_install_property (interface,
-                                       g_param_spec_boxed ("available-locales", "", "",
-                                                           G_TYPE_PTR_ARRAY,
-                                                           G_PARAM_READABLE));
+  GParamSpec *pspec;
 
-  g_object_interface_install_property (interface,
-                                       g_param_spec_string ("current-text", "", "",
-                                                            NULL,
-                                                            G_PARAM_READABLE));
+  pspec = g_param_spec_boxed ("available-locales", "", "",
+                              G_TYPE_STRV,
+                              G_PARAM_READABLE);
+  g_object_interface_install_property (interface, pspec);
 
-  g_object_interface_install_property (interface,
-                                       g_param_spec_string ("locale", "", "",
-                                                            NULL,
-                                                            G_PARAM_READABLE));
+  pspec = g_param_spec_string ("current-text", "", "",
+                               NULL,
+                               G_PARAM_READABLE);
+  g_object_interface_install_property (interface, pspec);
+
+  pspec = g_param_spec_string ("locale", "", "",
+                               NULL,
+                               G_PARAM_READABLE);
+  g_object_interface_install_property (interface, pspec);
 }
 
-GPtrArray *
+char **
 ytsg_vp_transcript_get_available_locales (YtsgVPTranscript *self)
 {
-  GPtrArray *available_locales;
+  char **available_locales;
 
   g_return_val_if_fail (YTSG_VP_IS_TRANSCRIPT (self), NULL);
 

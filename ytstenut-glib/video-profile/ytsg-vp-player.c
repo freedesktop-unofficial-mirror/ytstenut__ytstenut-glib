@@ -72,34 +72,36 @@ _prev (YtsgVPPlayer *self,
 static void
 ytsg_vp_player_default_init (YtsgVPPlayerInterface *interface)
 {
+  GParamSpec *pspec;
+
   interface->play = _play;
   interface->pause = _pause;
   interface->next = _next;
   interface->prev = _prev;
 
-  g_object_interface_install_property (interface,
-                                       g_param_spec_object ("playable", "", "",
-                                                            YTSG_VP_TYPE_PLAYABLE,
-                                                            G_PARAM_READWRITE |
-                                                            G_PARAM_STATIC_STRINGS));
+  pspec = g_param_spec_object ("playable", "", "",
+                               YTSG_VP_TYPE_PLAYABLE,
+                               G_PARAM_READWRITE |
+                               G_PARAM_STATIC_STRINGS);
+  g_object_interface_install_property (interface, pspec);
 
-  g_object_interface_install_property (interface,
-                                       g_param_spec_boolean ("playing", "", "",
-                                                             false,
-                                                             G_PARAM_READWRITE |
-                                                             G_PARAM_STATIC_STRINGS));
+  pspec = g_param_spec_boolean ("playing", "", "",
+                                false,
+                                G_PARAM_READWRITE |
+                                G_PARAM_STATIC_STRINGS);
+  g_object_interface_install_property (interface, pspec);
 
-  g_object_interface_install_property (interface,
-                                       g_param_spec_double ("volume", "", "",
-                                                            0.0, 1.0, 0.5,
-                                                            G_PARAM_READWRITE |
-                                                            G_PARAM_STATIC_STRINGS));
+  pspec = g_param_spec_double ("volume", "", "",
+                               0.0, 1.0, 0.5,
+                               G_PARAM_READWRITE |
+                               G_PARAM_STATIC_STRINGS);
+  g_object_interface_install_property (interface, pspec);
 
-  g_object_interface_install_property (interface,
-                                       g_param_spec_string ("playable-uri", "", "",
-                                                            NULL,
-                                                            G_PARAM_READWRITE |
-                                                            G_PARAM_STATIC_STRINGS));
+  pspec = g_param_spec_string ("playable-uri", "", "",
+                               NULL,
+                               G_PARAM_READWRITE |
+                               G_PARAM_STATIC_STRINGS);
+  g_object_interface_install_property (interface, pspec);
 
   /* Signals */
 

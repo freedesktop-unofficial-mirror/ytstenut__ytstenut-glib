@@ -55,7 +55,7 @@ typedef struct  {
 GType
 ytsg_vp_transcript_get_type (void) G_GNUC_CONST;
 
-GPtrArray *
+char **
 ytsg_vp_transcript_get_available_locales (YtsgVPTranscript *self);
 
 char *
