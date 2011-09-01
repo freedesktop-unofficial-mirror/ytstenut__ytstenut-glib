@@ -4,11 +4,12 @@ CLEANFILES=
 BUILT_GIRSOURCES=
 INCLUDES_FOR_GIR=-I..
 
-AM_CPPFLAGS = 					\
-	-DG_DISABLE_DEPRECATED 			\
-	-DG_DISABLE_SINGLE_INCLUDES		\
-	-DG_LOG_DOMAIN=\"YtstenutGlib\" 	\
-	$(YTSG_DEBUG_CFLAGS)		\
+AM_CPPFLAGS = \
+  -I$(top_srcdir) \
+	-DG_DISABLE_DEPRECATED \
+	-DG_DISABLE_SINGLE_INCLUDES \
+	-DG_LOG_DOMAIN=\"YtstenutGlib\" \
+	$(YTSG_DEBUG_CFLAGS) \
 	$(NULL)
 
 AM_CFLAGS = $(YTSG_CFLAGS)
@@ -94,6 +95,8 @@ source_c =						\
 		$(NULL)
 
 private_h = \
+		$(srcdir)/ytsg-private.h \
+		\
 		$(srcdir)/profile/ytsg-profile.h \
 		$(srcdir)/profile/ytsg-profile-impl.h \
 		$(srcdir)/profile/ytsg-profile-proxy.h \

@@ -1,11 +1,10 @@
 
 SUBDIRS = video-profile
 
-AM_CPPFLAGS = 					\
-	-DG_DISABLE_DEPRECATED 			\
-	-DG_DISABLE_SINGLE_INCLUDES		\
-	-DG_LOG_DOMAIN=\"YtstenutGlib\" 	\
-	$(YTSG_DEBUG_CFLAGS)		\
+AM_CPPFLAGS = \
+  -I$(top_srcdir) \
+	-DG_DISABLE_DEPRECATED \
+	$(YTSG_DEBUG_CFLAGS) \
 	$(NULL)
 
 AM_CFLAGS = $(YTSG_CFLAGS)
