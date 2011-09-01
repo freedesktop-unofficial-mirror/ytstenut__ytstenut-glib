@@ -27,13 +27,18 @@ _capability_interface_init (YtsgCapability *interface);
 static void
 _player_interface_init (YtsgVPPlayerInterface *interface);
 
+static void
+_transcript_interface_init (YtsgVPPlayerInterface *interface);
+
 G_DEFINE_TYPE_WITH_CODE (MockPlayer,
                          mock_player,
                          G_TYPE_OBJECT,
                          G_IMPLEMENT_INTERFACE (YTSG_TYPE_CAPABILITY,
                                                 _capability_interface_init)
                          G_IMPLEMENT_INTERFACE (YTSG_VP_TYPE_PLAYER,
-                                                _player_interface_init))
+                                                _player_interface_init)
+                         G_IMPLEMENT_INTERFACE (YTSG_VP_TYPE_TRANSCRIPT,
+                                                _transcript_interface_init))
 
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MOCK_TYPE_PLAYER, MockPlayerPrivate))
@@ -41,20 +46,37 @@ G_DEFINE_TYPE_WITH_CODE (MockPlayer,
 enum {
   PROP_0,
 
+  /* YtsgCapability */
   PROP_CAPABILITY_FQC_IDS,
 
+  /* YtsgVPPlayer */
   PROP_PLAYER_PLAYABLE,
   PROP_PLAYER_PLAYING,
   PROP_PLAYER_VOLUME,
-  PROP_PLAYER_PLAYABLE_URI
+  PROP_PLAYER_PLAYABLE_URI,
+
+  /* YtsgVPTranscript */
+  PROP_TRANSCRIPT_AVAILABLE_LOCALES,
+  PROP_TRANSCRIPT_CURRENT_TEXT,
+  PROP_TRANSCRIPT_LOCALE
 };
 
 typedef struct {
-  char const  **playlist;
-  unsigned      current;
-  bool          playing;
-  double        volume;
-  char         *playable_uri;
+
+  /* YtsgVPPlayer */
+
+  char const *const *playlist;
+  unsigned           current;
+  bool               playing;
+  double             volume;
+  char              *playable_uri;
+
+  /* YtsgVPTranscript */
+
+  char const *const *available_locales;
+  char              *current_text;
+  unsigned           locale_idx;
+
 } MockPlayerPrivate;
 
 /*
@@ -143,6 +165,37 @@ _player_interface_init (YtsgVPPlayerInterface *interface)
 }
 
 /*
+ * YtsgVPTranscript
+ */
+
+static bool
+_transcript_emit_text (MockPlayer *self)
+{
+  static unsigned _counter = 0;
+
+  MockPlayerPrivate *priv = GET_PRIVATE (self);
+
+  if (priv->current_text) {
+    g_free (priv->current_text);
+    priv->current_text = NULL;
+  }
+
+  priv->current_text = g_strdup_printf ("text %i", _counter);
+  g_object_notify (G_OBJECT (self), "current-text");
+
+  _counter++;
+
+  /* Keep running. */
+  return true;
+}
+
+static void
+_transcript_interface_init (YtsgVPPlayerInterface *interface)
+{
+  /* No methods to override. */
+}
+
+/*
  * MockPlayer
  */
 
@@ -155,10 +208,23 @@ _get_property (GObject    *object,
   MockPlayerPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
+
+    /*
+     * YtsgCapability
+     */
+
     case PROP_CAPABILITY_FQC_IDS: {
-      char *fcq_ids[] = { YTSG_VP_PLAYER_FQC_ID, NULL };
+      char *fcq_ids[] = {
+        YTSG_VP_PLAYER_FQC_ID,
+        YTSG_VP_TRANSCRIPT_FQC_ID,
+        NULL };
       g_value_set_boxed (value, fcq_ids);
     } break;
+
+    /*
+     * YtsgVPPlayer
+     */
+
     case PROP_PLAYER_PLAYABLE:
       /* TODO */
       g_critical ("%s: property MockPlayer.playable not implemented", G_STRLOC);
@@ -172,6 +238,21 @@ _get_property (GObject    *object,
     case PROP_PLAYER_PLAYABLE_URI:
       g_value_set_string (value, priv->playable_uri);
       break;
+
+    /*
+     * YtsgVPTranscript
+     */
+
+    case PROP_TRANSCRIPT_AVAILABLE_LOCALES:
+      g_value_set_boxed (value, (char **) priv->available_locales);
+      break;
+    case PROP_TRANSCRIPT_CURRENT_TEXT:
+      g_value_set_string (value, priv->current_text);
+      break;
+    case PROP_TRANSCRIPT_LOCALE:
+      g_value_set_string (value, priv->available_locales[priv->locale_idx]);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
@@ -186,6 +267,10 @@ _set_property (GObject      *object,
   MockPlayerPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
+
+    /*
+     * YtsgVPPlayer
+     */
 
     case PROP_PLAYER_PLAYABLE:
       /* TODO */
@@ -223,6 +308,38 @@ _set_property (GObject      *object,
         g_debug ("YtsgVPPlayer.playable-uri = %s", priv->playable_uri);
         g_object_notify (object, "playable-uri");
       }
+    } break;
+
+    /*
+     * YtsgVPTranscript
+     */
+
+    case PROP_TRANSCRIPT_LOCALE: {
+
+      char const *locale = g_value_get_string (value);
+      unsigned i;
+      int locale_idx = -1;
+      for (i = 0; priv->available_locales[i]; i++) {
+        if (0 == g_strcmp0 (locale, priv->available_locales[i])) {
+          locale_idx = i;
+          break;
+        }
+      }
+
+      if (locale_idx < 0) {
+        g_warning ("%s : Locale %s not available.",
+                   G_STRLOC,
+                   locale);
+        /* TODO emit error. */
+
+      } else if (locale_idx != priv->locale_idx) {
+
+        priv->locale_idx = locale_idx;
+        g_debug ("YtsgVPTranscript.locale = %s",
+                 priv->available_locales[priv->locale_idx]);
+        g_object_notify (object, "locale");
+      }
+
     } break;
 
     default:
@@ -277,20 +394,46 @@ mock_player_class_init (MockPlayerClass *klass)
   g_object_class_override_property (object_class,
                                     PROP_PLAYER_PLAYABLE_URI,
                                     "playable-uri");
+
+  /* YtsgVPTranscript */
+
+  g_object_class_override_property (object_class,
+                                    PROP_TRANSCRIPT_AVAILABLE_LOCALES,
+                                    "available-locales");
+
+  g_object_class_override_property (object_class,
+                                    PROP_TRANSCRIPT_CURRENT_TEXT,
+                                    "current-text");
+
+  g_object_class_override_property (object_class,
+                                    PROP_TRANSCRIPT_LOCALE,
+                                    "locale");
 }
 
 static void
 mock_player_init (MockPlayer *self)
 {
   MockPlayerPrivate *priv = GET_PRIVATE (self);
-  static char const *_playlist[] = {
+  static char const *const _playlist[] = {
     "#1 foo",
     "#2 bar",
     "#3 baz",
     NULL
   };
 
+  static char const *const _locales[] = {
+    "en_GB",
+    "de_AT",
+    NULL
+  };
+
   priv->playlist = _playlist;
+  priv->available_locales = _locales;
+
+  /* Timer to fake a stream of subtitles. */
+  g_timeout_add_seconds (3,
+                         (GSourceFunc) _transcript_emit_text,
+                         self);
 }
 
 MockPlayer *

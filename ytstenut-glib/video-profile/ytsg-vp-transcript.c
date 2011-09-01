@@ -32,17 +32,20 @@ ytsg_vp_transcript_default_init (YtsgVPTranscriptInterface *interface)
 
   pspec = g_param_spec_boxed ("available-locales", "", "",
                               G_TYPE_STRV,
-                              G_PARAM_READABLE);
+                              G_PARAM_READABLE |
+                              G_PARAM_STATIC_STRINGS);
   g_object_interface_install_property (interface, pspec);
 
   pspec = g_param_spec_string ("current-text", "", "",
                                NULL,
-                               G_PARAM_READABLE);
+                               G_PARAM_READABLE |
+                               G_PARAM_STATIC_STRINGS);
   g_object_interface_install_property (interface, pspec);
 
   pspec = g_param_spec_string ("locale", "", "",
                                NULL,
-                               G_PARAM_READABLE);
+                               G_PARAM_READWRITE |
+                               G_PARAM_STATIC_STRINGS);
   g_object_interface_install_property (interface, pspec);
 }
 

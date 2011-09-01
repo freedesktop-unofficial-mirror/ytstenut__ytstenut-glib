@@ -134,15 +134,9 @@ _player_prev_response (YtsgVPPlayer *player,
 }
 
 static void
-_proxy_service_player_created (YtsgProxyService *service,
-                               YtsgVPPlayer     *player,
-                               Options          *options)
+use_player (YtsgVPPlayer  *player,
+            Options       *options)
 {
-  if (!YTSG_VP_IS_PLAYER (player)) {
-    g_critical ("%s : Failed to create player", G_STRLOC);
-    return;
-  }
-
   // FIXME
   g_object_ref (player);
 
@@ -206,6 +200,66 @@ _proxy_service_player_created (YtsgProxyService *service,
 }
 
 static void
+_transcript_notify_current_text (YtsgVPTranscript *transcript,
+                                 GParamSpec       *pspec,
+                                 void             *data)
+{
+  char *current_text;
+
+  current_text = ytsg_vp_transcript_get_current_text (transcript);
+  g_debug ("YtsgVPTranscript.current-text = %s", current_text);
+  g_free (current_text);
+}
+
+static void
+use_transcript (YtsgVPTranscript  *transcript,
+                Options           *options)
+{
+  char **locales;
+  char  *locales_str;
+  char  *locale;
+
+  // FIXME
+  g_object_ref (transcript);
+
+  locales = ytsg_vp_transcript_get_available_locales (transcript);
+  locales_str = g_strjoinv (", ", locales);
+
+  locale = ytsg_vp_transcript_get_locale (transcript);
+
+  g_signal_connect (transcript, "notify::current-text",
+                    G_CALLBACK (_transcript_notify_current_text), NULL);
+
+  g_debug ("Transcript create with locales %s, currently using %s",
+           locales_str, locale);
+
+  g_free (locale);
+  g_free (locales_str);
+  g_strfreev (locales);
+}
+
+static void
+_proxy_service_proxy_created (YtsgProxyService  *service,
+                              YtsgProxy         *proxy,
+                              Options           *options)
+{
+  if (YTSG_VP_IS_PLAYER (proxy)) {
+
+    use_player (YTSG_VP_PLAYER (proxy), options);
+
+  } else if (YTSG_VP_IS_TRANSCRIPT (proxy)) {
+
+    use_transcript (YTSG_VP_TRANSCRIPT (proxy), options);
+
+  } else {
+
+    g_warning ("%s : Proxy of type %s not handled",
+               G_STRLOC,
+               G_OBJECT_TYPE_NAME (proxy));
+  }
+}
+
+static void
 _roster_service_added (YtsgRoster   *roster,
                        YtsgService  *service,
                        Options      *options)
@@ -223,12 +277,18 @@ _roster_service_added (YtsgRoster   *roster,
     bool ret;
 
     g_signal_connect (service, "proxy-created",
-                      G_CALLBACK (_proxy_service_player_created), options);
+                      G_CALLBACK (_proxy_service_proxy_created), options);
 
     ret = ytsg_proxy_service_create_proxy (YTSG_PROXY_SERVICE (service),
                                            YTSG_VP_PLAYER_FQC_ID);
     if (!ret) {
       g_critical ("%s : Failed to create player", G_STRLOC);
+    }
+
+    ret = ytsg_proxy_service_create_proxy (YTSG_PROXY_SERVICE (service),
+                                           YTSG_VP_TRANSCRIPT_FQC_ID);
+    if (!ret) {
+      g_critical ("%s : Failed to create transcript", G_STRLOC);
     }
   }
 }

@@ -54,6 +54,7 @@
 #include <ytstenut-glib/video-profile/ytsg-vp-playable.h>
 #include <ytstenut-glib/video-profile/ytsg-vp-player.h>
 #include <ytstenut-glib/video-profile/ytsg-vp-query.h>
+#include <ytstenut-glib/video-profile/ytsg-vp-transcript.h>
 #include <ytstenut-glib/video-profile/ytsg-vp-transfer.h>
 #include <ytstenut-glib/video-profile/ytsg-vp-transmission.h>
 
