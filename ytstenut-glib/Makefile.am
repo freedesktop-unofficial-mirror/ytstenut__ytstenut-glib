@@ -88,6 +88,7 @@ source_c =						\
 		$(srcdir)/video-profile/ytsg-vp-query.c \
 		$(srcdir)/video-profile/ytsg-vp-transcript.c \
 		$(srcdir)/video-profile/ytsg-vp-transcript-adapter.c \
+		$(srcdir)/video-profile/ytsg-vp-transcript-proxy.c \
 		$(srcdir)/video-profile/ytsg-vp-transfer.c \
 		$(srcdir)/video-profile/ytsg-vp-transmission.c \
 		$(NULL)
@@ -102,6 +103,7 @@ private_h = \
 		$(srcdir)/video-profile/ytsg-vp-player-adapter.h \
 		$(srcdir)/video-profile/ytsg-vp-player-proxy.h \
 		$(srcdir)/video-profile/ytsg-vp-transcript-adapter.h \
+		$(srcdir)/video-profile/ytsg-vp-transcript-proxy.h \
 		$(NULL)
 
 libytstenut_glib_@YTSG_API_VERSION@_la_SOURCES  = 	$(source_h) 	\

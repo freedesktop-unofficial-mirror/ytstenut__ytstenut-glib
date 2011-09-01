@@ -36,34 +36,6 @@ typedef struct {
 } YtsgVPTranscriptAdapterPrivate;
 
 /*
- * Utilities
- */
-
-static GVariant *
-build_locales_variant (YtsgVPTranscriptAdapter *self)
-{
-  YtsgVPTranscriptAdapterPrivate *priv = GET_PRIVATE (self);
-  GVariantBuilder   builder;
-  char            **locales;
-  unsigned          i;
-
-  g_variant_builder_init (&builder, G_VARIANT_TYPE_ARRAY);
-
-  locales = ytsg_vp_transcript_get_available_locales (priv->transcript);
-
-  if (locales && *locales) {
-    g_variant_builder_init (&builder, G_VARIANT_TYPE_ARRAY);
-    for (i = 0; locales && locales[i]; i++) {
-      g_variant_builder_add (&builder, "s", locales[i]);
-    }
-  }
-
-  g_strfreev (locales);
-
-  return g_variant_builder_end (&builder);
-}
-
-/*
  * YtsgServiceAdapter overrides
  */
 
@@ -72,17 +44,18 @@ _service_adapter_collect_properties (YtsgServiceAdapter *self)
 {
   YtsgVPTranscriptAdapterPrivate *priv = GET_PRIVATE (self);
   GVariantBuilder   builder;
-  GVariant         *locales;
+  char            **locales;
   char             *current_text;
   char             *locale;
 
   g_variant_builder_init (&builder, G_VARIANT_TYPE_ARRAY);
 
-  locales = build_locales_variant (YTSG_VP_TRANSCRIPT_ADAPTER (self));
+  locales = ytsg_vp_transcript_get_available_locales (priv->transcript);
   if (locales) {
+    GVariant *v = g_variant_new_strv ((char const *const *) locales, -1);
     g_variant_builder_add (&builder, "{sv}",
-                           "available-locales", locales);
-    g_variant_unref (locales);
+                           "available-locales", v);
+    g_strfreev (locales);
   }
 
   current_text = ytsg_vp_transcript_get_current_text (priv->transcript);
@@ -114,8 +87,8 @@ _service_adapter_invoke (YtsgServiceAdapter *self,
   /* Properties */
 
   if (0 == g_strcmp0 ("locale", aspect) &&
-             arguments &&
-             g_variant_is_of_type (arguments, G_VARIANT_TYPE_STRING)) {
+      arguments &&
+      g_variant_is_of_type (arguments, G_VARIANT_TYPE_STRING)) {
 
     ytsg_vp_transcript_set_locale (priv->transcript,
                                    g_variant_get_string (arguments, NULL));
@@ -150,12 +123,15 @@ _transcript_notify_available_locales (YtsgVPTranscript        *transcript,
                                       GParamSpec              *pspec,
                                       YtsgVPTranscriptAdapter *self)
 {
-  GVariant *locales;
+  char **locales;
+  GVariant *v;
 
-  locales = build_locales_variant (self);
+  locales = ytsg_vp_transcript_get_available_locales (transcript);
+  v = g_variant_new_strv ((char const *const *) locales, -1);
   ytsg_service_adapter_send_event (YTSG_SERVICE_ADAPTER (self),
-                                   "playable-uri",
-                                   locales);
+                                   "available-locales",
+                                   v);
+  g_strfreev (locales);
 }
 
 static void
