@@ -1,5 +1,5 @@
 m4_define([ytsg_major_version], [0])
-m4_define([ytsg_minor_version], [2])
+m4_define([ytsg_minor_version], [3])
 m4_define([ytsg_micro_version], [0])
 m4_define([ytsg_version],
           [ytsg_major_version.ytsg_minor_version.ytsg_micro_version])
