@@ -197,7 +197,7 @@ _profile_interface_init (YtsgProfileInterface *interface)
 enum {
   PROP_0 = 0,
 
-  PROP_CAPABILITY_FQC_ID,
+  PROP_CAPABILITY_FQC_IDS,
 
   PROP_PROFILE_CAPABILITIES,
 
@@ -213,9 +213,10 @@ _get_property (GObject      *object,
   YtsgProfileImplPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
-    case   PROP_CAPABILITY_FQC_ID:
-      g_value_set_string (value, YTSG_PROFILE_FQC_ID);
-      break;
+    case   PROP_CAPABILITY_FQC_IDS: {
+      char *fqc_ids[] = { YTSG_PROFILE_FQC_ID, NULL };
+      g_value_set_boxed (value, fqc_ids);
+    } break;
     case PROP_PROFILE_CAPABILITIES:
       g_value_set_boxed (value, priv->capabilities);
       break;
@@ -270,8 +271,8 @@ ytsg_profile_impl_class_init (YtsgProfileImplClass *klass)
   /* YtsgCapability */
 
   g_object_class_override_property (object_class,
-                                    PROP_CAPABILITY_FQC_ID,
-                                    "fqc-id");
+                                    PROP_CAPABILITY_FQC_IDS,
+                                    "fqc-ids");
 
   /* YtsgProfile interface */
 

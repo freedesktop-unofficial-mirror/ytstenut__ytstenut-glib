@@ -181,7 +181,7 @@ _profile_invoke_service (YtsgProfile      *profile,
   char const    *uid;
   char          *fqc_id;
 
-  fqc_id = ytsg_capability_get_fqc_id (YTSG_CAPABILITY (profile));
+  fqc_id = ytsg_proxy_get_fqc_id (YTSG_PROXY (profile));
   contact = ytsg_service_get_contact (YTSG_SERVICE (self));
   client = ytsg_contact_get_client (contact);
   uid = ytsg_service_get_uid (YTSG_SERVICE (self));
@@ -267,6 +267,9 @@ _proxy_destroyed (YtsgProxyService  *self,
 extern GType
 ytsg_vp_player_proxy_get_type (void);
 
+extern GType
+ytsg_vp_transcript_proxy_get_type (void);
+
 // TODO instantiate proxy only on response
 //  an move from invocations hash to proxies
 bool
@@ -285,8 +288,8 @@ ytsg_proxy_service_create_proxy (YtsgProxyService *self,
 //      ytsg_vp_content_proxy_get_type () },
     { "org.freedesktop.ytstenut.VideoProfile.Player",
       ytsg_vp_player_proxy_get_type () },
-//    { "org.freedesktop.ytstenut.VideoProfile.Transcript",
-//      ytsg_vp_transcript_proxy_get_type () },
+    { "org.freedesktop.ytstenut.VideoProfile.Transcript",
+      ytsg_vp_transcript_proxy_get_type () },
 //    { "org.freedesktop.ytstenut.VideoProfile.Transfer",
 //      ytsg_vp_transfer_proxy_get_type () },
     { NULL }

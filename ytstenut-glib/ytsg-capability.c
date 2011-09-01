@@ -29,23 +29,23 @@ ytsg_capability_default_init (YtsgCapabilityInterface *interface)
 {
   GParamSpec *pspec;
 
-  pspec = g_param_spec_string ("fqc-id", "", "",
-                               NULL,
-                               G_PARAM_READABLE |
-                               G_PARAM_STATIC_STRINGS);
+  pspec = g_param_spec_boxed ("fqc-ids", "", "",
+                              G_TYPE_STRV,
+                              G_PARAM_READABLE |
+                              G_PARAM_STATIC_STRINGS);
   g_object_interface_install_property (interface, pspec);
 }
 
-char *
-ytsg_capability_get_fqc_id (YtsgCapability *self)
+char **
+ytsg_capability_get_fqc_ids (YtsgCapability *self)
 {
-  char *fqc_id;
+  char **fqc_ids;
 
   g_return_val_if_fail (YTSG_IS_CAPABILITY (self), NULL);
 
-  fqc_id = NULL;
-  g_object_get (self, "fqc-id", &fqc_id, NULL);
+  fqc_ids = NULL;
+  g_object_get (self, "fqc-ids", &fqc_ids, NULL);
 
-  return fqc_id;
+  return fqc_ids;
 }
 

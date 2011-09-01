@@ -50,8 +50,8 @@ typedef struct {
 GType
 ytsg_capability_get_type (void) G_GNUC_CONST;
 
-char *
-ytsg_capability_get_fqc_id (YtsgCapability *self);
+char **
+ytsg_capability_get_fqc_ids (YtsgCapability *self);
 
 G_END_DECLS
 

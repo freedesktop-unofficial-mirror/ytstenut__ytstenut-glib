@@ -3165,7 +3165,6 @@ _adapter_event (YtsgServiceAdapter  *adapter,
   char          *fqc_id;
 
   fqc_id = ytsg_service_adapter_get_fqc_id (adapter);
-
   message = ytsg_event_message_new (fqc_id, aspect, arguments);
 
   /* Dispatch to all registered proxies. */
@@ -3180,8 +3179,8 @@ _adapter_event (YtsgServiceAdapter  *adapter,
                                  message);
     }
   }
-  g_object_unref (message);
   g_free (fqc_id);
+  g_object_unref (message);
 }
 
 static void
@@ -3192,8 +3191,8 @@ _adapter_response (YtsgServiceAdapter *adapter,
 {
   YtsgClientPrivate *priv = self->priv;
   InvocationData  *invocation;
-  char            *fqc_id;
   YtsgMetadata    *message;
+  char            *fqc_id;
 
   invocation = g_hash_table_lookup (priv->invocations, invocation_id);
   if (NULL == invocation) {
@@ -3231,28 +3230,36 @@ _service_destroyed (ServiceData *data,
  * A bit hacky for now, so we don't need to include video-service headers here. */
 
 extern GType
-ytsg_vp_content_adapter_get_type (void);
+ytsg_vp_player_get_type (void);
 
 extern GType
 ytsg_vp_player_adapter_get_type (void);
 
 extern GType
-ytsg_vp_query_get_adapter_type (void);
+ytsg_vp_transcript_get_type (void);
 
 extern GType
-ytsg_vp_transfer_get_adapter_type (void);
+ytsg_vp_transcript_adapter_get_type (void);
 
 static YtsgServiceAdapter *
 create_adapter_for_service (YtsgClient      *self,
-                            YtsgCapability  *service)
+                            YtsgCapability  *service,
+                            char const      *fqc_id)
 {
-  GType interface_type;
+  GType service_type;
 
-  interface_type = g_type_from_name ("YtsgVPPlayer");
-  if (interface_type &&
-      g_type_is_a (G_OBJECT_TYPE (service), interface_type)) {
+  service_type = G_OBJECT_TYPE (service);
+  if (0 == g_strcmp0 (fqc_id, "org.freedesktop.ytstenut.VideoProfile.Player") &&
+      g_type_is_a (service_type, ytsg_vp_player_get_type ())) {
 
     return g_object_new (ytsg_vp_player_adapter_get_type (),
+                         "service", service,
+                         NULL);
+
+  } else if (0 == g_strcmp0 (fqc_id, "org.freedesktop.ytstenut.VideoProfile.Transcript") &&
+             g_type_is_a (service_type, ytsg_vp_transcript_get_type ())) {
+
+    return g_object_new (ytsg_vp_transcript_adapter_get_type (),
                          "service", service,
                          NULL);
   }
@@ -3273,55 +3280,42 @@ gboolean
 ytsg_client_register_service (YtsgClient      *self,
                               YtsgCapability  *service)
 {
-  YtsgClientPrivate   *priv = self->priv;
-  YtsgServiceAdapter  *adapter;
-  YtsgProfileImpl     *profile_impl;
-  ServiceData         *service_data;
-  char                *fqc_id;
+  YtsgClientPrivate *priv = self->priv;
+  YtsgServiceAdapter   *adapter;
+  YtsgProfileImpl      *profile_impl;
+  ServiceData          *service_data;
+  char                **fqc_ids;
+  unsigned              i;
 
   g_return_val_if_fail (YTSG_IS_CLIENT (self), FALSE);
+  g_return_val_if_fail (YTSG_IS_CAPABILITY (service), FALSE);
 
-  fqc_id = ytsg_capability_get_fqc_id (service);
-  adapter = g_hash_table_lookup (priv->services, fqc_id);
-  if (adapter)
-    {
-      g_critical ("%s : Service for capability %s already registered",
-                  G_STRLOC,
-                  fqc_id);
-      return FALSE;
-    }
+  fqc_ids = ytsg_capability_get_fqc_ids (service);
 
-  adapter = create_adapter_for_service (self, service);
-  g_return_val_if_fail (adapter, FALSE);
+  /* Check that capabilities are not implemented yet. */
+  for (i = 0; fqc_ids[i] != NULL; i++) {
 
-  service_data = service_data_create (self, fqc_id);
-  g_object_weak_ref (G_OBJECT (service),
-                     (GWeakNotify) _service_destroyed,
-                     service_data);
+    adapter = g_hash_table_lookup (priv->services, fqc_ids[i]);
+    if (adapter)
+      {
+        g_critical ("%s : Service for capability %s already registered",
+                    G_STRLOC,
+                    fqc_ids[i]);
+        g_strfreev (fqc_ids);
+        return FALSE;
+      }
+  }
 
-  g_signal_connect (adapter, "error",
-                    G_CALLBACK (_adapter_error), self);
-  g_signal_connect (adapter, "event",
-                    G_CALLBACK (_adapter_event), self);
-  g_signal_connect (adapter, "response",
-                    G_CALLBACK (_adapter_response), self);
+  /* Hook up the service */
+  for (i = 0; fqc_ids[i] != NULL; i++) {
 
-  /* Hash table takes adapter reference */
-  g_hash_table_insert (priv->services,
-                       g_strdup (fqc_id),
-                       adapter);
-  ytsg_client_set_capabilities (self, g_quark_from_string (fqc_id));
+    adapter = create_adapter_for_service (self, service, fqc_ids[i]);
+    g_return_val_if_fail (adapter, FALSE);
 
-  /* Keep the proxy management service up to date. */
-  adapter = g_hash_table_lookup (priv->services, YTSG_PROFILE_FQC_ID);
-  if (NULL == adapter) {
-    profile_impl = ytsg_profile_impl_new (self);
-    adapter = g_object_new (YTSG_TYPE_PROFILE_ADAPTER,
-                            "service", profile_impl,
-                            NULL);
-    g_hash_table_insert (priv->services,
-                         g_strdup (YTSG_PROFILE_FQC_ID),
-                         adapter);
+    service_data = service_data_create (self, fqc_ids[i]);
+    g_object_weak_ref (G_OBJECT (service),
+                       (GWeakNotify) _service_destroyed,
+                       service_data);
 
     g_signal_connect (adapter, "error",
                       G_CALLBACK (_adapter_error), self);
@@ -3330,16 +3324,41 @@ ytsg_client_register_service (YtsgClient      *self,
     g_signal_connect (adapter, "response",
                       G_CALLBACK (_adapter_response), self);
 
-  } else {
-    profile_impl = NULL;
-    g_object_get (adapter, "service", &profile_impl, NULL);
-    // FIXME not nice, but object still referenced by adapter.
-    g_object_unref (profile_impl);
+    /* Hash table takes adapter reference */
+    g_hash_table_insert (priv->services,
+                         g_strdup (fqc_ids[i]),
+                         adapter);
+    ytsg_client_set_capabilities (self, g_quark_from_string (fqc_ids[i]));
+
+    /* Keep the proxy management service up to date. */
+    adapter = g_hash_table_lookup (priv->services, YTSG_PROFILE_FQC_ID);
+    if (NULL == adapter) {
+      profile_impl = ytsg_profile_impl_new (self);
+      adapter = g_object_new (YTSG_TYPE_PROFILE_ADAPTER,
+                              "service", profile_impl,
+                              NULL);
+      g_hash_table_insert (priv->services,
+                           g_strdup (YTSG_PROFILE_FQC_ID),
+                           adapter);
+
+      g_signal_connect (adapter, "error",
+                        G_CALLBACK (_adapter_error), self);
+      g_signal_connect (adapter, "event",
+                        G_CALLBACK (_adapter_event), self);
+      g_signal_connect (adapter, "response",
+                        G_CALLBACK (_adapter_response), self);
+
+    } else {
+      profile_impl = YTSG_PROFILE_IMPL (
+                        ytsg_service_adapter_get_service (adapter));
+      /* Not nice, but it's still referenced by the adapter. */
+      g_object_unref (profile_impl);
+    }
+
+    ytsg_profile_impl_add_capability (profile_impl, fqc_ids[i]);
   }
 
-  ytsg_profile_impl_add_capability (profile_impl, fqc_id);
-
-  g_free (fqc_id);
+  g_strfreev (fqc_ids);
 
   return TRUE;
 }

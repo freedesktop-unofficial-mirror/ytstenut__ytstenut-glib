@@ -41,7 +41,7 @@ G_DEFINE_TYPE_WITH_CODE (MockPlayer,
 enum {
   PROP_0,
 
-  PROP_CAPABILITY_FQC_ID,
+  PROP_CAPABILITY_FQC_IDS,
 
   PROP_PLAYER_PLAYABLE,
   PROP_PLAYER_PLAYING,
@@ -155,9 +155,10 @@ _get_property (GObject    *object,
   MockPlayerPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
-    case PROP_CAPABILITY_FQC_ID:
-      g_value_set_string (value, YTSG_VP_PLAYER_FQC_ID);
-      break;
+    case PROP_CAPABILITY_FQC_IDS: {
+      char *fcq_ids[] = { YTSG_VP_PLAYER_FQC_ID, NULL };
+      g_value_set_boxed (value, fcq_ids);
+    } break;
     case PROP_PLAYER_PLAYABLE:
       /* TODO */
       g_critical ("%s: property MockPlayer.playable not implemented", G_STRLOC);
@@ -256,8 +257,8 @@ mock_player_class_init (MockPlayerClass *klass)
   /* YtsgCapability */
 
   g_object_class_override_property (object_class,
-                                    PROP_CAPABILITY_FQC_ID,
-                                    "fqc-id");
+                                    PROP_CAPABILITY_FQC_IDS,
+                                    "fqc-ids");
 
   /* YtsgVPPlayer */
 

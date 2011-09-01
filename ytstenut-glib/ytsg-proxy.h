@@ -67,8 +67,8 @@ typedef struct {
 GType
 ytsg_proxy_get_type (void);
 
-YtsgProxy *
-ytsg_proxy_new (char const *capability);
+char *
+ytsg_proxy_get_fqc_id (YtsgProxy *self);
 
 char *
 ytsg_proxy_create_invocation_id (YtsgProxy *self);

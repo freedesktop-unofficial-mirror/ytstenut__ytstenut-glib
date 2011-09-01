@@ -23,6 +23,7 @@
 
 #include <stdbool.h>
 #include <glib-object.h>
+#include <ytstenut-glib/ytsg-capability.h>
 
 G_BEGIN_DECLS
 
@@ -85,6 +86,9 @@ ytsg_service_adapter_get_type (void) G_GNUC_CONST;
 
 char *
 ytsg_service_adapter_get_fqc_id (YtsgServiceAdapter *self);
+
+YtsgCapability *
+ytsg_service_adapter_get_service (YtsgServiceAdapter *self);
 
 GVariant *
 ytsg_service_adapter_collect_properties (YtsgServiceAdapter *self);

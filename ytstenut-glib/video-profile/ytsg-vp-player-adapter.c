@@ -158,6 +158,7 @@ _service_adapter_invoke (YtsgServiceAdapter *self,
 
 enum {
   PROP_0 = 0,
+  PROP_SERVICE_ADAPTER_FQC_ID,
   PROP_SERVICE_ADAPTER_SERVICE
 };
 
@@ -251,6 +252,9 @@ _get_property (GObject    *object,
   YtsgVPPlayerAdapterPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
+    case PROP_SERVICE_ADAPTER_FQC_ID:
+      g_value_set_string (value, YTSG_VP_PLAYER_FQC_ID);
+      break;
     case PROP_SERVICE_ADAPTER_SERVICE:
       g_value_set_object (value, priv->player);
       break;
@@ -333,6 +337,10 @@ ytsg_vp_player_adapter_class_init (YtsgVPPlayerAdapterClass *klass)
   adapter_class->invoke = _service_adapter_invoke;
 
   /* Properties */
+
+  g_object_class_override_property (object_class,
+                                    PROP_SERVICE_ADAPTER_FQC_ID,
+                                    "fqc-id");
 
   g_object_class_override_property (object_class,
                                     PROP_SERVICE_ADAPTER_SERVICE,

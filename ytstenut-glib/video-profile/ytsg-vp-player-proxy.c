@@ -19,14 +19,10 @@
  */
 
 #include <stdbool.h>
-#include "ytsg-capability.h"
 #include "ytsg-vp-playable.h"
 #include "ytsg-vp-playable-proxy.h"
 #include "ytsg-vp-player.h"
 #include "ytsg-vp-player-proxy.h"
-
-static void
-_capability_interface_init (YtsgCapability *interface);
 
 static void
 _player_interface_init (YtsgVPPlayerInterface *interface);
@@ -34,8 +30,6 @@ _player_interface_init (YtsgVPPlayerInterface *interface);
 G_DEFINE_TYPE_WITH_CODE (YtsgVPPlayerProxy,
                          ytsg_vp_player_proxy,
                          YTSG_TYPE_PROXY,
-                         G_IMPLEMENT_INTERFACE (YTSG_TYPE_CAPABILITY,
-                                                _capability_interface_init)
                          G_IMPLEMENT_INTERFACE (YTSG_VP_TYPE_PLAYER,
                                                 _player_interface_init))
 
@@ -54,16 +48,6 @@ typedef struct {
   GHashTable  *invocations;
 
 } YtsgVPPlayerProxyPrivate;
-
-/*
- * YtsgCapability implementation
- */
-
-static void
-_capability_interface_init (YtsgCapability *interface)
-{
-  /* Nothing to do, it's just about overriding the "fqc-id" property */
-}
 
 /*
  * YtsgVPPlayer implementation
@@ -228,7 +212,7 @@ _proxy_service_response (YtsgProxy  *self,
 enum {
   PROP_0 = 0,
 
-  PROP_CAPABILITY_FQC_ID,
+  PROP_CAPABILITY_FQC_IDS,
 
   PROP_PLAYER_PLAYABLE,
   PROP_PLAYER_PLAYING,
@@ -245,9 +229,10 @@ _get_property (GObject    *object,
   YtsgVPPlayerProxyPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
-    case PROP_CAPABILITY_FQC_ID:
-      g_value_set_string (value, YTSG_VP_PLAYER_FQC_ID);
-      break;
+    case PROP_CAPABILITY_FQC_IDS: {
+      char *fqc_ids[] = { YTSG_VP_PLAYER_FQC_ID, NULL };
+      g_value_set_boxed (value, fqc_ids);
+    } break;
     case PROP_PLAYER_PLAYABLE:
       g_value_set_object (value, priv->playable);
       break;
@@ -383,8 +368,8 @@ ytsg_vp_player_proxy_class_init (YtsgVPPlayerProxyClass *klass)
   /* YtsgCapability */
 
   g_object_class_override_property (object_class,
-                                    PROP_CAPABILITY_FQC_ID,
-                                    "fqc-id");
+                                    PROP_CAPABILITY_FQC_IDS,
+                                    "fqc-ids");
 
   /* YtsgVPPlayer */
 

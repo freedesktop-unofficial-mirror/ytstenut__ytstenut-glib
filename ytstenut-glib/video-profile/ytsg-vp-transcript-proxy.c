@@ -19,12 +19,8 @@
  */
 
 #include <stdbool.h>
-#include "ytsg-capability.h"
 #include "ytsg-vp-transcript.h"
 #include "ytsg-vp-transcript-proxy.h"
-
-static void
-_capability_interface_init (YtsgCapability *interface);
 
 static void
 _transcript_interface_init (YtsgVPTranscriptInterface *interface);
@@ -32,8 +28,6 @@ _transcript_interface_init (YtsgVPTranscriptInterface *interface);
 G_DEFINE_TYPE_WITH_CODE (YtsgVPTranscriptProxy,
                          ytsg_vp_transcript_proxy,
                          YTSG_TYPE_PROXY,
-                         G_IMPLEMENT_INTERFACE (YTSG_TYPE_CAPABILITY,
-                                                _capability_interface_init)
                          G_IMPLEMENT_INTERFACE (YTSG_VP_TYPE_TRANSCRIPT,
                                                 _transcript_interface_init))
 
@@ -51,16 +45,6 @@ typedef struct {
   GHashTable  *invocations;
 
 } YtsgVPTranscriptProxyPrivate;
-
-/*
- * YtsgCapability implementation
- */
-
-static void
-_capability_interface_init (YtsgCapability *interface)
-{
-  /* Nothing to do, it's just about overriding the "fqc-id" property */
-}
 
 /*
  * YtsgVPTranscript implementation
@@ -137,7 +121,7 @@ _proxy_service_response (YtsgProxy  *self,
 enum {
   PROP_0 = 0,
 
-  PROP_CAPABILITY_FQC_ID,
+  PROP_CAPABILITY_FQC_IDS,
 
   PROP_TRANSCRIPT_AVAILABLE_LOCALES,
   PROP_TRANSCRIPT_CURRENT_TEXT,
@@ -153,9 +137,10 @@ _get_property (GObject    *object,
   YtsgVPTranscriptProxyPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
-    case PROP_CAPABILITY_FQC_ID:
-      g_value_set_string (value, YTSG_VP_TRANSCRIPT_FQC_ID);
-      break;
+    case PROP_CAPABILITY_FQC_IDS: {
+      char *fqc_ids[] = { YTSG_VP_TRANSCRIPT_FQC_ID, NULL };
+      g_value_set_boxed (value, fqc_ids);
+    } break;
     case PROP_TRANSCRIPT_AVAILABLE_LOCALES:
       g_value_set_boxed (value, priv->available_locales);
       break;
@@ -235,8 +220,8 @@ ytsg_vp_transcript_proxy_class_init (YtsgVPTranscriptProxyClass *klass)
   /* YtsgCapability */
 
   g_object_class_override_property (object_class,
-                                    PROP_CAPABILITY_FQC_ID,
-                                    "fqc-id");
+                                    PROP_CAPABILITY_FQC_IDS,
+                                    "fqc-ids");
 
   /* YtsgVPTranscript */
 

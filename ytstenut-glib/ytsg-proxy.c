@@ -19,16 +19,22 @@
  */
 
 #include <stdbool.h>
+#include "ytsg-capability.h"
 #include "ytsg-marshal.h"
 #include "ytsg-proxy.h"
 
-G_DEFINE_TYPE (YtsgProxy, ytsg_proxy, G_TYPE_OBJECT)
+static void
+_capability_interface_init (YtsgCapability *interface);
 
-#define GET_PRIVATE(o) \
-  (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTSG_TYPE_PROXY, YtsgProxyPrivate))
+G_DEFINE_ABSTRACT_TYPE_WITH_CODE (YtsgProxy,
+                                  ytsg_proxy,
+                                  G_TYPE_OBJECT,
+                                  G_IMPLEMENT_INTERFACE (YTSG_TYPE_CAPABILITY,
+                                                         _capability_interface_init))
 
 enum {
-  PROP_0
+  PROP_0,
+  PROP_CAPABILITY_FQC_IDS
 };
 
 enum {
@@ -38,11 +44,22 @@ enum {
   N_SIGNALS
 };
 
-typedef struct {
-  char  *capability;
-} YtsgProxyPrivate;
-
 static guint _signals[N_SIGNALS] = { 0, };
+
+/*
+ * YtsgCapability implementation
+ */
+
+static void
+_capability_interface_init (YtsgCapability *interface)
+{
+  /* Nothing to do, it's just about overriding the "fqc-ids" property,
+   * which has to be done in the concrete subclass of the Proxy. */
+}
+
+/*
+ * YtsgProxy
+ */
 
 static void
 _get_property (GObject      *object,
@@ -79,11 +96,15 @@ ytsg_proxy_class_init (YtsgProxyClass *klass)
 {
   GObjectClass  *object_class = G_OBJECT_CLASS (klass);
 
-  g_type_class_add_private (klass, sizeof (YtsgProxyPrivate));
-
   object_class->get_property = _get_property;
   object_class->set_property = _set_property;
   object_class->dispose = _dispose;
+
+  /* YtsgCapability, needs to be overridden. */
+
+  g_object_class_override_property (object_class,
+                                    PROP_CAPABILITY_FQC_IDS,
+                                    "fqc-ids");
 
   /* Signals */
 
@@ -126,6 +147,29 @@ ytsg_proxy_init (YtsgProxy *self)
 }
 
 char *
+ytsg_proxy_get_fqc_id (YtsgProxy *self)
+{
+  char **fqc_ids;
+  char  *fqc_id;
+
+  g_return_val_if_fail (YTSG_IS_PROXY (self), NULL);
+
+  /* Get it from the subclass. */
+  fqc_ids = ytsg_capability_get_fqc_ids (YTSG_CAPABILITY (self));
+
+  /* A Proxy can only ever have a single fqc-id. */
+  g_return_val_if_fail (fqc_ids, NULL);
+  g_return_val_if_fail (fqc_ids[0], NULL);
+  g_return_val_if_fail (fqc_ids[1] == NULL, NULL);
+
+  /* PONDERING, maybe just g_free the array and return the first element. */
+  fqc_id = g_strdup (fqc_ids[0]);
+  g_strfreev (fqc_ids);
+
+  return fqc_id;
+}
+
+char *
 ytsg_proxy_create_invocation_id (YtsgProxy *self)
 {
   static GRand  *_rand = NULL;
@@ -140,16 +184,6 @@ ytsg_proxy_create_invocation_id (YtsgProxy *self)
   invocation_id = g_strdup_printf ("%x", g_rand_int (_rand));
 
   return invocation_id;
-}
-
-YtsgProxy *
-ytsg_proxy_new (char const *capability)
-{
-  g_return_val_if_fail (capability, NULL);
-
-  return g_object_new (YTSG_TYPE_PROXY,
-                       "capability", capability,
-                       NULL);
 }
 
 void

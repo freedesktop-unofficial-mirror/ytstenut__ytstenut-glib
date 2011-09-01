@@ -26,7 +26,7 @@ G_DEFINE_TYPE (YtsgServiceAdapter, ytsg_service_adapter, G_TYPE_OBJECT)
 
 enum {
   PROP_0,
-  PROP_CAPABILITY,
+  PROP_FQC_ID,
   PROP_SERVICE
 };
 
@@ -64,13 +64,50 @@ _invoke (YtsgServiceAdapter *self,
 }
 
 static void
+_constructed (GObject *object)
+{
+  YtsgCapability   *service;
+  char            **fqc_ids;
+  char             *fqc_id;
+  unsigned          i;
+  bool              found = false;
+
+  fqc_id = ytsg_service_adapter_get_fqc_id (YTSG_SERVICE_ADAPTER (object));
+  g_return_if_fail (fqc_id);
+
+  service = ytsg_service_adapter_get_service (YTSG_SERVICE_ADAPTER (object));
+  g_return_if_fail (service);
+
+  fqc_ids = ytsg_capability_get_fqc_ids (service);
+  g_return_if_fail (fqc_ids);
+
+  for (i = 0; fqc_ids[i] != NULL; i++) {
+    if (0 == g_strcmp0 (fqc_id, fqc_ids[i])) {
+      found = true;
+    }
+  }
+
+  if (!found) {
+    g_critical ("%s : Service %s does not match the %s capability %s",
+                G_STRLOC,
+                G_OBJECT_TYPE_NAME (service),
+                G_OBJECT_TYPE_NAME (object),
+                fqc_id);
+  }
+
+  g_free (fqc_id);
+  g_strfreev (fqc_ids);
+  g_object_unref (service);
+}
+
+static void
 _get_property (GObject      *object,
                unsigned int  property_id,
                GValue       *value,
                GParamSpec   *pspec)
 {
   switch (property_id) {
-    case PROP_CAPABILITY:
+    case PROP_FQC_ID:
       g_value_take_string (value,
                            ytsg_service_adapter_get_fqc_id (
                               YTSG_SERVICE_ADAPTER (object)));
@@ -100,6 +137,7 @@ ytsg_service_adapter_class_init (YtsgServiceAdapterClass *klass)
   GObjectClass  *object_class = G_OBJECT_CLASS (klass);
   GParamSpec    *pspec;
 
+  object_class->constructed = _constructed;
   object_class->get_property = _get_property;
   object_class->set_property = _set_property;
 
@@ -108,11 +146,11 @@ ytsg_service_adapter_class_init (YtsgServiceAdapterClass *klass)
 
   /* Properties */
 
-  pspec = g_param_spec_string ("capability", "", "",
+  pspec = g_param_spec_string ("fqc-id", "", "",
                                NULL,
                                G_PARAM_READABLE |
                                G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CAPABILITY, pspec);
+  g_object_class_install_property (object_class, PROP_FQC_ID, pspec);
 
   pspec = g_param_spec_object ("service", "", "",
                                G_TYPE_OBJECT,
@@ -162,21 +200,28 @@ ytsg_service_adapter_init (YtsgServiceAdapter *self)
 char *
 ytsg_service_adapter_get_fqc_id (YtsgServiceAdapter *self)
 {
-  GObject *service;
-  char    *fqc_id;
+  char *fqc_id;
 
   g_return_val_if_fail (YTSG_IS_SERVICE_ADAPTER (self), NULL);
 
-  /* Get service object from our subclass. */
-  service = NULL;
-  g_object_get (self, "service", &service, NULL);
-  g_return_val_if_fail (service, NULL);
-
-  fqc_id = ytsg_capability_get_fqc_id (YTSG_CAPABILITY (service));
-
-  g_object_unref (service);
+  /* Get from subclass. */
+  fqc_id = NULL;
+  g_object_get (self, "fqc-id", &fqc_id, NULL);
 
   return fqc_id;
+}
+
+YtsgCapability *
+ytsg_service_adapter_get_service (YtsgServiceAdapter *self)
+{
+  YtsgCapability *service;
+
+  g_return_val_if_fail (YTSG_IS_SERVICE_ADAPTER (self), NULL);
+
+  service = NULL;
+  g_object_get (G_OBJECT (self), "service", &service, NULL);
+
+  return service;
 }
 
 GVariant *
