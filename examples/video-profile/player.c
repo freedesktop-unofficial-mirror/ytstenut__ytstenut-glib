@@ -100,6 +100,21 @@ _roster_service_removed (YtsgRoster   *roster,
   g_debug ("%s()", __FUNCTION__);
 }
 
+static void
+_player_notify_current_text (MockPlayer *player,
+                             GParamSpec *pspec,
+                             void       *data)
+{
+  char *current_text;
+
+  current_text = ytsg_vp_transcript_get_current_text (
+                    YTSG_VP_TRANSCRIPT (player));
+
+  g_debug ("%s() '%s'", __FUNCTION__, current_text);
+
+  g_free (current_text);
+}
+
 /*
  * Main. What else.
  */
@@ -155,6 +170,9 @@ main (int     argc,
   /* Instantiate and publish example player object so others can access it. */
   player = mock_player_new ();
   ytsg_client_register_service (client, YTSG_CAPABILITY (player));
+
+  g_signal_connect (player, "notify::current-text",
+                    G_CALLBACK (_player_notify_current_text), NULL);
 
   /* Activate the client. */
   ytsg_client_connect (client);

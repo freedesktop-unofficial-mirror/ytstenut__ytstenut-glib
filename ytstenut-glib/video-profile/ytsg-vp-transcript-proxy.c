@@ -46,6 +46,16 @@ typedef struct {
 
 } YtsgVPTranscriptProxyPrivate;
 
+static void
+transcript_proxy_set_available_locales (YtsgVPTranscriptProxy *self,
+                                        char const *const     *locales);
+static void
+transcript_proxy_set_current_text (YtsgVPTranscriptProxy  *self,
+                                   char const             *current_text);
+static void
+transcript_proxy_set_locale (YtsgVPTranscriptProxy  *self,
+                             char const             *locale);
+
 /*
  * YtsgVPTranscript implementation
  */
@@ -72,8 +82,8 @@ _proxy_service_event (YtsgProxy   *self,
 
     /* Read-only property, sync behind the scenes. */
     char const **locales = g_variant_get_strv (arguments, NULL);
-    vp_transcript_proxy_set_available_locales (YTSG_VP_TRANSCRIPT_PROXY (self),
-                                               locales);
+    transcript_proxy_set_available_locales (YTSG_VP_TRANSCRIPT_PROXY (self),
+                                            locales);
     g_free (locales); /* See g_variant_get_strv(). */
 
   } else if (0 == g_strcmp0 ("current-text", aspect) &&
@@ -81,14 +91,14 @@ _proxy_service_event (YtsgProxy   *self,
 
     /* Read-only property, sync behind the scenes. */
     char const *current_text = g_variant_get_string (arguments, NULL);
-    vp_transcript_proxy_set_current_text (YTSG_VP_TRANSCRIPT_PROXY (self),
-                                          current_text);
+    transcript_proxy_set_current_text (YTSG_VP_TRANSCRIPT_PROXY (self),
+                                       current_text);
 
   } else if (0 == g_strcmp0 ("locale", aspect) &&
              g_variant_is_of_type (arguments, G_VARIANT_TYPE_STRING)) {
 
     char const *locale = g_variant_get_string (arguments, NULL);
-    ytsg_vp_transcript_set_locale (YTSG_VP_TRANSCRIPT (self), locale);
+    transcript_proxy_set_locale (YTSG_VP_TRANSCRIPT_PROXY (self), locale);
 
   } else {
 
@@ -167,16 +177,9 @@ _set_property (GObject      *object,
   switch (property_id) {
 
     case PROP_TRANSCRIPT_LOCALE: {
+
       char const *locale = g_value_get_string (value);
       if (0 != g_strcmp0 (locale, priv->locale)) {
-        if (priv->locale) {
-          g_free (priv->locale);
-          priv->locale = NULL;
-        }
-        if (locale) {
-          priv->locale = g_strdup (locale);
-        }
-        g_object_notify (object, "locale");
         invocation_id = ytsg_proxy_create_invocation_id (YTSG_PROXY (object));
         ytsg_proxy_invoke (YTSG_PROXY (object), invocation_id,
                            "locale", g_variant_new_string (locale));
@@ -249,13 +252,13 @@ ytsg_vp_transcript_proxy_init (YtsgVPTranscriptProxy *self)
                                              NULL);
 }
 
-void
-vp_transcript_proxy_set_available_locales (YtsgVPTranscriptProxy  *self,
-                                           char const *const      *locales)
+static void
+transcript_proxy_set_available_locales (YtsgVPTranscriptProxy *self,
+                                        char const *const     *locales)
 {
   YtsgVPTranscriptProxyPrivate *priv = GET_PRIVATE (self);
 
-  /* Internal setter for r/o property to sync the proxy. */
+  /* Assume the value has been validated by the service. */
 
   if (priv->available_locales) {
     g_strfreev (priv->available_locales);
@@ -269,23 +272,49 @@ vp_transcript_proxy_set_available_locales (YtsgVPTranscriptProxy  *self,
   g_object_notify (G_OBJECT (self), "available-locales");
 }
 
-void
-vp_transcript_proxy_set_current_text (YtsgVPTranscriptProxy *self,
-                                      char const            *current_text)
+static void
+transcript_proxy_set_current_text (YtsgVPTranscriptProxy  *self,
+                                   char const             *current_text)
 {
   YtsgVPTranscriptProxyPrivate *priv = GET_PRIVATE (self);
 
-  /* Internal setter for r/o property to sync the proxy. */
+  /* Assume the value has been validated by the service. */
 
-  if (priv->current_text) {
-    g_free (priv->current_text);
-    priv->current_text = NULL;
+  if (0 != g_strcmp0 (current_text, priv->current_text)) {
+
+    if (priv->current_text) {
+      g_free (priv->current_text);
+      priv->current_text = NULL;
+    }
+
+    if (current_text) {
+      priv->current_text = g_strdup (current_text);
+    }
+
+    g_object_notify (G_OBJECT (self), "current-text");
   }
+}
 
-  if (current_text) {
-    priv->current_text = g_strdup (current_text);
+static void
+transcript_proxy_set_locale (YtsgVPTranscriptProxy  *self,
+                             char const             *locale)
+{
+  YtsgVPTranscriptProxyPrivate *priv = GET_PRIVATE (self);
+
+  /* Assume the value has been validated by the service. */
+
+  if (0 != g_strcmp0 (locale, priv->locale)) {
+
+    if (priv->locale) {
+      g_free (priv->locale);
+      priv->locale = NULL;
+    }
+
+    if (locale) {
+      priv->locale = g_strdup (locale);
+    }
+
+    g_object_notify (G_OBJECT (self), "locale");
   }
-
-  g_object_notify (G_OBJECT (self), "current-text");
 }
 

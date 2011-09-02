@@ -207,7 +207,7 @@ _transcript_notify_current_text (YtsgVPTranscript *transcript,
   char *current_text;
 
   current_text = ytsg_vp_transcript_get_current_text (transcript);
-  g_debug ("YtsgVPTranscript.current-text = %s", current_text);
+  g_debug ("YtsgVPTranscript.current-text = '%s'", current_text);
   g_free (current_text);
 }
 

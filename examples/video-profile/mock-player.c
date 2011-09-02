@@ -175,6 +175,11 @@ _transcript_emit_text (MockPlayer *self)
 
   MockPlayerPrivate *priv = GET_PRIVATE (self);
 
+  if (priv->playing == false) {
+    /* Stop timer */
+    return false;
+  }
+
   if (priv->current_text) {
     g_free (priv->current_text);
     priv->current_text = NULL;
@@ -283,6 +288,13 @@ _set_property (GObject      *object,
         g_debug ("YtsgVPPlayer.playing = %s", playing ? "true" : "false");
         priv->playing = playing;
         g_object_notify (object, "playing");
+
+        if (priv->playing) {
+          /* Timer to fake a stream of subtitles. */
+          g_timeout_add_seconds (3,
+                                 (GSourceFunc) _transcript_emit_text,
+                                 object);
+        }
       }
     } break;
 
@@ -429,11 +441,6 @@ mock_player_init (MockPlayer *self)
 
   priv->playlist = _playlist;
   priv->available_locales = _locales;
-
-  /* Timer to fake a stream of subtitles. */
-  g_timeout_add_seconds (3,
-                         (GSourceFunc) _transcript_emit_text,
-                         self);
 }
 
 MockPlayer *

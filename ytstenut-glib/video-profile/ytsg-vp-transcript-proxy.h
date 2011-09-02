@@ -60,14 +60,6 @@ typedef struct {
 GType
 ytsg_vp_transcript_proxy_get_type (void) G_GNUC_CONST;
 
-void
-vp_transcript_proxy_set_available_locales (YtsgVPTranscriptProxy  *self,
-                                           char const *const      *locales);
-
-void
-vp_transcript_proxy_set_current_text (YtsgVPTranscriptProxy *self,
-                                      char const            *current_text);
-
 G_END_DECLS
 
 #endif /* YTSG_VP_TRANSCRIPT_PROXY_H */

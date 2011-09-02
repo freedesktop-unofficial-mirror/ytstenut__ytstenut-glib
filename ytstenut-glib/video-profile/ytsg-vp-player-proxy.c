@@ -49,6 +49,16 @@ typedef struct {
 
 } YtsgVPPlayerProxyPrivate;
 
+static void
+player_proxy_set_playing (YtsgVPPlayerProxy *self,
+                          bool               playing);
+static void
+player_proxy_set_playable_uri (YtsgVPPlayerProxy  *self,
+                               char const         *playable_uri);
+static void
+player_proxy_set_volume (YtsgVPPlayerProxy  *self,
+                         double              volume);
+
 /*
  * YtsgVPPlayer implementation
  */
@@ -137,19 +147,19 @@ _proxy_service_event (YtsgProxy   *self,
              g_variant_is_of_type (arguments, G_VARIANT_TYPE_BOOLEAN)) {
 
     bool playing = g_variant_get_boolean (arguments);
-    ytsg_vp_player_set_playing (YTSG_VP_PLAYER (self), playing);
+    player_proxy_set_playing (YTSG_VP_PLAYER_PROXY (self), playing);
 
   } else if (0 == g_strcmp0 ("volume", aspect) &&
              g_variant_is_of_type (arguments, G_VARIANT_TYPE_DOUBLE)) {
 
     double volume = g_variant_get_double (arguments);
-    ytsg_vp_player_set_volume (YTSG_VP_PLAYER (self), volume);
+    player_proxy_set_volume (YTSG_VP_PLAYER_PROXY (self), volume);
 
   } else if (0 == g_strcmp0 ("playable-uri", aspect) &&
              g_variant_is_of_type (arguments, G_VARIANT_TYPE_STRING)) {
 
     char const *playable_uri = g_variant_get_string (arguments, NULL);
-    ytsg_vp_player_set_playable_uri (YTSG_VP_PLAYER (self), playable_uri);
+    player_proxy_set_playable_uri (YTSG_VP_PLAYER_PROXY (self), playable_uri);
 
   } else {
 
@@ -262,30 +272,15 @@ _set_property (GObject      *object,
   switch (property_id) {
 
     case PROP_PLAYER_PLAYABLE: {
-      GObject *playable = g_value_get_object (value);
-      // FIXME compare URIs
-      if (playable != G_OBJECT (priv->playable)) {
-        if (priv->playable) {
-          g_object_unref (priv->playable);
-          priv->playable = NULL;
-        }
-        if (playable) {
-          priv->playable = g_object_ref (playable);
-        }
-        g_object_notify (object, "playable");
-        /* FIXME send home playable URI */
-        /* PONDERING maybe we could spare ourselves the answer or just pass onto
-         * the server and do all the property foo on the return. */
-        g_debug ("%s : 'playable' property not implemented yet", G_STRLOC);
-      }
+
+      // FIXME
+      g_warning ("%s : Property 'playable' not implemented", G_STRLOC);
+
     } break;
 
     case PROP_PLAYER_PLAYING: {
       bool playing = g_value_get_boolean (value);
       if (playing != priv->playing) {
-        priv->playing = playing;
-        g_object_notify (object, "playing");
-        /* PONDERING maybe we could spare ourselves the answer */
         invocation_id = ytsg_proxy_create_invocation_id (YTSG_PROXY (object));
         ytsg_proxy_invoke (YTSG_PROXY (object), invocation_id,
                            "playing", g_variant_new_boolean (playing));
@@ -296,10 +291,6 @@ _set_property (GObject      *object,
     case PROP_PLAYER_VOLUME: {
       double volume = g_value_get_double (value);
       if (volume != priv->volume) {
-        priv->volume = volume;
-        g_object_notify (object, "volume");
-        /* PONDERING maybe we could spare ourselves the answer or just pass onto
-         * the server and do all the property foo on the return. */
         invocation_id = ytsg_proxy_create_invocation_id (YTSG_PROXY (object));
         ytsg_proxy_invoke (YTSG_PROXY (object), invocation_id,
                            "volume", g_variant_new_double (volume));
@@ -310,16 +301,6 @@ _set_property (GObject      *object,
     case PROP_PLAYER_PLAYABLE_URI: {
       char const *playable_uri = g_value_get_string (value);
       if (0 != g_strcmp0 (playable_uri, priv->playable_uri)) {
-        if (priv->playable_uri) {
-          g_free (priv->playable_uri);
-          priv->playable_uri = NULL;
-        }
-        if (playable_uri) {
-          priv->playable_uri = g_strdup (playable_uri);
-        }
-        g_object_notify (object, "playable-uri");
-        /* PONDERING maybe we could spare ourselves the answer or just pass onto
-         * the server and do all the property foo on the return. */
         invocation_id = ytsg_proxy_create_invocation_id (YTSG_PROXY (object));
         ytsg_proxy_invoke (YTSG_PROXY (object), invocation_id,
                            "playable-uri", g_variant_new_string (playable_uri));
@@ -399,5 +380,50 @@ ytsg_vp_player_proxy_init (YtsgVPPlayerProxy *self)
                                              g_str_equal,
                                              g_free,
                                              NULL);
+}
+
+static void
+player_proxy_set_playing (YtsgVPPlayerProxy *self,
+                          bool               playing)
+{
+  YtsgVPPlayerProxyPrivate *priv = GET_PRIVATE (self);
+
+  if (playing != priv->playing) {
+    priv->playing = playing;
+    g_object_notify (G_OBJECT (self), "playing");
+  }
+}
+
+static void
+player_proxy_set_playable_uri (YtsgVPPlayerProxy  *self,
+                               char const         *playable_uri)
+{
+  YtsgVPPlayerProxyPrivate *priv = GET_PRIVATE (self);
+
+  if (0 != g_strcmp0 (playable_uri, priv->playable_uri)) {
+
+    if (priv->playable_uri) {
+      g_free (priv->playable_uri);
+      priv->playable_uri = NULL;
+    }
+
+    if (playable_uri) {
+      priv->playable_uri = g_strdup (playable_uri);
+    }
+
+    g_object_notify (G_OBJECT (self), "playable-uri");
+  }
+}
+
+static void
+player_proxy_set_volume (YtsgVPPlayerProxy  *self,
+                         double              volume)
+{
+  YtsgVPPlayerProxyPrivate *priv = GET_PRIVATE (self);
+
+  if (volume != priv->volume) {
+    priv->volume = volume;
+    g_object_notify (G_OBJECT (self), "volume");
+  }
 }
 

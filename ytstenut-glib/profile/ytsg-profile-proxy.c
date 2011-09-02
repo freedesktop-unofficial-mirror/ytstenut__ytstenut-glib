@@ -104,6 +104,8 @@ _proxy_service_event (YtsgProxy   *self,
                       char const  *aspect,
                       GVariant    *arguments)
 {
+  // TODO implement "capabilities" property
+
   g_warning ("%s : Received unhandled event '%s'",
              G_STRLOC,
              aspect);
