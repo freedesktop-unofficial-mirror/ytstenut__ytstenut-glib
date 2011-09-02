@@ -1,16 +1,16 @@
 TODO
 
-* ytsg_client_connect_to_mesh() -> ytsg_client_connect()
+* yts_client_connect_to_mesh() -> yts_client_connect()
 * Need to pass jid, or better sending service, with received message.
 * Roster should be created with _new() instead of _get() from client.
-* Should send-file really be with YtsgContact? Why not Service? Which service is receiving the file?
+* Should send-file really be with YtsContact? Why not Service? Which service is receiving the file?
 * Get rid of --enable-docs and adhere to --enable-gtk-doc only.
-* Add checking and error reporting when service name doesn't conform when creating YtsgClient.
-* ytsg_client_set_status_by_capability() is not in the docs.
+* Add checking and error reporting when service name doesn't conform when creating YtsClient.
+* yts_client_set_status_by_capability() is not in the docs.
 * Add "services" property to Contact.
 * Should allow xml inside messages?
-* There should be a common (abstract?) base-class that YtsgMetadata and YtsgInvocationMessage etc derive from -- YtsgDatagram probably.
-* YtsgService should maybe be YtsgRemoteService.
+* There should be a common (abstract?) base-class that YtsMetadata and YtsInvocationMessage etc derive from -- YtsDatagram probably.
+* YtsService should maybe be YtsRemoteService.
 * The pc file name should contain the API version.
 * Look at using xml-rpc
 * Globally rename "com.meego.xpmn.ytstenut" to "org.freedesktop.ytstenut".
@@ -19,21 +19,21 @@ TODO
 * Implement generic service proxy and replace MetadataService with it.
 * Implement capabilities boxed type and use it everywhere.
 * Implement error message handling on the client side, or do away with it altogether, or maybe rename to exception. Or maybe just make it an event?
-* Use exported symbols list when linking and generate sections.txt from it and, say, sections.txt.in, using "ytsg_client_*" and the like.
+* Use exported symbols list when linking and generate sections.txt from it and, say, sections.txt.in, using "yts_client_*" and the like.
 * Merge Event and Response classes, and use them instead of InvocationData, so they just need to be filled and sent out.
 * Maybe the message class should be initially unowned as well.
 * ServiceAdapater and Proxy classes should probably be abstract, maybe have a generic implementation subclass one day.
 * Every response should possibly be an error I guess.
 * Should there be a response for void returning invocations, and should it just be a NULL error if all went well? -- probably not, but there should be a response signal for every method in case an error occurred ... YES.
 * Service should probably be called something else. Probably Facet. A Profile is made up of Facets, consisting of Aspects. Liking it. Very leet.
-* Should probably pull out all of the profile handling of YtsgClient into a class of its own. YtsgServiceManager?
+* Should probably pull out all of the profile handling of YtsClient into a class of its own. YtsServiceManager?
 * InvocationID should carry the info to find back the method, obsoleting the hash tables. Would that work?
 * After registering the proxy, the server side should notify all properties so they are synched. Hmm but that would sync them to all listeners, need a special mode for that. Also should have batch synch later probably.
-* When proxy dies, should not the server be aware of it through TP? Seems ytsg_client_cleanup_contact does not run. Maybe a refcounting thing?
+* When proxy dies, should not the server be aware of it through TP? Seems yts_client_cleanup_contact does not run. Maybe a refcounting thing?
 * fqc-id should probably be a quark and named fqc-quark.
-* Every service interface method should return YtsgReturn, which takes an error or a variant on the server side, and an invocation_id on the client side.
+* Every service interface method should return YtsReturn, which takes an error or a variant on the server side, and an invocation_id on the client side.
 * Do roundtrip-based property-set in proxies. Needs helper setters a la Transcript.
-* Allow multiple services being implemented by a single object. YtsgCapabilities.capabilitiy must become plural, and ServiceAdapter hold the capability itself.
+* Allow multiple services being implemented by a single object. YtsCapabilities.capabilitiy must become plural, and ServiceAdapter hold the capability itself.
 
 Code Review
 -----------

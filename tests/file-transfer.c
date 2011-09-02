@@ -20,9 +20,9 @@
  *
  */
 
-#include <ytstenut/ytsg-private.h>
-#include <ytstenut/ytsg-client.h>
-#include <ytstenut/ytsg-main.h>
+#include <ytstenut/yts-private.h>
+#include <ytstenut/yts-client.h>
+#include <ytstenut/yts-main.h>
 
 #include <string.h>
 
@@ -31,8 +31,8 @@
 static gboolean    ready1 = FALSE;
 static gboolean    ready2 = FALSE;
 static int         retval = -2;
-static YtsgClient *client1 = NULL;
-static YtsgClient *client2 = NULL;
+static YtsClient *client1 = NULL;
+static YtsClient *client2 = NULL;
 static GMainLoop  *loop = NULL;
 
 static gboolean
@@ -48,13 +48,13 @@ timeout_test_cb (gpointer data)
 }
 
 static void
-authenticated_cb (YtsgClient *client, gpointer data)
+authenticated_cb (YtsClient *client, gpointer data)
 {
   retval += 1;
 }
 
 static void
-incoming_file_finished_cb (YtsgClient *client,
+incoming_file_finished_cb (YtsClient *client,
                            const char *s1,
                            const char *s2,
                            gboolean    r,
@@ -67,7 +67,7 @@ incoming_file_finished_cb (YtsgClient *client,
 }
 
 static gboolean
-incoming_file_cb (YtsgClient *client,
+incoming_file_cb (YtsClient *client,
                   const char *from,
                   const char *name,
                   guint64     size,
@@ -82,14 +82,14 @@ incoming_file_cb (YtsgClient *client,
 }
 
 static void
-service_added_cb (YtsgRoster *roster, YtsgService *service, gpointer data)
+service_added_cb (YtsRoster *roster, YtsService *service, gpointer data)
 {
-  YtsgClient  *client  = ytsg_roster_get_client (roster);
-  YtsgContact *contact = ytsg_service_get_contact (service);
-  const char  *jid     = ytsg_contact_get_jid (contact);
-  const char  *sid     = ytsg_service_get_uid (service);
+  YtsClient  *client  = yts_roster_get_client (roster);
+  YtsContact *contact = yts_service_get_contact (service);
+  const char  *jid     = yts_contact_get_jid (contact);
+  const char  *sid     = yts_service_get_uid (service);
 
-  static YtsgService *to = NULL;
+  static YtsService *to = NULL;
 
   if (client == client1 && strstr (sid, "com.meego.ytstenut.FileTransferTest2"))
     {
@@ -108,7 +108,7 @@ service_added_cb (YtsgRoster *roster, YtsgService *service, gpointer data)
   if (ready1 && ready2)
     {
       GFile     *file  = g_file_new_for_path ("file-transfer.c");
-      YtsgError  e;
+      YtsError  e;
 
       retval = 1;
 
@@ -121,15 +121,15 @@ service_added_cb (YtsgRoster *roster, YtsgService *service, gpointer data)
       g_signal_connect (client2, "incoming-file",
                         G_CALLBACK (incoming_file_cb), NULL);
 
-      e = ytsg_contact_send_file (ytsg_service_get_contact (to), file);
+      e = yts_contact_send_file (yts_service_get_contact (to), file);
 
       g_object_unref (file);
 
-      if (ytsg_error_get_code (e) != YTSG_ERROR_SUCCESS)
+      if (yts_error_get_code (e) != YTS_ERROR_SUCCESS)
         {
           g_message ("Send file status %d:%d",
-                     ytsg_error_get_atom (e),
-                     ytsg_error_get_code (e));
+                     yts_error_get_atom (e),
+                     yts_error_get_code (e));
           g_main_loop_quit (loop);
         }
     }
@@ -138,30 +138,30 @@ service_added_cb (YtsgRoster *roster, YtsgService *service, gpointer data)
 int
 main (int argc, char **argv)
 {
-  YtsgRoster *roster1;
-  YtsgRoster *roster2;
+  YtsRoster *roster1;
+  YtsRoster *roster2;
 
-  ytsg_init (0, NULL);
+  yts_init (0, NULL);
 
   loop = g_main_loop_new (NULL, FALSE);
 
-  client1 = ytsg_client_new (YTSG_PROTOCOL_LOCAL_XMPP,
+  client1 = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP,
                              "com.meego.ytstenut.FileTransferTest1");
   g_signal_connect (client1, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);
-  roster1 = ytsg_client_get_roster (client1);
+  roster1 = yts_client_get_roster (client1);
   g_signal_connect (roster1, "service-added",
                     G_CALLBACK (service_added_cb), NULL);
-  ytsg_client_connect (client1);
+  yts_client_connect (client1);
 
-  client2 = ytsg_client_new (YTSG_PROTOCOL_LOCAL_XMPP,
+  client2 = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP,
                              "com.meego.ytstenut.FileTransferTest2");
   g_signal_connect (client2, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);
-  roster2 = ytsg_client_get_roster (client2);
+  roster2 = yts_client_get_roster (client2);
   g_signal_connect (roster2, "service-added",
                     G_CALLBACK (service_added_cb), NULL);
-  ytsg_client_connect (client2);
+  yts_client_connect (client2);
 
   g_timeout_add_seconds (TEST_LENGTH, timeout_test_cb, loop);
 

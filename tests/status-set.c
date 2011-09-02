@@ -20,9 +20,9 @@
  *
  */
 
-#include <ytstenut/ytsg-private.h>
-#include <ytstenut/ytsg-client.h>
-#include <ytstenut/ytsg-main.h>
+#include <ytstenut/yts-private.h>
+#include <ytstenut/yts-client.h>
+#include <ytstenut/yts-main.h>
 
 #include <string.h>
 
@@ -31,8 +31,8 @@
 static gboolean    ready1 = FALSE;
 static gboolean    ready2 = FALSE;
 static int         retval = -2;
-static YtsgClient *client1 = NULL;
-static YtsgClient *client2 = NULL;
+static YtsClient *client1 = NULL;
+static YtsClient *client2 = NULL;
 static GMainLoop  *loop = NULL;
 
 static gboolean
@@ -48,17 +48,17 @@ timeout_test_cb (gpointer data)
 }
 
 static void
-authenticated_cb (YtsgClient *client, gpointer data)
+authenticated_cb (YtsClient *client, gpointer data)
 {
   retval += 1;
 }
 
 static void
-status_cb (YtsgClient *client, YtsgStatus *status, gpointer data)
+status_cb (YtsClient *client, YtsStatus *status, gpointer data)
 {
-  YtsgMetadata *md = (YtsgMetadata*)status;
+  YtsMetadata *md = (YtsMetadata*)status;
 
-  g_assert (YTSG_IS_STATUS (status));
+  g_assert (YTS_IS_STATUS (status));
 
   /* TODO -- check what is in the status ... */
   retval = 0;
@@ -67,15 +67,15 @@ status_cb (YtsgClient *client, YtsgStatus *status, gpointer data)
 }
 
 static void
-service_added_cb (YtsgRoster *roster, YtsgService *service, gpointer data)
+service_added_cb (YtsRoster *roster, YtsService *service, gpointer data)
 {
-  YtsgClient  *client  = ytsg_roster_get_client (roster);
-  YtsgContact *contact = ytsg_service_get_contact (service);
-  const char  *jid     = ytsg_contact_get_jid (contact);
-  const char  *sid     = ytsg_service_get_uid (service);
+  YtsClient  *client  = yts_roster_get_client (roster);
+  YtsContact *contact = yts_service_get_contact (service);
+  const char  *jid     = yts_contact_get_jid (contact);
+  const char  *sid     = yts_service_get_uid (service);
   gboolean     our     = FALSE;
 
-  static YtsgService *service2 = NULL;
+  static YtsService *service2 = NULL;
 
   g_debug ("Service %s:%s", jid, sid);
 
@@ -99,7 +99,7 @@ service_added_cb (YtsgRoster *roster, YtsgService *service, gpointer data)
    */
   if (our && ready1 && ready2)
     {
-      YtsgStatus *status;
+      YtsStatus *status;
       const char   *attributes[] =
         {
           "capability", "urn:ytstenut:capabilities:yts-caps-video",
@@ -110,9 +110,9 @@ service_added_cb (YtsgRoster *roster, YtsgService *service, gpointer data)
 
       g_debug ("Both test services are ready, setting status");
 
-      status = ytsg_status_new ((const char**)&attributes);
+      status = yts_status_new ((const char**)&attributes);
 
-      ytsg_client_set_status_by_capability (client1,
+      yts_client_set_status_by_capability (client1,
                                     "urn:ytstenut:capabilities:yts-caps-video",
                                     "yts-activity-playing");
     }
@@ -121,32 +121,32 @@ service_added_cb (YtsgRoster *roster, YtsgService *service, gpointer data)
 int
 main (int argc, char **argv)
 {
-  YtsgRoster *roster1;
-  YtsgRoster *roster2;
+  YtsRoster *roster1;
+  YtsRoster *roster2;
 
-  ytsg_init (0, NULL);
+  yts_init (0, NULL);
 
   loop = g_main_loop_new (NULL, FALSE);
 
-  client1 = ytsg_client_new (YTSG_PROTOCOL_LOCAL_XMPP,
+  client1 = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP,
                              "com.meego.ytstenut.SetStatusTest1");
-  ytsg_client_set_capabilities (client1, YTSG_CAPS_VIDEO);
+  yts_client_set_capabilities (client1, YTS_CAPS_VIDEO);
   g_signal_connect (client1, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);
-  roster1 = ytsg_client_get_roster (client1);
+  roster1 = yts_client_get_roster (client1);
   g_signal_connect (roster1, "service-added",
                     G_CALLBACK (service_added_cb), NULL);
-  ytsg_client_connect (client1);
+  yts_client_connect (client1);
 
-  client2 = ytsg_client_new (YTSG_PROTOCOL_LOCAL_XMPP,
+  client2 = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP,
                              "com.meego.ytstenut.SetStatusTest2");
-  ytsg_client_set_capabilities (client2, YTSG_CAPS_VIDEO);
+  yts_client_set_capabilities (client2, YTS_CAPS_VIDEO);
   g_signal_connect (client2, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);
-  roster2 = ytsg_client_get_roster (client2);
+  roster2 = yts_client_get_roster (client2);
   g_signal_connect (roster2, "service-added",
                     G_CALLBACK (service_added_cb), NULL);
-  ytsg_client_connect (client2);
+  yts_client_connect (client2);
 
   g_timeout_add_seconds (TEST_LENGTH, timeout_test_cb, loop);
 

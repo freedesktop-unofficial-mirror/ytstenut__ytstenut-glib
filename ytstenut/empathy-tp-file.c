@@ -54,8 +54,8 @@
 #include <telepathy-glib/interfaces.h>
 
 #include "empathy-tp-file.h"
-#include "ytsg-marshal.h"
-#include "ytsg-debug.h"
+#include "yts-marshal.h"
+#include "yts-debug.h"
 
 #if 0
 #include "empathy-time.h"
@@ -185,7 +185,7 @@ tp_file_get_available_socket_types_cb (TpProxy *proxy,
     }
 
 out:
-  YTSG_NOTE (FILE_TRANSFER, "Socket address type: %u, access control %u",
+  YTS_NOTE (FILE_TRANSFER, "Socket address type: %u, access control %u",
              priv->socket_address_type, priv->socket_access_control);
 }
 
@@ -198,7 +198,7 @@ tp_file_invalidated_cb (TpProxy       *proxy,
 {
   EmpathyTpFilePriv *priv = GET_PRIV (tp_file);
 
-  YTSG_NOTE (FILE_TRANSFER, "Channel invalidated: %s", message);
+  YTS_NOTE (FILE_TRANSFER, "Channel invalidated: %s", message);
 
   if (priv->state != TP_FILE_TRANSFER_STATE_COMPLETED &&
       priv->state != TP_FILE_TRANSFER_STATE_CANCELLED)
@@ -218,7 +218,7 @@ ft_operation_close_clean (EmpathyTpFile *tp_file)
   if (priv->is_closed)
     return;
 
-  YTSG_NOTE (FILE_TRANSFER, "FT operation close clean");
+  YTS_NOTE (FILE_TRANSFER, "FT operation close clean");
 
   priv->is_closed = TRUE;
 
@@ -235,7 +235,7 @@ ft_operation_close_with_error (EmpathyTpFile *tp_file,
   if (priv->is_closed)
     return;
 
-  YTSG_NOTE (FILE_TRANSFER, "FT operation close with error %s", error->message);
+  YTS_NOTE (FILE_TRANSFER, "FT operation close with error %s", error->message);
 
   priv->is_closed = TRUE;
 
@@ -259,7 +259,7 @@ splice_stream_ready_cb (GObject *source,
 
   g_output_stream_splice_finish (G_OUTPUT_STREAM (source), res, &error);
 
-  YTSG_NOTE (FILE_TRANSFER, "Splice stream ready cb, error %p", error);
+  YTS_NOTE (FILE_TRANSFER, "Splice stream ready cb, error %p", error);
 
   if (error != NULL)
     {
@@ -291,7 +291,7 @@ tp_file_start_transfer (EmpathyTpFile *tp_file)
       error = g_error_new_literal (EMPATHY_FT_ERROR_QUARK,
           EMPATHY_FT_ERROR_NOT_SUPPORTED, _("Socket type not supported"));
 
-      YTSG_NOTE (FILE_TRANSFER, "Socket not supported, closing channel");
+      YTS_NOTE (FILE_TRANSFER, "Socket not supported, closing channel");
 
       ft_operation_close_with_error (tp_file, error);
       g_clear_error (&error);
@@ -308,7 +308,7 @@ tp_file_start_transfer (EmpathyTpFile *tp_file)
       error = g_error_new_literal (EMPATHY_FT_ERROR_QUARK,
           EMPATHY_FT_ERROR_SOCKET, g_strerror (code));
 
-      YTSG_NOTE (FILE_TRANSFER, "Failed to create socket, closing channel");
+      YTS_NOTE (FILE_TRANSFER, "Failed to create socket, closing channel");
 
       ft_operation_close_with_error (tp_file, error);
       g_clear_error (&error);
@@ -350,7 +350,7 @@ tp_file_start_transfer (EmpathyTpFile *tp_file)
       error = g_error_new_literal (EMPATHY_FT_ERROR_QUARK,
           EMPATHY_FT_ERROR_SOCKET, g_strerror (code));
 
-      YTSG_NOTE (FILE_TRANSFER, "Failed to connect socket, closing channel");
+      YTS_NOTE (FILE_TRANSFER, "Failed to connect socket, closing channel");
 
       ft_operation_close_with_error (tp_file, error);
       close (fd);
@@ -359,7 +359,7 @@ tp_file_start_transfer (EmpathyTpFile *tp_file)
       return;
     }
 
-  YTSG_NOTE (FILE_TRANSFER, "Start the transfer");
+  YTS_NOTE (FILE_TRANSFER, "Start the transfer");
 
 #if 0
   priv->start_time = empathy_time_get_current ();
@@ -451,7 +451,7 @@ tp_file_state_changed_cb (TpChannel *proxy,
   if (state == priv->state)
     return;
 
-  YTSG_NOTE (FILE_TRANSFER, "File transfer state changed:\n"
+  YTS_NOTE (FILE_TRANSFER, "File transfer state changed:\n"
              "old state = %u, state = %u, reason = %u\n"
              "\tincoming = %s, in_stream = %s, out_stream = %s",
              priv->state, state, reason,
@@ -527,7 +527,7 @@ ft_operation_provide_or_accept_file_cb (TpChannel *proxy,
 
   if (myerr != NULL)
     {
-      YTSG_NOTE (FILE_TRANSFER, "Error: %s", myerr->message);
+      YTS_NOTE (FILE_TRANSFER, "Error: %s", myerr->message);
       ft_operation_close_with_error (tp_file, myerr);
       g_clear_error (&myerr);
       return;
@@ -568,7 +568,7 @@ ft_operation_provide_or_accept_file_cb (TpChannel *proxy,
       priv->port = g_value_get_uint (v);
     }
 
-  YTSG_NOTE (FILE_TRANSFER,
+  YTS_NOTE (FILE_TRANSFER,
              "Got socket address: %s, port (not zero if IPV4): %d",
              priv->socket_address->data, priv->port);
 
@@ -673,7 +673,7 @@ channel_closed_cb (TpChannel *proxy,
   EmpathyTpFilePriv *priv = GET_PRIV (tp_file);
   gboolean cancel = GPOINTER_TO_INT (user_data);
 
-  YTSG_NOTE (FILE_TRANSFER, "Channel is closed, should cancel %s",
+  YTS_NOTE (FILE_TRANSFER, "Channel is closed, should cancel %s",
              cancel ? "True" : "False");
 
   if (priv->cancellable != NULL &&
@@ -687,7 +687,7 @@ close_channel_internal (EmpathyTpFile *tp_file,
 {
   EmpathyTpFilePriv *priv = GET_PRIV (tp_file);
 
-  YTSG_NOTE (FILE_TRANSFER, "Closing channel, should cancel %s", cancel ?
+  YTS_NOTE (FILE_TRANSFER, "Closing channel, should cancel %s", cancel ?
              "True" : "False");
 
   tp_cli_channel_call_close (priv->channel, -1,

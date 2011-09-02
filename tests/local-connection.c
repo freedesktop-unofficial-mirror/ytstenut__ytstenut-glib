@@ -20,11 +20,11 @@
  *
  */
 
-#include <ytstenut/ytsg-metadata-service.h>
-#include <ytstenut/ytsg-private.h>
-#include <ytstenut/ytsg-client.h>
-#include <ytstenut/ytsg-status.h>
-#include <ytstenut/ytsg-main.h>
+#include <ytstenut/yts-metadata-service.h>
+#include <ytstenut/yts-private.h>
+#include <ytstenut/yts-client.h>
+#include <ytstenut/yts-status.h>
+#include <ytstenut/yts-main.h>
 
 #include <string.h>
 
@@ -72,9 +72,9 @@ timeout_presence_cb (gpointer data)
  * to the client applications.
  */
 static void
-authenticated_cb (YtsgClient *client, gpointer data)
+authenticated_cb (YtsClient *client, gpointer data)
 {
-  g_message ("Client %s authenticated", ytsg_client_get_jid (client));
+  g_message ("Client %s authenticated", yts_client_get_jid (client));
 
   retval = 0;
 
@@ -85,26 +85,26 @@ authenticated_cb (YtsgClient *client, gpointer data)
  * Sample callback for the 'disconnected' signal.
  */
 static void
-disconnected_cb (YtsgClient *client, gpointer data)
+disconnected_cb (YtsClient *client, gpointer data)
 {
   g_message ("Client disconnected");
 }
 
 /*
- * Sample callback for the YtsgContact 'notify::status' signal; this allows the
+ * Sample callback for the YtsContact 'notify::status' signal; this allows the
  * application to monitor status of items in the roster.
  *
  * (As a general rule, items that are not in available state should be hidden
  * in the UI.)
  */
 static void
-contact_status_cb (YtsgContact *item, GParamSpec *spec, gpointer data)
+contact_status_cb (YtsContact *item, GParamSpec *spec, gpointer data)
 {
   g_message ("Status change on %p", item);
 #if 0
-  const YtsgStatus *status = ytsg_contact_get_status (item);
+  const YtsStatus *status = yts_contact_get_status (item);
 
-  ytsg_status_dump (status);
+  yts_status_dump (status);
 #endif
 }
 
@@ -115,19 +115,19 @@ static gboolean
 timeout_cb (gpointer data)
 {
 #if 0
-  YtsgContact *item = data;
-  ytsg_contact_send_command (item, YTSG_CAPS_VIDEO, YTSG_ACTIVITY_PLAY,
+  YtsContact *item = data;
+  yts_contact_send_command (item, YTS_CAPS_VIDEO, YTS_ACTIVITY_PLAY,
                                "http://youtube.com/something", 0, NULL);
 #endif
   return FALSE;
 }
 
 /*
- * Callback for the YtsgRoster 'contact-added' signal; the roster UI in the
+ * Callback for the YtsRoster 'contact-added' signal; the roster UI in the
  * application will need to connect to this.
  */
 static void
-contact_added_cb (YtsgRoster *client, YtsgContact *item, gpointer data)
+contact_added_cb (YtsRoster *client, YtsContact *item, gpointer data)
 {
   g_message ("Roster: added %p", item);
 
@@ -141,24 +141,24 @@ contact_added_cb (YtsgRoster *client, YtsgContact *item, gpointer data)
 }
 
 /*
- * Callback for the YtsgRoster 'item-removed' signal; application roster UI will
+ * Callback for the YtsRoster 'item-removed' signal; application roster UI will
  * need to connect to this to monitor when items are removed.
  *
  * NB: if the application took reference to the item, it should unref the
  *     object when it receives this signal.
  */
 static void
-contact_removed_cb (YtsgRoster *client, YtsgContact *item, gpointer data)
+contact_removed_cb (YtsRoster *client, YtsContact *item, gpointer data)
 {
   g_message ("Roster: removed %p", item);
 }
 
 /*
- * Callback for the YtsgClient 'message' signal. Applications should rarely need
+ * Callback for the YtsClient 'message' signal. Applications should rarely need
  * to connect to this signal (see the 'command' signal instead).
  */
 static void
-message_cb (YtsgClient *client, YtsgMessage *msg, gpointer data)
+message_cb (YtsClient *client, YtsMessage *msg, gpointer data)
 {
   g_debug ("Got message");
 }
@@ -167,15 +167,15 @@ message_cb (YtsgClient *client, YtsgMessage *msg, gpointer data)
 int
 main (int argc, char **argv)
 {
-  YtsgClient *client;
-  YtsgRoster *roster;
+  YtsClient *client;
+  YtsRoster *roster;
   GMainLoop *loop;
 
   /*
    * Initialize stuff needed for telepathy and the GObject type system.
    */
 
-  ytsg_init (0, NULL);
+  yts_init (0, NULL);
 
   /*
    * create a main loop for this app
@@ -186,10 +186,10 @@ main (int argc, char **argv)
   loop = g_main_loop_new (NULL, FALSE);
 
   /*
-   * Construct the YtsgClient object and connect to it's signals that interest
+   * Construct the YtsClient object and connect to it's signals that interest
    * us.
    */
-  client = ytsg_client_new (YTSG_PROTOCOL_LOCAL_XMPP,
+  client = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP,
                             "com.meego.ytstenut.LocalConnectionTest");
 
   g_signal_connect (client, "authenticated",
@@ -199,10 +199,10 @@ main (int argc, char **argv)
   g_signal_connect (client, "message",
                     G_CALLBACK (message_cb), NULL);
 
-  roster = ytsg_client_get_roster (client);
+  roster = yts_client_get_roster (client);
 
   /*
-   * Connect to any YtsgRoster object signals that we care about.
+   * Connect to any YtsRoster object signals that we care about.
    *
    * NB: at this point the roster is empty, i.e., you cannot start populating
    *     the UI here.
@@ -215,7 +215,7 @@ main (int argc, char **argv)
   /*
    * Initiate network connection.
    */
-  ytsg_client_connect (client);
+  yts_client_connect (client);
 
   g_timeout_add_seconds (TEST_LENGTH, timeout_test_cb, loop);
 

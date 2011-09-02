@@ -20,15 +20,15 @@
  *
  */
 
-#include <ytstenut/ytsg-message.h>
-#include <ytstenut/ytsg-private.h>
+#include <ytstenut/yts-message.h>
+#include <ytstenut/yts-private.h>
 #include <string.h>
 
 int
 main (int argc, char **argv)
 {
-  YtsgMessage  *message;
-  YtsgMetadata *mdata;
+  YtsMessage  *message;
+  YtsMetadata *mdata;
   const char   *attrs[] = {"a1", "v1", "a2", "v2", NULL};
   const char   *a1, *a2, *a3;
   RestXmlNode  *child;
@@ -38,23 +38,23 @@ main (int argc, char **argv)
   g_thread_init (NULL);
   g_type_init ();
 
-  message = ytsg_message_new (attrs);
-  mdata   = (YtsgMetadata*)message;
+  message = yts_message_new (attrs);
+  mdata   = (YtsMetadata*)message;
 
-  ytsg_metadata_add_attribute (mdata, "a3", "v3");
-  a1 = ytsg_metadata_get_attribute (mdata, "a1");
-  a2 = ytsg_metadata_get_attribute (mdata, "a2");
-  a3 = ytsg_metadata_get_attribute (mdata, "a3");
+  yts_metadata_add_attribute (mdata, "a3", "v3");
+  a1 = yts_metadata_get_attribute (mdata, "a1");
+  a2 = yts_metadata_get_attribute (mdata, "a2");
+  a3 = yts_metadata_get_attribute (mdata, "a3");
 
   g_assert_cmpstr (a1, ==, "v1");
   g_assert_cmpstr (a2, ==, "v2");
   g_assert_cmpstr (a3, ==, "v3");
 
-  child = rest_xml_node_add_child (ytsg_metadata_get_root_node (mdata),"c1");
+  child = rest_xml_node_add_child (yts_metadata_get_root_node (mdata),"c1");
 
   rest_xml_node_add_attr (child, "ca1", "cv1");
 
-  h = _ytsg_metadata_extract (mdata, &body);
+  h = _yts_metadata_extract (mdata, &body);
   g_assert (h);
   g_assert_cmpstr (body, ==, "<c1 ca1='cv1'></c1>");
 

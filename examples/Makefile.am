@@ -4,14 +4,14 @@ SUBDIRS = video-profile
 AM_CPPFLAGS = \
   -I$(top_srcdir) \
 	-DG_DISABLE_DEPRECATED \
-	$(YTSG_DEBUG_CFLAGS) \
+	$(YTS_DEBUG_CFLAGS) \
 	$(NULL)
 
-AM_CFLAGS = $(YTSG_CFLAGS)
+AM_CFLAGS = $(YTS_CFLAGS)
 
-AM_LDFLAGS = ../ytstenut/libytstenut-@YTSG_API_VERSION@.la
+AM_LDFLAGS = ../ytstenut/libytstenut-@YTS_API_VERSION@.la
 
-LDADD = $(YTSG_LIBS)
+LDADD = $(YTS_LIBS)
 
 noinst_PROGRAMS = \
   invocation-message \

@@ -22,22 +22,22 @@
 #include "mock-player.h"
 
 static void
-_capability_interface_init (YtsgCapability *interface);
+_capability_interface_init (YtsCapability *interface);
 
 static void
-_player_interface_init (YtsgVPPlayerInterface *interface);
+_player_interface_init (YtsVPPlayerInterface *interface);
 
 static void
-_transcript_interface_init (YtsgVPPlayerInterface *interface);
+_transcript_interface_init (YtsVPPlayerInterface *interface);
 
 G_DEFINE_TYPE_WITH_CODE (MockPlayer,
                          mock_player,
                          G_TYPE_OBJECT,
-                         G_IMPLEMENT_INTERFACE (YTSG_TYPE_CAPABILITY,
+                         G_IMPLEMENT_INTERFACE (YTS_TYPE_CAPABILITY,
                                                 _capability_interface_init)
-                         G_IMPLEMENT_INTERFACE (YTSG_VP_TYPE_PLAYER,
+                         G_IMPLEMENT_INTERFACE (YTS_VP_TYPE_PLAYER,
                                                 _player_interface_init)
-                         G_IMPLEMENT_INTERFACE (YTSG_VP_TYPE_TRANSCRIPT,
+                         G_IMPLEMENT_INTERFACE (YTS_VP_TYPE_TRANSCRIPT,
                                                 _transcript_interface_init))
 
 #define GET_PRIVATE(o) \
@@ -46,16 +46,16 @@ G_DEFINE_TYPE_WITH_CODE (MockPlayer,
 enum {
   PROP_0,
 
-  /* YtsgCapability */
+  /* YtsCapability */
   PROP_CAPABILITY_FQC_IDS,
 
-  /* YtsgVPPlayer */
+  /* YtsVPPlayer */
   PROP_PLAYER_PLAYABLE,
   PROP_PLAYER_PLAYING,
   PROP_PLAYER_VOLUME,
   PROP_PLAYER_PLAYABLE_URI,
 
-  /* YtsgVPTranscript */
+  /* YtsVPTranscript */
   PROP_TRANSCRIPT_AVAILABLE_LOCALES,
   PROP_TRANSCRIPT_CURRENT_TEXT,
   PROP_TRANSCRIPT_LOCALE
@@ -63,7 +63,7 @@ enum {
 
 typedef struct {
 
-  /* YtsgVPPlayer */
+  /* YtsVPPlayer */
 
   char const *const *playlist;
   unsigned           current;
@@ -71,7 +71,7 @@ typedef struct {
   double             volume;
   char              *playable_uri;
 
-  /* YtsgVPTranscript */
+  /* YtsVPTranscript */
 
   char const *const *available_locales;
   char              *current_text;
@@ -80,45 +80,45 @@ typedef struct {
 } MockPlayerPrivate;
 
 /*
- * YtsgCapability implementation
+ * YtsCapability implementation
  */
 
 static void
-_capability_interface_init (YtsgCapability *interface)
+_capability_interface_init (YtsCapability *interface)
 {
   /* Nothing to do, it's just about overriding the "fqc-id" property */
 }
 
 /*
- * YtsgVPPlayer
+ * YtsVPPlayer
  */
 
 static void
-_player_play (YtsgVPPlayer *self)
+_player_play (YtsVPPlayer *self)
 {
   MockPlayerPrivate *priv = GET_PRIVATE (self);
 
-  g_debug ("YtsgVPPlayer.play() with playing=%s",
+  g_debug ("YtsVPPlayer.play() with playing=%s",
            priv->playing ? "true" : "false");
 
   /* Let the property setter do the work. */
-  ytsg_vp_player_set_playing (self, true);
+  yts_vp_player_set_playing (self, true);
 }
 
 static void
-_player_pause (YtsgVPPlayer *self)
+_player_pause (YtsVPPlayer *self)
 {
   MockPlayerPrivate *priv = GET_PRIVATE (self);
 
-  g_debug ("YtsgVPPlayer.pause() with playing=%s",
+  g_debug ("YtsVPPlayer.pause() with playing=%s",
            priv->playing ? "true" : "false");
 
   /* Let the property setter do the work. */
-  ytsg_vp_player_set_playing (self, false);
+  yts_vp_player_set_playing (self, false);
 }
 
 static void
-_player_next (YtsgVPPlayer  *self,
+_player_next (YtsVPPlayer  *self,
               char const    *invocation_id)
 {
   MockPlayerPrivate *priv = GET_PRIVATE (self);
@@ -129,14 +129,14 @@ _player_next (YtsgVPPlayer  *self,
     priv->current++;
   }
 
-  g_debug ("YtsgVPPlayer.next() -- %s", next);
+  g_debug ("YtsVPPlayer.next() -- %s", next);
 
   /* Return true if we skipped to the next item in the playlist. */
-  ytsg_vp_player_next_return (self, invocation_id, (bool) next);
+  yts_vp_player_next_return (self, invocation_id, (bool) next);
 }
 
 static void
-_player_prev (YtsgVPPlayer  *self,
+_player_prev (YtsVPPlayer  *self,
               char const    *invocation_id)
 {
   MockPlayerPrivate *priv = GET_PRIVATE (self);
@@ -149,14 +149,14 @@ _player_prev (YtsgVPPlayer  *self,
     priv->current--;
   }
 
-  g_debug ("YtsgVPPlayer.prev() -- %s", prev);
+  g_debug ("YtsVPPlayer.prev() -- %s", prev);
 
   /* Return true if we skipped to the previous item in the playlist. */
-  ytsg_vp_player_prev_return (self, invocation_id, (bool) prev);
+  yts_vp_player_prev_return (self, invocation_id, (bool) prev);
 }
 
 static void
-_player_interface_init (YtsgVPPlayerInterface *interface)
+_player_interface_init (YtsVPPlayerInterface *interface)
 {
   interface->play = _player_play;
   interface->pause = _player_pause;
@@ -165,7 +165,7 @@ _player_interface_init (YtsgVPPlayerInterface *interface)
 }
 
 /*
- * YtsgVPTranscript
+ * YtsVPTranscript
  */
 
 static bool
@@ -195,7 +195,7 @@ _transcript_emit_text (MockPlayer *self)
 }
 
 static void
-_transcript_interface_init (YtsgVPPlayerInterface *interface)
+_transcript_interface_init (YtsVPPlayerInterface *interface)
 {
   /* No methods to override. */
 }
@@ -215,19 +215,19 @@ _get_property (GObject    *object,
   switch (property_id) {
 
     /*
-     * YtsgCapability
+     * YtsCapability
      */
 
     case PROP_CAPABILITY_FQC_IDS: {
       char *fcq_ids[] = {
-        YTSG_VP_PLAYER_FQC_ID,
-        YTSG_VP_TRANSCRIPT_FQC_ID,
+        YTS_VP_PLAYER_FQC_ID,
+        YTS_VP_TRANSCRIPT_FQC_ID,
         NULL };
       g_value_set_boxed (value, fcq_ids);
     } break;
 
     /*
-     * YtsgVPPlayer
+     * YtsVPPlayer
      */
 
     case PROP_PLAYER_PLAYABLE:
@@ -245,7 +245,7 @@ _get_property (GObject    *object,
       break;
 
     /*
-     * YtsgVPTranscript
+     * YtsVPTranscript
      */
 
     case PROP_TRANSCRIPT_AVAILABLE_LOCALES:
@@ -274,7 +274,7 @@ _set_property (GObject      *object,
   switch (property_id) {
 
     /*
-     * YtsgVPPlayer
+     * YtsVPPlayer
      */
 
     case PROP_PLAYER_PLAYABLE:
@@ -285,7 +285,7 @@ _set_property (GObject      *object,
     case PROP_PLAYER_PLAYING: {
       bool playing = g_value_get_boolean (value);
       if (playing != priv->playing) {
-        g_debug ("YtsgVPPlayer.playing = %s", playing ? "true" : "false");
+        g_debug ("YtsVPPlayer.playing = %s", playing ? "true" : "false");
         priv->playing = playing;
         g_object_notify (object, "playing");
 
@@ -301,7 +301,7 @@ _set_property (GObject      *object,
     case PROP_PLAYER_VOLUME: {
       double volume = g_value_get_double (value);
       if (volume != priv->volume) {
-        g_debug ("YtsgVPPlayer.volume = %.2f", volume);
+        g_debug ("YtsVPPlayer.volume = %.2f", volume);
         priv->volume = volume;
         g_object_notify (object, "volume");
       }
@@ -317,13 +317,13 @@ _set_property (GObject      *object,
         if (playable_uri) {
           priv->playable_uri = g_strdup (playable_uri);
         }
-        g_debug ("YtsgVPPlayer.playable-uri = %s", priv->playable_uri);
+        g_debug ("YtsVPPlayer.playable-uri = %s", priv->playable_uri);
         g_object_notify (object, "playable-uri");
       }
     } break;
 
     /*
-     * YtsgVPTranscript
+     * YtsVPTranscript
      */
 
     case PROP_TRANSCRIPT_LOCALE: {
@@ -347,7 +347,7 @@ _set_property (GObject      *object,
       } else if (locale_idx != priv->locale_idx) {
 
         priv->locale_idx = locale_idx;
-        g_debug ("YtsgVPTranscript.locale = %s",
+        g_debug ("YtsVPTranscript.locale = %s",
                  priv->available_locales[priv->locale_idx]);
         g_object_notify (object, "locale");
       }
@@ -383,13 +383,13 @@ mock_player_class_init (MockPlayerClass *klass)
   object_class->set_property = _set_property;
   object_class->dispose = _dispose;
 
-  /* YtsgCapability */
+  /* YtsCapability */
 
   g_object_class_override_property (object_class,
                                     PROP_CAPABILITY_FQC_IDS,
                                     "fqc-ids");
 
-  /* YtsgVPPlayer */
+  /* YtsVPPlayer */
 
   g_object_class_override_property (object_class,
                                     PROP_PLAYER_PLAYABLE,
@@ -407,7 +407,7 @@ mock_player_class_init (MockPlayerClass *klass)
                                     PROP_PLAYER_PLAYABLE_URI,
                                     "playable-uri");
 
-  /* YtsgVPTranscript */
+  /* YtsVPTranscript */
 
   g_object_class_override_property (object_class,
                                     PROP_TRANSCRIPT_AVAILABLE_LOCALES,

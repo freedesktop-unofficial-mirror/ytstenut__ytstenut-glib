@@ -15,29 +15,29 @@
  */
 
 static void
-_client_authenticated (YtsgClient *client,
+_client_authenticated (YtsClient *client,
                        void       *data)
 {
   g_debug ("%s()", __FUNCTION__);
 }
 
 static void
-_client_ready (YtsgClient *client,
+_client_ready (YtsClient *client,
                void       *data)
 {
   g_debug ("%s()", __FUNCTION__);
 }
 
 static void
-_client_disconnected (YtsgClient  *client,
+_client_disconnected (YtsClient  *client,
                       void        *data)
 {
   g_debug ("%s()", __FUNCTION__);
 }
 
 static void
-_client_message (YtsgClient   *client,
-                 YtsgMessage  *msg,
+_client_message (YtsClient   *client,
+                 YtsMessage  *msg,
                  void         *data)
 {
   g_debug ("%s()", __FUNCTION__);
@@ -45,7 +45,7 @@ _client_message (YtsgClient   *client,
 }
 
 static gboolean
-_client_incoming_file (YtsgClient  *client,
+_client_incoming_file (YtsClient  *client,
                        const char  *from,
                        const char  *name,
                        guint64      size,
@@ -57,29 +57,29 @@ _client_incoming_file (YtsgClient  *client,
 }
 
 static void
-_server_status (YtsgClient  *client,
-                YtsgStatus  *status,
+_server_status (YtsClient  *client,
+                YtsStatus  *status,
                 void        *data)
 {
   char *dump;
 
   g_debug ("%s()", __FUNCTION__);
 
-  dump = ytsg_metadata_to_string (YTSG_METADATA (status));
+  dump = yts_metadata_to_string (YTS_METADATA (status));
   g_debug (dump);
   g_free (dump);
 }
 
 static void
-_client_roster_service_added (YtsgRoster  *roster,
-                              YtsgService *service,
+_client_roster_service_added (YtsRoster  *roster,
+                              YtsService *service,
                               void        *data)
 {
   char const *uid;
   char const *jid;
 
-  uid = ytsg_service_get_uid (service);
-  jid = ytsg_service_get_jid (service);
+  uid = yts_service_get_uid (service);
+  jid = yts_service_get_jid (service);
 
   if (0 == g_strcmp0 (uid, SERVER_UID)) {
 
@@ -87,7 +87,7 @@ _client_roster_service_added (YtsgRoster  *roster,
         "ping", "pong",
         NULL
     };
-    YtsgMetadata  *message = (YtsgMetadata*)ytsg_message_new ((const char**)&payload);
+    YtsMetadata  *message = (YtsMetadata*)yts_message_new ((const char**)&payload);
 
     /* Hook up to server status changes. */
     g_signal_connect (service, "status",
@@ -97,7 +97,7 @@ _client_roster_service_added (YtsgRoster  *roster,
     g_debug ("%s() %s %s", __FUNCTION__, uid, jid);
     g_debug ("Sending message \"%s\"", payload[1]);
 
-    ytsg_metadata_service_send_metadata ((YtsgMetadataService *)service,
+    yts_metadata_service_send_metadata ((YtsMetadataService *)service,
                                          message);
   }
 }
@@ -105,11 +105,11 @@ _client_roster_service_added (YtsgRoster  *roster,
 static int
 run_client (void)
 {
-  YtsgClient  *client;
-  YtsgRoster  *roster;
+  YtsClient  *client;
+  YtsRoster  *roster;
   GMainLoop   *mainloop;
 
-  client = ytsg_client_new (YTSG_PROTOCOL_LOCAL_XMPP, CLIENT_UID);
+  client = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP, CLIENT_UID);
   g_signal_connect (client, "authenticated",
                     G_CALLBACK (_client_authenticated), NULL);
   g_signal_connect (client, "ready",
@@ -121,11 +121,11 @@ run_client (void)
   g_signal_connect (client, "incoming-file",
                     G_CALLBACK (_client_incoming_file), NULL);
 
-  roster = ytsg_client_get_roster (client);
+  roster = yts_client_get_roster (client);
   g_signal_connect (roster, "service-added",
                     G_CALLBACK (_client_roster_service_added), NULL);
 
-  ytsg_client_connect (client);
+  yts_client_connect (client);
 
   mainloop = g_main_loop_new (NULL, false);
   g_main_loop_run (mainloop);
@@ -139,29 +139,29 @@ run_client (void)
  */
 
 static void
-_server_authenticated (YtsgClient *client,
+_server_authenticated (YtsClient *client,
                        void       *data)
 {
   g_debug ("%s()", __FUNCTION__);
 }
 
 static void
-_server_ready (YtsgClient *client,
+_server_ready (YtsClient *client,
                void       *data)
 {
   g_debug ("%s()", __FUNCTION__);
 }
 
 static void
-_server_disconnected (YtsgClient  *client,
+_server_disconnected (YtsClient  *client,
                       void        *data)
 {
   g_debug ("%s()", __FUNCTION__);
 }
 
 static void
-_server_message (YtsgClient   *client,
-                 YtsgMessage  *msg,
+_server_message (YtsClient   *client,
+                 YtsMessage  *msg,
                  void         *data)
 {
   char const *property_name;
@@ -172,12 +172,12 @@ _server_message (YtsgClient   *client,
 
   property_name = "urn:ytstenut:capabilities:" CAPABILITY;
 
-  ytsg_client_set_status_by_capability (client,
+  yts_client_set_status_by_capability (client,
                                         property_name, "Foo");
 }
 
 static gboolean
-_server_incoming_file (YtsgClient  *client,
+_server_incoming_file (YtsClient  *client,
                        const char  *from,
                        const char  *name,
                        guint64      size,
@@ -191,11 +191,11 @@ _server_incoming_file (YtsgClient  *client,
 static int
 run_server (void)
 {
-  YtsgClient    *client;
+  YtsClient    *client;
   GMainLoop     *mainloop;
 
-  client = ytsg_client_new (YTSG_PROTOCOL_LOCAL_XMPP, SERVER_UID);
-  ytsg_client_set_capabilities (client,
+  client = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP, SERVER_UID);
+  yts_client_set_capabilities (client,
                                 g_quark_from_static_string (CAPABILITY));
   g_signal_connect (client, "authenticated",
                     G_CALLBACK (_server_authenticated), NULL);
@@ -208,7 +208,7 @@ run_server (void)
   g_signal_connect (client, "incoming-file",
                     G_CALLBACK (_server_incoming_file), NULL);
 
-  ytsg_client_connect (client);
+  yts_client_connect (client);
 
   mainloop = g_main_loop_new (NULL, false);
   g_main_loop_run (mainloop);
@@ -235,7 +235,7 @@ main (int     argc,
 
   context = g_option_context_new ("- Ytstenut status test");
   g_option_context_add_main_entries (context, entries, NULL);
-  g_option_context_add_group (context, ytsg_get_option_group ());
+  g_option_context_add_group (context, yts_get_option_group ());
   g_option_context_parse (context, &argc, &argv, &error);
   if (error) {
     g_warning ("%s : %s", G_STRLOC, error->message);

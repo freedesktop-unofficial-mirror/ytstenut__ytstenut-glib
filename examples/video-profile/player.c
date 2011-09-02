@@ -31,21 +31,21 @@
  */
 
 static void
-_client_authenticated (YtsgClient *client,
+_client_authenticated (YtsClient *client,
                        void       *data)
 {
   g_debug ("%s()", __FUNCTION__);
 }
 
 static void
-_client_ready (YtsgClient *client,
+_client_ready (YtsClient *client,
                void       *data)
 {
   g_debug ("%s()", __FUNCTION__);
 }
 
 static void
-_client_disconnected (YtsgClient  *client,
+_client_disconnected (YtsClient  *client,
                       void        *data)
 {
   g_debug ("%s()", __FUNCTION__);
@@ -53,13 +53,13 @@ _client_disconnected (YtsgClient  *client,
 
 /* Messages that are not handled by any service are emitted by the client. */
 static void
-_client_message (YtsgClient   *client,
-                 YtsgMessage  *message,
+_client_message (YtsClient   *client,
+                 YtsMessage  *message,
                  void         *data)
 {
   char *message_xml;
 
-  message_xml = ytsg_metadata_to_string (YTSG_METADATA (message));
+  message_xml = yts_metadata_to_string (YTS_METADATA (message));
   g_debug ("%s() %s", __FUNCTION__, message_xml);
   g_free (message_xml);
 }
@@ -69,32 +69,32 @@ _client_message (YtsgClient   *client,
  */
 
 static void
-_roster_contact_added (YtsgRoster   *roster,
-                       YtsgContact  *contact,
+_roster_contact_added (YtsRoster   *roster,
+                       YtsContact  *contact,
                        void         *data)
 {
   g_debug ("%s()", __FUNCTION__);
 }
 
 static void
-_roster_contact_removed (YtsgRoster   *roster,
-                         YtsgContact  *contact,
+_roster_contact_removed (YtsRoster   *roster,
+                         YtsContact  *contact,
                          void         *data)
 {
   g_debug ("%s()", __FUNCTION__);
 }
 
 static void
-_roster_service_added (YtsgRoster   *roster,
-                       YtsgService  *service,
+_roster_service_added (YtsRoster   *roster,
+                       YtsService  *service,
                        void         *data)
 {
   g_debug ("%s()", __FUNCTION__);
 }
 
 static void
-_roster_service_removed (YtsgRoster   *roster,
-                         YtsgService  *contact,
+_roster_service_removed (YtsRoster   *roster,
+                         YtsService  *contact,
                          void         *data)
 {
   g_debug ("%s()", __FUNCTION__);
@@ -107,8 +107,8 @@ _player_notify_current_text (MockPlayer *player,
 {
   char *current_text;
 
-  current_text = ytsg_vp_transcript_get_current_text (
-                    YTSG_VP_TRANSCRIPT (player));
+  current_text = yts_vp_transcript_get_current_text (
+                    YTS_VP_TRANSCRIPT (player));
 
   g_debug ("%s() '%s'", __FUNCTION__, current_text);
 
@@ -124,8 +124,8 @@ main (int     argc,
       char  **argv)
 {
   GOptionContext  *context;
-  YtsgClient      *client;
-  YtsgRoster      *roster;
+  YtsClient      *client;
+  YtsRoster      *roster;
   MockPlayer      *player;
   GMainLoop       *mainloop;
   GError          *error = NULL;
@@ -136,7 +136,7 @@ main (int     argc,
   /* Initialisation and command-line argument handling. */
   context = g_option_context_new ("- mock player");
   g_option_context_add_main_entries (context, entries, NULL);
-  g_option_context_add_group (context, ytsg_get_option_group ());
+  g_option_context_add_group (context, yts_get_option_group ());
   g_option_context_parse (context, &argc, &argv, &error);
   if (error) {
     g_warning ("%s : %s", G_STRLOC, error->message);
@@ -145,7 +145,7 @@ main (int     argc,
   }
 
   /* The client object represents an ytstenut application. */
-  client = ytsg_client_new (YTSG_PROTOCOL_LOCAL_XMPP,
+  client = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP,
                             "org.freedesktop.ytstenut.MockPlayer");
   g_signal_connect (client, "authenticated",
                     G_CALLBACK (_client_authenticated), NULL);
@@ -157,7 +157,7 @@ main (int     argc,
                     G_CALLBACK (_client_message), NULL);
 
   /* The roster object tracks other devices and services as they come and go. */
-  roster = ytsg_client_get_roster (client);
+  roster = yts_client_get_roster (client);
   g_signal_connect (roster, "contact-added",
                     G_CALLBACK (_roster_contact_added), NULL);
   g_signal_connect (roster, "contact-removed",
@@ -169,13 +169,13 @@ main (int     argc,
 
   /* Instantiate and publish example player object so others can access it. */
   player = mock_player_new ();
-  ytsg_client_register_service (client, YTSG_CAPABILITY (player));
+  yts_client_register_service (client, YTS_CAPABILITY (player));
 
   g_signal_connect (player, "notify::current-text",
                     G_CALLBACK (_player_notify_current_text), NULL);
 
   /* Activate the client. */
-  ytsg_client_connect (client);
+  yts_client_connect (client);
 
   /* Run application. */
   mainloop = g_main_loop_new (NULL, false);

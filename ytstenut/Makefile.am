@@ -9,165 +9,165 @@ AM_CPPFLAGS = \
 	-DG_DISABLE_DEPRECATED \
 	-DG_DISABLE_SINGLE_INCLUDES \
 	-DG_LOG_DOMAIN=\"YtstenutGlib\" \
-	$(YTSG_DEBUG_CFLAGS) \
+	$(YTS_DEBUG_CFLAGS) \
 	$(NULL)
 
-AM_CFLAGS = $(YTSG_CFLAGS)
+AM_CFLAGS = $(YTS_CFLAGS)
 
 source_h =						\
 		$(srcdir)/empathy-tp-file.h		\
-		$(srcdir)/ytsg-capability.h			\
-		$(srcdir)/ytsg-caps.h			\
-		$(srcdir)/ytsg-client.h			\
-		$(srcdir)/ytsg-contact.h		\
-		$(srcdir)/ytsg-debug.h			\
-		$(srcdir)/ytsg-error.h			\
-		$(srcdir)/ytsg-main.h			\
-		$(srcdir)/ytsg-message.h		\
-		$(srcdir)/ytsg-metadata.h		\
-		$(srcdir)/ytsg-metadata-service.h	\
-		$(srcdir)/ytsg-roster.h			\
-		$(srcdir)/ytsg-service.h		\
-		$(srcdir)/ytsg-status.h			\
-		$(srcdir)/ytsg-types.h			\
-		$(srcdir)/ytsg-version.h		\
+		$(srcdir)/yts-capability.h			\
+		$(srcdir)/yts-caps.h			\
+		$(srcdir)/yts-client.h			\
+		$(srcdir)/yts-contact.h		\
+		$(srcdir)/yts-debug.h			\
+		$(srcdir)/yts-error.h			\
+		$(srcdir)/yts-main.h			\
+		$(srcdir)/yts-message.h		\
+		$(srcdir)/yts-metadata.h		\
+		$(srcdir)/yts-metadata-service.h	\
+		$(srcdir)/yts-roster.h			\
+		$(srcdir)/yts-service.h		\
+		$(srcdir)/yts-status.h			\
+		$(srcdir)/yts-types.h			\
+		$(srcdir)/yts-version.h		\
 		\
-		$(srcdir)/ytsg-capability-status.h \
-		$(srcdir)/ytsg-error-message.h \
-		$(srcdir)/ytsg-event-message.h \
-		$(srcdir)/ytsg-invocation-message.h \
-		$(srcdir)/ytsg-proxy.h \
-		$(srcdir)/ytsg-proxy-service.h \
-		$(srcdir)/ytsg-response-message.h \
-		$(srcdir)/ytsg-service-adapter.h \
+		$(srcdir)/yts-capability-status.h \
+		$(srcdir)/yts-error-message.h \
+		$(srcdir)/yts-event-message.h \
+		$(srcdir)/yts-invocation-message.h \
+		$(srcdir)/yts-proxy.h \
+		$(srcdir)/yts-proxy-service.h \
+		$(srcdir)/yts-response-message.h \
+		$(srcdir)/yts-service-adapter.h \
 		\
-		$(srcdir)/video-profile/ytsg-vp-content.h \
-		$(srcdir)/video-profile/ytsg-vp-playable.h \
-		$(srcdir)/video-profile/ytsg-vp-player.h \
-		$(srcdir)/video-profile/ytsg-vp-query.h \
-		$(srcdir)/video-profile/ytsg-vp-transcript.h \
-		$(srcdir)/video-profile/ytsg-vp-transfer.h \
-		$(srcdir)/video-profile/ytsg-vp-transmission.h \
+		$(srcdir)/video-profile/yts-vp-content.h \
+		$(srcdir)/video-profile/yts-vp-playable.h \
+		$(srcdir)/video-profile/yts-vp-player.h \
+		$(srcdir)/video-profile/yts-vp-query.h \
+		$(srcdir)/video-profile/yts-vp-transcript.h \
+		$(srcdir)/video-profile/yts-vp-transfer.h \
+		$(srcdir)/video-profile/yts-vp-transmission.h \
 		$(NULL)
 
 source_c =						\
 		$(srcdir)/empathy-tp-file.c		\
-		$(srcdir)/ytsg-capability.c			\
-		$(srcdir)/ytsg-client.c			\
-		$(srcdir)/ytsg-contact.c		\
-		$(srcdir)/ytsg-enum-types.c		\
-		$(srcdir)/ytsg-error.c			\
-		$(srcdir)/ytsg-main.c			\
-		$(srcdir)/ytsg-marshal.c		\
-		$(srcdir)/ytsg-message.c		\
-		$(srcdir)/ytsg-metadata.c		\
-		$(srcdir)/ytsg-metadata-service.c	\
-		$(srcdir)/ytsg-roster.c			\
-		$(srcdir)/ytsg-service.c		\
-		$(srcdir)/ytsg-status.c			\
+		$(srcdir)/yts-capability.c			\
+		$(srcdir)/yts-client.c			\
+		$(srcdir)/yts-contact.c		\
+		$(srcdir)/yts-enum-types.c		\
+		$(srcdir)/yts-error.c			\
+		$(srcdir)/yts-main.c			\
+		$(srcdir)/yts-marshal.c		\
+		$(srcdir)/yts-message.c		\
+		$(srcdir)/yts-metadata.c		\
+		$(srcdir)/yts-metadata-service.c	\
+		$(srcdir)/yts-roster.c			\
+		$(srcdir)/yts-service.c		\
+		$(srcdir)/yts-status.c			\
 		\
-		$(srcdir)/ytsg-capability-status.c \
-		$(srcdir)/ytsg-error-message.c \
-		$(srcdir)/ytsg-event-message.c \
-		$(srcdir)/ytsg-invocation-message.c \
-		$(srcdir)/ytsg-proxy.c \
-		$(srcdir)/ytsg-proxy-service.c \
-		$(srcdir)/ytsg-response-message.c \
-		$(srcdir)/ytsg-service-adapter.c \
+		$(srcdir)/yts-capability-status.c \
+		$(srcdir)/yts-error-message.c \
+		$(srcdir)/yts-event-message.c \
+		$(srcdir)/yts-invocation-message.c \
+		$(srcdir)/yts-proxy.c \
+		$(srcdir)/yts-proxy-service.c \
+		$(srcdir)/yts-response-message.c \
+		$(srcdir)/yts-service-adapter.c \
 		\
-		$(srcdir)/profile/ytsg-profile.c \
-		$(srcdir)/profile/ytsg-profile-impl.c \
-		$(srcdir)/profile/ytsg-profile-proxy.c \
-		$(srcdir)/profile/ytsg-profile-adapter.c \
+		$(srcdir)/profile/yts-profile.c \
+		$(srcdir)/profile/yts-profile-impl.c \
+		$(srcdir)/profile/yts-profile-proxy.c \
+		$(srcdir)/profile/yts-profile-adapter.c \
     \
-		$(srcdir)/video-profile/ytsg-vp-content.c \
-		$(srcdir)/video-profile/ytsg-vp-playable.c \
-		$(srcdir)/video-profile/ytsg-vp-playable-proxy.c \
-		$(srcdir)/video-profile/ytsg-vp-player.c \
-		$(srcdir)/video-profile/ytsg-vp-player-adapter.c \
-		$(srcdir)/video-profile/ytsg-vp-player-proxy.c \
-		$(srcdir)/video-profile/ytsg-vp-query.c \
-		$(srcdir)/video-profile/ytsg-vp-transcript.c \
-		$(srcdir)/video-profile/ytsg-vp-transcript-adapter.c \
-		$(srcdir)/video-profile/ytsg-vp-transcript-proxy.c \
-		$(srcdir)/video-profile/ytsg-vp-transfer.c \
-		$(srcdir)/video-profile/ytsg-vp-transmission.c \
+		$(srcdir)/video-profile/yts-vp-content.c \
+		$(srcdir)/video-profile/yts-vp-playable.c \
+		$(srcdir)/video-profile/yts-vp-playable-proxy.c \
+		$(srcdir)/video-profile/yts-vp-player.c \
+		$(srcdir)/video-profile/yts-vp-player-adapter.c \
+		$(srcdir)/video-profile/yts-vp-player-proxy.c \
+		$(srcdir)/video-profile/yts-vp-query.c \
+		$(srcdir)/video-profile/yts-vp-transcript.c \
+		$(srcdir)/video-profile/yts-vp-transcript-adapter.c \
+		$(srcdir)/video-profile/yts-vp-transcript-proxy.c \
+		$(srcdir)/video-profile/yts-vp-transfer.c \
+		$(srcdir)/video-profile/yts-vp-transmission.c \
 		$(NULL)
 
 private_h = \
-		$(srcdir)/ytsg-private.h \
+		$(srcdir)/yts-private.h \
 		\
-		$(srcdir)/profile/ytsg-profile.h \
-		$(srcdir)/profile/ytsg-profile-impl.h \
-		$(srcdir)/profile/ytsg-profile-proxy.h \
-		$(srcdir)/profile/ytsg-profile-adapter.h \
+		$(srcdir)/profile/yts-profile.h \
+		$(srcdir)/profile/yts-profile-impl.h \
+		$(srcdir)/profile/yts-profile-proxy.h \
+		$(srcdir)/profile/yts-profile-adapter.h \
 		\
-		$(srcdir)/video-profile/ytsg-vp-playable-proxy.h \
-		$(srcdir)/video-profile/ytsg-vp-player-adapter.h \
-		$(srcdir)/video-profile/ytsg-vp-player-proxy.h \
-		$(srcdir)/video-profile/ytsg-vp-transcript-adapter.h \
-		$(srcdir)/video-profile/ytsg-vp-transcript-proxy.h \
+		$(srcdir)/video-profile/yts-vp-playable-proxy.h \
+		$(srcdir)/video-profile/yts-vp-player-adapter.h \
+		$(srcdir)/video-profile/yts-vp-player-proxy.h \
+		$(srcdir)/video-profile/yts-vp-transcript-adapter.h \
+		$(srcdir)/video-profile/yts-vp-transcript-proxy.h \
 		$(NULL)
 
-libytstenut_@YTSG_API_VERSION@_la_SOURCES  = 	$(source_h) 	\
+libytstenut_@YTS_API_VERSION@_la_SOURCES  = 	$(source_h) 	\
 							$(private_h)	\
 							$(source_c)
 
-STAMPS = stamp-marshal.h stamp-ytsg-enum-types.h
+STAMPS = stamp-marshal.h stamp-yts-enum-types.h
 
-ENUMS = ytsg-enum-types.h \
-	ytsg-enum-types.c
+ENUMS = yts-enum-types.h \
+	yts-enum-types.c
 
-ytsg-enum-types.h: stamp-ytsg-enum-types.h
+yts-enum-types.h: stamp-yts-enum-types.h
 	@true
-stamp-ytsg-enum-types.h: $(source_h) Makefile
+stamp-yts-enum-types.h: $(source_h) Makefile
 	$(QUIET_GEN)( $(GLIB_MKENUMS) \
-	  	--template $(srcdir)/ytsg-enum-types.h.in \
+	  	--template $(srcdir)/yts-enum-types.h.in \
 	  $(source_h) ) >> xgen-ceth && \
-	(cmp -s xgen-ceth ytsg-enum-types.h || cp xgen-ceth ytsg-enum-types.h) && \
+	(cmp -s xgen-ceth yts-enum-types.h || cp xgen-ceth yts-enum-types.h) && \
 	rm -f xgen-ceth && \
 	echo timestamp > $(@F)
 
-ytsg-enum-types.c: ytsg-enum-types.h
+yts-enum-types.c: yts-enum-types.h
 	$(QUIET_GEN)( $(GLIB_MKENUMS) \
-	  	--template $(srcdir)/ytsg-enum-types.c.in \
+	  	--template $(srcdir)/yts-enum-types.c.in \
 	  $(source_h) ) >> xgen-cetc && \
-	cp xgen-cetc ytsg-enum-types.c && \
+	cp xgen-cetc yts-enum-types.c && \
 	rm -f xgen-cetc
 
-MARSHALS = ytsg-marshal.c ytsg-marshal.h
+MARSHALS = yts-marshal.c yts-marshal.h
 
-ytsg-marshal.h: stamp-marshal.h
+yts-marshal.h: stamp-marshal.h
 	@true
 stamp-marshal.h: marshal.list
 	$(QUIET_GEN)$(GLIB_GENMARSHAL) \
-		--prefix=ytsg_marshal \
+		--prefix=yts_marshal \
 		--header \
 	  $(srcdir)/marshal.list > xgen-cmh \
-	&& (cmp -s xgen-cmh ytsg-marshal.h || cp xgen-cmh ytsg-marshal.h ) \
+	&& (cmp -s xgen-cmh yts-marshal.h || cp xgen-cmh yts-marshal.h ) \
 	&& rm -f xgen-cmh \
 	&& echo timestamp > $(@F)
 
-ytsg-marshal.c: ytsg-marshal.h Makefile
-	$(QUIET_GEN)( echo "#include \"ytsg-marshal.h\"" ; \
+yts-marshal.c: yts-marshal.h Makefile
+	$(QUIET_GEN)( echo "#include \"yts-marshal.h\"" ; \
 	  $(GLIB_GENMARSHAL) \
-	  	--prefix=ytsg_marshal \
+	  	--prefix=yts_marshal \
 		--body \
 	  $(srcdir)/marshal.list --body ) >> xgen-cmc \
-	&& cp xgen-cmc ytsg-marshal.c \
+	&& cp xgen-cmc yts-marshal.c \
 	&& rm -f xgen-cmc
 
-libytstenut_@YTSG_API_VERSION@_la_LDFLAGS  = $(YTSG_LT_LDFLAGS) \
+libytstenut_@YTS_API_VERSION@_la_LDFLAGS  = $(YTS_LT_LDFLAGS) \
 						-no-undefined
-libytstenut_@YTSG_API_VERSION@_la_LIBADD   = $(YTSG_LIBS)
+libytstenut_@YTS_API_VERSION@_la_LIBADD   = $(YTS_LIBS)
 
-lib_LTLIBRARIES = libytstenut-@YTSG_API_VERSION@.la
+lib_LTLIBRARIES = libytstenut-@YTS_API_VERSION@.la
 
-ytstenutheadersdir = $(includedir)/ytstenut-$(YTSG_API_VERSION)/ytstenut
+ytstenutheadersdir = $(includedir)/ytstenut-$(YTS_API_VERSION)/ytstenut
 ytstenutheaders_HEADERS =		\
 	$(source_h)			\
-	$(srcdir)/ytsg-enum-types.h	\
-	$(srcdir)/ytsg-marshal.h	\
+	$(srcdir)/yts-enum-types.h	\
+	$(srcdir)/yts-marshal.h	\
 	$(srcdir)/ytstenut.h	\
 	$(NULL)
 
@@ -175,25 +175,25 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = ytstenut-1.pc
 
 if WITH_INTROSPECTION
-Ytsg-@YTSG_API_VERSION@.gir: $(G_IR_SCANNER) libytstenut-@YTSG_API_VERSION@.la
+Yts-@YTS_API_VERSION@.gir: $(G_IR_SCANNER) libytstenut-@YTS_API_VERSION@.la
 	$(QUIET_GEN) $(G_IR_SCANNER) -v \
-		--namespace=Ytsg --nsversion=@YTSG_API_VERSION@ \
-		--strip-prefix=Ytsg \
+		--namespace=Yts --nsversion=@YTS_API_VERSION@ \
+		--strip-prefix=Yts \
 		$(INCLUDES_FOR_GIR) \
-		$(YTSG_CFLAGS) \
+		$(YTS_CFLAGS) \
 		$(AM_CPPFLAGS) \
-		--add-init-section="ytsg_init(0,NULL);"\
+		--add-init-section="yts_init(0,NULL);"\
 		--c-include='ytstenut/ytstenut.h' \
 		--include=GObject-2.0 \
 		--include=TelepathyGLib-0.12 \
-		--library=libytstenut-@YTSG_API_VERSION@.la \
+		--library=libytstenut-@YTS_API_VERSION@.la \
 		--libtool="$(top_builddir)/libtool" \
 	        --pkg gobject-2.0 \
 	        --output $@ \
 		$(ytstenutheaders_HEADERS) \
 		$(source_c)
 
-BUILT_GIRSOURCES += Ytsg-@YTSG_API_VERSION@.gir
+BUILT_GIRSOURCES += Yts-@YTS_API_VERSION@.gir
 
 # G_IR_GIRDIR/G_IR_TYPELIBDIR aren't the right place to
 # install anything - we need to install inside our prefix.
@@ -220,11 +220,11 @@ BUILT_SOURCES += $(MARSHALS) $(ENUMS)
 CLEANFILES += $(BUILT_SOURCES) $(STAMPS) ytstenut-1.pc
 
 EXTRA_DIST =	marshal.list 		\
-		ytsg-enum-types.h.in	\
-		ytsg-enum-types.c.in	\
-		ytsg-version.h.in	\
+		yts-enum-types.h.in	\
+		yts-enum-types.c.in	\
+		yts-version.h.in	\
 		ytstenut-1.pc.in	\
 		$(NULL)
 
-DISTCLEANFILES= ytsg-version.h		\
+DISTCLEANFILES= yts-version.h		\
 		$(NULL)

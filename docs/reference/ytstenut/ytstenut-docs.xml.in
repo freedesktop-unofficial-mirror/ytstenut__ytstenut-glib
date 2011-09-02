@@ -4,7 +4,7 @@
 <!ENTITY version "@PLUGIN_VERSION@">
 ]>
 
-<book id="ytsg" xmlns:xi="http://www.w3.org/2003/XInclude">
+<book id="yts" xmlns:xi="http://www.w3.org/2003/XInclude">
   <bookinfo>
     <title>Ytstenut-glib</title>
     <releaseinfo>For ytstenut &version;</releaseinfo>
@@ -39,40 +39,40 @@
 
   <xi:include href="xml/overview.xml"/>
 
-  <part id="ytsg-reference">
+  <part id="yts-reference">
 
     <title>Reference</title>
 
-    <chapter id="ytsg-classes">
+    <chapter id="yts-classes">
       <title>Ytstenut-glib Objects</title>
 
-      <xi:include href="xml/ytsg-types.xml"/>
-      <xi:include href="xml/ytsg-error.xml"/>
-      <xi:include href="xml/ytsg-client.xml"/>
-      <xi:include href="xml/ytsg-roster.xml"/>
-      <xi:include href="xml/ytsg-contact.xml"/>
-      <xi:include href="xml/ytsg-service.xml"/>
-      <xi:include href="xml/ytsg-metadata-service.xml"/>
-      <xi:include href="xml/ytsg-caps.xml"/>
-      <xi:include href="xml/ytsg-metadata.xml"/>
-      <xi:include href="xml/ytsg-status.xml"/>
-      <xi:include href="xml/ytsg-message.xml"/>
+      <xi:include href="xml/yts-types.xml"/>
+      <xi:include href="xml/yts-error.xml"/>
+      <xi:include href="xml/yts-client.xml"/>
+      <xi:include href="xml/yts-roster.xml"/>
+      <xi:include href="xml/yts-contact.xml"/>
+      <xi:include href="xml/yts-service.xml"/>
+      <xi:include href="xml/yts-metadata-service.xml"/>
+      <xi:include href="xml/yts-caps.xml"/>
+      <xi:include href="xml/yts-metadata.xml"/>
+      <xi:include href="xml/yts-status.xml"/>
+      <xi:include href="xml/yts-message.xml"/>
 
     </chapter>
 
   </part>
 
-    <part id="ytsg-index">
+    <part id="yts-index">
       <title>Index of all symbols</title>
 
       <xi:include href="xml/api-index-full.xml"><xi:fallback /></xi:include>
 
     </part>
 
-  <part id="ytsg-appendices">
+  <part id="yts-appendices">
     <title>Appendices</title>
 
-  <appendix id="ytsg-license">
+  <appendix id="yts-license">
     <title>License</title>
 
   </appendix>

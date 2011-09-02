@@ -21,41 +21,41 @@
 #ifndef YTSTENUT_H
 #define YTSTENUT_H
 
-#include <ytstenut/ytsg-capability.h>
-#include <ytstenut/ytsg-caps.h>
-#include <ytstenut/ytsg-client.h>
-#include <ytstenut/ytsg-contact.h>
-#include <ytstenut/ytsg-debug.h>
-#include <ytstenut/ytsg-error.h>
-#include <ytstenut/ytsg-main.h>
-#include <ytstenut/ytsg-message.h>
-#include <ytstenut/ytsg-metadata.h>
-#include <ytstenut/ytsg-metadata-service.h>
-#include <ytstenut/ytsg-roster.h>
-#include <ytstenut/ytsg-service.h>
-#include <ytstenut/ytsg-status.h>
-#include <ytstenut/ytsg-types.h>
-#include <ytstenut/ytsg-version.h>
+#include <ytstenut/yts-capability.h>
+#include <ytstenut/yts-caps.h>
+#include <ytstenut/yts-client.h>
+#include <ytstenut/yts-contact.h>
+#include <ytstenut/yts-debug.h>
+#include <ytstenut/yts-error.h>
+#include <ytstenut/yts-main.h>
+#include <ytstenut/yts-message.h>
+#include <ytstenut/yts-metadata.h>
+#include <ytstenut/yts-metadata-service.h>
+#include <ytstenut/yts-roster.h>
+#include <ytstenut/yts-service.h>
+#include <ytstenut/yts-status.h>
+#include <ytstenut/yts-types.h>
+#include <ytstenut/yts-version.h>
 
-#include <ytstenut/ytsg-marshal.h>
-#include <ytstenut/ytsg-enum-types.h>
+#include <ytstenut/yts-marshal.h>
+#include <ytstenut/yts-enum-types.h>
 
-#include <ytstenut/ytsg-capability-status.h>
-#include <ytstenut/ytsg-error-message.h>
-#include <ytstenut/ytsg-event-message.h>
-#include <ytstenut/ytsg-invocation-message.h>
-#include <ytstenut/ytsg-proxy.h>
-#include <ytstenut/ytsg-proxy-service.h>
-#include <ytstenut/ytsg-response-message.h>
-#include <ytstenut/ytsg-service-adapter.h>
+#include <ytstenut/yts-capability-status.h>
+#include <ytstenut/yts-error-message.h>
+#include <ytstenut/yts-event-message.h>
+#include <ytstenut/yts-invocation-message.h>
+#include <ytstenut/yts-proxy.h>
+#include <ytstenut/yts-proxy-service.h>
+#include <ytstenut/yts-response-message.h>
+#include <ytstenut/yts-service-adapter.h>
 
-#include <ytstenut/video-profile/ytsg-vp-content.h>
-#include <ytstenut/video-profile/ytsg-vp-playable.h>
-#include <ytstenut/video-profile/ytsg-vp-player.h>
-#include <ytstenut/video-profile/ytsg-vp-query.h>
-#include <ytstenut/video-profile/ytsg-vp-transcript.h>
-#include <ytstenut/video-profile/ytsg-vp-transfer.h>
-#include <ytstenut/video-profile/ytsg-vp-transmission.h>
+#include <ytstenut/video-profile/yts-vp-content.h>
+#include <ytstenut/video-profile/yts-vp-playable.h>
+#include <ytstenut/video-profile/yts-vp-player.h>
+#include <ytstenut/video-profile/yts-vp-query.h>
+#include <ytstenut/video-profile/yts-vp-transcript.h>
+#include <ytstenut/video-profile/yts-vp-transfer.h>
+#include <ytstenut/video-profile/yts-vp-transmission.h>
 
 #endif /* YTSTENUT_H */
 

@@ -20,9 +20,9 @@
  *
  */
 
-#include <ytstenut/ytsg-metadata-service.h>
-#include <ytstenut/ytsg-private.h>
-#include <ytstenut/ytsg-status.h>
+#include <ytstenut/yts-metadata-service.h>
+#include <ytstenut/yts-private.h>
+#include <ytstenut/yts-status.h>
 #include <string.h>
 
 #define MYUID       "com.meego.ytstenut.TestService"
@@ -33,31 +33,31 @@ static gboolean got_status_signal  = FALSE;
 static gboolean got_message_signal = FALSE;
 
 static void
-status_cb (YtsgMetadataService *service, YtsgStatus *status, gpointer data)
+status_cb (YtsMetadataService *service, YtsStatus *status, gpointer data)
 {
-  YtsgStatus *s2 = data;
+  YtsStatus *s2 = data;
 
   got_status_signal = TRUE;
 
-  g_assert (ytsg_metadata_is_equal ((YtsgMetadata*)status, (YtsgMetadata*)s2));
+  g_assert (yts_metadata_is_equal ((YtsMetadata*)status, (YtsMetadata*)s2));
 }
 
 static void
-message_cb (YtsgMetadataService *service, YtsgMessage *message, gpointer data)
+message_cb (YtsMetadataService *service, YtsMessage *message, gpointer data)
 {
-  YtsgMessage *m2 = data;
+  YtsMessage *m2 = data;
 
   got_message_signal = TRUE;
 
-  g_assert (ytsg_metadata_is_equal ((YtsgMetadata*)message, (YtsgMetadata*)m2));
+  g_assert (yts_metadata_is_equal ((YtsMetadata*)message, (YtsMetadata*)m2));
 }
 
 int
 main (int argc, char **argv)
 {
-  YtsgService *service;
-  YtsgStatus  *status;
-  YtsgMessage *message;
+  YtsService *service;
+  YtsStatus  *status;
+  YtsMessage *message;
   const char  *uid;
 
   g_thread_init (NULL);
@@ -67,7 +67,7 @@ main (int argc, char **argv)
    * The metadata-serivice-test property allows for partial construction of
    * the object, so we can run some rudimentary tests.
    */
-  service = g_object_new (YTSG_TYPE_METADATA_SERVICE,
+  service = g_object_new (YTS_TYPE_METADATA_SERVICE,
                           "metadata-service-test", TRUE,
                           "uid", MYUID,
                           "type", "application",
@@ -75,28 +75,28 @@ main (int argc, char **argv)
 
   g_assert (service);
 
-  uid = ytsg_service_get_uid (service);
+  uid = yts_service_get_uid (service);
 
   g_assert_cmpstr (MYUID, ==, uid);
 
-  status = (YtsgStatus*)_ytsg_metadata_new_from_xml (STATUS_XML);
-  g_assert (YTSG_IS_STATUS (status));
+  status = (YtsStatus*)_yts_metadata_new_from_xml (STATUS_XML);
+  g_assert (YTS_IS_STATUS (status));
 
   g_signal_connect (service, "status",
                     G_CALLBACK (status_cb), status);
 
-  _ytsg_metadata_service_received_status ((YtsgMetadataService*)service,
+  _yts_metadata_service_received_status ((YtsMetadataService*)service,
                                           STATUS_XML);
 
   g_assert (got_status_signal);
 
-  message = (YtsgMessage*)_ytsg_metadata_new_from_xml (MESSAGE_XML);
-  g_assert (YTSG_IS_MESSAGE (message));
+  message = (YtsMessage*)_yts_metadata_new_from_xml (MESSAGE_XML);
+  g_assert (YTS_IS_MESSAGE (message));
 
   g_signal_connect (service, "message",
                     G_CALLBACK (message_cb), message);
 
-  _ytsg_metadata_service_received_message ((YtsgMetadataService*)service,
+  _yts_metadata_service_received_message ((YtsMetadataService*)service,
                                            MESSAGE_XML);
 
   g_assert (got_message_signal);

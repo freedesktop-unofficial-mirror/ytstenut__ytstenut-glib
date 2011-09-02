@@ -7,7 +7,7 @@ AUTOMAKE_OPTIONS = 1.6
 DOC_MODULE=ytstenut
 
 # Uncomment for versioned docs and specify the version of the module, e.g. '2'.
-#DOC_MODULE_VERSION=$(YTSG_VERSION)
+#DOC_MODULE_VERSION=$(YTS_VERSION)
 
 
 # The top-level SGML file. You can change this if you want to.
@@ -17,7 +17,7 @@ DOC_MAIN_SGML_FILE=$(DOC_MODULE)-docs.xml
 DOC_SOURCE_DIR=../../../ytstenut
 
 # Extra options to pass to gtkdoc-scangobj. Not normally needed.
-SCANGOBJ_OPTIONS=--type-init-func="ytsg_init (NULL, NULL)"
+SCANGOBJ_OPTIONS=--type-init-func="yts_init (NULL, NULL)"
 
 # Extra options to supply to gtkdoc-scan.
 # e.g. SCAN_OPTIONS=--deprecated-guards="GTK_DISABLE_DEPRECATED"
@@ -55,8 +55,8 @@ EXTRA_HFILES=
 # Header files to ignore when scanning. Use base file name, no paths
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
 IGNORE_HFILES= \
-	ytsg-marshal.h \
-	ytsg-enum-types.h
+	yts-marshal.h \
+	yts-enum-types.h
 
 
 # Images to copy into HTML directory.
@@ -77,8 +77,8 @@ expand_content_files=
 # signals and properties.
 # e.g. GTKDOC_CFLAGS=-I$(top_srcdir) -I$(top_builddir) $(GTK_DEBUG_FLAGS)
 # e.g. GTKDOC_LIBS=$(top_builddir)/gtk/$(gtktargetlib)
-INCLUDES=-I$(top_srcdir)/ytstenut $(YTSG_CFLAGS)
-GTKDOC_LIBS=$(top_builddir)/ytstenut/libytstenut-@YTSG_API_VERSION@.la $(YTSG_LIBS)
+INCLUDES=-I$(top_srcdir)/ytstenut $(YTS_CFLAGS)
+GTKDOC_LIBS=$(top_builddir)/ytstenut/libytstenut-@YTS_API_VERSION@.la $(YTS_LIBS)
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
 include $(top_srcdir)/gtk-doc.make
