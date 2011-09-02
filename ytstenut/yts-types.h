@@ -28,8 +28,8 @@
  * Common Ytstenut-glib types
  */
 
-#ifndef _YTS_TYPES_H
-#define _YTS_TYPES_H
+#ifndef YTS_TYPES_H
+#define YTS_TYPES_H
 
 #include <glib.h>
 

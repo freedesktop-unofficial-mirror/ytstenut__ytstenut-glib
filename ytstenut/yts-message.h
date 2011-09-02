@@ -19,8 +19,8 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _YTS_MESSAGE_H
-#define _YTS_MESSAGE_H
+#ifndef YTS_MESSAGE_H
+#define YTS_MESSAGE_H
 
 #include <ytstenut/yts-metadata.h>
 
@@ -83,4 +83,4 @@ YtsMessage *yts_message_new (const char ** attributes);
 
 G_END_DECLS
 
-#endif /* _YTS_MESSAGE_H */
+#endif /* YTS_MESSAGE_H */

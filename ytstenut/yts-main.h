@@ -19,8 +19,8 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _YTS_UTIL_H
-#define _YTS_UTIL_H
+#ifndef YTS_UTIL_H
+#define YTS_UTIL_H
 
 #include <glib.h>
 
@@ -31,4 +31,4 @@ GOptionGroup *yts_get_option_group (void);
 
 G_END_DECLS
 
-#endif /* _YTS_UTIL_H */
+#endif /* YTS_UTIL_H */

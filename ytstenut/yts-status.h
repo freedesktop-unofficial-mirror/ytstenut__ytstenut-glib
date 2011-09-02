@@ -19,8 +19,8 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _YTS_STATUS_H
-#define _YTS_STATUS_H
+#ifndef YTS_STATUS_H
+#define YTS_STATUS_H
 
 #include <ytstenut/yts-metadata.h>
 
@@ -82,4 +82,4 @@ YtsStatus *yts_status_new (const char **attributes);
 
 G_END_DECLS
 
-#endif /* _YTS_STATUS_H */
+#endif /* YTS_STATUS_H */

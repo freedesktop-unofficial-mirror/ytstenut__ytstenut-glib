@@ -19,8 +19,8 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _YTS_METADATA_H
-#define _YTS_METADATA_H
+#ifndef YTS_METADATA_H
+#define YTS_METADATA_H
 
 #include <glib-object.h>
 #include <rest/rest-xml-node.h>
@@ -89,4 +89,4 @@ RestXmlNode *yts_metadata_get_root_node (YtsMetadata *self);
 
 G_END_DECLS
 
-#endif /* _YTS_METADATA_H */
+#endif /* YTS_METADATA_H */

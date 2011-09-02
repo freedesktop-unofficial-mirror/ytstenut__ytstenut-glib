@@ -1,7 +1,7 @@
 /* -*- mode: C; c-file-style: "gnu"; indent-tabs-mode: nil; -*- */
 
-#ifndef _YTS_METADATA_SERVICE_H
-#define _YTS_METADATA_SERVICE_H
+#ifndef YTS_METADATA_SERVICE_H
+#define YTS_METADATA_SERVICE_H
 
 #include <ytstenut/yts-error.h>
 #include <ytstenut/yts-message.h>
@@ -72,4 +72,4 @@ YtsError yts_metadata_service_send_metadata (YtsMetadataService *service,
 
 G_END_DECLS
 
-#endif /* _YTS_METADATA_SERVICE_H */
+#endif /* YTS_METADATA_SERVICE_H */

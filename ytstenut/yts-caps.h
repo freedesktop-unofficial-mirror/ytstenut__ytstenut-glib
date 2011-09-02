@@ -26,8 +26,8 @@
  * #YtsCaps represents application capability.
  */
 
-#ifndef _YTS_CAPS_H
-#define _YTS_CAPS_H
+#ifndef YTS_CAPS_H
+#define YTS_CAPS_H
 
 #include <glib.h>
 
@@ -176,4 +176,4 @@ typedef GQuark YtsCaps;
 
 G_END_DECLS
 
-#endif /* _YTS_CAPS_H */
+#endif /* YTS_CAPS_H */

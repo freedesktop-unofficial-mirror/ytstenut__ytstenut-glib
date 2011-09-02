@@ -19,8 +19,8 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _YTS_ROSTER_H
-#define _YTS_ROSTER_H
+#ifndef YTS_ROSTER_H
+#define YTS_ROSTER_H
 
 #include <glib-object.h>
 #include <ytstenut/yts-caps.h>
@@ -90,4 +90,4 @@ YtsClient        *yts_roster_get_client (YtsRoster *roster);
 
 G_END_DECLS
 
-#endif /* _YTS_ROSTER_H */
+#endif /* YTS_ROSTER_H */

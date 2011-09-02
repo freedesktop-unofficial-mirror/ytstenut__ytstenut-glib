@@ -6,8 +6,8 @@
  * Author: Tomas Frydrych <tf@linux.intel.com>
  */
 
-#ifndef _YTS_ERROR_H
-#define _YTS_ERROR_H
+#ifndef YTS_ERROR_H
+#define YTS_ERROR_H
 
 #include <ytstenut/yts-types.h>
 
@@ -67,4 +67,4 @@ guint     yts_error_get_atom (YtsError error);
 
 G_END_DECLS
 
-#endif /* _YTS_ERROR_H */
+#endif /* YTS_ERROR_H */

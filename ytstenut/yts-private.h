@@ -19,8 +19,8 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _YTS_PRIVATE_H
-#define _YTS_PRIVATE_H
+#ifndef YTS_PRIVATE_H
+#define YTS_PRIVATE_H
 
 #include <rest/rest-xml-node.h>
 #include <telepathy-glib/contact.h>
@@ -96,4 +96,4 @@ YtsError     _yts_client_send_message (YtsClient  *client,
 
 G_END_DECLS
 
-#endif /* _YTS_PRIVATE_H */
+#endif /* YTS_PRIVATE_H */

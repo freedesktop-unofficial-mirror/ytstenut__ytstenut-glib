@@ -30,8 +30,8 @@
  * This section list available debugging API
  */
 
-#ifndef _YTS_DEBUG_H
-#define _YTS_DEBUG_H
+#ifndef YTS_DEBUG_H
+#define YTS_DEBUG_H
 
 #include <glib.h>
 
@@ -137,4 +137,4 @@ extern guint yts_debug_flags;
 
 G_END_DECLS
 
-#endif /* _YTS_DEBUG_H */
+#endif /* YTS_DEBUG_H */

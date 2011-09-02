@@ -19,8 +19,8 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _YTS_CLIENT_H
-#define _YTS_CLIENT_H
+#ifndef YTS_CLIENT_H
+#define YTS_CLIENT_H
 
 #include <stdbool.h>
 #include <glib-object.h>
@@ -154,5 +154,5 @@ yts_client_unregister_proxy (YtsClient  *self,
 
 G_END_DECLS
 
-#endif /* _YTS_CLIENT_H */
+#endif /* YTS_CLIENT_H */
 

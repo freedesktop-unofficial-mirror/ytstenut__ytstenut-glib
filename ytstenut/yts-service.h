@@ -19,8 +19,8 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _YTS_SERVICE_H
-#define _YTS_SERVICE_H
+#ifndef YTS_SERVICE_H
+#define YTS_SERVICE_H
 
 #include <glib-object.h>
 #include <ytstenut/yts-contact.h>
@@ -95,4 +95,4 @@ gboolean       yts_service_has_capability (YtsService *self,
 
 G_END_DECLS
 
-#endif /* _YTS_SERVICE_H */
+#endif /* YTS_SERVICE_H */
