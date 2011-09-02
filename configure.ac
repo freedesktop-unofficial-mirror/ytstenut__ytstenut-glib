@@ -20,10 +20,10 @@ m4_define([default_enable_cache],    [no])
 
 AC_PREREQ([2.59])
 
-AC_INIT([ytstenut-glib], [ytsg_version], [http://ytstenut.meego.com])
+AC_INIT([ytstenut], [ytsg_version], [http://ytstenut.meego.com])
 AC_CONFIG_MACRO_DIR([build/autotools])
 
-AC_CONFIG_SRCDIR(ytstenut-glib/ytstenut-glib.h)
+AC_CONFIG_SRCDIR(ytstenut/ytstenut.h)
 
 AM_INIT_AUTOMAKE([tar-ustar dist-bzip2])
 
@@ -154,21 +154,21 @@ AC_SUBST(YTSG_LT_VERSION)
 AC_SUBST(YTSG_LT_LDFLAGS)
 
 AC_OUTPUT([
-Makefile
-docs/Makefile
-docs/reference/Makefile
-docs/reference/ytstenut-glib/Makefile
-docs/reference/ytstenut-glib/ytstenut-glib-docs.xml
-examples/Makefile
-examples/video-profile/Makefile
-ytstenut-glib/Makefile
-ytstenut-glib/ytsg-version.h
-ytstenut-glib/ytstenut-glib.pc
-tests/Makefile
+  Makefile
+  docs/Makefile
+  docs/reference/Makefile
+  docs/reference/ytstenut/Makefile
+  docs/reference/ytstenut/ytstenut-docs.xml
+  examples/Makefile
+  examples/video-profile/Makefile
+  ytstenut/Makefile
+  ytstenut/ytsg-version.h
+  ytstenut/ytstenut-1.pc
+  tests/Makefile
 ])
 
 echo "
-        ytstenut-glib
+        ytstenut
         ===================================================
 
         Configuration:

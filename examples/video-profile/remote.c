@@ -23,7 +23,7 @@
 #include <string.h>
 #include <glib.h>
 
-#include <ytstenut-glib/ytstenut-glib.h>
+#include <ytstenut/ytstenut.h>
 
 typedef enum {
   COMMAND_NONE,

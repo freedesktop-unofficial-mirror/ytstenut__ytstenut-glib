@@ -1,4 +1,4 @@
 DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --enable-docs --disable-silent-rules
 
-SUBDIRS=ytstenut-glib docs tests examples
+SUBDIRS = ytstenut docs tests examples
 

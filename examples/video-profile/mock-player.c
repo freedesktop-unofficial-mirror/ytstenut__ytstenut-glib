@@ -18,7 +18,7 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
-#include <ytstenut-glib/ytstenut-glib.h>
+#include <ytstenut/ytstenut.h>
 #include "mock-player.h"
 
 static void

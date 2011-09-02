@@ -4,13 +4,13 @@
 srcdir=`dirname $0`
 test -z "$srcdir" && srcdir=.
 
-PKG_NAME="ytstenut-glib"
+PKG_NAME="ytstenut"
 REQUIRED_AUTOMAKE_VERSION=1.10
 
 (test -f $srcdir/configure.ac \
-  && test -d $srcdir/ytstenut-glib) || {
+  && test -d $srcdir/ytstenut) || {
     echo -n "**Error**: Directory "\`$srcdir\'" does not look like the"
-    echo " top-level ytstenut-glib directory"
+    echo " top-level ytstenut directory"
     exit 1
 }
 

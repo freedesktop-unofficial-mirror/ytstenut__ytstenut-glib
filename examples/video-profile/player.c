@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <glib.h>
 
-#include <ytstenut-glib/ytstenut-glib.h>
+#include <ytstenut/ytstenut.h>
 
 #include "mock-player.h"
 

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <glib.h>
 
-#include <ytstenut-glib/ytstenut-glib.h>
+#include <ytstenut/ytstenut.h>
 
 #define CAPABILITY "org.freedesktop.ytstenut.StatusExample"
 

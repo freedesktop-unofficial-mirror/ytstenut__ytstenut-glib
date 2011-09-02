@@ -20,9 +20,9 @@
  *
  */
 
-#include <ytstenut-glib/ytsg-private.h>
-#include <ytstenut-glib/ytsg-client.h>
-#include <ytstenut-glib/ytsg-main.h>
+#include <ytstenut/ytsg-private.h>
+#include <ytstenut/ytsg-client.h>
+#include <ytstenut/ytsg-main.h>
 
 #include <string.h>
 

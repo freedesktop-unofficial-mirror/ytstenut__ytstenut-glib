@@ -20,9 +20,9 @@
  *
  */
 
-#include <ytstenut-glib/ytsg-metadata-service.h>
-#include <ytstenut-glib/ytsg-private.h>
-#include <ytstenut-glib/ytsg-status.h>
+#include <ytstenut/ytsg-metadata-service.h>
+#include <ytstenut/ytsg-private.h>
+#include <ytstenut/ytsg-status.h>
 #include <string.h>
 
 #define MYUID       "com.meego.ytstenut.TestService"

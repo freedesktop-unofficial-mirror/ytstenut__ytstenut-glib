@@ -9,7 +9,7 @@ AM_CPPFLAGS = \
 
 AM_CFLAGS = $(YTSG_CFLAGS)
 
-AM_LDFLAGS = ../ytstenut-glib/libytstenut-glib-@YTSG_API_VERSION@.la
+AM_LDFLAGS = ../ytstenut/libytstenut-@YTSG_API_VERSION@.la
 
 LDADD = $(YTSG_LIBS)
 

@@ -20,8 +20,8 @@
  *
  */
 
-#include <ytstenut-glib/ytsg-message.h>
-#include <ytstenut-glib/ytsg-private.h>
+#include <ytstenut/ytsg-message.h>
+#include <ytstenut/ytsg-private.h>
 #include <string.h>
 
 int

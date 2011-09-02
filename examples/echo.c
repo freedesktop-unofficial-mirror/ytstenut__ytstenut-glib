@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <glib.h>
 
-#include <ytstenut-glib/ytstenut-glib.h>
+#include <ytstenut/ytstenut.h>
 
 #define CLIENT_UID "org.freedesktop.ytstenut.EchoExampleClient"
 #define SERVER_UID "org.freedesktop.ytstenut.EchoExampleServer"
