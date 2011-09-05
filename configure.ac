@@ -20,9 +20,10 @@ m4_define([default_enable_cache],    [no])
 
 AC_PREREQ([2.59])
 
-AC_INIT([ytstenut], [yts_version], [http://ytstenut.meego.com])
-AC_CONFIG_MACRO_DIR([build/autotools])
+AC_INIT([ytstenut], [yts_version], [https://bugs.freedesktop.org/enter_bug.cgi?product=Ytstenut])
 
+AC_CONFIG_AUX_DIR([build])
+AC_CONFIG_MACRO_DIR([build])
 AC_CONFIG_SRCDIR(ytstenut/ytstenut.h)
 
 AM_INIT_AUTOMAKE([tar-ustar dist-bzip2])
