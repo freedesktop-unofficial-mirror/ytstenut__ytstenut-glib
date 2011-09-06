@@ -4,11 +4,11 @@ libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
 datadir=@datadir@
-apiversion=@YTSTENUT_API_VERSION@
+apiversion=@YTS_API_VERSION@
 
 Name: Ytstenut
 Description: GObject based convenience library for Ytstenut
 Requires: telepathy-glib @TELEPATHY_VERSION@
-Version: @YTSTENUT_VERSION@
+Version: @YTS_VERSION@
 Libs: -L${libdir} -lytstenut-${apiversion}
 Cflags: -I${includedir}/ytstenut-${apiversion}
