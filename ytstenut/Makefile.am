@@ -164,7 +164,7 @@ libytstenut_@YTS_API_VERSION@_la_LIBADD   = $(YTS_LIBS)
 lib_LTLIBRARIES = libytstenut-@YTS_API_VERSION@.la
 
 ytstenutheadersdir = $(includedir)/ytstenut-$(YTS_API_VERSION)/ytstenut
-ytstenutheaders_HEADERS =		\
+nobase_ytstenutheaders_HEADERS =		\
 	$(source_h)			\
 	$(srcdir)/yts-enum-types.h	\
 	$(srcdir)/yts-marshal.h	\
@@ -190,7 +190,7 @@ Yts-@YTS_API_VERSION@.gir: $(G_IR_SCANNER) libytstenut-@YTS_API_VERSION@.la
 		--libtool="$(top_builddir)/libtool" \
 	        --pkg gobject-2.0 \
 	        --output $@ \
-		$(ytstenutheaders_HEADERS) \
+		$(nobase_ytstenutheaders_HEADERS) \
 		$(source_c)
 
 BUILT_GIRSOURCES += Yts-@YTS_API_VERSION@.gir
