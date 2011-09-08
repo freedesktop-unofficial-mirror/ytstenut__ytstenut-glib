@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Intel Corp.
+ * Copyright © 2011 Intel Corp.
  *
  * This  library is free  software; you can  redistribute it and/or
  * modify it  under  the terms  of the  GNU Lesser  General  Public
@@ -15,7 +15,8 @@
  * License along with this library. If not, see
  * <http://www.gnu.org/licenses/>.
  *
- * Authored by: Rob Staudinger <robsta@linux.intel.com>
+ * Authored by: Tomas Frydrych <tf@linux.intel.com>
+ *              Rob Staudinger <robsta@linux.intel.com>
  */
 
 #ifndef YTSTENUT_H
