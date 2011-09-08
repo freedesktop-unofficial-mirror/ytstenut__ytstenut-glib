@@ -77,14 +77,14 @@ service_added_cb (YtsRoster *roster, YtsService *service, gpointer data)
 
   g_debug ("Service %s:%s", jid, sid);
 
-  if (client == client1 && strstr (sid, "com.meego.ytstenut.SetStatusTest2"))
+  if (client == client1 && strstr (sid, "org.freedesktop.ytstenut.SetStatusTest2"))
     {
       ready1   = TRUE;
       our      = TRUE;
       service2 = service;
     }
 
-  if (client == client2 && strstr (sid, "com.meego.ytstenut.SetStatusTest1"))
+  if (client == client2 && strstr (sid, "org.freedesktop.ytstenut.SetStatusTest1"))
     {
       ready2   = TRUE;
       our      = TRUE;
@@ -102,7 +102,7 @@ service_added_cb (YtsRoster *roster, YtsService *service, gpointer data)
         {
           "capability", "urn:ytstenut:capabilities:yts-caps-video",
           "activity", "yts-activity-playing",
-          "from-service", "com.meego.ytstenut.SetStatusTest1",
+          "from-service", "org.freedesktop.ytstenut.SetStatusTest1",
           NULL
         };
 
@@ -127,7 +127,7 @@ main (int argc, char **argv)
   loop = g_main_loop_new (NULL, FALSE);
 
   client1 = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP,
-                             "com.meego.ytstenut.SetStatusTest1");
+                             "org.freedesktop.ytstenut.SetStatusTest1");
   yts_client_set_capabilities (client1, YTS_CAPS_VIDEO);
   g_signal_connect (client1, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);
@@ -137,7 +137,7 @@ main (int argc, char **argv)
   yts_client_connect (client1);
 
   client2 = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP,
-                             "com.meego.ytstenut.SetStatusTest2");
+                             "org.freedesktop.ytstenut.SetStatusTest2");
   yts_client_set_capabilities (client2, YTS_CAPS_VIDEO);
   g_signal_connect (client2, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);

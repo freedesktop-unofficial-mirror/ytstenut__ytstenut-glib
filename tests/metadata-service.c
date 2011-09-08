@@ -23,7 +23,7 @@
 #include <ytstenut/yts-status.h>
 #include <string.h>
 
-#define MYUID       "com.meego.ytstenut.TestService"
+#define MYUID       "org.freedesktop.ytstenut.TestService"
 #define STATUS_XML  "<status a1='v1' a2='v2'></status>"
 #define MESSAGE_XML "<message a1='v1' a2='v2'></message>"
 

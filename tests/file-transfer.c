@@ -89,13 +89,13 @@ service_added_cb (YtsRoster *roster, YtsService *service, gpointer data)
 
   static YtsService *to = NULL;
 
-  if (client == client1 && strstr (sid, "com.meego.ytstenut.FileTransferTest2"))
+  if (client == client1 && strstr (sid, "org.freedesktop.ytstenut.FileTransferTest2"))
     {
       ready1 = TRUE;
       to     = service;
     }
 
-  if (client == client2 && strstr (sid, "com.meego.ytstenut.FileTransferTest1"))
+  if (client == client2 && strstr (sid, "org.freedesktop.ytstenut.FileTransferTest1"))
     {
       ready2   = TRUE;
     }
@@ -144,7 +144,7 @@ main (int argc, char **argv)
   loop = g_main_loop_new (NULL, FALSE);
 
   client1 = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP,
-                             "com.meego.ytstenut.FileTransferTest1");
+                             "org.freedesktop.ytstenut.FileTransferTest1");
   g_signal_connect (client1, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);
   roster1 = yts_client_get_roster (client1);
@@ -153,7 +153,7 @@ main (int argc, char **argv)
   yts_client_connect (client1);
 
   client2 = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP,
-                             "com.meego.ytstenut.FileTransferTest2");
+                             "org.freedesktop.ytstenut.FileTransferTest2");
   g_signal_connect (client2, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);
   roster2 = yts_client_get_roster (client2);

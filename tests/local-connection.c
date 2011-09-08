@@ -188,7 +188,7 @@ main (int argc, char **argv)
    * us.
    */
   client = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP,
-                            "com.meego.ytstenut.LocalConnectionTest");
+                            "org.freedesktop.ytstenut.LocalConnectionTest");
 
   g_signal_connect (client, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);
