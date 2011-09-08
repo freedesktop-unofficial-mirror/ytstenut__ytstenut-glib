@@ -60,7 +60,7 @@ AC_SUBST(GLIB_PREFIX)
 TELEPATHY_VERSION=">= 0.11.7"
 AC_SUBST(TELEPATHY_VERSION)
 
-YTS_PC_MODULES="$YTS_PC_MODULES telepathy-glib $TELEPATHY_VERSION telepathy-ytstenut-glib gio-unix-2.0 rest-0.7 glib-2.0 gobject-2.0"
+YTS_PC_MODULES="$YTS_PC_MODULES telepathy-glib $TELEPATHY_VERSION telepathy-ytstenut-glib >= 0.2.0 gio-unix-2.0 rest-0.7 glib-2.0 gobject-2.0"
 
 AC_ARG_ENABLE([docs],
               [AC_HELP_STRING([--enable-docs=@<:@no/yes@:>@],

@@ -1473,7 +1473,7 @@ yts_client_yts_channels_received_cb (TpYtsClient *tp_client,
           GValue      *v = value;
           char        *k = key;
 
-          if (!strcmp (k, "com.meego.xpmn.ytstenut.Channel.RequestBody"))
+          if (!strcmp (k, "org.freedesktop.ytstenut.xpmn.Channel.RequestBody"))
             {
               const char *xml = g_value_get_string (v);
               gboolean dispatched = dispatch_to_service (client, from, xml);
