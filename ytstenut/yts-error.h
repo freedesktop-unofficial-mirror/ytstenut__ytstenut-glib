@@ -43,7 +43,7 @@ G_BEGIN_DECLS
  * @YTS_ERROR_CUSTOM_START: custom error codes can start at this value
  * @YTS_ERROR_CUSTOM_END: custom error code must not exceed this value
  *
- * YtsError represents common errors for nScreen operation; YtsError combines
+ * YtsError represents common errors for Ytstenut operation; YtsError combines
  * an error code defined by the above enumeration and an atom value that
  * uniquely identifies the operation associated with the value. Use
  * yts_error_get_code() and yts_error_get_atom() to retrieve these components.

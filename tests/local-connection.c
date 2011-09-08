@@ -107,7 +107,7 @@ contact_status_cb (YtsContact *item, GParamSpec *spec, gpointer data)
 }
 
 /*
- * Demonstrates how to send nScreen command to an item in the roster.
+ * Demonstrates how to send Ytstenut command to an item in the roster.
  */
 static gboolean
 timeout_cb (gpointer data)

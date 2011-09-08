@@ -949,7 +949,7 @@ yts_client_class_init (YtsClientClass *klass)
    * YtsClient::authenticated
    * @client: object which emitted the signal,
    *
-   * The authenticated signal is emited when connection to the nScreen server
+   * The authenticated signal is emited when connection to the Ytstenut server
    * is successfully established.
    *
    * Since: 0.1
@@ -985,7 +985,7 @@ yts_client_class_init (YtsClientClass *klass)
    * YtsClient::disconnected
    * @client: object which emitted the signal,
    *
-   * The disconnected signal is emited when connection to the nScreen server
+   * The disconnected signal is emited when connection to the Ytstenut server
    * is successfully established.
    *
    * Since: 0.1
@@ -1025,7 +1025,7 @@ yts_client_class_init (YtsClientClass *klass)
    * @error: #YtsError
    *
    * The error signal is emitted to indicate an error (or eventual success)
-   * during the handling of an operation for which the nScreen API initially
+   * during the handling of an operation for which the Ytstenut API initially
    * returned %YTS_ERROR_PENDING. The original operation can be determined
    * using the atom part of the #YtsError parameter.
    *
@@ -2339,7 +2339,7 @@ yts_client_setup_account_connection (YtsClient *client)
 
   if (error)
     {
-      g_critical (G_STRLOC ": %s: %s; no nScreen functionality will be "
+      g_critical (G_STRLOC ": %s: %s; no Ytstenut functionality will be "
                   "available", __FUNCTION__, error->message);
       g_clear_error (&error);
       return;
@@ -2354,7 +2354,7 @@ yts_client_setup_account_connection (YtsClient *client)
 
   if (error)
     {
-      g_critical (G_STRLOC ": %s: %s; no nScreen functionality will be "
+      g_critical (G_STRLOC ": %s: %s; no Ytstenut functionality will be "
                   "available", __FUNCTION__, error->message);
       g_clear_error (&error);
       return;
@@ -2369,7 +2369,7 @@ yts_client_setup_account_connection (YtsClient *client)
 
   if (error)
     {
-      g_critical (G_STRLOC ": %s: %s; no nScreen functionality will be "
+      g_critical (G_STRLOC ": %s: %s; no Ytstenut functionality will be "
                   "available", __FUNCTION__, error->message);
       g_clear_error (&error);
       return;
@@ -2666,7 +2666,7 @@ yts_client_emit_error (YtsClient *client, YtsError error)
  * @directory: path to a directory or %NULL.
  *
  * Sets the directory where incoming files will be stored; if the provided path
- * is %NULL, the directory will be reset to the default (~/.nscreen/). This
+ * is %NULL, the directory will be reset to the default (~/.Ytstenut/). This
  * function does not do any checks regarding validity of the path provided,
  * though an attempt to create the directory before it is used, with permissions
  * of 0700.

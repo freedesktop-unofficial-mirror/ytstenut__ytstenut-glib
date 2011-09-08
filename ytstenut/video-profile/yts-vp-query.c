@@ -76,7 +76,7 @@ yts_vp_query_default_init (YtsVPQueryInterface *interface)
 }
 
 unsigned
-yts_vp_get_max_results (YtsVPQuery *self)
+yts_vp_query_get_max_results (YtsVPQuery *self)
 {
   unsigned max_results;
 
@@ -88,7 +88,7 @@ yts_vp_get_max_results (YtsVPQuery *self)
 }
 
 unsigned
-yts_vp_get_progress (YtsVPQuery *self)
+yts_vp_query_get_progress (YtsVPQuery *self)
 {
   unsigned progress;
 
@@ -100,7 +100,7 @@ yts_vp_get_progress (YtsVPQuery *self)
 }
 
 GList *
-yts_vp_get_results (YtsVPQuery *self)
+yts_vp_query_get_results (YtsVPQuery *self)
 {
   GList *results;
 
@@ -112,7 +112,7 @@ yts_vp_get_results (YtsVPQuery *self)
 }
 
 YtsVPQueryResultOrder
-yts_vp_get_result_order (YtsVPQuery *self)
+yts_vp_query_get_result_order (YtsVPQuery *self)
 {
   YtsVPQueryResultOrder result_order;
 

@@ -59,16 +59,16 @@ GType
 yts_vp_query_get_type (void) G_GNUC_CONST;
 
 unsigned
-yts_vp_get_max_results (YtsVPQuery *self);
+yts_vp_query_get_max_results (YtsVPQuery *self);
 
 unsigned
-yts_vp_get_progress (YtsVPQuery *self);
+yts_vp_query_get_progress (YtsVPQuery *self);
 
 GList *
-yts_vp_get_results (YtsVPQuery *self);
+yts_vp_query_get_results (YtsVPQuery *self);
 
 YtsVPQueryResultOrder
-yts_vp_get_result_order (YtsVPQuery *self);
+yts_vp_query_get_result_order (YtsVPQuery *self);
 
 G_END_DECLS
 

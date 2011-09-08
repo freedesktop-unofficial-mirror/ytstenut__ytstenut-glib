@@ -113,6 +113,10 @@ libytstenut_@YTS_API_VERSION@_la_SOURCES  = 	$(source_h) 	\
 							$(private_h)	\
 							$(source_c)
 
+libytstenut_@YTS_API_VERSION@_la_DEPENDENCIES = \
+  ytstenut.sym \
+  $(NULL)
+
 STAMPS = stamp-marshal.h stamp-yts-enum-types.h
 
 ENUMS = yts-enum-types.h \
@@ -157,9 +161,15 @@ yts-marshal.c: yts-marshal.h Makefile
 	&& cp xgen-cmc yts-marshal.c \
 	&& rm -f xgen-cmc
 
-libytstenut_@YTS_API_VERSION@_la_LDFLAGS  = $(YTS_LT_LDFLAGS) \
-						-no-undefined
-libytstenut_@YTS_API_VERSION@_la_LIBADD   = $(YTS_LIBS)
+libytstenut_@YTS_API_VERSION@_la_LDFLAGS = \
+  $(YTS_LT_LDFLAGS) \
+  -export-symbols $(srcdir)/ytstenut.sym \
+  -no-undefined \
+  $(NULL)
+
+libytstenut_@YTS_API_VERSION@_la_LIBADD = \
+  $(YTS_LIBS) \
+  $(NULL)
 
 lib_LTLIBRARIES = libytstenut-@YTS_API_VERSION@.la
 
@@ -224,6 +234,7 @@ EXTRA_DIST =	marshal.list 		\
 		yts-enum-types.c.in	\
 		yts-version.h.in	\
 		ytstenut-1.pc.in	\
+		ytstenut.sym \
 		$(NULL)
 
 DISTCLEANFILES= yts-version.h		\
