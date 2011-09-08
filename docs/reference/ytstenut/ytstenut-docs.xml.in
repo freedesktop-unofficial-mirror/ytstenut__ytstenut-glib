@@ -6,7 +6,7 @@
 
 <book id="yts" xmlns:xi="http://www.w3.org/2003/XInclude">
   <bookinfo>
-    <title>Ytstenut-glib</title>
+    <title>Ytstenut</title>
     <releaseinfo>For ytstenut &version;</releaseinfo>
 
     <copyright>
@@ -44,7 +44,7 @@
     <title>Reference</title>
 
     <chapter id="yts-classes">
-      <title>Ytstenut-glib Objects</title>
+      <title>Ytstenut Objects</title>
 
       <xi:include href="xml/yts-types.xml"/>
       <xi:include href="xml/yts-error.xml"/>

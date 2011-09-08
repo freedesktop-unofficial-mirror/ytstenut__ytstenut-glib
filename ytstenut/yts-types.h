@@ -24,7 +24,7 @@
  * @title: Common Types
  * @section_id: yts-types
  *
- * Common Ytstenut-glib types
+ * Common Ytstenut types
  */
 
 #ifndef YTS_TYPES_H

@@ -105,9 +105,9 @@ static GOptionEntry yts_args[] = {
     N_("Make all warnings fatal"), NULL },
 #ifdef YTS_ENABLE_DEBUG
   { "yts-debug", 0, 0, G_OPTION_ARG_CALLBACK, yts_arg_debug_cb,
-    N_("Ytstenut-glib debugging flags to set"), "FLAGS" },
+    N_("Ytstenut debugging flags to set"), "FLAGS" },
   { "yts-no-debug", 0, 0, G_OPTION_ARG_CALLBACK, yts_arg_no_debug_cb,
-    N_("Ytstenut-glib debugging flags to unset"), "FLAGS" },
+    N_("Ytstenut debugging flags to unset"), "FLAGS" },
 #endif /* YTS_ENABLE_DEBUG */
   { NULL, },
 };
@@ -176,12 +176,12 @@ post_parse_hook (GOptionContext  *context,
  * yts_get_option_group:
  *
  * Returns a #GOptionGroup for the command line arguments recognized
- * by Ytstenut-Glib. You should add this group to your #GOptionContext with
+ * by Ytstenut. You should add this group to your #GOptionContext with
  * g_option_context_add_group(), if you are using g_option_context_parse()
  * to parse your commandline arguments.
  *
- * Calling g_option_context_parse() with Ytstenut-Glib's #GOptionGroup will
- * result in Ytstenut-Glib's initialization. That is, the following code:
+ * Calling g_option_context_parse() with Ytstenut's #GOptionGroup will
+ * result in Ytstenut's initialization. That is, the following code:
  *
  * |[
  *   g_option_context_set_main_group (context, yts_get_option_group ());
@@ -195,11 +195,11 @@ post_parse_hook (GOptionContext  *context,
  * ]|
  *
  * After g_option_context_parse() on a #GOptionContext containing the
- * Ytstenut-Glib #GOptionGroup has returned %TRUE, Ytstenut-Glib is guaranteed
+ * Ytstenut #GOptionGroup has returned %TRUE, Ytstenut is guaranteed
  * to be initialized.
  *
  * Return value: (transfer full): a #GOptionGroup for the commandline arguments
- *   recognized by Ytstenut-Glib
+ *   recognized by Ytstenut
  *
  * Since: 0.1
  */
@@ -210,9 +210,9 @@ yts_get_option_group (void)
 
   yts_base_init ();
 
-  group = g_option_group_new ("Ytstenut-glib",
-                              _("Ytstenut-glib Options"),
-                              _("Show Ytstenut-glib Options"),
+  group = g_option_group_new ("Ytstenut",
+                              _("Ytstenut Options"),
+                              _("Show Ytstenut Options"),
                               NULL,
                               NULL);
 
@@ -353,7 +353,7 @@ yts_parse_args (int *argc, char ***argv)
  * @argv: (array length=argc) (inout) (allow-none): A pointer to an array
  *   of arguments.
  *
- * Initialises Ytstenut-glib library.
+ * Initialises Ytstenut library.
  *
  * Return value: 1 on success, < 0 on failure.
  */
