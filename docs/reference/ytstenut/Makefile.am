@@ -55,9 +55,20 @@ EXTRA_HFILES=
 # Header files to ignore when scanning. Use base file name, no paths
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
 IGNORE_HFILES= \
-	yts-marshal.h \
-	yts-enum-types.h
-
+  empathy-tp-file.h \
+  yts-enum-types.h \
+  yts-marshal.h \
+  yts-private.h \
+  yts-profile.h \
+  yts-profile-proxy.h \
+  yts-profile-adapter.h \
+  yts-profile-impl.h \
+  yts-vp-playable-proxy.h \
+  yts-vp-player-adapter.h \
+  yts-vp-player-proxy.h \
+  yts-vp-transcript-adapter.h \
+  yts-vp-transcript-proxy.h \
+  $(NULL)
 
 # Images to copy into HTML directory.
 # e.g. HTML_IMAGES=$(top_srcdir)/gtk/stock-icons/stock_about_24.png
