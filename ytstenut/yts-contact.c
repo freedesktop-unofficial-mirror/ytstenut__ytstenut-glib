@@ -36,13 +36,12 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/channel.h>
 
-#include "yts-client.h"
+#include "yts-client-internal.h"
 #include "yts-contact-internal.h"
 #include "yts-debug.h"
 #include "yts-enum-types.h"
 #include "yts-error.h"
 #include "yts-marshal.h"
-#include "yts-private.h"
 #include "yts-proxy-service-internal.h"
 #include "yts-types.h"
 
@@ -238,7 +237,7 @@ yts_contact_class_init (YtsContactClass *klass)
    * Since: 0.1
    */
   signals[SERVICE_ADDED] =
-    g_signal_new (I_("service-added"),
+    g_signal_new ("service-added",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_FIRST,
                   G_STRUCT_OFFSET (YtsContactClass, service_added),
@@ -258,7 +257,7 @@ yts_contact_class_init (YtsContactClass *klass)
    * Since: 0.1
    */
   signals[SERVICE_REMOVED] =
-    g_signal_new (I_("service-removed"),
+    g_signal_new ("service-removed",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST,
                   G_STRUCT_OFFSET (YtsContactClass, service_removed),
@@ -363,7 +362,7 @@ yts_contact_constructed (GObject *object)
   if (G_OBJECT_CLASS (yts_contact_parent_class)->constructed)
     G_OBJECT_CLASS (yts_contact_parent_class)->constructed (object);
 
-  connection = _yts_client_get_connection (priv->client);
+  connection = yts_client_get_connection (priv->client);
 
   g_assert (connection);
 
@@ -592,7 +591,7 @@ yts_contact_get_icon (const YtsContact  *contact, const char **mime)
 }
 
 YtsContact *
-_yts_contact_new (YtsClient *client, const char *jid)
+yts_contact_new (YtsClient *client, const char *jid)
 {
   g_return_val_if_fail (YTS_IS_CLIENT (client), NULL);
   g_return_val_if_fail (jid && *jid, NULL);
@@ -921,7 +920,7 @@ yts_contact_ft_filename_cb (TpProxy      *proxy,
  * Sets the channel file transfer item for this item.
  */
 void
-_yts_contact_set_ft_channel (YtsContact *item, TpChannel *channel)
+yts_contact_set_ft_channel (YtsContact *item, TpChannel *channel)
 {
   YtsContactPrivate *priv = item->priv;
 
@@ -1179,7 +1178,7 @@ yts_contact_cancel_file (const YtsContact *item, GFile *gfile)
 }
 
 void
-_yts_contact_add_service (YtsContact *contact, YtsService *service)
+yts_contact_add_service (YtsContact *contact, YtsService *service)
 {
   /*
    * Emit the signal; the run-first signal closure will do the rest
@@ -1192,7 +1191,7 @@ _yts_contact_add_service (YtsContact *contact, YtsService *service)
 }
 
 void
-_yts_contact_remove_service_by_uid (YtsContact *contact, const char *uid)
+yts_contact_remove_service_by_uid (YtsContact *contact, const char *uid)
 {
   YtsContactPrivate *priv = contact->priv;
   YtsService        *service;
@@ -1216,8 +1215,8 @@ _yts_contact_remove_service_by_uid (YtsContact *contact, const char *uid)
     }
 }
 
-gboolean
-_yts_contact_is_empty (YtsContact *contact)
+bool
+yts_contact_is_empty (YtsContact *contact)
 {
   YtsContactPrivate *priv = contact->priv;
 

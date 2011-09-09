@@ -95,15 +95,19 @@ source_c =						\
 		$(NULL)
 
 private_h = \
-		$(srcdir)/yts-private.h \
-		\
+		$(srcdir)/yts-client-internal.h \
 		$(srcdir)/yts-contact-internal.h \
+		$(srcdir)/yts-contact-internal.h \
+		$(srcdir)/yts-metadata-internal.h \
+		$(srcdir)/yts-metadata-service-internal.h \
+		$(srcdir)/yts-proxy-internal.h \
+		$(srcdir)/yts-proxy-service-internal.h \
+		$(srcdir)/yts-roster-internal.h \
+		\
 		$(srcdir)/profile/yts-profile.h \
 		$(srcdir)/profile/yts-profile-impl.h \
 		$(srcdir)/profile/yts-profile-proxy.h \
 		$(srcdir)/profile/yts-profile-adapter.h \
-		$(srcdir)/yts-proxy-internal.h \
-		$(srcdir)/yts-proxy-service-internal.h \
 		\
 		$(srcdir)/video-profile/yts-vp-playable-proxy.h \
 		$(srcdir)/video-profile/yts-vp-player-adapter.h \

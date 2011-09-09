@@ -56,13 +56,6 @@ typedef struct {
 GType
 yts_proxy_service_get_type (void);
 
-YtsService *
-yts_proxy_service_new (YtsContact  *contact,
-                        char const   *service_uid,
-                        char const   *type,
-                        char const  **capabilities,
-                        GHashTable   *names);
-
 bool
 yts_proxy_service_create_proxy (YtsProxyService *self,
                                  char const       *capability);

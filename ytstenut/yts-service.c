@@ -27,11 +27,11 @@
  */
 
 #include <telepathy-glib/util.h>
+#include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
 
 #include "yts-contact.h"
 #include "yts-debug.h"
 #include "yts-marshal.h"
-#include "yts-private.h"
 #include "yts-service.h"
 
 static void yts_service_dispose (GObject *object);
@@ -245,7 +245,7 @@ yts_service_constructed (GObject *object)
    * -- this is bit cumbersome, requiring nested hash table lookup.
    */
   client = yts_contact_get_client (priv->contact);
-  status = _yts_client_get_tp_status (client);
+  status = yts_client_get_tp_status (client);
   g_return_if_fail (status);
 
   if (priv->caps && *priv->caps &&

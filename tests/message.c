@@ -18,9 +18,8 @@
  * Authored by: Tomas Frydrych <tf@linux.intel.com>
  */
 
-#include <ytstenut/yts-message.h>
-#include <ytstenut/yts-private.h>
-#include <string.h>
+#include <ytstenut/ytstenut.h>
+#include "ytstenut/yts-metadata-internal.h"
 
 int
 main (int argc, char **argv)
@@ -52,7 +51,7 @@ main (int argc, char **argv)
 
   rest_xml_node_add_attr (child, "ca1", "cv1");
 
-  h = _yts_metadata_extract (mdata, &body);
+  h = yts_metadata_extract (mdata, &body);
   g_assert (h);
   g_assert_cmpstr (body, ==, "<c1 ca1='cv1'></c1>");
 

@@ -21,7 +21,7 @@
 #include <stdbool.h>
 #include "yts-capability.h"
 #include "yts-marshal.h"
-#include "yts-proxy.h"
+#include "yts-proxy-internal.h"
 
 static void
 _capability_interface_init (YtsCapability *interface);

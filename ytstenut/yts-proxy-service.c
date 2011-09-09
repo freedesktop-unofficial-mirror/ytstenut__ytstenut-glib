@@ -20,9 +20,9 @@
 
 #include <stdbool.h>
 #include "yts-capability.h"
+#include "yts-client-internal.h"
 #include "yts-invocation-message.h"
 #include "yts-marshal.h"
-#include "yts-private.h"
 #include "yts-proxy-internal.h"
 #include "yts-proxy-service-internal.h"
 
@@ -154,11 +154,11 @@ yts_proxy_service_init (YtsProxyService *self)
 }
 
 YtsService *
-yts_proxy_service_new (YtsContact  *contact,
-                        char const   *service_uid,
-                        char const   *type,
-                        char const  **capabilities,
-                        GHashTable   *names)
+yts_proxy_service_new (YtsContact         *contact,
+                        char const        *service_uid,
+                        char const        *type,
+                        char const *const *capabilities,
+                        GHashTable        *names)
 {
   return g_object_new (YTS_TYPE_PROXY_SERVICE,
                        "contact", contact,
@@ -195,7 +195,7 @@ _profile_invoke_service (YtsProfile      *profile,
   // TODO maybe we should attach the invocation-id to the contact
   // and handle the timeout here, so handling the response is simpler.
 
-  _yts_client_send_message (client, contact, uid, message);
+  yts_client_send_message (client, contact, uid, message);
 
   g_object_unref (message);
   g_free (fqc_id);
@@ -240,7 +240,7 @@ _proxy_invoke_service (YtsProxy        *proxy,
   // TODO maybe we should attach the invocation-id to the contact
   // and handle the timeout here, so handling the response is simpler.
 
-  _yts_client_send_message (client, contact, uid, message);
+  yts_client_send_message (client, contact, uid, message);
 
   g_object_unref (message);
 }

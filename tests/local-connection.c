@@ -18,13 +18,7 @@
  * Authored by: Tomas Frydrych <tf@linux.intel.com>
  */
 
-#include <ytstenut/yts-metadata-service.h>
-#include <ytstenut/yts-private.h>
-#include <ytstenut/yts-client.h>
-#include <ytstenut/yts-status.h>
-#include <ytstenut/yts-main.h>
-
-#include <string.h>
+#include <ytstenut/ytstenut.h>
 
 #define TEST_LENGTH 5
 

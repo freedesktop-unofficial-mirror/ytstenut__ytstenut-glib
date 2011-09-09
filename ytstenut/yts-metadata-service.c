@@ -30,14 +30,13 @@
 #include <string.h>
 #include <telepathy-glib/util.h>
 
-#include "yts-metadata-service.h"
-
-#include "yts-client.h"
+#include "yts-client-internal.h"
 #include "yts-debug.h"
 #include "yts-invocation-message.h"
 #include "yts-marshal.h"
 #include "yts-message.h"
-#include "yts-private.h"
+#include "yts-metadata-internal.h"
+#include "yts-metadata-service-internal.h"
 #include "yts-status.h"
 
 static void yts_metadata_service_dispose (GObject *object);
@@ -117,7 +116,7 @@ yts_metadata_service_class_init (YtsMetadataServiceClass *klass)
    * Since: 0.1
    */
   signals[RECEIVED_STATUS] =
-    g_signal_new (I_("status"),
+    g_signal_new ("status",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST,
                   G_STRUCT_OFFSET (YtsMetadataServiceClass, received_status),
@@ -137,7 +136,7 @@ yts_metadata_service_class_init (YtsMetadataServiceClass *klass)
    * Since: 0.1
    */
   signals[RECEIVED_MESSAGE] =
-    g_signal_new (I_("received-message"),
+    g_signal_new ("received-message",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST,
                   G_STRUCT_OFFSET (YtsMetadataServiceClass, received_message),
@@ -163,7 +162,7 @@ yts_metadata_service_notify_status_xml_cb (YtsMetadataService *self,
       priv->status = NULL;
     }
 
-  priv->status = (YtsStatus*) _yts_metadata_new_from_xml (xml);
+  priv->status = (YtsStatus*) yts_metadata_new_from_xml (xml);
 
   if (!YTS_IS_STATUS (priv->status))
     g_warning ("Failed to construct YtsStatus object");
@@ -239,13 +238,13 @@ yts_metadata_service_finalize (GObject *object)
 }
 
 void
-_yts_metadata_service_received_status (YtsMetadataService *service,
+yts_metadata_service_received_status (YtsMetadataService *service,
                                         const char          *xml)
 {
   YtsMetadataServicePrivate *priv = service->priv;
   YtsStatus                 *status;
 
-  status = (YtsStatus*) _yts_metadata_new_from_xml (xml);
+  status = (YtsStatus*) yts_metadata_new_from_xml (xml);
 
   if (priv->status)
     g_object_unref (priv->status);
@@ -258,12 +257,12 @@ _yts_metadata_service_received_status (YtsMetadataService *service,
 }
 
 void
-_yts_metadata_service_received_message (YtsMetadataService *service,
+yts_metadata_service_received_message (YtsMetadataService *service,
                                          const char          *xml)
 {
   YtsMessage *message;
 
-  message = (YtsMessage*) _yts_metadata_new_from_xml (xml);
+  message = (YtsMessage*) yts_metadata_new_from_xml (xml);
 
   g_return_if_fail (YTS_IS_MESSAGE (message));
 
@@ -279,7 +278,7 @@ yts_service_metadata_send_message (YtsMetadataService *service,
   YtsClient  *client  = yts_contact_get_client (contact);
   const char  *uid     = yts_service_get_uid (s);
 
-  return _yts_client_send_message (client, contact, uid, YTS_METADATA (message));
+  return yts_client_send_message (client, contact, uid, YTS_METADATA (message));
 }
 
 /**
@@ -317,11 +316,11 @@ yts_metadata_service_send_metadata (YtsMetadataService *service,
 }
 
 YtsService *
-_yts_metadata_service_new (YtsContact *contact,
-                            const char  *uid,
-                            const char  *type,
-                            const char **caps,
-                            GHashTable  *names)
+yts_metadata_service_new (YtsContact        *contact,
+                          char const        *uid,
+                          char const        *type,
+                          char const *const *caps,
+                          GHashTable        *names)
 {
   g_return_val_if_fail (uid && *uid, NULL);
 

@@ -26,7 +26,7 @@
  */
 
 #include "yts-message.h"
-#include "yts-private.h"
+#include "yts-metadata-internal.h"
 
 static void yts_message_dispose (GObject *object);
 static void yts_message_finalize (GObject *object);
@@ -151,7 +151,7 @@ yts_message_new (const char ** attributes)
 
   g_return_val_if_fail (top, NULL);
 
-  mdata = _yts_metadata_new_from_node (top, attributes);
+  mdata = yts_metadata_new_from_node (top, attributes);
 
   g_return_val_if_fail (YTS_IS_MESSAGE (mdata), NULL);
 

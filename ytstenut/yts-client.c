@@ -42,7 +42,7 @@
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
 
-#include "yts-client.h"
+#include "yts-client-internal.h"
 #include "yts-contact-internal.h"
 #include "yts-debug.h"
 #include "yts-enum-types.h"
@@ -51,10 +51,10 @@
 #include "yts-event-message.h"
 #include "yts-invocation-message.h"
 #include "yts-marshal.h"
-#include "yts-metadata.h"
-#include "yts-private.h"
+#include "yts-metadata-internal.h"
 #include "yts-response-message.h"
-#include "yts-roster.h"
+#include "yts-roster-internal.h"
+#include "yts-service.h"
 #include "yts-service-adapter.h"
 #include "yts-types.h"
 
@@ -521,7 +521,7 @@ yts_client_ft_accept_cb (TpProxy      *proxy,
                                TP_PROP_CHANNEL_INITIATOR_HANDLE,
                                NULL);
 
-  if ((item = _yts_roster_find_contact_by_handle (priv->roster, ihandle)))
+  if ((item = yts_roster_find_contact_by_handle (priv->roster, ihandle)))
     {
       jid = yts_contact_get_jid (item);
     }
@@ -579,7 +579,7 @@ yts_client_ft_handle_state (YtsClient *client, TpChannel *proxy, guint state)
       ihandle = tp_asv_get_uint32 (props,
                                    TP_PROP_CHANNEL_INITIATOR_HANDLE,
                                    NULL);
-      item = _yts_roster_find_contact_by_handle (priv->roster, ihandle);
+      item = yts_roster_find_contact_by_handle (priv->roster, ihandle);
 
       switch (state)
         {
@@ -712,10 +712,10 @@ yts_client_channel_cb (TpConnection *proxy,
 
           ch = tp_channel_new (proxy, path, type, handle_type, handle, &error);
 
-          if ((item = _yts_roster_find_contact_by_handle (priv->roster,
+          if ((item = yts_roster_find_contact_by_handle (priv->roster,
                                                            handle)))
             {
-              _yts_contact_set_ft_channel (item, ch);
+              yts_contact_set_ft_channel (item, ch);
 
               tp_proxy_prepare_async (ch, features,
                                       yts_client_ft_core_cb, client);
@@ -794,7 +794,7 @@ yts_client_cleanup_connection_resources (YtsClient *client)
    * Empty roster
    */
   if (priv->roster)
-    _yts_roster_clear (priv->roster);
+    yts_roster_clear (priv->roster);
 
   if (priv->connection)
     {
@@ -811,7 +811,7 @@ yts_client_disconnected (YtsClient *client)
   yts_client_cleanup_connection_resources (client);
 
   if (priv->reconnect)
-    _yts_client_reconnect_after (client, RECONNECT_DELAY);
+    yts_client_reconnect_after (client, RECONNECT_DELAY);
 }
 
 static void
@@ -956,7 +956,7 @@ yts_client_class_init (YtsClientClass *klass)
    * Since: 0.1
    */
   signals[AUTHENTICATED] =
-    g_signal_new (I_("authenticated"),
+    g_signal_new ("authenticated",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_FIRST,
                   G_STRUCT_OFFSET (YtsClientClass, authenticated),
@@ -974,7 +974,7 @@ yts_client_class_init (YtsClientClass *klass)
    * Since: 0.1
    */
   signals[READY] =
-    g_signal_new (I_("ready"),
+    g_signal_new ("ready",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_FIRST,
                   G_STRUCT_OFFSET (YtsClientClass, ready),
@@ -992,7 +992,7 @@ yts_client_class_init (YtsClientClass *klass)
    * Since: 0.1
    */
   signals[DISCONNECTED] =
-    g_signal_new (I_("disconnected"),
+    g_signal_new ("disconnected",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_FIRST,
                   G_STRUCT_OFFSET (YtsClientClass, disconnected),
@@ -1011,7 +1011,7 @@ yts_client_class_init (YtsClientClass *klass)
    * Since: 0.1
    */
   signals[MESSAGE] =
-    g_signal_new (I_("message"),
+    g_signal_new ("message",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST,
                   G_STRUCT_OFFSET (YtsClientClass, message),
@@ -1033,7 +1033,7 @@ yts_client_class_init (YtsClientClass *klass)
    * Since: 0.1
    */
   signals[ERROR] =
-    g_signal_new (I_("error"),
+    g_signal_new ("error",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST,
                   0,
@@ -1059,7 +1059,7 @@ yts_client_class_init (YtsClientClass *klass)
    * Since: 0.1
    */
   signals[INCOMING_FILE] =
-    g_signal_new (I_("incoming-file"),
+    g_signal_new ("incoming-file",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST,
                   G_STRUCT_OFFSET (YtsClientClass, incoming_file),
@@ -1085,7 +1085,7 @@ yts_client_class_init (YtsClientClass *klass)
    * Since: 0.1
    */
   signals[INCOMING_FILE_FINISHED] =
-    g_signal_new (I_("incoming-file-finished"),
+    g_signal_new ("incoming-file-finished",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST,
                   0,
@@ -1481,7 +1481,7 @@ yts_client_yts_channels_received_cb (TpYtsClient *tp_client,
 
               if (!dispatched)
                 {
-                  YtsMetadata *msg = _yts_metadata_new_from_xml (xml);
+                  YtsMetadata *msg = yts_metadata_new_from_xml (xml);
                   g_signal_emit (client, signals[MESSAGE], 0, msg);
                   g_object_unref (msg);
                 }
@@ -1576,8 +1576,8 @@ yts_client_constructed (GObject *object)
   if (G_OBJECT_CLASS (yts_client_parent_class)->constructed)
     G_OBJECT_CLASS (yts_client_parent_class)->constructed (object);
 
-  priv->roster   = _yts_roster_new (client);
-  priv->unwanted = _yts_roster_new (client);
+  priv->roster   = yts_roster_new (client);
+  priv->unwanted = yts_roster_new (client);
 
   if (!priv->uid || !*priv->uid)
     g_error ("UID must be set at construction time.");
@@ -1835,14 +1835,14 @@ yts_client_reconnect_cb (gpointer data)
 
 
 /*
- * _yts_client_reconnect_after:
+ * yts_client_reconnect_after:
  * @client: #YtsClient
  * @after_seconds: #guint
  *
  * Attempst to reconnect to server after given number of seconds.
  */
 void
-_yts_client_reconnect_after (YtsClient *client, guint after_seconds)
+yts_client_reconnect_after (YtsClient *client, guint after_seconds)
 {
   YtsClientPrivate *priv;
 
@@ -1869,7 +1869,7 @@ yts_client_connected_cb (TpConnection *proxy,
       g_warning (G_STRLOC ": %s: %s", __FUNCTION__, error->message);
 
       yts_client_disconnect (client);
-      _yts_client_reconnect_after (client, RECONNECT_DELAY);
+      yts_client_reconnect_after (client, RECONNECT_DELAY);
     }
 }
 
@@ -1984,7 +1984,7 @@ yts_client_process_one_service (YtsClient        *client,
   YTS_NOTE (CLIENT, "Using roster %s",
              roster == priv->roster ? "wanted" : "unwanted");
 
-  _yts_roster_add_service (roster, jid, sid, type,
+  yts_roster_add_service (roster, jid, sid, type,
                             (const char**)caps, names);
 
   return TRUE;
@@ -2008,7 +2008,7 @@ yts_client_service_removed_cb (TpYtsStatus *self,
 {
   YtsClientPrivate *priv = client->priv;
 
-  _yts_roster_remove_service_by_id (priv->roster, jid, sid);
+  yts_roster_remove_service_by_id (priv->roster, jid, sid);
 }
 
 static void
@@ -2567,8 +2567,8 @@ yts_client_refresh_roster (YtsClient *client)
   if (!priv->tp_status)
     return;
 
-  _yts_roster_clear (priv->roster);
-  _yts_roster_clear (priv->unwanted);
+  yts_roster_clear (priv->roster);
+  yts_roster_clear (priv->unwanted);
 
   yts_client_process_status (client);
 }
@@ -2757,7 +2757,7 @@ yts_client_get_uid (const YtsClient *client)
 }
 
 TpConnection *
-_yts_client_get_connection (YtsClient *client)
+yts_client_get_connection (YtsClient *client)
 {
   YtsClientPrivate *priv;
 
@@ -2769,7 +2769,7 @@ _yts_client_get_connection (YtsClient *client)
 }
 
 TpYtsStatus *
-_yts_client_get_tp_status (YtsClient *client)
+yts_client_get_tp_status (YtsClient *client)
 {
   YtsClientPrivate *priv;
 
@@ -3087,7 +3087,7 @@ yts_client_notify_tp_contact_cb (YtsContact              *contact,
 }
 
 YtsError
-_yts_client_send_message (YtsClient   *client,
+yts_client_send_message (YtsClient   *client,
                            YtsContact  *contact,
                            const char   *uid,
                            YtsMetadata *message)
@@ -3097,7 +3097,7 @@ _yts_client_send_message (YtsClient   *client,
   YtsError                 e;
   char                     *xml = NULL;
 
-  if (!(attrs = _yts_metadata_extract (message, &xml)))
+  if (!(attrs = yts_metadata_extract (message, &xml)))
     {
       g_warning ("Failed to extract content from YtsMessage object");
 
@@ -3172,7 +3172,7 @@ _adapter_event (YtsServiceAdapter  *adapter,
     GList const *iter;
     for (iter = proxy_list->list; iter; iter = iter->next) {
       ProxyData const *proxy_data = (ProxyData const *) iter->data;
-      _yts_client_send_message (self,
+      yts_client_send_message (self,
                                  YTS_CONTACT (proxy_data->contact),
                                  proxy_data->proxy_id,
                                  message);
@@ -3205,7 +3205,7 @@ _adapter_response (YtsServiceAdapter *adapter,
   message = yts_response_message_new (fqc_id,
                                        invocation_id,
                                        return_value);
-  _yts_client_send_message (self,
+  yts_client_send_message (self,
                              invocation->contact,
                              invocation->proxy_id,
                              message);

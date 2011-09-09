@@ -25,8 +25,7 @@
  * #YtsMetadata is a base class for Ytstenut metadata classes.
  */
 
-#include "yts-metadata.h"
-#include "yts-private.h"
+#include "yts-metadata-internal.h"
 #include "yts-message.h"
 #include "yts-status.h"
 
@@ -270,14 +269,14 @@ yts_metadata_get_root_node (YtsMetadata *self)
 }
 
 /*
- * _yts_metadata_new_from_xml:
+ * yts_metadata_new_from_xml:
  * @xml: the xml the metatdata object is to represent
  *
  * Constructs a new #YtsMetadata object from the xml snippet; depending on the
  * xml, this is either #YtsMessage or #YtsStatus.
  */
 YtsMetadata *
-_yts_metadata_new_from_xml (const char *xml)
+yts_metadata_new_from_xml (const char *xml)
 {
   YtsMetadata  *mdata;
   RestXmlParser *parser;
@@ -293,14 +292,14 @@ _yts_metadata_new_from_xml (const char *xml)
 
   /* We do not unref the node, the object takes over the reference */
 
-  mdata = _yts_metadata_new_from_node (node, NULL);
+  mdata = yts_metadata_new_from_node (node, NULL);
   mdata->priv->readonly = TRUE;
 
   return mdata;
 }
 
 /*
- * _yts_metadata_new_from_node:
+ * yts_metadata_new_from_node:
  * @node: #RestXmlNode
  * @attributes: %NULL terminated array of name/value pairs for additional
  * attributes, can be %NULL
@@ -311,7 +310,8 @@ _yts_metadata_new_from_xml (const char *xml)
  * #YtsMessage or #YtsStatus, depending on the top level node.
  */
 YtsMetadata *
-_yts_metadata_new_from_node (RestXmlNode *node, const char **attributes)
+yts_metadata_new_from_node (RestXmlNode       *node,
+                            char const *const *attributes)
 {
   YtsMetadata  *mdata = NULL;
 
@@ -331,7 +331,7 @@ _yts_metadata_new_from_node (RestXmlNode *node, const char **attributes)
     {
       if (attributes)
         {
-          const char **p;
+          char const *const *p;
           gboolean     have_caps     = FALSE;
           gboolean     have_activity = FALSE;
           gboolean     have_xmlns    = FALSE;
@@ -462,7 +462,7 @@ yts_metadata_to_string (YtsMetadata *self)
 }
 
 /*
- * _yts_metadata_extract:
+ * yts_metadata_extract:
  * @self: #YtsMetadata
  * @body: location to store the body of the metadata; free with g_free() when no
  * longer needed.
@@ -476,7 +476,7 @@ yts_metadata_to_string (YtsMetadata *self)
  * g_hash_table_unref() when no longer needed.
  */
 GHashTable *
-_yts_metadata_extract (YtsMetadata *self, char **body)
+yts_metadata_extract (YtsMetadata *self, char **body)
 {
   YtsMetadataPrivate *priv;
   RestXmlNode         *n0;

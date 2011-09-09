@@ -18,9 +18,7 @@
  * Authored by: Tomas Frydrych <tf@linux.intel.com>
  */
 
-#include <ytstenut/yts-status.h>
-#include <ytstenut/yts-message.h>
-#include <string.h>
+#include <ytstenut/ytstenut.h>
 
 int
 main (int argc, char **argv)

@@ -28,12 +28,12 @@
  */
 
 #include "yts-client.h"
-#include "yts-contact.h"
+#include "yts-contact-internal.h"
 #include "yts-debug.h"
 #include "yts-marshal.h"
-#include "yts-private.h"
+#include "yts-metadata-service-internal.h"
 #include "yts-proxy-service.h"
-#include "yts-roster.h"
+#include "yts-roster-internal.h"
 
 #include <string.h>
 #include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
@@ -118,7 +118,7 @@ yts_roster_class_init (YtsRosterClass *klass)
    * Since: 0.1
    */
   signals[CONTACT_ADDED] =
-    g_signal_new (I_("contact-added"),
+    g_signal_new ("contact-added",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST,
                   0,
@@ -139,7 +139,7 @@ yts_roster_class_init (YtsRosterClass *klass)
    * Since: 0.1
    */
   signals[CONTACT_REMOVED] =
-    g_signal_new (I_("contact-removed"),
+    g_signal_new ("contact-removed",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST,
                   0,
@@ -158,7 +158,7 @@ yts_roster_class_init (YtsRosterClass *klass)
    * Since: 0.1
    */
   signals[SERVICE_ADDED] =
-    g_signal_new (I_("service-added"),
+    g_signal_new ("service-added",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST,
                   0,
@@ -179,7 +179,7 @@ yts_roster_class_init (YtsRosterClass *klass)
    * Since: 0.1
    */
   signals[SERVICE_REMOVED] =
-    g_signal_new (I_("service-removed"),
+    g_signal_new ("service-removed",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST,
                   0,
@@ -294,7 +294,7 @@ yts_roster_get_contacts (YtsRoster *roster)
  * For use by #YtsClient.
  */
 void
-_yts_roster_remove_service_by_id (YtsRoster *roster,
+yts_roster_remove_service_by_id (YtsRoster *roster,
                                    const char *jid,
                                    const char *uid)
 {
@@ -312,9 +312,9 @@ _yts_roster_remove_service_by_id (YtsRoster *roster,
       return;
     }
 
-  _yts_contact_remove_service_by_uid (contact, uid);
+  yts_contact_remove_service_by_uid (contact, uid);
 
-  emit = _yts_contact_is_empty (contact);
+  emit = yts_contact_is_empty (contact);
 
   if (emit)
     {
@@ -335,7 +335,7 @@ _yts_roster_remove_service_by_id (YtsRoster *roster,
  * Return value: (transfer none): #YtsContact if found, or %NULL.
  */
 YtsContact *
-_yts_roster_find_contact_by_handle (YtsRoster *roster, guint handle)
+yts_roster_find_contact_by_handle (YtsRoster *roster, guint handle)
 {
   YtsRosterPrivate *priv;
   GHashTableIter     iter;
@@ -405,7 +405,7 @@ yts_roster_find_contact_by_jid (YtsRoster *roster, const char *jid)
  * forecefully run.
  */
 void
-_yts_roster_clear (YtsRoster *roster)
+yts_roster_clear (YtsRoster *roster)
 {
   YtsRosterPrivate *priv;
   GHashTableIter     iter;
@@ -468,7 +468,7 @@ yts_roster_find_contact_by_capability (YtsRoster *roster,
 }
 
 YtsRoster*
-_yts_roster_new (YtsClient *client)
+yts_roster_new (YtsClient *client)
 {
   return g_object_new (YTS_TYPE_ROSTER,
                        "client", client,
@@ -515,12 +515,12 @@ yts_roster_contact_service_added_cb (YtsContact *contact,
 /* FIXME this should probably go into some sort of factory.
  * Then we'll probably also use some smarter lookup algorithm. */
 static YtsService *
-create_service (YtsRoster   *self,
-                YtsContact  *contact,
-                char const   *sid,
-                char const   *type,
-                char const  **caps,
-                GHashTable   *names)
+create_service (YtsRoster         *self,
+                YtsContact        *contact,
+                char const        *sid,
+                char const        *type,
+                char const *const *caps,
+                GHashTable        *names)
 {
   static char const *known_caps[] = {
     "org.freedesktop.ytstenut.VideoProfile.Content",
@@ -545,16 +545,16 @@ create_service (YtsRoster   *self,
         }
     }
 
-  return _yts_metadata_service_new (contact, sid, type, caps, names);
+  return yts_metadata_service_new (contact, sid, type, caps, names);
 }
 
 void
-_yts_roster_add_service (YtsRoster  *roster,
-                          const char  *jid,
-                          const char  *sid,
-                          const char  *type,
-                          const char **caps,
-                          GHashTable  *names)
+yts_roster_add_service (YtsRoster           *roster,
+                          const char        *jid,
+                          const char        *sid,
+                          const char        *type,
+                          char const *const *caps,
+                          GHashTable        *names)
 {
   YtsRosterPrivate *priv;
   YtsContact       *contact;
@@ -568,7 +568,7 @@ _yts_roster_add_service (YtsRoster  *roster,
     {
       YTS_NOTE (ROSTER, "Creating new contact for %s", jid);
 
-      contact = _yts_contact_new (priv->client, jid);
+      contact = yts_contact_new (priv->client, jid);
 
       g_signal_connect (contact, "service-added",
                         G_CALLBACK (yts_roster_contact_service_added_cb),
@@ -587,7 +587,7 @@ _yts_roster_add_service (YtsRoster  *roster,
 
   service = create_service (roster, contact, sid, type, caps, names);
 
-  _yts_contact_add_service (contact, service);
+  yts_contact_add_service (contact, service);
 
   g_object_unref (service);
 }

@@ -31,7 +31,6 @@
 #include <rest/rest-xml-node.h>
 
 #include "yts-status.h"
-#include "yts-private.h"
 
 static void yts_status_dispose (GObject *object);
 static void yts_status_finalize (GObject *object);
@@ -156,7 +155,7 @@ yts_status_new (const char ** attributes)
 
   g_return_val_if_fail (top, NULL);
 
-  mdata = _yts_metadata_new_from_node (top, attributes);
+  mdata = yts_metadata_new_from_node (top, attributes);
 
   g_return_val_if_fail (YTS_IS_STATUS (mdata), NULL);
 

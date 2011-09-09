@@ -19,7 +19,7 @@
  */
 
 #include "yts-capability.h"
-#include "yts-private.h"
+#include "yts-client-internal.h"
 #include "yts-profile.h"
 #include "yts-profile-impl.h"
 #include "yts-response-message.h"
@@ -122,7 +122,7 @@ _register_proxy (YtsProfile  *self,
   message = yts_response_message_new (capability,
                                        invocation_id,
                                        return_value);
-  _yts_client_send_message (priv->client, contact, proxy_id, message);
+  yts_client_send_message (priv->client, contact, proxy_id, message);
   g_object_unref (message);
   g_variant_unref (return_value);
 }

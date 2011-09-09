@@ -18,10 +18,9 @@
  * Authored by: Tomas Frydrych <tf@linux.intel.com>
  */
 
-#include <ytstenut/yts-metadata-service.h>
-#include <ytstenut/yts-private.h>
-#include <ytstenut/yts-status.h>
-#include <string.h>
+#include <ytstenut/ytstenut.h>
+#include "ytstenut/yts-metadata-internal.h"
+#include "ytstenut/yts-metadata-service-internal.h"
 
 #define MYUID       "org.freedesktop.ytstenut.TestService"
 #define STATUS_XML  "<status a1='v1' a2='v2'></status>"
@@ -77,24 +76,24 @@ main (int argc, char **argv)
 
   g_assert_cmpstr (MYUID, ==, uid);
 
-  status = (YtsStatus*)_yts_metadata_new_from_xml (STATUS_XML);
+  status = (YtsStatus*)yts_metadata_new_from_xml (STATUS_XML);
   g_assert (YTS_IS_STATUS (status));
 
   g_signal_connect (service, "status",
                     G_CALLBACK (status_cb), status);
 
-  _yts_metadata_service_received_status ((YtsMetadataService*)service,
+  yts_metadata_service_received_status ((YtsMetadataService*)service,
                                           STATUS_XML);
 
   g_assert (got_status_signal);
 
-  message = (YtsMessage*)_yts_metadata_new_from_xml (MESSAGE_XML);
+  message = (YtsMessage*)yts_metadata_new_from_xml (MESSAGE_XML);
   g_assert (YTS_IS_MESSAGE (message));
 
   g_signal_connect (service, "message",
                     G_CALLBACK (message_cb), message);
 
-  _yts_metadata_service_received_message ((YtsMetadataService*)service,
+  yts_metadata_service_received_message ((YtsMetadataService*)service,
                                            MESSAGE_XML);
 
   g_assert (got_message_signal);

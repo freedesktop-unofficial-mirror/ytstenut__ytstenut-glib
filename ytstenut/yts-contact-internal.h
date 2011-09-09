@@ -24,6 +24,10 @@
 #include <stdbool.h>
 #include <ytstenut/yts-contact.h>
 
+YtsContact *
+yts_contact_new (YtsClient  *client,
+                 char const *jid);
+
 bool
 yts_contact_dispatch_event (YtsContact  *self,
                             char const  *capability,
@@ -35,6 +39,21 @@ yts_contact_dispatch_response (YtsContact *self,
                                char const *capability,
                                char const *invocation_id,
                                GVariant   *response);
+
+void
+yts_contact_add_service (YtsContact *contact,
+                         YtsService *service);
+
+void
+yts_contact_remove_service_by_uid (YtsContact *contact,
+                                   char const *uid);
+
+bool
+yts_contact_is_empty (YtsContact *contact);
+
+void
+yts_contact_set_ft_channel (YtsContact  *item,
+                            TpChannel   *channel);
 
 #endif /* YTS_CONTACT_INTERNAL_H */
 
