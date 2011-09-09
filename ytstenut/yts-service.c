@@ -29,10 +29,12 @@
 #include <telepathy-glib/util.h>
 #include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
 
+#include "yts-client-internal.h"
 #include "yts-contact.h"
 #include "yts-debug.h"
 #include "yts-marshal.h"
 #include "yts-service.h"
+#include "config.h"
 
 static void yts_service_dispose (GObject *object);
 static void yts_service_finalize (GObject *object);

@@ -27,16 +27,17 @@
  * application mesh.
  */
 
+#include <string.h>
+#include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
+
 #include "yts-client.h"
 #include "yts-contact-internal.h"
 #include "yts-debug.h"
 #include "yts-marshal.h"
 #include "yts-metadata-service-internal.h"
-#include "yts-proxy-service.h"
+#include "yts-proxy-service-internal.h"
 #include "yts-roster-internal.h"
-
-#include <string.h>
-#include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
+#include "config.h"
 
 static void yts_roster_dispose (GObject *object);
 static void yts_roster_finalize (GObject *object);

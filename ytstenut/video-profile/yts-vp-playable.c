@@ -19,6 +19,7 @@
  */
 
 #include "yts-vp-playable.h"
+#include "config.h"
 
 G_DEFINE_INTERFACE (YtsVPPlayable,
                     yts_vp_playable,

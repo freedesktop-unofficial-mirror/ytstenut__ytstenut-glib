@@ -22,6 +22,7 @@
 
 #include "yts-profile.h"
 #include "yts-profile-adapter.h"
+#include "config.h"
 
 G_DEFINE_TYPE (YtsProfileAdapter,
                yts_profile_adapter,

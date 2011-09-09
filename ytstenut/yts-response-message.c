@@ -19,7 +19,9 @@
  */
 
 #include <stdbool.h>
+
 #include "yts-response-message.h"
+#include "config.h"
 
 G_DEFINE_TYPE (YtsResponseMessage, yts_response_message, YTS_TYPE_METADATA)
 

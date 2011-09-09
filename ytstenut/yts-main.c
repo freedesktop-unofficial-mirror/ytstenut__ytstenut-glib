@@ -30,10 +30,6 @@
 
 #define _GNU_SOURCE /* for getresuid(), getresgid() */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include <unistd.h>
 
 #if 0
@@ -44,13 +40,13 @@
 #endif
 
 #include <locale.h>
+#include <string.h>
 #include <glib.h>
 #include <glib-object.h>
-#include <unistd.h>
-#include <string.h>
 
 #include "yts-debug.h"
 #include "yts-main.h"
+#include "config.h"
 
 static void yts_base_init (void);
 static int  yts_init_real (GError **error);

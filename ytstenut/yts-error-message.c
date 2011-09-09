@@ -19,7 +19,9 @@
  */
 
 #include <stdbool.h>
+
 #include "yts-error-message.h"
+#include "config.h"
 
 G_DEFINE_TYPE (YtsErrorMessage, yts_error_message, YTS_TYPE_METADATA)
 

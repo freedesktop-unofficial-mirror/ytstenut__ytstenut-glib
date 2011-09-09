@@ -36,6 +36,7 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/channel.h>
 
+#include "empathy-tp-file.h"
 #include "yts-client-internal.h"
 #include "yts-contact-internal.h"
 #include "yts-debug.h"
@@ -44,8 +45,7 @@
 #include "yts-marshal.h"
 #include "yts-proxy-service-internal.h"
 #include "yts-types.h"
-
-#include "empathy-tp-file.h"
+#include "config.h"
 
 static void yts_c_pending_file_free (gpointer file);
 

@@ -22,6 +22,7 @@
 #include "yts-marshal.h"
 #include "yts-vp-playable.h"
 #include "yts-vp-player.h"
+#include "config.h"
 
 G_DEFINE_INTERFACE (YtsVPPlayer,
                     yts_vp_player,

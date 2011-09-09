@@ -30,7 +30,9 @@
 #include <string.h>
 #include <rest/rest-xml-node.h>
 
+#include "yts-metadata-internal.h"
 #include "yts-status.h"
+#include "config.h"
 
 static void yts_status_dispose (GObject *object);
 static void yts_status_finalize (GObject *object);

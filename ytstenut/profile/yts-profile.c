@@ -22,6 +22,7 @@
 #include "yts-marshal.h"
 #include "yts-profile.h"
 #include "yts-proxy.h"
+#include "config.h"
 
 G_DEFINE_INTERFACE (YtsProfile,
                     yts_profile,

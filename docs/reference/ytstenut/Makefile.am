@@ -54,18 +54,21 @@ EXTRA_HFILES=
 
 # Header files to ignore when scanning. Use base file name, no paths
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
-IGNORE_HFILES= \
+IGNORE_HFILES = \
   empathy-tp-file.h \
+  yts-client-internal.h \
   yts-contact-internal.h \
   yts-enum-types.h \
   yts-marshal.h \
-  yts-private.h \
+  yts-metadata-internal.h \
+  yts-metadata-service-internal.h \
   yts-profile.h \
   yts-profile-proxy.h \
   yts-profile-adapter.h \
   yts-profile-impl.h \
   yts-proxy-internal.h \
   yts-proxy-service-internal.h \
+  yts-roster-internal.h \
   yts-vp-playable-proxy.h \
   yts-vp-player-adapter.h \
   yts-vp-player-proxy.h \

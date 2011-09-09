@@ -32,11 +32,8 @@
  * of a unique identifier and a status code.
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include "yts-error.h"
+#include "config.h"
 
 /**
  * yts_error_get_code:

@@ -20,6 +20,7 @@
 
 #include "yts-capability.h"
 #include "yts-vp-transfer.h"
+#include "config.h"
 
 G_DEFINE_INTERFACE (YtsVPTransfer,
                     yts_vp_transfer,

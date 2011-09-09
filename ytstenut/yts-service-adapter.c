@@ -21,6 +21,7 @@
 #include "yts-capability.h"
 #include "yts-marshal.h"
 #include "yts-service-adapter.h"
+#include "config.h"
 
 G_DEFINE_TYPE (YtsServiceAdapter, yts_service_adapter, G_TYPE_OBJECT)
 

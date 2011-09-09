@@ -25,12 +25,13 @@
  * #YtsMetadata is a base class for Ytstenut metadata classes.
  */
 
+#include <string.h>
+#include <rest/rest-xml-parser.h>
+
 #include "yts-metadata-internal.h"
 #include "yts-message.h"
 #include "yts-status.h"
-
-#include <rest/rest-xml-parser.h>
-#include <string.h>
+#include "config.h"
 
 static void yts_metadata_dispose (GObject *object);
 static void yts_metadata_finalize (GObject *object);

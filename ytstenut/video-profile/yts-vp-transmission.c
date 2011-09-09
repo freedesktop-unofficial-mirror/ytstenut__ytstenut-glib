@@ -19,6 +19,7 @@
  */
 
 #include "yts-vp-transmission.h"
+#include "config.h"
 
 G_DEFINE_INTERFACE (YtsVPTransmission,
                     yts_vp_transmission,

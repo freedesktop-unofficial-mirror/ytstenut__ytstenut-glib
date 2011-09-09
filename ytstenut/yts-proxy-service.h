@@ -23,7 +23,6 @@
 
 #include <stdbool.h>
 #include <glib-object.h>
-#include <ytstenut/yts-proxy.h>
 #include <ytstenut/yts-service.h>
 
 G_BEGIN_DECLS

@@ -42,6 +42,7 @@
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
 
+#include "empathy-tp-file.h"
 #include "yts-client-internal.h"
 #include "yts-contact-internal.h"
 #include "yts-debug.h"
@@ -58,11 +59,11 @@
 #include "yts-service-adapter.h"
 #include "yts-types.h"
 
-#include "empathy-tp-file.h"
-
 #include "profile/yts-profile.h"
 #include "profile/yts-profile-adapter.h"
 #include "profile/yts-profile-impl.h"
+
+#include "config.h"
 
 #define RECONNECT_DELAY 20 /* in seconds */
 

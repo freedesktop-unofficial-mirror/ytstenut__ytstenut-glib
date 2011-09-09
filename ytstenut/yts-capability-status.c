@@ -19,7 +19,9 @@
  */
 
 #include <stdbool.h>
+
 #include "yts-capability-status.h"
+#include "config.h"
 
 G_DEFINE_TYPE (YtsCapabilityStatus, yts_capability_status, YTS_TYPE_METADATA)
 

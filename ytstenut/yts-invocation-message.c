@@ -19,7 +19,9 @@
  */
 
 #include <stdbool.h>
+
 #include "yts-invocation-message.h"
+#include "config.h"
 
 G_DEFINE_TYPE (YtsInvocationMessage, yts_invocation_message, YTS_TYPE_METADATA)
 

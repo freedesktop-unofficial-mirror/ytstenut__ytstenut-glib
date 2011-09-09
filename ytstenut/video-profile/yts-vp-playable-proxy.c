@@ -20,6 +20,7 @@
 
 #include "yts-vp-playable.h"
 #include "yts-vp-playable-proxy.h"
+#include "config.h"
 
 static void
 _playable_interface_init (YtsVPPlayableInterface *interface);

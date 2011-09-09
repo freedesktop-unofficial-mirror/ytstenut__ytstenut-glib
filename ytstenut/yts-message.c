@@ -27,6 +27,7 @@
 
 #include "yts-message.h"
 #include "yts-metadata-internal.h"
+#include "config.h"
 
 static void yts_message_dispose (GObject *object);
 static void yts_message_finalize (GObject *object);

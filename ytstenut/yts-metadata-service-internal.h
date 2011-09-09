@@ -22,6 +22,7 @@
 #define YTS_METADATA_SERVICE_INTERNAL_H
 
 #include <glib.h>
+#include <ytstenut/yts-contact.h>
 #include <ytstenut/yts-service.h>
 #include <ytstenut/yts-metadata-service.h>
 

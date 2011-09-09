@@ -19,6 +19,7 @@
  */
 
 #include <stdbool.h>
+
 #include "yts-capability.h"
 #include "yts-client-internal.h"
 #include "yts-invocation-message.h"
@@ -28,6 +29,7 @@
 
 #include "profile/yts-profile.h"
 #include "profile/yts-profile-proxy.h"
+#include "config.h"
 
 G_DEFINE_TYPE (YtsProxyService, yts_proxy_service, YTS_TYPE_SERVICE)
 

@@ -20,6 +20,7 @@
 
 #include "yts-profile.h"
 #include "yts-profile-proxy.h"
+#include "config.h"
 
 static void
 _profile_interface_init (YtsProfileInterface *interface);

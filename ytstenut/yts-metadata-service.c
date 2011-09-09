@@ -38,6 +38,7 @@
 #include "yts-metadata-internal.h"
 #include "yts-metadata-service-internal.h"
 #include "yts-status.h"
+#include "config.h"
 
 static void yts_metadata_service_dispose (GObject *object);
 static void yts_metadata_service_finalize (GObject *object);

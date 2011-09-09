@@ -20,6 +20,7 @@
 
 #include "yts-capability.h"
 #include "yts-vp-content.h"
+#include "config.h"
 
 G_DEFINE_INTERFACE (YtsVPContent,
                     yts_vp_content,

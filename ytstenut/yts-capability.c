@@ -19,6 +19,7 @@
  */
 
 #include "yts-capability.h"
+#include "config.h"
 
 G_DEFINE_INTERFACE (YtsCapability,
                     yts_capability,
