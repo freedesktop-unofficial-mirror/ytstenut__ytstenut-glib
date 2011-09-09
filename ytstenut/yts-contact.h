@@ -102,20 +102,6 @@ YtsError   yts_contact_send_file          (const YtsContact *item,
 gboolean    yts_contact_cancel_file        (const YtsContact *item,
                                              GFile             *gfile);
 
-/* FIXME private */
-
-gboolean
-yts_contact_dispatch_event (YtsContact  *self,
-                             char const   *capability,
-                             char const   *aspect,
-                             GVariant     *arguments);
-
-gboolean
-yts_contact_dispatch_response (YtsContact *self,
-                                char const  *capability,
-                                char const  *invocation_id,
-                                GVariant    *response);
-
 G_END_DECLS
 
 #endif /* YTS_CONTACT_H */

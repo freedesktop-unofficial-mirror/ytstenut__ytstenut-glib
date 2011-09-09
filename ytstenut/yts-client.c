@@ -43,6 +43,7 @@
 #include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
 
 #include "yts-client.h"
+#include "yts-contact-internal.h"
 #include "yts-debug.h"
 #include "yts-enum-types.h"
 #include "yts-error.h"

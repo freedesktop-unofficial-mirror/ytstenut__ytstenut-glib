@@ -56,6 +56,7 @@ EXTRA_HFILES=
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
 IGNORE_HFILES= \
   empathy-tp-file.h \
+  yts-contact-internal.h \
   yts-enum-types.h \
   yts-marshal.h \
   yts-private.h \
@@ -63,6 +64,8 @@ IGNORE_HFILES= \
   yts-profile-proxy.h \
   yts-profile-adapter.h \
   yts-profile-impl.h \
+  yts-proxy-internal.h \
+  yts-proxy-service-internal.h \
   yts-vp-playable-proxy.h \
   yts-vp-player-adapter.h \
   yts-vp-player-proxy.h \

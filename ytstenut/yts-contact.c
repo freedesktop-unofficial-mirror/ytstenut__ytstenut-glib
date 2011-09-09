@@ -37,13 +37,13 @@
 #include <telepathy-glib/channel.h>
 
 #include "yts-client.h"
-#include "yts-contact.h"
+#include "yts-contact-internal.h"
 #include "yts-debug.h"
 #include "yts-enum-types.h"
 #include "yts-error.h"
 #include "yts-marshal.h"
 #include "yts-private.h"
-#include "yts-proxy-service.h"
+#include "yts-proxy-service-internal.h"
 #include "yts-types.h"
 
 #include "empathy-tp-file.h"
@@ -1224,7 +1224,7 @@ _yts_contact_is_empty (YtsContact *contact)
   return (g_hash_table_size (priv->services) == 0);
 }
 
-gboolean
+bool
 yts_contact_dispatch_event (YtsContact  *self,
                              char const   *capability,
                              char const   *aspect,
@@ -1256,7 +1256,7 @@ yts_contact_dispatch_event (YtsContact  *self,
   return dispatched;
 }
 
-gboolean
+bool
 yts_contact_dispatch_response (YtsContact *self,
                                 char const  *capability,
                                 char const  *invocation_id,

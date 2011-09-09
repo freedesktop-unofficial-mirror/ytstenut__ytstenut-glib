@@ -79,18 +79,6 @@ yts_proxy_invoke (YtsProxy  *self,
                    char const *aspect,
                    GVariant   *arguments);
 
-/* FIXME private */
-
-void
-yts_proxy_handle_service_event (YtsProxy  *self,
-                                 char const *aspect,
-                                 GVariant   *arguments);
-
-void
-yts_proxy_handle_service_response (YtsProxy   *self,
-                                    char const  *invocation_id,
-                                    GVariant    *response);
-
 G_END_DECLS
 
 #endif /* YTS_PROXY_H */

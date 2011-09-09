@@ -79,7 +79,7 @@ source_c =						\
 		$(srcdir)/profile/yts-profile-impl.c \
 		$(srcdir)/profile/yts-profile-proxy.c \
 		$(srcdir)/profile/yts-profile-adapter.c \
-    \
+		\
 		$(srcdir)/video-profile/yts-vp-content.c \
 		$(srcdir)/video-profile/yts-vp-playable.c \
 		$(srcdir)/video-profile/yts-vp-playable-proxy.c \
@@ -97,10 +97,13 @@ source_c =						\
 private_h = \
 		$(srcdir)/yts-private.h \
 		\
+		$(srcdir)/yts-contact-internal.h \
 		$(srcdir)/profile/yts-profile.h \
 		$(srcdir)/profile/yts-profile-impl.h \
 		$(srcdir)/profile/yts-profile-proxy.h \
 		$(srcdir)/profile/yts-profile-adapter.h \
+		$(srcdir)/yts-proxy-internal.h \
+		$(srcdir)/yts-proxy-service-internal.h \
 		\
 		$(srcdir)/video-profile/yts-vp-playable-proxy.h \
 		$(srcdir)/video-profile/yts-vp-player-adapter.h \

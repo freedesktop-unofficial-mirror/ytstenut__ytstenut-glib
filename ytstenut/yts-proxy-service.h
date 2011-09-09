@@ -67,20 +67,6 @@ bool
 yts_proxy_service_create_proxy (YtsProxyService *self,
                                  char const       *capability);
 
-/* FIXME private */
-
-bool
-yts_proxy_service_dispatch_event (YtsProxyService *self,
-                                   char const       *capability,
-                                   char const       *aspect,
-                                   GVariant         *arguments);
-
-bool
-yts_proxy_service_dispatch_response (YtsProxyService  *self,
-                                      char const        *capability,
-                                      char const        *invocation_id,
-                                      GVariant          *response);
-
 G_END_DECLS
 
 #endif /* YTS_PROXY_SERVICE_H */
