@@ -164,7 +164,7 @@ AC_OUTPUT([
   examples/video-profile/Makefile
   ytstenut/Makefile
   ytstenut/yts-version.h
-  ytstenut/ytstenut-1.pc
+  ytstenut.pc
   tests/Makefile
 ])
 

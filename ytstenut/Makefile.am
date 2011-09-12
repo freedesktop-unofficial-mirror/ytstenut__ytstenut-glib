@@ -188,9 +188,6 @@ nobase_ytstenutheaders_HEADERS =		\
 	$(srcdir)/ytstenut.h	\
 	$(NULL)
 
-pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = ytstenut-1.pc
-
 if WITH_INTROSPECTION
 Yts-@YTS_API_VERSION@.gir: $(G_IR_SCANNER) libytstenut-@YTS_API_VERSION@.la
 	$(QUIET_GEN) $(G_IR_SCANNER) -v \
@@ -234,13 +231,12 @@ endif # HAVE_INTROSPECTION
 
 BUILT_SOURCES += $(MARSHALS) $(ENUMS)
 
-CLEANFILES += $(BUILT_SOURCES) $(STAMPS) ytstenut-1.pc
+CLEANFILES += $(BUILT_SOURCES) $(STAMPS)
 
 EXTRA_DIST =	marshal.list 		\
 		yts-enum-types.h.in	\
 		yts-enum-types.c.in	\
 		yts-version.h.in	\
-		ytstenut-1.pc.in	\
 		ytstenut.sym \
 		$(NULL)
 
