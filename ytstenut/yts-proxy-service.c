@@ -43,7 +43,7 @@ enum {
 
 typedef struct {
   YtsProfile *profile;
-  GHashTable  *invocations;
+  GHashTable  *pending_proxies;
   GHashTable  *proxies;
 } YtsProxyServicePrivate;
 
@@ -109,9 +109,9 @@ _dispose (GObject *object)
     priv->profile = NULL;
   }
 
-  if (priv->invocations) {
-    g_hash_table_destroy (priv->invocations);
-    priv->invocations = NULL;
+  if (priv->pending_proxies) {
+    g_hash_table_destroy (priv->pending_proxies);
+    priv->pending_proxies = NULL;
   }
 
   G_OBJECT_CLASS (yts_proxy_service_parent_class)->dispose (object);
@@ -149,10 +149,10 @@ yts_proxy_service_init (YtsProxyService *self)
                                          g_free,
                                          NULL);
 
-  priv->invocations = g_hash_table_new_full (g_str_hash,
+  priv->pending_proxies = g_hash_table_new_full (g_str_hash,
                                              g_str_equal,
                                              g_free,
-                                             g_object_unref);
+                                             NULL);
 }
 
 YtsService *
@@ -266,7 +266,7 @@ _proxy_destroyed (YtsProxyService  *self,
 }
 
 // FIXME need factory foo
-
+// FIXME and check which capabilities the service actually has
 extern GType
 yts_vp_player_proxy_get_type (void);
 
@@ -280,8 +280,8 @@ yts_proxy_service_create_proxy (YtsProxyService *self,
                                  char const       *capability)
 {
   YtsProxyServicePrivate *priv = GET_PRIVATE (self);
-  YtsProxy *proxy;
-  char      *invocation_id;
+  GType  proxy_type;
+  char  *invocation_id;
 
   struct {
     char const *capability;
@@ -302,27 +302,26 @@ yts_proxy_service_create_proxy (YtsProxyService *self,
 
   g_return_val_if_fail (YTS_IS_PROXY_SERVICE (self), NULL);
 
-  proxy = NULL;
+  proxy_type = G_TYPE_NONE;
   for (i = 0; proxies[i].capability != NULL; i++) {
     if (0 == g_strcmp0 (capability, proxies[i].capability)) {
-      proxy = g_object_new (proxies[i].gtype, NULL);
+      proxy_type = proxies[i].gtype;
       break;
     }
   }
 
-  if (NULL == proxy) {
+  if (G_TYPE_NONE == proxy_type) {
     // FIXME GError
     return false;
   }
 
-  g_hash_table_insert (priv->proxies,
-                       g_strdup (capability),
-                       proxy);
-  g_signal_connect (proxy, "invoke-service",
-                    G_CALLBACK (_proxy_invoke_service), self);
-  g_object_weak_ref (G_OBJECT (proxy),
-                     (GWeakNotify) _proxy_destroyed,
-                     self);
+  /* Register new proxy with the service.
+   * For now just remember its type, and create it when the server responds. */
+
+  invocation_id = yts_proxy_create_invocation_id (YTS_PROXY (priv->profile));
+  g_hash_table_insert (priv->pending_proxies,
+                       invocation_id,
+                       GSIZE_TO_POINTER (proxy_type));
 
   if (NULL == priv->profile) {
     /* Lazily create the profile proxy. */
@@ -330,21 +329,11 @@ yts_proxy_service_create_proxy (YtsProxyService *self,
     g_signal_connect (priv->profile, "invoke-service",
                       G_CALLBACK (_profile_invoke_service), self);
   }
-
-  invocation_id = yts_proxy_create_invocation_id (YTS_PROXY (priv->profile));
-
-  /* Register new proxy with the service. */
   // TODO timeout
-  yts_profile_register_proxy (priv->profile,
-                               invocation_id,
-                               capability);
-
-  g_hash_table_insert (priv->invocations, invocation_id, proxy);
+  yts_profile_register_proxy (priv->profile, invocation_id, capability);
 
   return true;
 }
-
-// todo break here
 
 bool
 yts_proxy_service_dispatch_event (YtsProxyService *self,
@@ -381,12 +370,12 @@ yts_proxy_service_dispatch_response (YtsProxyService  *self,
                                       GVariant          *response)
 {
   YtsProxyServicePrivate *priv = GET_PRIVATE (self);
-  YtsProxy *proxy;
+  GType proxy_type;
 
-  if (priv->invocations &&
-      g_hash_table_size (priv->invocations) > 0 &&
-      NULL != (proxy = g_hash_table_lookup (priv->invocations, invocation_id))) {
+  proxy_type = (GType) g_hash_table_lookup (priv->pending_proxies, invocation_id);
+  if (G_TYPE_INVALID != proxy_type) {
 
+    YtsProxy *proxy;
     /* Initial properties for the proxy */
     GVariantIter iter;
     char *name;
@@ -399,6 +388,18 @@ yts_proxy_service_dispatch_response (YtsProxyService  *self,
       return false;
     }
 
+    /* Create proxy object */
+    proxy = g_object_new (proxy_type, NULL);
+
+    g_hash_table_insert (priv->proxies,
+                         g_strdup (capability),
+                         proxy);
+    g_signal_connect (proxy, "invoke-service",
+                      G_CALLBACK (_proxy_invoke_service), self);
+    g_object_weak_ref (G_OBJECT (proxy),
+                       (GWeakNotify) _proxy_destroyed,
+                       self);
+
     g_variant_iter_init (&iter, response);
     while (g_variant_iter_next (&iter, "{sv}", &name, &value)) {
       /* Pass the properties to the proxy through the standard mechanism. */
@@ -407,9 +408,9 @@ yts_proxy_service_dispatch_response (YtsProxyService  *self,
       g_variant_unref (value);
     }
 
-    g_signal_emit (self, _signals[SIG_PROXY_CREATED], 0,
-                   proxy);
-    g_hash_table_remove (priv->invocations, invocation_id);
+    g_signal_emit (self, _signals[SIG_PROXY_CREATED], 0, proxy);
+    g_object_unref (proxy);
+    g_hash_table_remove (priv->pending_proxies, invocation_id);
     return true;
   }
 

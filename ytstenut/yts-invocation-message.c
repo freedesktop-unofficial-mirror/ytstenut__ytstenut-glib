@@ -88,7 +88,7 @@ yts_invocation_message_new (char const *invocation_id,
   RestXmlNode *node;
 
   node = rest_xml_node_add_child (NULL, "message");
-  /* TODO need those keywords be made reserved */
+  /* PONDERING need those keywords be made reserved */
   rest_xml_node_add_attr (node, "type", "invocation");
   rest_xml_node_add_attr (node, "invocation", invocation_id);
   rest_xml_node_add_attr (node, "capability", capability);

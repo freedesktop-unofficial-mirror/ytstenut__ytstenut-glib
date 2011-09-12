@@ -89,7 +89,7 @@ yts_error_message_new (char const  *domain,
 
   node = rest_xml_node_add_child (NULL, "message");
 
-  /* TODO need those keywords be made reserved */
+  /* PONDERING need those keywords be made reserved */
   rest_xml_node_add_attr (node, "type", "error");
 
   if (domain) {
