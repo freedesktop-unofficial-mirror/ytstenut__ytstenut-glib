@@ -4,7 +4,7 @@ m4_define([yts_micro_version], [0])
 m4_define([yts_version],
           [yts_major_version.yts_minor_version.yts_micro_version])
 
-m4_define([yts_api_version], [1.0])
+m4_define([yts_api_version], [1])
 
 # increase the interface age of 2 for each release
 # set to 0 if the API changes
