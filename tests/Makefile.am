@@ -38,3 +38,5 @@ message_send_LDADD       = $(YTS_LIBS)
 
 status_set_SOURCES     = status-set.c
 status_set_LDADD       = $(YTS_LIBS)
+
+-include $(top_srcdir)/git.mk

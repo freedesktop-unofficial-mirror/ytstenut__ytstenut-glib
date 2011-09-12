@@ -4,3 +4,4 @@ DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --enable-docs --disable-silent-rule
 
 SUBDIRS = ytstenut docs tests examples
 
+-include $(top_srcdir)/git.mk

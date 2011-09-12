@@ -26,3 +26,4 @@ remote_SOURCES = \
   remote.c \
   $(NULL)
 
+-include $(top_srcdir)/git.mk

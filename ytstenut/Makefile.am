@@ -246,3 +246,5 @@ EXTRA_DIST =	marshal.list 		\
 
 DISTCLEANFILES= yts-version.h		\
 		$(NULL)
+
+-include $(top_srcdir)/git.mk

@@ -31,3 +31,4 @@ status_SOURCES = \
   status.c \
   $(NULL)
 
+-include $(top_srcdir)/git.mk
