@@ -53,7 +53,7 @@ typedef struct {
 } YtsProxyServiceClass;
 
 GType
-yts_proxy_service_get_type (void);
+yts_proxy_service_get_type (void) G_GNUC_CONST;
 
 bool
 yts_proxy_service_create_proxy (YtsProxyService *self,

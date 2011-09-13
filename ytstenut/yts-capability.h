@@ -21,6 +21,7 @@
 #ifndef YTS_CAPABILITY_H
 #define YTS_CAPABILITY_H
 
+#include <stdbool.h>
 #include <glib-object.h>
 
 G_BEGIN_DECLS
@@ -52,6 +53,10 @@ yts_capability_get_type (void) G_GNUC_CONST;
 
 char **
 yts_capability_get_fqc_ids (YtsCapability *self);
+
+bool
+yts_capability_has_fqc_id (YtsCapability  *self,
+                           char const     *fqc_id);
 
 G_END_DECLS
 

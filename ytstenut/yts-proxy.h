@@ -65,7 +65,7 @@ typedef struct {
 } YtsProxyClass;
 
 GType
-yts_proxy_get_type (void);
+yts_proxy_get_type (void) G_GNUC_CONST;
 
 char *
 yts_proxy_get_fqc_id (YtsProxy *self);

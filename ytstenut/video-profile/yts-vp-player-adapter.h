@@ -22,6 +22,7 @@
 #define YTS_VP_PLAYER_ADAPTER_H
 
 #include <glib-object.h>
+#include <ytstenut/yts-service-adapter.h>
 
 G_BEGIN_DECLS
 

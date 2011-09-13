@@ -50,3 +50,28 @@ yts_capability_get_fqc_ids (YtsCapability *self)
   return fqc_ids;
 }
 
+bool
+yts_capability_has_fqc_id (YtsCapability  *self,
+                           char const     *fqc_id)
+{
+  char      **fqc_ids;
+  unsigned    i;
+  bool        ret = false;
+
+  g_return_val_if_fail (YTS_IS_CAPABILITY (self), NULL);
+
+  fqc_ids = NULL;
+  g_object_get (self, "fqc-ids", &fqc_ids, NULL);
+
+  for (i = 0; fqc_ids[i]; i++) {
+    if (0 == g_strcmp0 (fqc_id, fqc_ids[i])) {
+      ret = true;
+      break;
+    }
+  }
+
+  g_strfreev (fqc_ids);
+
+  return ret;
+}
+

@@ -315,6 +315,13 @@ yts_proxy_service_create_proxy (YtsProxyService *self,
     return false;
   }
 
+  if (NULL == priv->profile) {
+    /* Lazily create the profile proxy. */
+    priv->profile = g_object_new (YTS_TYPE_PROFILE_PROXY, NULL);
+    g_signal_connect (priv->profile, "invoke-service",
+                      G_CALLBACK (_profile_invoke_service), self);
+  }
+
   /* Register new proxy with the service.
    * For now just remember its type, and create it when the server responds. */
 
@@ -323,12 +330,6 @@ yts_proxy_service_create_proxy (YtsProxyService *self,
                        invocation_id,
                        GSIZE_TO_POINTER (proxy_type));
 
-  if (NULL == priv->profile) {
-    /* Lazily create the profile proxy. */
-    priv->profile = g_object_new (YTS_TYPE_PROFILE_PROXY, NULL);
-    g_signal_connect (priv->profile, "invoke-service",
-                      G_CALLBACK (_profile_invoke_service), self);
-  }
   // TODO timeout
   yts_profile_register_proxy (priv->profile, invocation_id, capability);
 
