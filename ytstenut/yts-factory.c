@@ -40,6 +40,13 @@ typedef struct {
 static FactoryEntry *_table = NULL;
 static unsigned      _table_size = 0;
 
+static int
+_factory_entry_compare (FactoryEntry const *fe1,
+                        FactoryEntry const *fe2)
+{
+  return strcmp (fe1->fqc_id, fe2->fqc_id);
+}
+
 static void
 _dispose (GObject *object)
 {
@@ -67,9 +74,12 @@ yts_factory_class_init (YtsFactoryClass *klass)
   object_class->dispose = _dispose;
 
   if (NULL == _table) {
-    _table = memcpy (_table, table, sizeof (table));
+    _table = g_memdup (table, sizeof (table));
     _table_size = G_N_ELEMENTS (table);
-    qsort (_table, _table_size, sizeof (FactoryEntry), (__compar_fn_t) strcmp);
+    qsort (_table,
+           _table_size,
+           sizeof (FactoryEntry),
+           (__compar_fn_t) _factory_entry_compare);
   }
 }
 
@@ -83,8 +93,10 @@ yts_factory_handles_fqc_id (YtsFactory const  *self,
                             char const        *fqc_id)
 {
   FactoryEntry const *entry;
+  FactoryEntry        needle;
 
-  entry = bsearch (fqc_id,
+  needle.fqc_id = fqc_id;
+  entry = bsearch (&needle,
                    _table,
                    _table_size,
                    sizeof (FactoryEntry),
@@ -98,12 +110,14 @@ yts_factory_get_proxy_gtype_for_fqc_id (YtsFactory const  *self,
                                         char const        *fqc_id)
 {
   FactoryEntry const *entry;
+  FactoryEntry        needle;
 
-  entry = bsearch (fqc_id,
+  needle.fqc_id = fqc_id;
+  entry = bsearch (&needle,
                    _table,
                    _table_size,
                    sizeof (FactoryEntry),
-                   (__compar_fn_t) strcmp);
+                   (__compar_fn_t) _factory_entry_compare);
 
   g_return_val_if_fail (entry, G_TYPE_INVALID);
 
@@ -115,12 +129,14 @@ yts_factory_get_adapter_gtype_for_fqc_id (YtsFactory const  *self,
                                           char const        *fqc_id)
 {
   FactoryEntry const *entry;
+  FactoryEntry        needle;
 
-  entry = bsearch (fqc_id,
+  needle.fqc_id = fqc_id;
+  entry = bsearch (&needle,
                    _table,
                    _table_size,
                    sizeof (FactoryEntry),
-                   (__compar_fn_t) strcmp);
+                   (__compar_fn_t) _factory_entry_compare);
 
   g_return_val_if_fail (entry, G_TYPE_INVALID);
 

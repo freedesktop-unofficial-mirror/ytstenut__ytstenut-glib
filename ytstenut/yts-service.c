@@ -26,6 +26,8 @@
  * #YtsService represents a known service in the Ytstenut application mesh.
  */
 
+// FIXME derive from YtsCapability?
+
 #include <telepathy-glib/util.h>
 #include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
 

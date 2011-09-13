@@ -24,6 +24,7 @@
 #include "yts-client-internal.h"
 #include "yts-invocation-message.h"
 #include "yts-marshal.h"
+#include "yts-proxy-factory.h"
 #include "yts-proxy-internal.h"
 #include "yts-proxy-service-internal.h"
 
@@ -150,9 +151,9 @@ yts_proxy_service_init (YtsProxyService *self)
                                          NULL);
 
   priv->pending_proxies = g_hash_table_new_full (g_str_hash,
-                                             g_str_equal,
-                                             g_free,
-                                             NULL);
+                                                 g_str_equal,
+                                                 g_free,
+                                                 g_free);
 }
 
 YtsService *
@@ -265,53 +266,20 @@ _proxy_destroyed (YtsProxyService  *self,
   }
 }
 
-// FIXME need factory foo
-// FIXME and check which capabilities the service actually has
-extern GType
-yts_vp_player_proxy_get_type (void);
-
-extern GType
-yts_vp_transcript_proxy_get_type (void);
-
-// TODO instantiate proxy only on response
-//  an move from invocations hash to proxies
 bool
 yts_proxy_service_create_proxy (YtsProxyService *self,
                                  char const       *capability)
 {
   YtsProxyServicePrivate *priv = GET_PRIVATE (self);
-  GType  proxy_type;
+  bool   has_fqc_id;
   char  *invocation_id;
 
-  struct {
-    char const *capability;
-    GType       gtype;
-  } proxies[] = {
-//    { "org.freedesktop.ytstenut.VideoProfile.Content",
-//      yts_vp_content_proxy_get_type () },
-    { "org.freedesktop.ytstenut.VideoProfile.Player",
-      yts_vp_player_proxy_get_type () },
-    { "org.freedesktop.ytstenut.VideoProfile.Transcript",
-      yts_vp_transcript_proxy_get_type () },
-//    { "org.freedesktop.ytstenut.VideoProfile.Transfer",
-//      yts_vp_transfer_proxy_get_type () },
-    { NULL }
-  };
-
-  unsigned int i;
-
-  g_return_val_if_fail (YTS_IS_PROXY_SERVICE (self), NULL);
-
-  proxy_type = G_TYPE_NONE;
-  for (i = 0; proxies[i].capability != NULL; i++) {
-    if (0 == g_strcmp0 (capability, proxies[i].capability)) {
-      proxy_type = proxies[i].gtype;
-      break;
-    }
-  }
-
-  if (G_TYPE_NONE == proxy_type) {
+  has_fqc_id = yts_service_has_capability (YTS_SERVICE (self), capability);
+  if (!has_fqc_id) {
     // FIXME GError
+    g_critical ("%s : Service does not support capability %s",
+                G_STRLOC,
+                capability);
     return false;
   }
 
@@ -328,7 +296,7 @@ yts_proxy_service_create_proxy (YtsProxyService *self,
   invocation_id = yts_proxy_create_invocation_id (YTS_PROXY (priv->profile));
   g_hash_table_insert (priv->pending_proxies,
                        invocation_id,
-                       GSIZE_TO_POINTER (proxy_type));
+                       g_strdup (capability));
 
   // TODO timeout
   yts_profile_register_proxy (priv->profile, invocation_id, capability);
@@ -371,11 +339,15 @@ yts_proxy_service_dispatch_response (YtsProxyService  *self,
                                       GVariant          *response)
 {
   YtsProxyServicePrivate *priv = GET_PRIVATE (self);
-  GType proxy_type;
+  char const *new_proxy_fqc_id;
 
-  proxy_type = (GType) g_hash_table_lookup (priv->pending_proxies, invocation_id);
-  if (G_TYPE_INVALID != proxy_type) {
+  /* PONDERING this reply should really go to the profile proxy
+   * and be handled there. */
+  new_proxy_fqc_id = (char const *) g_hash_table_lookup (priv->pending_proxies,
+                                                         invocation_id);
+  if (new_proxy_fqc_id) {
 
+    YtsProxyFactory * const factory = yts_proxy_factory_get_default ();
     YtsProxy *proxy;
     /* Initial properties for the proxy */
     GVariantIter iter;
@@ -385,15 +357,21 @@ yts_proxy_service_dispatch_response (YtsProxyService  *self,
     if (!g_variant_is_of_type (response, G_VARIANT_TYPE_DICTIONARY)) {
       g_critical ("%s : Registering proxy for capability %s failed",
                   G_STRLOC,
-                  capability);
+                  new_proxy_fqc_id);
       return false;
     }
 
     /* Create proxy object */
-    proxy = g_object_new (proxy_type, NULL);
+    proxy = yts_proxy_factory_create_proxy (factory, new_proxy_fqc_id);
+    if (!proxy) {
+      g_critical ("%s : Creating proxy for capability %s failed",
+                  G_STRLOC,
+                  new_proxy_fqc_id);
+      return false;
+    }
 
     g_hash_table_insert (priv->proxies,
-                         g_strdup (capability),
+                         g_strdup (new_proxy_fqc_id),
                          proxy);
     g_signal_connect (proxy, "invoke-service",
                       G_CALLBACK (_proxy_invoke_service), self);

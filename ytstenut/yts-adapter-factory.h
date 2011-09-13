@@ -62,9 +62,9 @@ YtsAdapterFactory * const
 yts_adapter_factory_get_default (void);
 
 YtsServiceAdapter *
-yts_adapter_factory_create_adapter_for_service (YtsAdapterFactory *self,
-                                                YtsCapability     *service,
-                                                char const        *fqc_id);
+yts_adapter_factory_create_adapter (YtsAdapterFactory *self,
+                                    YtsCapability     *service,
+                                    char const        *fqc_id);
 
 G_END_DECLS
 

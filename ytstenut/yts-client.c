@@ -43,6 +43,7 @@
 #include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
 
 #include "empathy-tp-file.h"
+#include "yts-adapter-factory.h"
 #include "yts-client-internal.h"
 #include "yts-contact-internal.h"
 #include "yts-debug.h"
@@ -3226,51 +3227,6 @@ _service_destroyed (ServiceData *data,
   service_data_destroy (data);
 }
 
-/* FIXME this should probably go into some sort of factory.
- * A bit hacky for now, so we don't need to include video-service headers here. */
-
-extern GType
-yts_vp_player_get_type (void);
-
-extern GType
-yts_vp_player_adapter_get_type (void);
-
-extern GType
-yts_vp_transcript_get_type (void);
-
-extern GType
-yts_vp_transcript_adapter_get_type (void);
-
-static YtsServiceAdapter *
-create_adapter_for_service (YtsClient      *self,
-                            YtsCapability  *service,
-                            char const      *fqc_id)
-{
-  GType service_type;
-
-  service_type = G_OBJECT_TYPE (service);
-  if (0 == g_strcmp0 (fqc_id, "org.freedesktop.ytstenut.VideoProfile.Player") &&
-      g_type_is_a (service_type, yts_vp_player_get_type ())) {
-
-    return g_object_new (yts_vp_player_adapter_get_type (),
-                         "service", service,
-                         NULL);
-
-  } else if (0 == g_strcmp0 (fqc_id, "org.freedesktop.ytstenut.VideoProfile.Transcript") &&
-             g_type_is_a (service_type, yts_vp_transcript_get_type ())) {
-
-    return g_object_new (yts_vp_transcript_adapter_get_type (),
-                         "service", service,
-                         NULL);
-  }
-
-  g_critical ("%s : Failed to find built-in adapter class for %s",
-              G_STRLOC,
-              G_OBJECT_TYPE_NAME (service));
-
-  return NULL;
-}
-
 /*
  * TODO add GError reporting
  * The client does not take ownership of the service, it will be
@@ -3286,6 +3242,7 @@ yts_client_register_service (YtsClient      *self,
   ServiceData          *service_data;
   char                **fqc_ids;
   unsigned              i;
+  YtsAdapterFactory   *const factory = yts_adapter_factory_get_default ();
 
   g_return_val_if_fail (YTS_IS_CLIENT (self), FALSE);
   g_return_val_if_fail (YTS_IS_CAPABILITY (service), FALSE);
@@ -3309,7 +3266,7 @@ yts_client_register_service (YtsClient      *self,
   /* Hook up the service */
   for (i = 0; fqc_ids[i] != NULL; i++) {
 
-    adapter = create_adapter_for_service (self, service, fqc_ids[i]);
+    adapter = yts_adapter_factory_create_adapter (factory, service, fqc_ids[i]);
     g_return_val_if_fail (adapter, FALSE);
 
     service_data = service_data_create (self, fqc_ids[i]);
