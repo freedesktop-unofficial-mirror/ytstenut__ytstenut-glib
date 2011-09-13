@@ -56,9 +56,11 @@ EXTRA_HFILES=
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
 IGNORE_HFILES = \
   empathy-tp-file.h \
+  yts-adapter-factory.h \
   yts-client-internal.h \
   yts-contact-internal.h \
   yts-enum-types.h \
+  yts-factory.h \
   yts-marshal.h \
   yts-metadata-internal.h \
   yts-metadata-service-internal.h \
@@ -66,6 +68,7 @@ IGNORE_HFILES = \
   yts-profile-proxy.h \
   yts-profile-adapter.h \
   yts-profile-impl.h \
+  yts-proxy-factory.h \
   yts-proxy-internal.h \
   yts-proxy-service-internal.h \
   yts-roster-internal.h \
