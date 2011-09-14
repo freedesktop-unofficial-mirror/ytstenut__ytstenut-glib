@@ -33,12 +33,5 @@ yts_metadata_service_new (YtsContact        *contact,
                           char const *const *fqc_ids,
                           GHashTable        *names);
 
-void
-yts_metadata_service_received_status (YtsMetadataService  *service,
-                                      char const          *xml);
-void
-yts_metadata_service_received_message (YtsMetadataService *service,
-                                       char const         *xml);
-
 #endif /* YTS_METADATA_SERVICE_INTERNAL_H */
 

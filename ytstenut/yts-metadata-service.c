@@ -68,7 +68,6 @@ struct _YtsMetadataServicePrivate
 enum
 {
   RECEIVED_STATUS,
-  RECEIVED_MESSAGE,
 
   N_SIGNALS
 };
@@ -126,26 +125,6 @@ yts_metadata_service_class_init (YtsMetadataServiceClass *klass)
                   yts_marshal_VOID__OBJECT,
                   G_TYPE_NONE, 1,
                   YTS_TYPE_STATUS);
-
-
-  /**
-   * YtsMetadataService::received-message:
-   * @service: the service which received the signal
-   * @message: the message
-   *
-   * The ::received-message signal is emitted when message is received on given service
-   *
-   * Since: 0.1
-   */
-  signals[RECEIVED_MESSAGE] =
-    g_signal_new ("received-message",
-                  G_TYPE_FROM_CLASS (object_class),
-                  G_SIGNAL_RUN_LAST,
-                  G_STRUCT_OFFSET (YtsMetadataServiceClass, received_message),
-                  NULL, NULL,
-                  yts_marshal_VOID__OBJECT,
-                  G_TYPE_NONE, 1,
-                  YTS_TYPE_MESSAGE);
 }
 
 static void
@@ -237,38 +216,6 @@ static void
 yts_metadata_service_finalize (GObject *object)
 {
   G_OBJECT_CLASS (yts_metadata_service_parent_class)->finalize (object);
-}
-
-void
-yts_metadata_service_received_status (YtsMetadataService *service,
-                                        const char          *xml)
-{
-  YtsMetadataServicePrivate *priv = service->priv;
-  YtsStatus                 *status;
-
-  status = (YtsStatus*) yts_metadata_new_from_xml (xml);
-
-  if (priv->status)
-    g_object_unref (priv->status);
-
-  priv->status = status;
-
-  g_return_if_fail (YTS_IS_STATUS (status));
-
-  g_signal_emit (service, signals[RECEIVED_STATUS], 0, status);
-}
-
-void
-yts_metadata_service_received_message (YtsMetadataService *service,
-                                         const char          *xml)
-{
-  YtsMessage *message;
-
-  message = (YtsMessage*) yts_metadata_new_from_xml (xml);
-
-  g_return_if_fail (YTS_IS_MESSAGE (message));
-
-  g_signal_emit (service, signals[RECEIVED_MESSAGE], 0, message);
 }
 
 static YtsError

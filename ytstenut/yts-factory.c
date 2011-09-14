@@ -69,8 +69,6 @@ yts_factory_class_init (YtsFactoryClass *klass)
 
   object_class->dispose = _dispose;
 
-  g_debug ("%s : %i table size", G_STRLOC, sizeof (table));
-
   if (NULL == _table) {
     _table = g_array_sized_new (false,
                                 false,
