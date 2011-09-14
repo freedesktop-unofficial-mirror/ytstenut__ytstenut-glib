@@ -37,14 +37,14 @@ typedef struct {
   GType       proxy_gtype;
 } FactoryEntry;
 
-static FactoryEntry *_table = NULL;
-static unsigned      _table_size = 0;
+static GArray *_table = NULL;
 
 static int
-_factory_entry_compare (FactoryEntry const *fe1,
-                        FactoryEntry const *fe2)
+_factory_entry_compare (const void *fe1,
+                        const void *fe2)
 {
-  return strcmp (fe1->fqc_id, fe2->fqc_id);
+  return strcmp (((FactoryEntry *) fe1)->fqc_id,
+                 ((FactoryEntry *) fe2)->fqc_id);
 }
 
 static void
@@ -58,11 +58,7 @@ yts_factory_class_init (YtsFactoryClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-  struct {
-    char const *fqc_id;       /* Needs to be first so we can use strcmp. */
-    GType       adapter_type;
-    GType       proxy_type;
-  } table[] = {
+  FactoryEntry table[] = {
     { "org.freedesktop.ytstenut.VideoProfile.Player",
        yts_vp_player_adapter_get_type (),
        yts_vp_player_proxy_get_type () },
@@ -73,13 +69,16 @@ yts_factory_class_init (YtsFactoryClass *klass)
 
   object_class->dispose = _dispose;
 
+  g_debug ("%s : %i table size", G_STRLOC, sizeof (table));
+
   if (NULL == _table) {
-    _table = g_memdup (table, sizeof (table));
-    _table_size = G_N_ELEMENTS (table);
-    qsort (_table,
-           _table_size,
-           sizeof (FactoryEntry),
-           (__compar_fn_t) _factory_entry_compare);
+    _table = g_array_sized_new (false,
+                                false,
+                                sizeof (FactoryEntry),
+                                G_N_ELEMENTS (table));
+    memcpy (_table->data, table, sizeof (table));
+    _table->len = G_N_ELEMENTS (table);
+    g_array_sort (_table, _factory_entry_compare);
   }
 }
 
@@ -97,10 +96,10 @@ yts_factory_has_fqc_id (YtsFactory const  *self,
 
   needle.fqc_id = fqc_id;
   entry = bsearch (&needle,
-                   _table,
-                   _table_size,
+                   _table->data,
+                   _table->len,
                    sizeof (FactoryEntry),
-                   (__compar_fn_t) strcmp);
+                   _factory_entry_compare);
 
   return (bool) entry;
 }
@@ -114,10 +113,10 @@ yts_factory_get_proxy_gtype_for_fqc_id (YtsFactory const  *self,
 
   needle.fqc_id = fqc_id;
   entry = bsearch (&needle,
-                   _table,
-                   _table_size,
+                   _table->data,
+                   _table->len,
                    sizeof (FactoryEntry),
-                   (__compar_fn_t) _factory_entry_compare);
+                   _factory_entry_compare);
 
   g_return_val_if_fail (entry, G_TYPE_INVALID);
 
@@ -133,10 +132,10 @@ yts_factory_get_adapter_gtype_for_fqc_id (YtsFactory const  *self,
 
   needle.fqc_id = fqc_id;
   entry = bsearch (&needle,
-                   _table,
-                   _table_size,
+                   _table->data,
+                   _table->len,
                    sizeof (FactoryEntry),
-                   (__compar_fn_t) _factory_entry_compare);
+                   _factory_entry_compare);
 
   g_return_val_if_fail (entry, G_TYPE_INVALID);
 
