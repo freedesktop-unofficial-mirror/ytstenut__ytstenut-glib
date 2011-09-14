@@ -320,16 +320,16 @@ YtsService *
 yts_metadata_service_new (YtsContact        *contact,
                           char const        *uid,
                           char const        *type,
-                          char const *const *caps,
+                          char const *const *fqc_ids,
                           GHashTable        *names)
 {
   g_return_val_if_fail (uid && *uid, NULL);
 
   return g_object_new (YTS_TYPE_METADATA_SERVICE,
+                       "fqc-ids", fqc_ids,
                        "contact", contact,
                        "uid",     uid,
                        "type",    type,
-                       "caps",    caps,
                        "names",   names,
                        NULL);
 }

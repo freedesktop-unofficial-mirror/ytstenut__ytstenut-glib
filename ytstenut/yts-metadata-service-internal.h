@@ -30,7 +30,7 @@ YtsService *
 yts_metadata_service_new (YtsContact        *contact,
                           char const        *uid,
                           char const        *type,
-                          char const *const *caps,
+                          char const *const *fqc_ids,
                           GHashTable        *names);
 
 void

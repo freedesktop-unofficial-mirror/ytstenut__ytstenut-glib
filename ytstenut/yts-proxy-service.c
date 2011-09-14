@@ -160,14 +160,14 @@ YtsService *
 yts_proxy_service_new (YtsContact         *contact,
                         char const        *service_uid,
                         char const        *type,
-                        char const *const *capabilities,
+                        char const *const *fqc_ids,
                         GHashTable        *names)
 {
   return g_object_new (YTS_TYPE_PROXY_SERVICE,
+                       "fqc-ids", fqc_ids,
                        "contact", contact,
                        "uid",     service_uid,
                        "type",    type,
-                       "caps",    capabilities,
                        "names",   names,
                        NULL);
 }
@@ -274,7 +274,7 @@ yts_proxy_service_create_proxy (YtsProxyService *self,
   bool   has_fqc_id;
   char  *invocation_id;
 
-  has_fqc_id = yts_service_has_capability (YTS_SERVICE (self), capability);
+  has_fqc_id = yts_capability_has_fqc_id (YTS_CAPABILITY (self), capability);
   if (!has_fqc_id) {
     // FIXME GError
     g_critical ("%s : Service does not support capability %s",

@@ -1242,7 +1242,7 @@ yts_contact_dispatch_event (YtsContact  *self,
                                  (void **) &service_uid,
                                  (void **) &service)) {
     if (YTS_IS_PROXY_SERVICE (service) &&
-        yts_service_has_capability (service, capability)) {
+        yts_capability_has_fqc_id (YTS_CAPABILITY (service), capability)) {
 
       /* Dispatch to all matching services, be happy if one of them accepts. */
       dispatched = dispatched ||
@@ -1274,7 +1274,7 @@ yts_contact_dispatch_response (YtsContact *self,
                                  (void **) &service_uid,
                                  (void **) &service)) {
     if (YTS_IS_PROXY_SERVICE (service) &&
-        yts_service_has_capability (service, capability)) {
+        yts_capability_has_fqc_id (YTS_CAPABILITY (service), capability)) {
 
       /* Invocations are unique, so just go home after delivery. */
       dispatched =

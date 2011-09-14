@@ -46,7 +46,7 @@ enum {
   N_SIGNALS
 };
 
-static guint _signals[N_SIGNALS] = { 0, };
+static unsigned _signals[N_SIGNALS] = { 0, };
 
 /*
  * YtsCapability implementation
@@ -64,10 +64,10 @@ _capability_interface_init (YtsCapability *interface)
  */
 
 static void
-_get_property (GObject      *object,
-               unsigned int  property_id,
-               GValue       *value,
-               GParamSpec   *pspec)
+_get_property (GObject    *object,
+               unsigned    property_id,
+               GValue     *value,
+               GParamSpec *pspec)
 {
   switch (property_id) {
     default:
@@ -77,7 +77,7 @@ _get_property (GObject      *object,
 
 static void
 _set_property (GObject      *object,
-               unsigned int  property_id,
+               unsigned      property_id,
                const GValue *value,
                GParamSpec   *pspec)
 {

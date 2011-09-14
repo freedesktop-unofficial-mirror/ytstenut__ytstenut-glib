@@ -32,7 +32,7 @@ yts_capability_default_init (YtsCapabilityInterface *interface)
 
   pspec = g_param_spec_boxed ("fqc-ids", "", "",
                               G_TYPE_STRV,
-                              G_PARAM_READABLE |
+                              G_PARAM_READWRITE |
                               G_PARAM_STATIC_STRINGS);
   g_object_interface_install_property (interface, pspec);
 }

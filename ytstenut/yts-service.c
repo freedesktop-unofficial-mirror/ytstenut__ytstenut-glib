@@ -27,7 +27,6 @@
  * #YtsService represents a known service in the Ytstenut application mesh.
  */
 
-// FIXME derive from YtsCapability?
 // FIXME should not reference contact
 
 #include <telepathy-glib/util.h>
@@ -40,16 +39,27 @@
 #include "yts-service.h"
 #include "config.h"
 
-G_DEFINE_ABSTRACT_TYPE (YtsService, yts_service, G_TYPE_OBJECT);
+static void
+_capability_interface_init (YtsCapability *interface);
+
+G_DEFINE_ABSTRACT_TYPE_WITH_CODE (YtsService,
+                                  yts_service,
+                                  G_TYPE_OBJECT,
+                                  G_IMPLEMENT_INTERFACE (YTS_TYPE_CAPABILITY,
+                                                         _capability_interface_init))
 
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_SERVICE, YtsServicePrivate))
 
 enum {
   PROP_0,
+
+  /* YtsCapability */
+  PROP_CAPABILITY_FQC_IDS,
+
+  /* YtsService */
   PROP_TYPE,
   PROP_NAMES,
-  PROP_CAPS,
   PROP_UID,
   PROP_CONTACT,
   PROP_STATUS_XML
@@ -61,8 +71,12 @@ enum {
 };
 
 typedef struct {
+
+  /* YtsCapability */
+  char  **fqc_ids;
+
+  /* YtsService */
   char const  *type;
-  char       **caps;
   GHashTable  *names;
   char const  *uid;
 
@@ -72,6 +86,21 @@ typedef struct {
 } YtsServicePrivate;
 
 static unsigned _signals[N_SIGNALS] = { 0, };
+
+/*
+ * YtsCapability
+ */
+
+static void
+_capability_interface_init (YtsCapability *interface)
+{
+  /* Nothing to do, it's just about overriding the "fqc-ids" property,
+   * which has to be done in the concrete subclass of the Proxy. */
+}
+
+/*
+ * YtsService
+ */
 
 static void
 _tp_status_changed (TpYtsStatus *status,
@@ -129,13 +158,13 @@ _constructed (GObject *object)
   tp_status = yts_client_get_tp_status (client);
   g_return_if_fail (tp_status);
 
-  if (priv->caps && *priv->caps &&
+  if (priv->fqc_ids && *priv->fqc_ids &&
       (stats = tp_yts_status_get_discovered_statuses (tp_status))) {
 
     char const *jid = yts_service_get_jid (YTS_SERVICE (object));
 
     // FIXME, should we do this for every cap possibly?
-    char const *cap = *priv->caps; /*a single capability we have*/
+    char const *cap = *priv->fqc_ids; /*a single capability we have*/
     GHashTable *cinfo;
 
     if ((cinfo = g_hash_table_lookup (stats, jid))) {
@@ -165,6 +194,15 @@ _get_property (GObject    *object,
   YtsServicePrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
+
+    /* YtsCapability */
+
+    case PROP_CAPABILITY_FQC_IDS:
+      g_value_set_boxed (value, priv->fqc_ids);
+      break;
+
+    /* YtsService */
+
     case PROP_UID:
       g_value_set_string (value, priv->uid);
       break;
@@ -173,9 +211,6 @@ _get_property (GObject    *object,
       break;
     case PROP_NAMES:
       g_value_set_boxed (value, priv->names);
-      break;
-    case PROP_CAPS:
-      g_value_set_boxed (value, priv->caps);
       break;
     case PROP_STATUS_XML:
       g_value_set_string (value, priv->status_xml);
@@ -194,6 +229,15 @@ _set_property (GObject      *object,
   YtsServicePrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
+
+    /* YtsCapability */
+
+    case PROP_CAPABILITY_FQC_IDS:
+      priv->fqc_ids = g_value_dup_boxed (value);
+      break;
+
+    /* YtsService */
+
     case PROP_CONTACT:
       priv->contact = g_value_get_object (value);
       break;
@@ -205,9 +249,6 @@ _set_property (GObject      *object,
       break;
     case PROP_NAMES:
       priv->names = g_value_dup_boxed (value);
-      break;
-    case PROP_CAPS:
-      priv->caps = g_value_dup_boxed (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -222,17 +263,20 @@ _dispose (GObject *object)
   /* Free pointer, no ref. */
   priv->contact = NULL;
 
-  if (priv->names)
-    {
-      g_hash_table_unref (priv->names);
-      priv->names = NULL;
-    }
+  if (priv->fqc_ids) {
+    g_strfreev (priv->fqc_ids);
+    priv->fqc_ids = NULL;
+  }
 
-  if (priv->status_xml)
-    {
-      g_free (priv->status_xml);
-      priv->status_xml = NULL;
-    }
+  if (priv->names) {
+    g_hash_table_unref (priv->names);
+    priv->names = NULL;
+  }
+
+  if (priv->status_xml) {
+    g_free (priv->status_xml);
+    priv->status_xml = NULL;
+  }
 
   G_OBJECT_CLASS (yts_service_parent_class)->dispose (object);
 }
@@ -250,76 +294,69 @@ yts_service_class_init (YtsServiceClass *klass)
   object_class->get_property = _get_property;
   object_class->set_property = _set_property;
 
+  /* YtsCapability, needs to be overridden. */
+
+  g_object_class_override_property (object_class,
+                                    PROP_CAPABILITY_FQC_IDS,
+                                    "fqc-ids");
+
   /**
    * YtsService:contact:
    *
-   * #YtsContact this service belongs to
+   * #YtsContact this service belongs to.
    */
-  pspec = g_param_spec_object ("contact",
-                               "YtsContact",
-                               "YtsContact",
+  pspec = g_param_spec_object ("contact", "", "",
                                YTS_TYPE_CONTACT,
-                               G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY);
+                               G_PARAM_WRITABLE |
+                               G_PARAM_CONSTRUCT_ONLY |
+                               G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONTACT, pspec);
 
   /**
    * YtsService:uid:
    *
-   * The uid of this service
+   * The uid of this service.
    */
-  pspec = g_param_spec_string ("uid",
-                               "uid",
-                               "uid",
+  pspec = g_param_spec_string ("uid", "", "",
                                NULL,
-                               G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
+                               G_PARAM_READWRITE |
+                               G_PARAM_CONSTRUCT_ONLY |
+                               G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_UID, pspec);
 
   /**
    * YtsService:type:
    *
-   * The type of this service
+   * The type of this service.
    */
-  pspec = g_param_spec_string ("type",
-                               "type",
-                               "type",
+  pspec = g_param_spec_string ("type", "", "",
                                NULL,
-                               G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
+                               G_PARAM_READWRITE |
+                               G_PARAM_CONSTRUCT_ONLY |
+                               G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_TYPE, pspec);
 
   /**
    * YtsService:names:
    *
-   * The names of this service
+   * The names of this service.
    */
-  pspec = g_param_spec_boxed ("names",
-                              "names",
-                              "names",
+  pspec = g_param_spec_boxed ("names", "", "",
                               G_TYPE_HASH_TABLE,
-                              G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
+                              G_PARAM_READWRITE |
+                              G_PARAM_CONSTRUCT_ONLY |
+                              G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_NAMES, pspec);
-
-  /**
-   * YtsService:caps:
-   *
-   * The caps of this service
-   */
-  pspec = g_param_spec_boxed ("caps",
-                              "caps",
-                              "caps",
-                              G_TYPE_STRV,
-                              G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
-  g_object_class_install_property (object_class, PROP_CAPS, pspec);
 
   /**
    * YtsService:type:
    *
-   * The type of this service
+   * The current status of this service in unparsed form.
    */
-  pspec = g_param_spec_string ("status-xml",
-                               "status-xml",
-                               "status-xml",
+  pspec = g_param_spec_string ("status-xml", "", "",
                                NULL,
-                               G_PARAM_READABLE);
+                               G_PARAM_READABLE |
+                               G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_STATUS_XML, pspec);
 
   /**
@@ -414,17 +451,7 @@ yts_service_get_service_type (YtsService *self)
   return priv->type;
 }
 
-char const **
-yts_service_get_caps (YtsService *self)
-{
-  YtsServicePrivate *priv = GET_PRIVATE (self);
-
-  g_return_val_if_fail (YTS_IS_SERVICE (self), NULL);
-
-  return (char const **) priv->caps;
-}
-
-GHashTable *
+GHashTable *const
 yts_service_get_names (YtsService *self)
 {
   YtsServicePrivate *priv = GET_PRIVATE (self);
@@ -442,24 +469,5 @@ yts_service_get_status_xml (YtsService *self)
   g_return_val_if_fail (YTS_IS_SERVICE (self), NULL);
 
   return priv->status_xml;
-}
-
-bool
-yts_service_has_capability (YtsService *self,
-                             char const  *capability)
-{
-  YtsServicePrivate *priv = GET_PRIVATE (self);
-  unsigned i;
-
-  g_return_val_if_fail (YTS_IS_SERVICE (self), false);
-  g_return_val_if_fail (priv->caps, false);
-
-  for (i = 0; priv->caps[i] != NULL; i++) {
-    if (0 == g_strcmp0 (capability, priv->caps[i])) {
-      return true;
-    }
-  }
-
-  return false;
 }
 

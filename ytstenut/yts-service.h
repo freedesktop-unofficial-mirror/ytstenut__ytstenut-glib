@@ -84,18 +84,11 @@ yts_service_get_contact (YtsService *self);
 char const *
 yts_service_get_service_type (YtsService *self);
 
-char const **
-yts_service_get_caps (YtsService *self);
-
-GHashTable *
+GHashTable *const
 yts_service_get_names (YtsService *self);
 
 char const *
 yts_service_get_status_xml (YtsService *self);
-
-bool
-yts_service_has_capability (YtsService  *self,
-                            char const  *capability);
 
 G_END_DECLS
 
