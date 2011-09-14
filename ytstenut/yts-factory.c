@@ -89,8 +89,8 @@ yts_factory_init (YtsFactory *self)
 }
 
 bool
-yts_factory_handles_fqc_id (YtsFactory const  *self,
-                            char const        *fqc_id)
+yts_factory_has_fqc_id (YtsFactory const  *self,
+                        char const        *fqc_id)
 {
   FactoryEntry const *entry;
   FactoryEntry        needle;

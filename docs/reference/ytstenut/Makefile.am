@@ -72,6 +72,8 @@ IGNORE_HFILES = \
   yts-proxy-internal.h \
   yts-proxy-service-internal.h \
   yts-roster-internal.h \
+  yts-service-factory.h \
+  yts-service-internal.h \
   yts-vp-playable-proxy.h \
   yts-vp-player-adapter.h \
   yts-vp-player-proxy.h \

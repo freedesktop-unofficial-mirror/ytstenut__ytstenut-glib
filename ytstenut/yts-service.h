@@ -24,7 +24,6 @@
 
 #include <stdbool.h>
 #include <glib-object.h>
-#include <ytstenut/yts-contact.h>
 
 G_BEGIN_DECLS
 
@@ -77,9 +76,6 @@ yts_service_get_uid (YtsService *self);
 
 char const *
 yts_service_get_jid (YtsService *self);
-
-YtsContact *
-yts_service_get_contact (YtsService *self);
 
 char const *
 yts_service_get_service_type (YtsService *self);

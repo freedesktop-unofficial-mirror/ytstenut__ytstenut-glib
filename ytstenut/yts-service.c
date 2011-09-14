@@ -36,7 +36,7 @@
 #include "yts-contact.h"
 #include "yts-debug.h"
 #include "yts-marshal.h"
-#include "yts-service.h"
+#include "yts-service-internal.h"
 #include "config.h"
 
 static void
@@ -431,7 +431,7 @@ yts_service_get_jid (YtsService *self)
  *
  * Return value (transfer none): #YtsContact.
  */
-YtsContact*
+YtsContact *const
 yts_service_get_contact (YtsService *self)
 {
   YtsServicePrivate *priv = GET_PRIVATE (self);

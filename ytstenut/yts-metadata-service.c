@@ -37,6 +37,7 @@
 #include "yts-message.h"
 #include "yts-metadata-internal.h"
 #include "yts-metadata-service-internal.h"
+#include "yts-service-internal.h"
 #include "yts-status.h"
 #include "config.h"
 

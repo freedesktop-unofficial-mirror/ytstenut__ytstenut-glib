@@ -77,6 +77,7 @@ source_c =						\
 		$(srcdir)/yts-proxy-service.c \
 		$(srcdir)/yts-response-message.c \
 		$(srcdir)/yts-service-adapter.c \
+		$(srcdir)/yts-service-factory.c \
 		\
 		$(srcdir)/profile/yts-profile.c \
 		$(srcdir)/profile/yts-profile-impl.c \
@@ -109,11 +110,13 @@ private_h = \
 		$(srcdir)/yts-proxy-internal.h \
 		$(srcdir)/yts-proxy-service-internal.h \
 		$(srcdir)/yts-roster-internal.h \
+		$(srcdir)/yts-service-factory.h \
 		\
 		$(srcdir)/profile/yts-profile.h \
 		$(srcdir)/profile/yts-profile-impl.h \
 		$(srcdir)/profile/yts-profile-proxy.h \
 		$(srcdir)/profile/yts-profile-adapter.h \
+		$(srcdir)/profile/yts-service-internal.h \
 		\
 		$(srcdir)/video-profile/yts-vp-playable-proxy.h \
 		$(srcdir)/video-profile/yts-vp-player-adapter.h \

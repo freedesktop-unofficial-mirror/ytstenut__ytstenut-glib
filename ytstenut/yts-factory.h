@@ -56,8 +56,8 @@ GType
 yts_factory_get_type (void) G_GNUC_CONST;
 
 bool
-yts_factory_handles_fqc_id (YtsFactory const  *self,
-                            char const        *fqc_id);
+yts_factory_has_fqc_id (YtsFactory const  *self,
+                        char const        *fqc_id);
 
 GType
 yts_factory_get_proxy_gtype_for_fqc_id (YtsFactory const  *self,

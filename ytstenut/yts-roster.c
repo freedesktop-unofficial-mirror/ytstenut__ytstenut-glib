@@ -34,9 +34,8 @@
 #include "yts-contact-internal.h"
 #include "yts-debug.h"
 #include "yts-marshal.h"
-#include "yts-metadata-service-internal.h"
-#include "yts-proxy-service-internal.h"
 #include "yts-roster-internal.h"
+#include "yts-service-factory.h"
 #include "config.h"
 
 static void yts_roster_dispose (GObject *object);
@@ -513,42 +512,6 @@ yts_roster_contact_service_added_cb (YtsContact *contact,
   g_signal_emit (roster, signals[SERVICE_ADDED], 0, service);
 }
 
-/* FIXME this should probably go into some sort of factory.
- * Then we'll probably also use some smarter lookup algorithm. */
-static YtsService *
-create_service (YtsRoster         *self,
-                YtsContact        *contact,
-                char const        *sid,
-                char const        *type,
-                char const *const *caps,
-                GHashTable        *names)
-{
-  static char const *known_caps[] = {
-    "org.freedesktop.ytstenut.VideoProfile.Content",
-    "org.freedesktop.ytstenut.VideoProfile.Player",
-    "org.freedesktop.ytstenut.VideoProfile.Transcript",
-    "org.freedesktop.ytstenut.VideoProfile.Transfer",
-    NULL
-  };
-
-  // TODO: publish implemented profiles in "names"?
-  if (caps && *caps)
-    {
-      char const *capability = *caps;
-      unsigned int i;
-
-      for (i = 0; known_caps[i] != NULL; i++)
-        {
-          if (0 == g_strcmp0 (capability, known_caps[i]))
-            {
-              return yts_proxy_service_new (contact, sid, type, caps, names);
-            }
-        }
-    }
-
-  return yts_metadata_service_new (contact, sid, type, caps, names);
-}
-
 void
 yts_roster_add_service (YtsRoster           *roster,
                           const char        *jid,
@@ -557,9 +520,10 @@ yts_roster_add_service (YtsRoster           *roster,
                           char const *const *caps,
                           GHashTable        *names)
 {
-  YtsRosterPrivate *priv;
-  YtsContact       *contact;
-  YtsService       *service;
+  YtsRosterPrivate  *priv;
+  YtsContact        *contact;
+  YtsService        *service;
+  YtsServiceFactory *factory = yts_service_factory_get_default ();
 
   g_return_if_fail (YTS_IS_ROSTER (roster));
 
@@ -586,7 +550,12 @@ yts_roster_add_service (YtsRoster           *roster,
 
   YTS_NOTE (ROSTER, "Adding service %s:%s", jid, sid);
 
-  service = create_service (roster, contact, sid, type, caps, names);
+  service = yts_service_factory_create_service (factory,
+                                                caps,
+                                                contact,
+                                                sid,
+                                                type,
+                                                names);
 
   yts_contact_add_service (contact, service);
 

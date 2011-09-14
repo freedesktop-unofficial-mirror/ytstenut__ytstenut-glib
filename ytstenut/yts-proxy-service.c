@@ -27,6 +27,7 @@
 #include "yts-proxy-factory.h"
 #include "yts-proxy-internal.h"
 #include "yts-proxy-service-internal.h"
+#include "yts-service-internal.h"
 
 #include "profile/yts-profile.h"
 #include "profile/yts-profile-proxy.h"
