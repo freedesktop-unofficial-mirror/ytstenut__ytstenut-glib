@@ -39,7 +39,6 @@ G_BEGIN_DECLS
  */
 typedef struct _YtsClient  YtsClient;
 typedef struct _YtsContact YtsContact;
-typedef struct _YtsService YtsService;
 
 /**
  * YtsProtocol:

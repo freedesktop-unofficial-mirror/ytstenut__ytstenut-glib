@@ -16,6 +16,7 @@
  * <http://www.gnu.org/licenses/>.
  *
  * Authored by: Tomas Frydrych <tf@linux.intel.com>
+ *              Rob Staudinger <robsta@linux.intel.com>
  */
 
 /**
@@ -27,6 +28,7 @@
  */
 
 // FIXME derive from YtsCapability?
+// FIXME should not reference contact
 
 #include <telepathy-glib/util.h>
 #include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
@@ -38,39 +40,12 @@
 #include "yts-service.h"
 #include "config.h"
 
-static void yts_service_dispose (GObject *object);
-static void yts_service_finalize (GObject *object);
-static void yts_service_constructed (GObject *object);
-static void yts_service_get_property (GObject    *object,
-                                       guint       property_id,
-                                       GValue     *value,
-                                       GParamSpec *pspec);
-static void yts_service_set_property (GObject      *object,
-                                       guint         property_id,
-                                       const GValue *value,
-                                       GParamSpec   *pspec);
-
 G_DEFINE_ABSTRACT_TYPE (YtsService, yts_service, G_TYPE_OBJECT);
 
-#define YTS_SERVICE_GET_PRIVATE(o) \
-(G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_SERVICE, YtsServicePrivate))
+#define GET_PRIVATE(o) \
+  (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_SERVICE, YtsServicePrivate))
 
-struct _YtsServicePrivate
-{
-  const char  *type;
-  char       **caps;
-  GHashTable  *names;
-  const char  *uid;
-
-  YtsContact *contact;   /* back-reference to the contact object that owns us */
-
-  char        *status_xml;
-
-  guint disposed : 1;
-};
-
-enum
-{
+enum {
   PROP_0,
   PROP_TYPE,
   PROP_NAMES,
@@ -80,62 +55,200 @@ enum
   PROP_STATUS_XML
 };
 
-enum
-{
-  MESSAGE_SIGNAL,
+enum {
+  SIG_MESSAGE,
   N_SIGNALS
 };
 
-static guint _signals[N_SIGNALS] = { 0, };
+typedef struct {
+  char const  *type;
+  char       **caps;
+  GHashTable  *names;
+  char const  *uid;
+
+  YtsContact *contact;   /* back-reference to the contact object that owns us */
+
+  char        *status_xml;
+} YtsServicePrivate;
+
+static unsigned _signals[N_SIGNALS] = { 0, };
 
 static void
-yts_service_status_changed_cb (TpYtsStatus *status,
-                                const gchar *contact_id,
-                                const gchar *capability,
-                                const gchar *service_name,
-                                const gchar *xml,
-                                YtsService *self)
+_tp_status_changed (TpYtsStatus *status,
+                    char const  *contact_id,
+                    char const  *capability,
+                    char const  *service_name,
+                    char const  *xml,
+                    YtsService  *self)
 {
-  YtsServicePrivate *priv = self->priv;
-  const char *jid = yts_service_get_jid (self);
+  YtsServicePrivate *priv = GET_PRIVATE (self);
+  char const *jid;
 
-  g_return_if_fail (contact_id && service_name && jid && priv->uid);
+  jid = yts_service_get_jid (self);
 
   YTS_NOTE (STATUS, "Status changed for %s/%s:%s",
              contact_id, service_name, capability);
 
   if (0 == g_strcmp0 (contact_id, jid) &&
       0 == g_strcmp0 (service_name, priv->uid) &&
-      0 != g_strcmp0 (xml, priv->status_xml))
-    {
-      if (priv->status_xml)
-        {
-          g_free (priv->status_xml);
-          priv->status_xml = NULL;
-        }
+      0 != g_strcmp0 (xml, priv->status_xml)) {
 
-      if (xml)
-        {
+    if (priv->status_xml) {
+      g_free (priv->status_xml);
+      priv->status_xml = NULL;
+    }
+
+    if (xml) {
+      priv->status_xml = g_strdup (xml);
+    }
+
+    g_object_notify (G_OBJECT (self), "status-xml");
+  }
+}
+
+static void
+_constructed (GObject *object)
+{
+  YtsServicePrivate *priv = GET_PRIVATE (object);
+  YtsClient   *client;
+  TpYtsStatus *tp_status;
+  GHashTable  *stats;
+
+  if (G_OBJECT_CLASS (yts_service_parent_class)->constructed)
+    G_OBJECT_CLASS (yts_service_parent_class)->constructed (object);
+
+  g_return_if_fail (priv->contact);
+
+  /*
+   * Construct the YtsStatus object from the xml stored in
+   * TpYtsStatus:discovered-statuses
+   *
+   * -- this is bit cumbersome, requiring nested hash table lookup.
+   */
+  client = yts_contact_get_client (priv->contact);
+  tp_status = yts_client_get_tp_status (client);
+  g_return_if_fail (tp_status);
+
+  if (priv->caps && *priv->caps &&
+      (stats = tp_yts_status_get_discovered_statuses (tp_status))) {
+
+    char const *jid = yts_service_get_jid (YTS_SERVICE (object));
+
+    // FIXME, should we do this for every cap possibly?
+    char const *cap = *priv->caps; /*a single capability we have*/
+    GHashTable *cinfo;
+
+    if ((cinfo = g_hash_table_lookup (stats, jid))) {
+
+      GHashTable *capinfo;
+      if (NULL != (capinfo = g_hash_table_lookup (cinfo, cap))) {
+
+        char *xml;
+        if (NULL != (xml = g_hash_table_lookup (capinfo, priv->uid))) {
           priv->status_xml = g_strdup (xml);
         }
-
-      g_object_notify (G_OBJECT (self), "status-xml");
+      }
     }
+  }
+
+  tp_g_signal_connect_object (tp_status, "status-changed",
+                              G_CALLBACK (_tp_status_changed),
+                              object, 0);
+}
+
+static void
+_get_property (GObject    *object,
+               unsigned    property_id,
+               GValue     *value,
+               GParamSpec *pspec)
+{
+  YtsServicePrivate *priv = GET_PRIVATE (object);
+
+  switch (property_id) {
+    case PROP_UID:
+      g_value_set_string (value, priv->uid);
+      break;
+    case PROP_TYPE:
+      g_value_set_string (value, priv->type);
+      break;
+    case PROP_NAMES:
+      g_value_set_boxed (value, priv->names);
+      break;
+    case PROP_CAPS:
+      g_value_set_boxed (value, priv->caps);
+      break;
+    case PROP_STATUS_XML:
+      g_value_set_string (value, priv->status_xml);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+  }
+}
+
+static void
+_set_property (GObject      *object,
+               unsigned      property_id,
+               const GValue *value,
+               GParamSpec   *pspec)
+{
+  YtsServicePrivate *priv = GET_PRIVATE (object);
+
+  switch (property_id) {
+    case PROP_CONTACT:
+      priv->contact = g_value_get_object (value);
+      break;
+    case PROP_UID:
+      priv->uid = g_intern_string (g_value_get_string (value));
+      break;
+    case PROP_TYPE:
+      priv->type = g_intern_string (g_value_get_string (value));
+      break;
+    case PROP_NAMES:
+      priv->names = g_value_dup_boxed (value);
+      break;
+    case PROP_CAPS:
+      priv->caps = g_value_dup_boxed (value);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+  }
+}
+
+static void
+_dispose (GObject *object)
+{
+  YtsServicePrivate *priv = GET_PRIVATE (object);
+
+  /* Free pointer, no ref. */
+  priv->contact = NULL;
+
+  if (priv->names)
+    {
+      g_hash_table_unref (priv->names);
+      priv->names = NULL;
+    }
+
+  if (priv->status_xml)
+    {
+      g_free (priv->status_xml);
+      priv->status_xml = NULL;
+    }
+
+  G_OBJECT_CLASS (yts_service_parent_class)->dispose (object);
 }
 
 static void
 yts_service_class_init (YtsServiceClass *klass)
 {
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
   GParamSpec   *pspec;
-  GObjectClass *object_class = (GObjectClass *)klass;
 
   g_type_class_add_private (klass, sizeof (YtsServicePrivate));
 
-  object_class->dispose      = yts_service_dispose;
-  object_class->finalize     = yts_service_finalize;
-  object_class->constructed  = yts_service_constructed;
-  object_class->get_property = yts_service_get_property;
-  object_class->set_property = yts_service_set_property;
+  object_class->constructed = _constructed;
+  object_class->dispose = _dispose;
+  object_class->get_property = _get_property;
+  object_class->set_property = _set_property;
 
   /**
    * YtsService:contact:
@@ -218,171 +331,20 @@ yts_service_class_init (YtsServiceClass *klass)
    *
    * Since: 0.1
    */
-  _signals[MESSAGE_SIGNAL] =
-    g_signal_new ("message",
-                  G_TYPE_FROM_CLASS (object_class),
-                  G_SIGNAL_RUN_LAST,
-                  G_STRUCT_OFFSET (YtsServiceClass, message),
-                  NULL, NULL,
-                  yts_marshal_VOID__STRING,
-                  G_TYPE_NONE, 1,
-                  G_TYPE_STRING);
-}
-
-static void
-yts_service_constructed (GObject *object)
-{
-  YtsServicePrivate *priv = YTS_SERVICE (object)->priv;
-  YtsClient                 *client;
-  TpYtsStatus                *status;
-  GHashTable                 *stats;
-
-  if (G_OBJECT_CLASS (yts_service_parent_class)->constructed)
-    G_OBJECT_CLASS (yts_service_parent_class)->constructed (object);
-
-  g_return_if_fail (priv->contact);
-
-  /*
-   * Construct the YtsStatus object from the xml stored in
-   * TpYtsStatus:discovered-statuses
-   *
-   * -- this is bit cumbersome, requiring nested hash table lookup.
-   */
-  client = yts_contact_get_client (priv->contact);
-  status = yts_client_get_tp_status (client);
-  g_return_if_fail (status);
-
-  if (priv->caps && *priv->caps &&
-      (stats = tp_yts_status_get_discovered_statuses (status)))
-    {
-      const char *jid = yts_service_get_jid ((YtsService*)object);
-      const char *uid = yts_service_get_uid ((YtsService*)object);
-
-      // FIXME, should we do this for every cap possibly?
-      const char *cap = *priv->caps; /*a single capability we have*/
-      GHashTable *cinfo;
-
-      if ((cinfo = g_hash_table_lookup (stats, jid)))
-        {
-          GHashTable *capinfo;
-
-          if ((capinfo = g_hash_table_lookup (cinfo, cap)))
-            {
-              char *xml;
-
-              if ((xml = g_hash_table_lookup (capinfo, uid)))
-                {
-                  priv->status_xml = g_strdup (xml);
-                }
-            }
-        }
-    }
-
-  tp_g_signal_connect_object (status, "status-changed",
-                              G_CALLBACK (yts_service_status_changed_cb),
-                              object, 0);
-}
-
-static void
-yts_service_get_property (GObject    *object,
-                           guint       property_id,
-                           GValue     *value,
-                           GParamSpec *pspec)
-{
-  YtsService        *self = (YtsService*) object;
-  YtsServicePrivate *priv = self->priv;
-
-  switch (property_id)
-    {
-    case PROP_UID:
-      g_value_set_string (value, priv->uid);
-      break;
-    case PROP_TYPE:
-      g_value_set_string (value, priv->type);
-      break;
-    case PROP_NAMES:
-      g_value_set_boxed (value, priv->names);
-      break;
-    case PROP_CAPS:
-      g_value_set_boxed (value, priv->caps);
-      break;
-    case PROP_STATUS_XML:
-      g_value_set_string (value, priv->status_xml);
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-    }
-}
-
-static void
-yts_service_set_property (GObject      *object,
-                           guint         property_id,
-                           const GValue *value,
-                           GParamSpec   *pspec)
-{
-  YtsService        *self = (YtsService*) object;
-  YtsServicePrivate *priv = self->priv;
-
-  switch (property_id)
-    {
-    case PROP_CONTACT:
-      priv->contact = g_value_get_object (value);
-      break;
-    case PROP_UID:
-      priv->uid = g_intern_string (g_value_get_string (value));
-      break;
-    case PROP_TYPE:
-      priv->type = g_intern_string (g_value_get_string (value));
-      break;
-    case PROP_NAMES:
-      priv->names = g_value_dup_boxed (value);
-      break;
-    case PROP_CAPS:
-      priv->caps = g_value_dup_boxed (value);
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-    }
+  _signals[SIG_MESSAGE] = g_signal_new ("message",
+                                        G_TYPE_FROM_CLASS (object_class),
+                                        G_SIGNAL_RUN_LAST,
+                                        G_STRUCT_OFFSET (YtsServiceClass,
+                                                         message),
+                                        NULL, NULL,
+                                        yts_marshal_VOID__STRING,
+                                        G_TYPE_NONE, 1,
+                                        G_TYPE_STRING);
 }
 
 static void
 yts_service_init (YtsService *self)
 {
-  self->priv = YTS_SERVICE_GET_PRIVATE (self);
-}
-
-static void
-yts_service_dispose (GObject *object)
-{
-  YtsService        *self = (YtsService*) object;
-  YtsServicePrivate *priv = self->priv;
-
-  if (priv->disposed)
-    return;
-
-  priv->disposed = TRUE;
-
-  priv->contact = NULL;
-
-  if (priv->names)
-    {
-      g_hash_table_unref (priv->names);
-      priv->names = NULL;
-    }
-
-  if (priv->status_xml)
-    {
-      g_free (priv->status_xml);
-      priv->status_xml = NULL;
-    }
-
-  G_OBJECT_CLASS (yts_service_parent_class)->dispose (object);
-}
-
-static void
-yts_service_finalize (GObject *object)
-{
-  G_OBJECT_CLASS (yts_service_parent_class)->finalize (object);
 }
 
 /**
@@ -394,12 +356,14 @@ yts_service_finalize (GObject *object)
  *
  * Return value: (transfer none): the uid.
  */
-const char *
-yts_service_get_uid (YtsService *service)
+char const *
+yts_service_get_uid (YtsService *self)
 {
-  g_return_val_if_fail (YTS_IS_SERVICE (service), NULL);
+  YtsServicePrivate *priv = GET_PRIVATE (self);
 
-  return service->priv->uid;
+  g_return_val_if_fail (YTS_IS_SERVICE (self), NULL);
+
+  return priv->uid;
 }
 
 /**
@@ -411,12 +375,14 @@ yts_service_get_uid (YtsService *service)
  *
  * Return value: (transfer none): the jid.
  */
-const char *
-yts_service_get_jid (YtsService *service)
+char const *
+yts_service_get_jid (YtsService *self)
 {
-  g_return_val_if_fail (YTS_IS_SERVICE (service), NULL);
+  YtsServicePrivate *priv = GET_PRIVATE (self);
 
-  return yts_contact_get_jid (service->priv->contact);
+  g_return_val_if_fail (YTS_IS_SERVICE (self), NULL);
+
+  return yts_contact_get_jid (priv->contact);
 }
 
 /**
@@ -429,73 +395,71 @@ yts_service_get_jid (YtsService *service)
  * Return value (transfer none): #YtsContact.
  */
 YtsContact*
-yts_service_get_contact (YtsService *service)
+yts_service_get_contact (YtsService *self)
 {
-  YtsServicePrivate *priv;
+  YtsServicePrivate *priv = GET_PRIVATE (self);
 
-  g_return_val_if_fail (YTS_IS_SERVICE (service), NULL);
-
-  priv = service->priv;
+  g_return_val_if_fail (YTS_IS_SERVICE (self), NULL);
 
   return priv->contact;
 }
 
-const char *
-yts_service_get_service_type (YtsService *service)
+char const *
+yts_service_get_service_type (YtsService *self)
 {
-  YtsServicePrivate *priv = service->priv;
+  YtsServicePrivate *priv = GET_PRIVATE (self);
 
-  g_return_val_if_fail (YTS_IS_SERVICE (service), NULL);
+  g_return_val_if_fail (YTS_IS_SERVICE (self), NULL);
 
   return priv->type;
 }
 
-const char **
-yts_service_get_caps (YtsService *service)
+char const **
+yts_service_get_caps (YtsService *self)
 {
-  YtsServicePrivate *priv = service->priv;
+  YtsServicePrivate *priv = GET_PRIVATE (self);
 
-  g_return_val_if_fail (YTS_IS_SERVICE (service), NULL);
+  g_return_val_if_fail (YTS_IS_SERVICE (self), NULL);
 
-  return (const char **) priv->caps;
+  return (char const **) priv->caps;
 }
 
 GHashTable *
-yts_service_get_names (YtsService *service)
+yts_service_get_names (YtsService *self)
 {
-  YtsServicePrivate *priv = service->priv;
+  YtsServicePrivate *priv = GET_PRIVATE (self);
 
-  g_return_val_if_fail (YTS_IS_SERVICE (service), NULL);
+  g_return_val_if_fail (YTS_IS_SERVICE (self), NULL);
 
   return priv->names;
 }
 
-const char *
-yts_service_get_status_xml (YtsService *service)
+char const *
+yts_service_get_status_xml (YtsService *self)
 {
-  YtsServicePrivate *priv = service->priv;
+  YtsServicePrivate *priv = GET_PRIVATE (self);
 
-  g_return_val_if_fail (YTS_IS_SERVICE (service), NULL);
+  g_return_val_if_fail (YTS_IS_SERVICE (self), NULL);
 
   return priv->status_xml;
 }
 
-gboolean
+bool
 yts_service_has_capability (YtsService *self,
                              char const  *capability)
 {
-  YtsServicePrivate *priv = self->priv;
-  guint i;
+  YtsServicePrivate *priv = GET_PRIVATE (self);
+  unsigned i;
 
-  g_return_val_if_fail (YTS_IS_SERVICE (self), FALSE);
-  g_return_val_if_fail (priv->caps, FALSE);
+  g_return_val_if_fail (YTS_IS_SERVICE (self), false);
+  g_return_val_if_fail (priv->caps, false);
 
   for (i = 0; priv->caps[i] != NULL; i++) {
     if (0 == g_strcmp0 (capability, priv->caps[i])) {
-      return TRUE;
+      return true;
     }
   }
 
-  return FALSE;
+  return false;
 }
 

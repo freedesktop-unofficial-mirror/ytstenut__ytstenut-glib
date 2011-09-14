@@ -28,6 +28,7 @@
 #include <ytstenut/yts-caps.h>
 #include <ytstenut/yts-error.h>
 #include <ytstenut/yts-types.h>
+#include <ytstenut/yts-service.h>
 
 G_BEGIN_DECLS
 
