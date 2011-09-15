@@ -82,7 +82,7 @@ _client_roster_service_added (YtsRoster  *roster,
 {
   char const *uid;
 
-  uid = yts_service_get_uid (service);
+  uid = yts_service_get_id (service);
 
   if (0 == g_strcmp0 (uid, SERVER_UID)) {
 
@@ -93,7 +93,7 @@ _client_roster_service_added (YtsRoster  *roster,
                                                          CAPABILITY,
                                                          "method1",
                                                          args);
-    yts_service_send_message (YTS_METADATA_SERVICE (service), message);
+    yts_service_send_message (service, message);
   }
 }
 

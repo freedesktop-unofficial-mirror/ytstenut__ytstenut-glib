@@ -89,7 +89,7 @@ _contact_send_message (YtsContact   *contact,
                        YtsRoster    *self)
 {
   YtsRosterPrivate *priv = self->priv;
-  char const *service_id = yts_service_get_uid (service);
+  char const *service_id = yts_service_get_id (service);
 
   yts_client_send_message (priv->client,
                            contact,

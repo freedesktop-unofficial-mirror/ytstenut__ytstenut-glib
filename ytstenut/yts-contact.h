@@ -96,8 +96,7 @@ struct _YtsContact
 
 GType yts_contact_get_type (void) G_GNUC_CONST;
 
-YtsClient *yts_contact_get_client         (const YtsContact  *contact);
-const char *yts_contact_get_jid            (const YtsContact  *contact);
+const char *yts_contact_get_id            (const YtsContact  *contact);
 const char *yts_contact_get_name           (const YtsContact  *contact);
 TpContact  *yts_contact_get_tp_contact     (const YtsContact  *contact);
 GFile      *yts_contact_get_icon           (const YtsContact  *contact,

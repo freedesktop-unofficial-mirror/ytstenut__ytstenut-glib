@@ -18,9 +18,8 @@ yts_client_set_incoming_file_directory
 yts_client_set_status
 yts_client_set_status_by_capability
 yts_contact_cancel_file
-yts_contact_get_client
 yts_contact_get_icon
-yts_contact_get_jid
+yts_contact_get_id
 yts_contact_get_name
 yts_contact_get_tp_contact
 yts_contact_get_type
@@ -76,11 +75,11 @@ yts_service_adapter_invoke
 yts_service_adapter_send_error
 yts_service_adapter_send_event
 yts_service_adapter_send_response
+yts_service_get_id
 yts_service_get_names
 yts_service_get_service_type
-yts_service_get_type
 yts_service_get_statuses
-yts_service_get_uid
+yts_service_get_type
 yts_service_send_message
 yts_status_get_type
 yts_status_new

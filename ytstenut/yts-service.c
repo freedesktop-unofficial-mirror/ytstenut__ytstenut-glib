@@ -294,7 +294,7 @@ yts_service_init (YtsService *self)
 }
 
 /**
- * yts_service_get_uid:
+ * yts_service_get_id:
  * @service: #YtsService
  *
  * Returns the uid of the the given service. The returned pointer is to a
@@ -303,7 +303,7 @@ yts_service_init (YtsService *self)
  * Return value: (transfer none): the uid.
  */
 char const *
-yts_service_get_uid (YtsService *self)
+yts_service_get_id (YtsService *self)
 {
   YtsServicePrivate *priv = GET_PRIVATE (self);
 

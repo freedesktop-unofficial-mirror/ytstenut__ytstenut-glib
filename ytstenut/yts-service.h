@@ -79,7 +79,7 @@ GType
 yts_service_get_type (void) G_GNUC_CONST;
 
 char const *
-yts_service_get_uid (YtsService *self);
+yts_service_get_id (YtsService *self);
 
 char const *
 yts_service_get_service_type (YtsService *self);

@@ -98,7 +98,7 @@ _register_proxy (YtsProfile  *self,
       if (NULL == return_value) {
         g_critical ("%s : Failed to register proxy %s:%s for %s",
                     G_STRLOC,
-                    yts_contact_get_jid (contact),
+                    yts_contact_get_id (contact),
                     proxy_id,
                     capability);
         return_value = g_variant_new_boolean (false);
@@ -174,7 +174,7 @@ _unregister_proxy (YtsProfile  *self,
   if (!ret) {
     g_critical ("%s : Failed to unregister proxy %s:%s for %s",
                 G_STRLOC,
-                yts_contact_get_jid (contact),
+                yts_contact_get_id (contact),
                 proxy_id,
                 capability);
     yts_profile_unregister_proxy_return (self, invocation_id, false);

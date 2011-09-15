@@ -125,7 +125,7 @@ static void
 yts_contact_service_added (YtsContact *contact, YtsService *service)
 {
   YtsContactPrivate *priv = contact->priv;
-  const char         *uid  = yts_service_get_uid (service);
+  const char         *uid  = yts_service_get_id (service);
 
   g_return_if_fail (uid && *uid);
   g_return_if_fail (!g_hash_table_lookup (priv->services, uid));
@@ -142,7 +142,7 @@ static void
 yts_contact_service_removed (YtsContact *contact, YtsService *service)
 {
   YtsContactPrivate *priv = contact->priv;
-  const char         *uid  = yts_service_get_uid (service);
+  const char         *uid  = yts_service_get_id (service);
 
   g_return_if_fail (uid && *uid);
 
@@ -549,7 +549,7 @@ yts_contact_finalize (GObject *object)
 }
 
 /**
- * yts_contact_get_jid:
+ * yts_contact_get_id:
  * @contact: #YtsContact
  *
  * Retrieves the jabber identifier of this contact.
@@ -557,7 +557,7 @@ yts_contact_finalize (GObject *object)
  * Return value: (transfer none): The jid of this contact.
  */
 const char *
-yts_contact_get_jid (const YtsContact *contact)
+yts_contact_get_id (const YtsContact *contact)
 {
   YtsContactPrivate *priv;
 
@@ -755,7 +755,7 @@ yts_contact_ft_op_cb (EmpathyTpFile *tp_file,
     {
       e = (atom | YTS_ERROR_UNKNOWN);
       g_warning ("File transfer to %s failed: %s",
-                 yts_contact_get_jid (item), error->message);
+                 yts_contact_get_id (item), error->message);
     }
   else
     e = (atom | YTS_ERROR_SUCCESS);
@@ -1215,7 +1215,7 @@ yts_contact_add_service (YtsContact *contact, YtsService *service)
    * Emit the signal; the run-first signal closure will do the rest
    */
   YTS_NOTE (CONTACT, "New service %s on %s",
-             yts_service_get_uid (service),
+             yts_service_get_id (service),
              priv->jid);
 
   g_signal_emit (contact, signals[SERVICE_ADDED], 0, service);

@@ -525,7 +525,7 @@ yts_client_ft_accept_cb (TpProxy      *proxy,
 
   if ((item = yts_roster_find_contact_by_handle (priv->roster, ihandle)))
     {
-      jid = yts_contact_get_jid (item);
+      jid = yts_contact_get_id (item);
     }
   else
     {
@@ -590,7 +590,7 @@ yts_client_ft_handle_state (YtsClient *client, TpChannel *proxy, guint state)
             if (item)
               YTS_NOTE (FILE_TRANSFER,
                          "Got request for FT channel from %s (%s)",
-                         yts_contact_get_jid (item),
+                         yts_contact_get_id (item),
                          tp_proxy_get_bus_name (proxy));
             else
               YTS_NOTE (FILE_TRANSFER,
@@ -625,7 +625,7 @@ yts_client_ft_handle_state (YtsClient *client, TpChannel *proxy, guint state)
 
             if (item)
               {
-                jid = yts_contact_get_jid (item);
+                jid = yts_contact_get_id (item);
 
                 name   = tp_asv_get_string (props, "Filename");
 
@@ -3440,7 +3440,7 @@ yts_client_cleanup_service (YtsClient   *self,
   GHashTableIter   iter;
   bool             start_over;
 
-  service_id = yts_service_get_uid (service);
+  service_id = yts_service_get_id (service);
 
   /*
    * Clear pending responses.
