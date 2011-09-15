@@ -3577,3 +3577,25 @@ yts_client_unregister_proxy (YtsClient  *self,
   return true;
 }
 
+void
+yts_client_foreach_service (YtsClient                 *self,
+                            YtsClientServiceIterator   callback,
+                            void                      *user_data)
+{
+  YtsClientPrivate *priv = self->priv;
+  GHashTableIter     iter;
+  char const        *fqc_id;
+  YtsServiceAdapter *adapter;
+
+  g_return_if_fail (YTS_IS_CLIENT (self));
+  g_return_if_fail (callback);
+
+  g_hash_table_iter_init (&iter, priv->services);
+  while (g_hash_table_iter_next (&iter,
+                                 (void **) &fqc_id,
+                                 (void **) &adapter)) {
+    YtsCapability *capability = yts_service_adapter_get_service (adapter);
+    callback (self, fqc_id, capability, user_data);
+  }
+}
+

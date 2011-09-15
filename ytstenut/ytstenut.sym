@@ -12,6 +12,7 @@ yts_client_get_roster
 yts_client_get_type
 yts_client_get_uid
 yts_client_new
+yts_client_foreach_service
 yts_client_register_service
 yts_client_set_capabilities
 yts_client_set_incoming_file_directory

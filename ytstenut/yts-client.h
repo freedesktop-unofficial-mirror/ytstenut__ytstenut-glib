@@ -124,32 +124,16 @@ gboolean
 yts_client_register_service (YtsClient      *self,
                               YtsCapability  *service);
 
-/* Protected */
+typedef void
+(*YtsClientServiceIterator) (YtsClient      *client,
+                             char const     *fqc_id,
+                             YtsCapability  *service,
+                             void           *user_data);
 
 void
-yts_client_cleanup_contact (YtsClient         *self,
-                             YtsContact const  *contact);
-
-void
-yts_client_cleanup_service (YtsClient   *self,
-                             YtsService  *service);
-
-bool
-yts_client_get_invocation_proxy (YtsClient   *self,
-                                  char const   *invocation_id,
-                                  YtsContact **contact,
-                                  char const  **proxy_id);
-
-GVariant *
-yts_client_register_proxy (YtsClient  *self,
-                            char const  *capability,
-                            YtsContact *contact,
-                            char const  *proxy_id);
-
-bool
-yts_client_unregister_proxy (YtsClient  *self,
-                              char const  *capability,
-                              char const  *proxy_id);
+yts_client_foreach_service (YtsClient                 *self,
+                            YtsClientServiceIterator   callback,
+                            void                      *user_data);
 
 G_END_DECLS
 

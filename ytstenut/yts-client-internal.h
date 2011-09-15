@@ -41,5 +41,31 @@ yts_client_send_message (YtsClient    *client,
                          char const   *uid,
                          YtsMetadata  *message);
 
+
+void
+yts_client_cleanup_contact (YtsClient         *self,
+                             YtsContact const  *contact);
+
+void
+yts_client_cleanup_service (YtsClient   *self,
+                             YtsService  *service);
+
+bool
+yts_client_get_invocation_proxy (YtsClient   *self,
+                                  char const   *invocation_id,
+                                  YtsContact **contact,
+                                  char const  **proxy_id);
+
+GVariant *
+yts_client_register_proxy (YtsClient  *self,
+                            char const  *capability,
+                            YtsContact *contact,
+                            char const  *proxy_id);
+
+bool
+yts_client_unregister_proxy (YtsClient  *self,
+                              char const  *capability,
+                              char const  *proxy_id);
+
 #endif /* YTS_CLIENT_INTERNAL_H */
 
