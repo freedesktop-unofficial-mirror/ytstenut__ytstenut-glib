@@ -116,9 +116,11 @@ yts_factory_get_proxy_gtype_for_fqc_id (YtsFactory const  *self,
                    sizeof (FactoryEntry),
                    _factory_entry_compare);
 
-  g_return_val_if_fail (entry, G_TYPE_INVALID);
+  if (entry) {
+    return entry->proxy_gtype;
+  }
 
-  return entry->proxy_gtype;
+  return G_TYPE_INVALID;
 }
 
 GType
@@ -135,8 +137,10 @@ yts_factory_get_adapter_gtype_for_fqc_id (YtsFactory const  *self,
                    sizeof (FactoryEntry),
                    _factory_entry_compare);
 
-  g_return_val_if_fail (entry, G_TYPE_INVALID);
+  if (entry) {
+    return entry->adapter_gtype;
+  }
 
-  return entry->adapter_gtype;
+  return G_TYPE_INVALID;
 }
 
