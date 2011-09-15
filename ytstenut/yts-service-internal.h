@@ -24,8 +24,10 @@
 #include <ytstenut/yts-service.h>
 #include <ytstenut/yts-contact.h>
 
-YtsContact *const
-yts_service_get_contact (YtsService *self);
+void
+yts_service_update_status (YtsService *self,
+                           char const *fqc_id,
+                           char const *status_xml);
 
 G_END_DECLS
 

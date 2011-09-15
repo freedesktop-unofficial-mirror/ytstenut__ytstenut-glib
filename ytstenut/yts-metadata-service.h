@@ -85,9 +85,6 @@ struct _YtsMetadataService
 
 GType yts_metadata_service_get_type (void) G_GNUC_CONST;
 
-YtsError yts_metadata_service_send_metadata (YtsMetadataService *service,
-                                               YtsMetadata        *metadata);
-
 G_END_DECLS
 
 #endif /* YTS_METADATA_SERVICE_H */

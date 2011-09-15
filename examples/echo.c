@@ -86,10 +86,8 @@ _client_roster_service_added (YtsRoster  *roster,
                               void        *data)
 {
   char const *uid;
-  char const *jid;
 
   uid = yts_service_get_uid (service);
-  jid = yts_service_get_jid (service);
 
   if (0 == g_strcmp0 (uid, SERVER_UID)) {
 
@@ -99,11 +97,10 @@ _client_roster_service_added (YtsRoster  *roster,
     };
     YtsMetadata  *message = (YtsMetadata*)yts_message_new ((const char**)&payload);
 
-    g_debug ("%s() %s %s", __FUNCTION__, uid, jid);
+    g_debug ("%s() %s", __FUNCTION__, uid);
     g_debug ("Sending message \"%s\"", payload[1]);
 
-    yts_metadata_service_send_metadata ((YtsMetadataService *)service,
-                                         message);
+    yts_service_send_message (service, message);
   }
 }
 
@@ -189,8 +186,7 @@ _server_message (YtsClient   *client,
     g_debug ("%s() echoing \"%s\"", __FUNCTION__, text);
     payload[1] = text;
     message = (YtsMetadata*)yts_message_new ((const char**)&payload);
-    yts_metadata_service_send_metadata ((YtsMetadataService *)self->service,
-                                         message);
+    yts_service_send_message (YTS_SERVICE (self->service), message);
   }
 }
 
@@ -212,12 +208,10 @@ _server_roster_service_added (YtsRoster  *roster,
                               ServerData  *self)
 {
   char const *uid;
-  char const *jid;
 
   uid = yts_service_get_uid (service);
-  jid = yts_service_get_jid (service);
 
-  g_debug ("%s() %s %s", __FUNCTION__, uid, jid);
+  g_debug ("%s() %s", __FUNCTION__, uid);
 
   /* FIXME, possible race condition when client sends message before
    * it shows up in our roster? */

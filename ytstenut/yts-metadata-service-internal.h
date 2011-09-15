@@ -27,11 +27,11 @@
 #include <ytstenut/yts-metadata-service.h>
 
 YtsService *
-yts_metadata_service_new (YtsContact        *contact,
-                          char const        *uid,
+yts_metadata_service_new (char const        *uid,
                           char const        *type,
                           char const *const *fqc_ids,
-                          GHashTable        *names);
+                          GHashTable        *names,
+                          GHashTable        *statuses);
 
 #endif /* YTS_METADATA_SERVICE_INTERNAL_H */
 

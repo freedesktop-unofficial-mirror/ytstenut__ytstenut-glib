@@ -22,7 +22,6 @@
 #define YTS_SERVICE_FACTORY_H
 
 #include <glib-object.h>
-#include <ytstenut/yts-contact.h>
 #include <ytstenut/yts-factory.h>
 #include <ytstenut/yts-service.h>
 
@@ -65,10 +64,10 @@ yts_service_factory_get_default (void);
 YtsService *
 yts_service_factory_create_service (YtsServiceFactory *self,
                                     char const *const *fqc_ids,
-                                    YtsContact        *contact,
                                     char const        *service_id,
                                     char const        *type,
-                                    GHashTable        *names);
+                                    GHashTable        *names,
+                                    GHashTable        *statuses);
 
 G_END_DECLS
 

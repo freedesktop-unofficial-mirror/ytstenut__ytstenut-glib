@@ -44,6 +44,7 @@
 #include "yts-error.h"
 #include "yts-marshal.h"
 #include "yts-proxy-service-internal.h"
+#include "yts-service-internal.h"
 #include "yts-types.h"
 #include "config.h"
 
@@ -89,6 +90,7 @@ struct _YtsContactPrivate
 
 enum
 {
+  SEND_MESSAGE,
   SERVICE_ADDED,
   SERVICE_REMOVED,
 
@@ -111,6 +113,15 @@ static guint signals[N_SIGNALS] = {0};
 static GParamSpec *properties[PROP_LAST];
 
 static void
+_service_send_message (YtsService   *service,
+                       YtsMetadata  *message,
+                       YtsContact   *self)
+{
+  g_signal_emit (self, signals[SEND_MESSAGE], 0,
+                 service, message);
+}
+
+static void
 yts_contact_service_added (YtsContact *contact, YtsService *service)
 {
   YtsContactPrivate *priv = contact->priv;
@@ -122,6 +133,9 @@ yts_contact_service_added (YtsContact *contact, YtsService *service)
   g_hash_table_insert (priv->services,
                        g_strdup (uid),
                        g_object_ref (service));
+
+  g_signal_connect (service, "send-message",
+                    G_CALLBACK (_service_send_message), contact);
 }
 
 static void
@@ -136,6 +150,10 @@ yts_contact_service_removed (YtsContact *contact, YtsService *service)
 
   if (!g_hash_table_remove (priv->services, uid))
     g_warning (G_STRLOC ": unknown service with uid %s", uid);
+
+  g_signal_handlers_disconnect_by_func (service,
+                                        _service_send_message,
+                                        contact);
 }
 
 static void
@@ -225,6 +243,17 @@ yts_contact_class_init (YtsContactClass *klass)
   g_object_class_install_property (object_class, PROP_TP_CONTACT,
                                    properties[PROP_TP_CONTACT]);
 
+
+  signals[SEND_MESSAGE] = g_signal_new ("send-message",
+                                        G_TYPE_FROM_CLASS (object_class),
+                                        G_SIGNAL_RUN_LAST,
+                                        G_STRUCT_OFFSET (YtsContactClass,
+                                                         send_message),
+                                        NULL, NULL,
+                                        yts_marshal_VOID__OBJECT_OBJECT,
+                                        G_TYPE_NONE, 2,
+                                        YTS_TYPE_SERVICE,
+                                        YTS_TYPE_METADATA);
 
   /**
    * YtsContact::service-added:
@@ -1180,12 +1209,14 @@ yts_contact_cancel_file (const YtsContact *item, GFile *gfile)
 void
 yts_contact_add_service (YtsContact *contact, YtsService *service)
 {
+  YtsContactPrivate *priv = contact->priv;
+
   /*
    * Emit the signal; the run-first signal closure will do the rest
    */
   YTS_NOTE (CONTACT, "New service %s on %s",
              yts_service_get_uid (service),
-             yts_service_get_jid (service));
+             priv->jid);
 
   g_signal_emit (contact, signals[SERVICE_ADDED], 0, service);
 }
@@ -1287,5 +1318,20 @@ yts_contact_dispatch_response (YtsContact *self,
     }
   }
   return dispatched;
+}
+
+void
+yts_contact_update_service_status (YtsContact *self,
+                                   char const *service_id,
+                                   char const *fqc_id,
+                                   char const *status_xml)
+{
+  YtsContactPrivate *priv = self->priv;
+  YtsService *service;
+
+  service = g_hash_table_lookup (priv->services, service_id);
+  g_return_if_fail (service);
+
+  yts_service_update_status (service, fqc_id, status_xml);
 }
 

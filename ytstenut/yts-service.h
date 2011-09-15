@@ -22,8 +22,8 @@
 #ifndef YTS_SERVICE_H
 #define YTS_SERVICE_H
 
-#include <stdbool.h>
 #include <glib-object.h>
+#include <ytstenut/yts-metadata.h>
 
 G_BEGIN_DECLS
 
@@ -64,8 +64,15 @@ typedef struct {
   GObjectClass parent;
 
   void
-  (*message) (YtsService  *self,
-              char const  *xml_payload);
+  (*send_message) (YtsService   *self,
+                   YtsMetadata  *message);
+
+  /*< public >*/
+  void
+  (*status_changed) (YtsService *self,
+                     char const *fqc_id,
+                     char const *status_xml);
+
 } YtsServiceClass;
 
 GType
@@ -75,16 +82,17 @@ char const *
 yts_service_get_uid (YtsService *self);
 
 char const *
-yts_service_get_jid (YtsService *self);
-
-char const *
 yts_service_get_service_type (YtsService *self);
 
 GHashTable *const
 yts_service_get_names (YtsService *self);
 
-char const *
-yts_service_get_status_xml (YtsService *self);
+GHashTable *const
+yts_service_get_statuses (YtsService  *self);
+
+void
+yts_service_send_message (YtsService  *self,
+                          YtsMetadata *message);
 
 G_END_DECLS
 

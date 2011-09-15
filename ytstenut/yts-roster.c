@@ -30,7 +30,7 @@
 #include <string.h>
 #include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
 
-#include "yts-client.h"
+#include "yts-client-internal.h"
 #include "yts-contact-internal.h"
 #include "yts-debug.h"
 #include "yts-marshal.h"
@@ -81,6 +81,21 @@ enum
 };
 
 static guint signals[N_SIGNALS] = {0};
+
+static void
+_contact_send_message (YtsContact   *contact,
+                       YtsService   *service,
+                       YtsMetadata  *message,
+                       YtsRoster    *self)
+{
+  YtsRosterPrivate *priv = self->priv;
+  char const *service_id = yts_service_get_uid (service);
+
+  yts_client_send_message (priv->client,
+                           contact,
+                           service_id,
+                           message);
+}
 
 static void
 yts_roster_class_init (YtsRosterClass *klass)
@@ -240,8 +255,11 @@ yts_roster_init (YtsRoster *self)
 static void
 yts_roster_dispose (GObject *object)
 {
-  YtsRoster        *self = (YtsRoster*) object;
-  YtsRosterPrivate *priv = self->priv;
+  YtsRoster         *self = (YtsRoster*) object;
+  YtsRosterPrivate  *priv = self->priv;
+  GHashTableIter     iter;
+  char const        *contact_id;
+  YtsContact        *contact;
 
   if (priv->disposed)
     return;
@@ -249,6 +267,16 @@ yts_roster_dispose (GObject *object)
   priv->disposed = TRUE;
 
   priv->client = NULL;
+
+  g_hash_table_iter_init (&iter, priv->contacts);
+  while (g_hash_table_iter_next (&iter,
+                                 (void **) &contact_id,
+                                 (void **) &contact)) {
+
+    g_signal_handlers_disconnect_by_func (contact,
+                                          _contact_send_message,
+                                          object);
+  }
 
   g_hash_table_destroy (priv->contacts);
 
@@ -318,6 +346,9 @@ yts_roster_remove_service_by_id (YtsRoster *roster,
 
   if (emit)
     {
+      g_signal_handlers_disconnect_by_func (contact,
+                                            _contact_send_message,
+                                            roster);
       g_object_ref (contact);
       g_hash_table_remove (priv->contacts, jid);
       g_signal_emit (roster, signals[CONTACT_REMOVED], 0, contact);
@@ -414,6 +445,8 @@ yts_roster_clear (YtsRoster *roster)
   g_return_if_fail (YTS_IS_ROSTER (roster));
 
   priv = roster->priv;
+
+  // FIXME changing the hash while iterating seems not safe?!
 
   g_hash_table_iter_init (&iter, priv->contacts);
   while (g_hash_table_iter_next (&iter, &key, &value))
@@ -518,7 +551,8 @@ yts_roster_add_service (YtsRoster           *roster,
                           const char        *sid,
                           const char        *type,
                           char const *const *caps,
-                          GHashTable        *names)
+                          GHashTable        *names,
+                          GHashTable        *statuses)
 {
   YtsRosterPrivate  *priv;
   YtsContact        *contact;
@@ -546,19 +580,38 @@ yts_roster_add_service (YtsRoster           *roster,
 
       YTS_NOTE (ROSTER, "Emitting contact-added for new contact %s", jid);
       g_signal_emit (roster, signals[CONTACT_ADDED], 0, contact);
+
+      g_signal_connect (contact, "send-message",
+                        G_CALLBACK (_contact_send_message), roster);
     }
 
   YTS_NOTE (ROSTER, "Adding service %s:%s", jid, sid);
 
   service = yts_service_factory_create_service (factory,
                                                 caps,
-                                                contact,
                                                 sid,
                                                 type,
-                                                names);
+                                                names,
+                                                statuses);
 
   yts_contact_add_service (contact, service);
 
   g_object_unref (service);
+}
+
+void
+yts_roster_update_contact_status (YtsRoster   *self,
+                                  char const  *contact_id,
+                                  char const  *service_id,
+                                  char const  *fqc_id,
+                                  char const  *status_xml)
+{
+  YtsRosterPrivate *priv = self->priv;
+  YtsContact *contact;
+
+  contact = g_hash_table_lookup (priv->contacts, contact_id);
+  g_return_if_fail (contact);
+
+  yts_contact_update_service_status (contact, service_id, fqc_id, status_xml);
 }
 

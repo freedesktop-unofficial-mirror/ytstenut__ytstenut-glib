@@ -21,7 +21,6 @@
 #include <stdbool.h>
 
 #include "yts-capability.h"
-#include "yts-client-internal.h"
 #include "yts-invocation-message.h"
 #include "yts-marshal.h"
 #include "yts-proxy-factory.h"
@@ -158,18 +157,18 @@ yts_proxy_service_init (YtsProxyService *self)
 }
 
 YtsService *
-yts_proxy_service_new (YtsContact         *contact,
-                        char const        *service_uid,
-                        char const        *type,
-                        char const *const *fqc_ids,
-                        GHashTable        *names)
+yts_proxy_service_new (char const         *service_uid,
+                       char const         *type,
+                       char const *const  *fqc_ids,
+                       GHashTable         *names,
+                       GHashTable         *statuses)
 {
   return g_object_new (YTS_TYPE_PROXY_SERVICE,
-                       "fqc-ids", fqc_ids,
-                       "contact", contact,
-                       "uid",     service_uid,
-                       "type",    type,
-                       "names",   names,
+                       "fqc-ids",   fqc_ids,
+                       "uid",       service_uid,
+                       "type",      type,
+                       "names",     names,
+                       "statuses",  statuses,
                        NULL);
 }
 
@@ -180,26 +179,16 @@ _profile_invoke_service (YtsProfile      *profile,
                          GVariant         *arguments,
                          YtsProxyService *self)
 {
-  YtsContact   *contact;
-  YtsClient    *client;
-  YtsMetadata  *message;
-  char const    *uid;
-  char          *fqc_id;
+  YtsMetadata *message;
+  char        *fqc_id;
 
   fqc_id = yts_proxy_get_fqc_id (YTS_PROXY (profile));
-  contact = yts_service_get_contact (YTS_SERVICE (self));
-  client = yts_contact_get_client (contact);
-  uid = yts_service_get_uid (YTS_SERVICE (self));
-
   message = yts_invocation_message_new (invocation_id,
-                                         fqc_id,
-                                         aspect,
-                                         arguments);
+                                        fqc_id,
+                                        aspect,
+                                        arguments);
 
-  // TODO maybe we should attach the invocation-id to the contact
-  // and handle the timeout here, so handling the response is simpler.
-
-  yts_client_send_message (client, contact, uid, message);
+  yts_service_send_message (YTS_SERVICE (self), message);
 
   g_object_unref (message);
   g_free (fqc_id);
@@ -212,41 +201,19 @@ _proxy_invoke_service (YtsProxy        *proxy,
                        GVariant         *arguments,
                        YtsProxyService *self)
 {
-  YtsProxyServicePrivate *priv = GET_PRIVATE (self);
-  YtsContact     *contact;
-  YtsClient      *client;
-  YtsMetadata    *message;
-  char const      *uid;
-  GHashTableIter   iter;
-  char const      *capability;
-  YtsProxy const *p;
+  YtsMetadata *message;
+  char        *fqc_id;
 
-  contact = yts_service_get_contact (YTS_SERVICE (self));
-  client = yts_contact_get_client (contact);
-  uid = yts_service_get_uid (YTS_SERVICE (self));
-
-  /* FIXME not very nice, but a proxy doesn't know its capability, otherwise
-   * it conflicts with the capability property of YtsVSPlayer et al. */
-  // TODO get capability from proxy parameter instead.
-  g_hash_table_iter_init (&iter, priv->proxies);
-  while (g_hash_table_iter_next (&iter, (void **) &capability, (void **) &p)) {
-    if (p == proxy) {
-      /* This is the capability we're looking for */
-      break;
-    }
-  }
-
+  fqc_id = yts_proxy_get_fqc_id (proxy);
   message = yts_invocation_message_new (invocation_id,
-                                         capability,
-                                         aspect,
-                                         arguments);
+                                        fqc_id,
+                                        aspect,
+                                        arguments);
 
-  // TODO maybe we should attach the invocation-id to the contact
-  // and handle the timeout here, so handling the response is simpler.
-
-  yts_client_send_message (client, contact, uid, message);
+  yts_service_send_message (YTS_SERVICE (self), message);
 
   g_object_unref (message);
+  g_free (fqc_id);
 }
 
 static void

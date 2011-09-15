@@ -75,10 +75,10 @@ yts_service_factory_get_default (void)
 YtsService *
 yts_service_factory_create_service (YtsServiceFactory *self,
                                     char const *const *fqc_ids,
-                                    YtsContact        *contact,
                                     char const        *service_id,
                                     char const        *type,
-                                    GHashTable        *names)
+                                    GHashTable        *names,
+                                    GHashTable        *statuses)
 {
   unsigned  i;
 
@@ -94,10 +94,18 @@ yts_service_factory_create_service (YtsServiceFactory *self,
                             YTS_FACTORY (self),
                             fqc_ids[i]);
     if (proxy_gtype != G_TYPE_INVALID) {
-      return yts_proxy_service_new (contact, service_id, type, fqc_ids, names);
+      return yts_proxy_service_new (service_id,
+                                    type, 
+                                    fqc_ids,
+                                    names,
+                                    statuses);
     }
   }
 
-  return yts_metadata_service_new (contact, service_id, type, fqc_ids, names);
+  return yts_metadata_service_new (service_id,
+                                   type,
+                                   fqc_ids,
+                                   names,
+                                   statuses);
 }
 

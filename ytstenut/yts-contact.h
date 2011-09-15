@@ -65,8 +65,15 @@ typedef struct _YtsContactPrivate YtsContactPrivate;
  */
 struct _YtsContactClass
 {
+  /*< private >*/
   GObjectClass parent_class;
 
+  void
+  (*send_message) (YtsContact   *contact,
+                   YtsService   *service,
+                   YtsMetadata  *message);
+
+  /*< public >*/
   void (*service_added)   (YtsContact *contact, YtsService *service);
   void (*service_removed) (YtsContact *contact, YtsService *service);
 };

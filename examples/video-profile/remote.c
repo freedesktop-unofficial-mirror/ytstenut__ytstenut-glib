@@ -267,13 +267,11 @@ _roster_service_added (YtsRoster   *roster,
                        YtsService  *service,
                        Remote      *remote)
 {
-  char const  *uid;
-  char const  *jid;
+  char const *uid;
 
   uid = yts_service_get_uid (service);
-  jid = yts_service_get_jid (service);
 
-  g_debug ("%s() %s %s", __FUNCTION__, uid, jid);
+  g_debug ("%s() %s", __FUNCTION__, uid);
 
   if (0 == g_strcmp0 (uid, remote->remote_id) ||
       0 == g_strcmp0 (uid, "org.freedesktop.ytstenut.MockPlayer")) {

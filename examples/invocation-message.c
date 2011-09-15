@@ -93,8 +93,7 @@ _client_roster_service_added (YtsRoster  *roster,
                                                          CAPABILITY,
                                                          "method1",
                                                          args);
-    yts_metadata_service_send_metadata (YTS_METADATA_SERVICE (service),
-                                         message);
+    yts_service_send_message (YTS_METADATA_SERVICE (service), message);
   }
 }
 

@@ -44,7 +44,8 @@ yts_roster_add_service (YtsRoster         *roster,
                         char const        *sid,
                         char const        *type,
                         char const *const *caps,
-                        GHashTable        *names);
+                        GHashTable        *names,
+                        GHashTable        *statuses);
 
 void
 yts_roster_remove_service_by_id (YtsRoster  *roster,
@@ -58,6 +59,12 @@ YtsContact *
 yts_roster_find_contact_by_handle (YtsRoster  *roster,
                                    unsigned    handle);
 
+void
+yts_roster_update_contact_status (YtsRoster   *self,
+                                  char const  *constact_id,
+                                  char const  *service_id,
+                                  char const  *fqc_id,
+                                  char const  *status_xml);
 
 #endif /* YTS_ROSTER_INTERNAL_H */
 

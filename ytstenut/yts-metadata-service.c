@@ -16,6 +16,7 @@
  * <http://www.gnu.org/licenses/>.
  *
  * Authored by: Tomas Frydrych <tf@linux.intel.com>
+ *              Rob Staudinger <robsta@linux.intel.com>
  */
 
 /**
@@ -30,11 +31,8 @@
 #include <string.h>
 #include <telepathy-glib/util.h>
 
-#include "yts-client-internal.h"
 #include "yts-debug.h"
-#include "yts-invocation-message.h"
 #include "yts-marshal.h"
-#include "yts-message.h"
 #include "yts-metadata-internal.h"
 #include "yts-metadata-service-internal.h"
 #include "yts-service-internal.h"
@@ -128,14 +126,15 @@ yts_metadata_service_class_init (YtsMetadataServiceClass *klass)
 }
 
 static void
-yts_metadata_service_notify_status_xml_cb (YtsMetadataService *self,
-                                            GParamSpec          *pspec,
-                                            gpointer             data)
+yts_metadata_service_status_changed_cb (YtsMetadataService *self,
+                                        char const          *fqc_id,
+                                        char const          *status_xml,
+                                        gpointer             data)
 {
-  YtsMetadataServicePrivate *priv = self->priv;
-  char const *xml;
+  // PONDERING this fails when the status has multiple capabilities
+  // but it's legacy anyway.
 
-  xml = yts_service_get_status_xml (YTS_SERVICE (self));
+  YtsMetadataServicePrivate *priv = self->priv;
 
   if (priv->status)
     {
@@ -143,7 +142,7 @@ yts_metadata_service_notify_status_xml_cb (YtsMetadataService *self,
       priv->status = NULL;
     }
 
-  priv->status = (YtsStatus*) yts_metadata_new_from_xml (xml);
+  priv->status = (YtsStatus*) yts_metadata_new_from_xml (status_xml);
 
   if (!YTS_IS_STATUS (priv->status))
     g_warning ("Failed to construct YtsStatus object");
@@ -188,8 +187,8 @@ yts_metadata_service_init (YtsMetadataService *self)
 {
   self->priv = YTS_METADATA_SERVICE_GET_PRIVATE (self);
 
-  g_signal_connect (self, "notify::status-xml",
-                    G_CALLBACK (yts_metadata_service_notify_status_xml_cb), NULL);
+  g_signal_connect (self, "status-changed",
+                    G_CALLBACK (yts_metadata_service_status_changed_cb), NULL);
 }
 
 static void
@@ -218,78 +217,21 @@ yts_metadata_service_finalize (GObject *object)
   G_OBJECT_CLASS (yts_metadata_service_parent_class)->finalize (object);
 }
 
-static YtsError
-yts_service_metadata_send_message (YtsMetadataService *service,
-                                    YtsMessage         *message)
-{
-  YtsService *s       = (YtsService*) service;
-  YtsContact *contact = yts_service_get_contact (s);
-  YtsClient  *client  = yts_contact_get_client (contact);
-  const char  *uid     = yts_service_get_uid (s);
-
-  return yts_client_send_message (client, contact, uid, YTS_METADATA (message));
-}
-
-/**
- * yts_metadata_service_send_metadata:
- * @service: #YtsMetadataService
- * @metadata: #YtsMetadata that was received
- *
- * Sends the provided metadata via the service.
- *
- * Return value: #YtsError indicating status of the operation.
- */
-YtsError
-yts_metadata_service_send_metadata (YtsMetadataService *service,
-                                     YtsMetadata        *metadata)
-{
-  g_return_val_if_fail (YTS_IS_METADATA_SERVICE (service),
-                        yts_error_new (YTS_ERROR_INVALID_PARAMETER));
-  g_return_val_if_fail (YTS_IS_METADATA (metadata),
-                        yts_error_new (YTS_ERROR_INVALID_PARAMETER));
-
-  if (YTS_IS_MESSAGE (metadata) ||
-      YTS_IS_INVOCATION_MESSAGE (metadata))
-    {
-      return yts_service_metadata_send_message (service,
-                                                 (YtsMessage*)metadata);
-    }
-  else if (YTS_IS_STATUS (metadata))
-    {
-      g_warning ("Cannot send YtsStatus, only YtsMessage !!!");
-    }
-  else
-    g_warning ("Unknown metadata type %s",  G_OBJECT_TYPE_NAME (metadata));
-
-  return yts_error_new (YTS_ERROR_INVALID_PARAMETER);
-}
-
 YtsService *
-yts_metadata_service_new (YtsContact        *contact,
-                          char const        *uid,
+yts_metadata_service_new (char const        *uid,
                           char const        *type,
                           char const *const *fqc_ids,
-                          GHashTable        *names)
+                          GHashTable        *names,
+                          GHashTable        *statuses)
 {
   g_return_val_if_fail (uid && *uid, NULL);
 
   return g_object_new (YTS_TYPE_METADATA_SERVICE,
-                       "fqc-ids", fqc_ids,
-                       "contact", contact,
-                       "uid",     uid,
-                       "type",    type,
-                       "names",   names,
+                       "fqc-ids",   fqc_ids,
+                       "uid",       uid,
+                       "type",      type,
+                       "names",     names,
+                       "statuses",  statuses,
                        NULL);
 }
 
-YtsStatus *
-yts_metadata_service_get_status (YtsMetadataService *service)
-{
-  YtsMetadataServicePrivate *priv;
-
-  g_return_val_if_fail (YTS_IS_METADATA_SERVICE (service), NULL);
-
-  priv = service->priv;
-
-  return priv->status;
-}

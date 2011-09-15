@@ -1955,27 +1955,27 @@ static gboolean
 yts_client_process_one_service (YtsClient        *client,
                                  const char        *jid,
                                  const char        *sid,
-                                 const GValueArray *service)
+                                 const GValueArray *service_info)
 {
   YtsClientPrivate *priv = client->priv;
   const char        *type;
   GHashTable        *names;
   char             **caps;
+  GHashTable        *service_statuses;
   YtsRoster        *roster;
-  GValueArray       *sinfo = (GValueArray*) service;
 
-  if (sinfo->n_values != 3)
+  if (service_info->n_values != 3)
     {
       g_warning ("Missformed service description (nvalues == %d)",
-                 sinfo->n_values);
+                 service_info->n_values);
       return FALSE;
     }
 
   YTS_NOTE (CLIENT, "Processing service %s:%s", jid, sid);
 
-  type  = g_value_get_string (g_value_array_get_nth (sinfo, 0));
-  names = g_value_get_boxed (g_value_array_get_nth (sinfo, 1));
-  caps  = g_value_get_boxed (g_value_array_get_nth (sinfo, 2));
+  type  = g_value_get_string (&service_info->values[0]);
+  names = g_value_get_boxed (&service_info->values[1]);
+  caps  = g_value_get_boxed (&service_info->values[2]);
 
   if (!priv->caps || !caps || !*caps ||
       yts_client_caps_overlap (priv->caps, caps))
@@ -1986,20 +1986,56 @@ yts_client_process_one_service (YtsClient        *client,
   YTS_NOTE (CLIENT, "Using roster %s",
              roster == priv->roster ? "wanted" : "unwanted");
 
-  yts_roster_add_service (roster, jid, sid, type,
-                            (const char**)caps, names);
+  service_statuses = g_hash_table_new_full (g_str_hash,
+                                            g_str_equal,
+                                            g_free,
+                                            g_free);
+  if (priv->tp_status) {
+    GHashTable *discovered_statuses = tp_yts_status_get_discovered_statuses (
+                                                              priv->tp_status);
+    if (discovered_statuses) {
+      GHashTable *contact_statuses = g_hash_table_lookup (discovered_statuses,
+                                                          jid);
+      if (contact_statuses) {
+        unsigned i;
+        for (i = 0; caps && caps[i]; i++) {
+          GHashTable *capability_statuses = g_hash_table_lookup (contact_statuses,
+                                                                 caps[i]);
+          if (capability_statuses) {
+            char const *status_xml = g_hash_table_lookup (capability_statuses,
+                                                          sid);
+            if (status_xml) {
+              g_hash_table_insert (service_statuses,
+                                   g_strdup (caps[i]),
+                                   g_strdup (status_xml));
+            }
+          }
+        }
+      }
+    }
+  }
+
+  yts_roster_add_service (roster,
+                          jid,
+                          sid,
+                          type,
+                          (const char **)caps,
+                          names,
+                          service_statuses);
+
+  g_hash_table_unref (service_statuses);
 
   return TRUE;
 }
 
 static void
-yts_client_service_added_cb (TpYtsStatus       *self,
+yts_client_service_added_cb (TpYtsStatus        *self,
                               const gchar       *jid,
                               const gchar       *sid,
-                              const GValueArray *sinfo,
-                              YtsClient        *client)
+                              const GValueArray *service_info,
+                              YtsClient         *client)
 {
-  yts_client_process_one_service (client, jid, sid, sinfo);
+  yts_client_process_one_service (client, jid, sid, service_info);
 }
 
 static void
@@ -2032,13 +2068,13 @@ yts_client_process_status (YtsClient *client)
       while (g_hash_table_iter_next (&iter, (void**)&jid, (void**)&service))
         {
           char           *sid;
-          GValueArray    *sinfo;
+          GValueArray    *service_info;
           GHashTableIter  iter2;
 
           g_hash_table_iter_init (&iter2, service);
-          while (g_hash_table_iter_next (&iter2, (void**)&sid, (void**)&sinfo))
+          while (g_hash_table_iter_next (&iter2, (void**)&sid, (void**)&service_info))
             {
-              yts_client_process_one_service (client, jid, sid, sinfo);
+              yts_client_process_one_service (client, jid, sid, service_info);
             }
         }
     }
@@ -2103,6 +2139,23 @@ yts_client_dispatch_status (YtsClient *client)
 }
 
 static void
+_tp_yts_status_changed (TpYtsStatus *status,
+                        char const  *contact_id,
+                        char const  *fqc_id,
+                        char const  *service_id,
+                        char const  *status_xml,
+                        YtsClient   *self)
+{
+  YtsClientPrivate *priv = self->priv;
+
+  yts_roster_update_contact_status (priv->roster,
+                                    contact_id,
+                                    service_id,
+                                    fqc_id,
+                                    status_xml);
+}
+
+static void
 yts_client_yts_status_cb (GObject      *obj,
                            GAsyncResult *res,
                            gpointer      data)
@@ -2111,23 +2164,27 @@ yts_client_yts_status_cb (GObject      *obj,
   YtsClient        *client = data;
   YtsClientPrivate *priv   = client->priv;
   GError            *error  = NULL;
-  TpYtsStatus       *status;
+  TpYtsStatus       *tp_status;
 
-  if (!(status = tp_yts_status_ensure_finish (acc, res,&error)))
+  if (!(tp_status = tp_yts_status_ensure_finish (acc, res,&error)))
     {
-      g_error ("Failed to obtain status: %s", error->message);
+      g_error ("Failed to obtain tp_status: %s", error->message);
     }
 
-  YTS_NOTE (CLIENT, "Processing status");
+  YTS_NOTE (CLIENT, "Processing tp_status");
 
-  priv->tp_status = status;
+  priv->tp_status = tp_status;
 
-  tp_g_signal_connect_object (status, "service-added",
+  tp_g_signal_connect_object (tp_status, "service-added",
                               G_CALLBACK (yts_client_service_added_cb),
                               client, 0);
-  tp_g_signal_connect_object (status, "service-removed",
+  tp_g_signal_connect_object (tp_status, "service-removed",
                               G_CALLBACK (yts_client_service_removed_cb),
                               client, 0);
+  tp_g_signal_connect_object (tp_status, "status-changed",
+                              G_CALLBACK (_tp_yts_status_changed),
+                              client, 0);
+
 
   if (priv->status)
     yts_client_dispatch_status (client);

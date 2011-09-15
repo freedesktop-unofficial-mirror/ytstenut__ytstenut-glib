@@ -55,5 +55,11 @@ void
 yts_contact_set_ft_channel (YtsContact  *item,
                             TpChannel   *channel);
 
+void
+yts_contact_update_service_status (YtsContact *self,
+                                   char const *service_id,
+                                   char const *fqc_id,
+                                   char const *status_xml);
+
 #endif /* YTS_CONTACT_INTERNAL_H */
 
