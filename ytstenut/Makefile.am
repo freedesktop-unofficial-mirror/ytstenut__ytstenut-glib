@@ -178,7 +178,7 @@ yts-marshal.c: yts-marshal.h Makefile
 	&& rm -f xgen-cmc
 
 libytstenut_@YTS_API_VERSION@_la_LDFLAGS = \
-  $(YTS_LT_LDFLAGS) \
+  -version-info $(VERSION_INFO) \
   -export-symbols $(srcdir)/ytstenut.sym \
   -no-undefined \
   $(NULL)
@@ -251,5 +251,20 @@ EXTRA_DIST =	marshal.list 		\
 
 DISTCLEANFILES= yts-version.h		\
 		$(NULL)
+
+# PONDERING should only run on platforms we know it works.
+# Use "nm" to get the public symbols from libytstenut, and then
+# check that every symbol from ytstenut.sym actually shows up in the library.
+all-local:
+	$(AM_V_GEN) b=`tput bold` && \
+	n=`tput sgr0` && \
+	NM_CMD="nm --defined-only --extern-only" && \
+	exported_syms=`$${NM_CMD} ".libs/libytstenut-$(YTS_API_VERSION).so" | cut -d' ' -f3` && \
+	for sym in `cat $(srcdir)/ytstenut.sym`; do \
+		if [ "`echo $${exported_syms} | grep $${sym}`" = "" ]; then \
+			echo "$${b}Error: $${sym} exported in ytstenut.sym but not found in libytstenut.$${n}" && \
+			exit 1; \
+		fi \
+	done
 
 -include $(top_srcdir)/git.mk

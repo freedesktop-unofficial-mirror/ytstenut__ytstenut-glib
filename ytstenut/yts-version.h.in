@@ -51,7 +51,7 @@ G_BEGIN_DECLS
  *s
  * The full version of the Ytstenut library, like 1.2.3
  */
-#define YTS_VERSION         @YTS_VERSION@
+#define YTS_VERSION         @PACKAGE_VERSION@
 
 /**
  * YTS_VERSION_S:
@@ -59,7 +59,7 @@ G_BEGIN_DECLS
  * The full version of the Ytstenut library, in string form (suited for
  * string concatenation)
  */
-#define YTS_VERSION_S       "@YTS_VERSION@"
+#define YTS_VERSION_S       "@PACKAGE_VERSION@"
 
 /**
  * YTS_VERSION_HEX:

@@ -1,47 +1,43 @@
+AC_PREREQ(2.59)
+
 m4_define([yts_major_version], [0])
 m4_define([yts_minor_version], [3])
 m4_define([yts_micro_version], [0])
 m4_define([yts_version],
-          [yts_major_version.yts_minor_version.yts_micro_version])
+  [yts_major_version.yts_minor_version.yts_micro_version])
 
-m4_define([yts_api_version], [1])
-
-# increase the interface age of 2 for each release
-# set to 0 if the API changes
-m4_define([yts_interface_age], [0])
-m4_define([yts_binary_age], [m4_eval(100 * yts_minor_version + yts_micro_version)])
-
-m4_define([yts_lt_current], [m4_eval(100 * yts_minor_version + yts_micro_version - yts_interface_age)])
-m4_define([yts_lt_revision], [yts_interface_age])
-m4_define([yts_lt_age], [m4_eval(yts_binary_age - yts_interface_age)])
-
-# defaults
-m4_define([default_enable_cache],    [no])
-
-AC_PREREQ([2.59])
-
-AC_INIT([ytstenut], [yts_version], [https://bugs.freedesktop.org/enter_bug.cgi?product=Ytstenut])
-
+AC_INIT(ytstenut, [yts_version],
+  [https://bugs.freedesktop.org/enter_bug.cgi?product=Ytstenut])
+AC_CONFIG_SRCDIR(ytstenut/ytstenut.h)
 AC_CONFIG_AUX_DIR([build])
 AC_CONFIG_MACRO_DIR([build])
-AC_CONFIG_SRCDIR(ytstenut/ytstenut.h)
+AC_SUBST(ACLOCAL_AMFLAGS, "$ACLOCAL_FLAGS -I build")
 
-AM_INIT_AUTOMAKE([tar-ustar dist-bzip2])
+AC_SUBST(YTS_MAJOR_VERSION, yts_major_version)
+AC_SUBST(YTS_MINOR_VERSION, yts_minor_version)
+AC_SUBST(YTS_MICRO_VERSION, yts_micro_version)
 
-m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])],[])
+dnl PONDERING maybe rename to YTS_EPOCH
+AC_SUBST(YTS_API_VERSION, [1])
 
-YTS_MAJOR_VERSION=yts_major_version
-YTS_MINOR_VERSION=yts_minor_version
-YTS_MICRO_VERSION=yts_micro_version
-YTS_VERSION=yts_version
-YTS_API_VERSION=yts_api_version
-AC_SUBST(YTS_MAJOR_VERSION)
-AC_SUBST(YTS_MINOR_VERSION)
-AC_SUBST(YTS_MICRO_VERSION)
-AC_SUBST(YTS_VERSION)
-AC_SUBST(YTS_API_VERSION)
+dnl Version info for libraries = CURRENT:REVISION:AGE
+dnl
+dnl Within each x.y.*, ABI is maintained backward compatible.
+dnl We strive for forward compatibility too, except that we sometimes
+dnl add new functions.
+dnl
+m4_define([version_iface],
+	m4_eval(100 * yts_major_version + yts_minor_version))
 
-AM_CONFIG_HEADER([config.h])
+AC_SUBST([VERSION_INFO], [version_iface:yts_micro_version:0])
+
+AM_INIT_AUTOMAKE(dist-bzip2)
+
+AC_CONFIG_HEADERS(config.h)
+
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+
+AC_SUBST(ACLOCAL_AMFLAGS, $ACLOCAL_FLAGS)
 
 AC_PROG_CC
 AM_PROG_CC_C_O
@@ -143,16 +139,6 @@ GLIB_GENMARSHAL=`$PKG_CONFIG --variable=glib_genmarshal glib-2.0`
 AC_SUBST(GLIB_GENMARSHAL)
 GLIB_MKENUMS=`$PKG_CONFIG --variable=glib_mkenums glib-2.0`
 AC_SUBST(GLIB_MKENUMS)
-
-YTS_LT_CURRENT=yts_lt_current
-YTS_LT_REV=yts_lt_revision
-YTS_AGE=yts_lt_age
-YTS_LT_VERSION="$YTS_LT_CURRENT:$YTS_LT_REV:$YTS_LT_AGE"
-
-YTS_LT_LDFLAGS="-version-info $YTS_LT_VERSION"
-
-AC_SUBST(YTS_LT_VERSION)
-AC_SUBST(YTS_LT_LDFLAGS)
 
 AC_OUTPUT([
   Makefile
