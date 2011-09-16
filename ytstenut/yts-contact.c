@@ -656,28 +656,6 @@ yts_contact_get_tp_contact (const YtsContact  *contact)
 }
 
 /**
- * yts_contact_get_client:
- * @contact: #YtsContact
- *
- * Retrieves the #YtsClient associated with this #YtsContact object.
- *
- * Return value (transfer none): The associated #YtsClient.
- */
-YtsClient *
-yts_contact_get_client (const YtsContact  *contact)
-{
-  YtsContactPrivate *priv;
-
-  g_return_val_if_fail (YTS_IS_CONTACT (contact), NULL);
-
-  priv = contact->priv;
-
-  g_return_val_if_fail (!priv->disposed, NULL);
-
-  return priv->client;
-}
-
-/**
  * yts_contact_has_capability:
  * @item: #YtsContact,
  * @cap: #YtsCaps, capability to check for.

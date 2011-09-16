@@ -19,6 +19,7 @@
  */
 
 #include <stdbool.h>
+#include <math.h>
 
 #include "yts-vp-playable.h"
 #include "yts-vp-playable-proxy.h"
@@ -242,7 +243,7 @@ _get_property (GObject    *object,
 
   switch (property_id) {
     case PROP_CAPABILITY_FQC_IDS: {
-      char *fqc_ids[] = { YTS_VP_PLAYER_FQC_ID, NULL };
+      char const *fqc_ids[] = { YTS_VP_PLAYER_FQC_ID, NULL };
       g_value_set_boxed (value, fqc_ids);
     } break;
     case PROP_PLAYER_PLAYABLE:
@@ -292,7 +293,7 @@ _set_property (GObject      *object,
 
     case PROP_PLAYER_VOLUME: {
       double volume = g_value_get_double (value);
-      if (volume != priv->volume) {
+      if (0.01 < fabs (volume - priv->volume)) {
         invocation_id = yts_proxy_create_invocation_id (YTS_PROXY (object));
         yts_proxy_invoke (YTS_PROXY (object), invocation_id,
                            "volume", g_variant_new_double (volume));
@@ -423,7 +424,7 @@ player_proxy_set_volume (YtsVPPlayerProxy  *self,
 {
   YtsVPPlayerProxyPrivate *priv = GET_PRIVATE (self);
 
-  if (volume != priv->volume) {
+  if (0.01 < fabs (volume - priv->volume)) {
     priv->volume = volume;
     g_object_notify (G_OBJECT (self), "volume");
   }

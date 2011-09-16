@@ -18,6 +18,8 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include <math.h>
+
 #include "yts-vp-playable.h"
 #include "yts-vp-playable-proxy.h"
 #include "config.h"
@@ -109,7 +111,7 @@ _set_property (GObject      *object,
   switch (property_id) {
     case PROP_PLAYABLE_POSITION: {
       double position = g_value_get_double (value);
-      if (position != priv->position) {
+      if (0.001 < fabs (position - priv->position)) {
         priv->position = position;
         g_object_notify (object, "postion");
         /* TODO send home etc */

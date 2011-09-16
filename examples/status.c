@@ -85,7 +85,7 @@ _server_status (YtsClient  *client,
   g_debug ("%s()", __FUNCTION__);
 
   dump = yts_metadata_to_string (YTS_METADATA (status));
-  g_debug (dump);
+  g_debug ("%s", dump);
   g_free (dump);
 }
 

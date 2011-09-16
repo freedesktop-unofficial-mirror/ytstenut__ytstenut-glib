@@ -70,7 +70,7 @@ _register_proxy (YtsProfile  *self,
   YtsContact   *contact;
   char const    *proxy_id;
   bool           found;
-  int            i;
+  unsigned       i;
   GVariant      *return_value = NULL;
   YtsMetadata  *message;
 
@@ -138,7 +138,7 @@ _unregister_proxy (YtsProfile  *self,
   char const  *proxy_id;
   bool         found;
   bool         ret;
-  int          i;
+  unsigned     i;
 
   found = false;
   for (i = 0; i < priv->capabilities->len; i++) {
@@ -215,7 +215,7 @@ _get_property (GObject      *object,
 
   switch (property_id) {
     case   PROP_CAPABILITY_FQC_IDS: {
-      char *fqc_ids[] = { YTS_PROFILE_FQC_ID, NULL };
+      char const *fqc_ids[] = { YTS_PROFILE_FQC_ID, NULL };
       g_value_set_boxed (value, fqc_ids);
     } break;
     case PROP_PROFILE_CAPABILITIES:

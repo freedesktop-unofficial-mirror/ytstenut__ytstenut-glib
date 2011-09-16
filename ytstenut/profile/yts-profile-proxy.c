@@ -177,7 +177,7 @@ _get_property (GObject      *object,
 
   switch (property_id) {
     case PROP_CAPABILITY_FQC_IDS: {
-      char *fqc_ids[] = { YTS_PROFILE_FQC_ID, NULL };
+      char const *fqc_ids[] = { YTS_PROFILE_FQC_ID, NULL };
       g_value_set_boxed (value, fqc_ids);
     } break;
     case PROP_PROFILE_CAPABILITIES:

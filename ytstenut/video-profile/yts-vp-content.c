@@ -26,7 +26,7 @@ G_DEFINE_INTERFACE (YtsVPContent,
                     yts_vp_content,
                     YTS_TYPE_CAPABILITY)
 
-YtsVPQuery *
+static YtsVPQuery *
 _retrieve (YtsVPContent  *self,
            char const     *uri)
 {
@@ -36,7 +36,7 @@ _retrieve (YtsVPContent  *self,
   return NULL;
 }
 
-YtsVPQuery *
+static YtsVPQuery *
 _search (YtsVPContent           *self,
          char const             **tokens,
          YtsVPQueryResultOrder   order,

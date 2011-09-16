@@ -18,6 +18,8 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include <math.h>
+
 #include <ytstenut/ytstenut.h>
 #include "mock-player.h"
 
@@ -219,7 +221,7 @@ _get_property (GObject    *object,
      */
 
     case PROP_CAPABILITY_FQC_IDS: {
-      char *fcq_ids[] = {
+      char const *fcq_ids[] = {
         YTS_VP_PLAYER_FQC_ID,
         YTS_VP_TRANSCRIPT_FQC_ID,
         NULL };
@@ -300,7 +302,7 @@ _set_property (GObject      *object,
 
     case PROP_PLAYER_VOLUME: {
       double volume = g_value_get_double (value);
-      if (volume != priv->volume) {
+      if (0.01 < fabs (volume - priv->volume)) {
         g_debug ("YtsVPPlayer.volume = %.2f", volume);
         priv->volume = volume;
         g_object_notify (object, "volume");
@@ -344,7 +346,7 @@ _set_property (GObject      *object,
                    locale);
         /* TODO emit error. */
 
-      } else if (locale_idx != priv->locale_idx) {
+      } else if (locale_idx != (int) priv->locale_idx) {
 
         priv->locale_idx = locale_idx;
         g_debug ("YtsVPTranscript.locale = %s",

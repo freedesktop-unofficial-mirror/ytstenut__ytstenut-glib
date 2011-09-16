@@ -126,14 +126,14 @@ struct _YtsClientPrivate
   /* callback ids */
   guint reconnect_id;
 
-  guint authenticated   : 1; /* are we authenticated ? */
-  guint ready           : 1; /* is TP setup done ? */
-  guint connect         : 1; /* connect once we get our connection ? */
-  guint reconnect       : 1; /* should we attempt to reconnect ? */
-  guint dialing         : 1; /* are we currently acquiring connection ? */
-  guint members_pending : 1; /* requery members when TP set up completed ? */
-  guint prepared        : 1; /* are connection features set up ? */
-  guint disposed        : 1; /* dispose guard */
+  bool authenticated;   /* are we authenticated ? */
+  bool ready;           /* is TP setup done ? */
+  bool connect;         /* connect once we get our connection ? */
+  bool reconnect;       /* should we attempt to reconnect ? */
+  bool dialing;         /* are we currently acquiring connection ? */
+  bool members_pending; /* requery members when TP set up completed ? */
+  bool prepared;        /* are connection features set up ? */
+  bool disposed;        /* dispose guard */
 };
 
 enum
@@ -742,7 +742,7 @@ yts_client_authenticated (YtsClient *client)
 {
   YtsClientPrivate *priv = client->priv;
 
-  priv->authenticated = TRUE;
+  priv->authenticated = true;
 
   YTS_NOTE (CONNECTION, "Authenticated");
 }
@@ -759,7 +759,7 @@ yts_client_ready (YtsClient *client)
   if (priv->tp_status && priv->status)
     {
       char *xml = yts_metadata_to_string ((YtsMetadata*)priv->status);
-      int   i;
+      unsigned   i;
 
       for (i = 0; i < priv->caps->len; ++i)
         {
@@ -1286,7 +1286,7 @@ yts_client_setup_debug  (YtsClient *client)
 
   if (error != NULL)
     {
-      g_warning (error->message);
+      g_warning ("%s", error->message);
       g_clear_error (&error);
       return;
     }
@@ -1671,8 +1671,7 @@ yts_client_set_property (GObject      *object,
 static void
 yts_client_init (YtsClient *client)
 {
-  client->priv = YTS_CLIENT_GET_PRIVATE (client);
-  YtsClientPrivate *priv = client->priv;
+  YtsClientPrivate *priv = client->priv = YTS_CLIENT_GET_PRIVATE (client);
 
   yts_client_set_incoming_file_directory (client, NULL);
 
@@ -1929,7 +1928,7 @@ yts_client_status_cb (TpConnection *proxy,
 static gboolean
 yts_client_caps_overlap (GArray *mycaps, char **caps)
 {
-  int i;
+  unsigned i;
 
   /* TODO -- this is not nice, maybe YtsClient:caps should also be just a
    *         char**
@@ -2107,7 +2106,7 @@ yts_client_dispatch_status (YtsClient *client)
 {
   YtsClientPrivate *priv;
   char *xml = NULL;
-  int   i;
+  unsigned i;
 
   g_return_if_fail (YTS_IS_CLIENT (client));
 
@@ -2600,7 +2599,7 @@ static gboolean
 yts_client_has_capability (YtsClient *client, YtsCaps cap)
 {
   YtsClientPrivate *priv = client->priv;
-  int                i;
+  unsigned i;
 
   if (!priv->caps)
     return FALSE;
@@ -3219,14 +3218,15 @@ _adapter_event (YtsServiceAdapter  *adapter,
                 YtsClient          *self)
 {
   YtsClientPrivate *priv = self->priv;
-  YtsMetadata  *message;
-  char          *fqc_id;
+  YtsMetadata *message;
+  ProxyList   *proxy_list;
+  char        *fqc_id;
 
   fqc_id = yts_service_adapter_get_fqc_id (adapter);
   message = yts_event_message_new (fqc_id, aspect, arguments);
 
   /* Dispatch to all registered proxies. */
-  ProxyList *proxy_list = g_hash_table_lookup (priv->proxies, fqc_id);
+  proxy_list = g_hash_table_lookup (priv->proxies, fqc_id);
   if (proxy_list) {
     GList const *iter;
     for (iter = proxy_list->list; iter; iter = iter->next) {

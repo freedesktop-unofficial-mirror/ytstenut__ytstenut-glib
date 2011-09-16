@@ -79,6 +79,34 @@ if test "$enable_debug" != "no"; then
   AC_DEFINE([YTS_ENABLE_DEBUG], [1], [Defined when debugging code is enabled])
 fi
 
+CFLAGS="$CFLAGS $WARN_CFLAGS -DG_DISABLE_DEPRECATED"
+if test "$GCC" = "yes"; then
+  for option in -Wno-system-headers -Wfloat-equal -Wpointer-arith \
+                -Wbad-function-cast -Wwrite-strings -Wsign-compare \
+                -Waggregate-return -Wstrict-prototypes -Wmissing-prototypes \
+                -Wmissing-declarations -Wformat=2 -Wnested-externs -Winline \
+                -Wdeclaration-after-statement -Wundef -Wmissing-noreturn \
+                -Wmissing-format-attribute -Wno-pointer-sign -Wbitwise \
+                -Wcast-to-as -Wdefault-bitfield-sign -Wdo-while -Wparen-string \
+                -Wptr-subtraction-blows -Wreturn-void -Wtypesign \
+                -Wclobbered -Wempty-body -Woverride-init -Wsign-compare \
+                -Wtype-limits -Wuninitialized; do
+    SAVE_CFLAGS="$CFLAGS"
+    CFLAGS="$CFLAGS $option"
+    AC_MSG_CHECKING([whether gcc understands $option])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [])],
+      has_option=yes,
+      has_option=no)
+    if test $has_option = no; then
+      CFLAGS="$SAVE_CFLAGS"
+    fi
+    AC_MSG_RESULT($has_option)
+    unset has_option
+    unset SAVE_CFLAGS
+  done
+  unset option
+fi
+
 have_introspection=no
 AC_ARG_WITH(introspection,
   AC_HELP_STRING([--with-introspection],
@@ -111,16 +139,6 @@ AM_CONDITIONAL(WITH_INTROSPECTION, test "$have_introspection" = "yes")
 
 PKG_CHECK_MODULES(YTS, $YTS_PC_MODULES)
 
-AC_ARG_ENABLE([profile],
-              [AC_HELP_STRING([--enable-profile],
-                              [Enable profiling])],
-              [],
-              [enable_profile=no])
-
-CFLAGS="$CFLAGS -Wall"
-
-AS_IF([test "x$enable_profile" = "xyes"], [CFLAGS="$CFLAGS -pg"])
-
 # glib-genmarshal
 GLIB_GENMARSHAL=`$PKG_CONFIG --variable=glib_genmarshal glib-2.0`
 AC_SUBST(GLIB_GENMARSHAL)
@@ -146,13 +164,13 @@ echo "
         ===================================================
 
         Configuration:
-            Prefix           :    ${prefix}
-	    Debug            :    ${enable_debug}
-	    Profile          :    ${enable_profile}
-            API Reference    :    ${enable_gtk_doc}
-            Introspection    :    ${have_introspection}
+        Prefix           :    ${prefix}
+        Debug            :    ${enable_debug}
+        API Reference    :    ${enable_gtk_doc}
+        Introspection    :    ${have_introspection}
 
-	    CFLAGS: ${CFLAGS}
+        CFLAGS: ${CFLAGS}
 
         Type make to build.
 "
+

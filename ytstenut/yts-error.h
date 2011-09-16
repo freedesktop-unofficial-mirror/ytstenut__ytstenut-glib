@@ -72,7 +72,7 @@ typedef enum { /*< prefix=YTS_ERROR >*/
 } YtsError;
 
 YtsError yts_error_new (guint32 code);
-guint32   yts_error_new_atom ();
+guint32   yts_error_new_atom (void);
 YtsError yts_error_make (guint32 atom, guint32 code);
 guint     yts_error_get_code (YtsError error);
 guint     yts_error_get_atom (YtsError error);
