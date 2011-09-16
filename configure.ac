@@ -60,14 +60,6 @@ AC_SUBST(TELEPATHY_VERSION)
 
 YTS_PC_MODULES="$YTS_PC_MODULES telepathy-glib $TELEPATHY_VERSION telepathy-ytstenut-glib >= 0.2.0 gio-unix-2.0 rest-0.7 glib-2.0 gobject-2.0"
 
-AC_ARG_ENABLE([docs],
-              [AC_HELP_STRING([--enable-docs=@<:@no/yes@:>@],
-                              [Build optional documentation.])],
-              [enable_docs=$enableval],
-              [enable_docs=no])
-
-AM_CONDITIONAL(ENABLE_DOCS, [test "x$enable_docs" = "xyes"])
-
 AC_ARG_ENABLE([debug],
               [AC_HELP_STRING([--enable-debug],
                               [Enable debugging code])],
@@ -76,6 +68,7 @@ AC_ARG_ENABLE([debug],
 AC_MSG_CHECKING([whether to enable debugging code])
 AC_MSG_RESULT([$enable_debug])
 if test "$enable_debug" != "no"; then
+  enable_debug="yes"
   AC_DEFINE([YTS_ENABLE_DEBUG], [1], [Defined when debugging code is enabled])
 fi
 
