@@ -2,7 +2,6 @@
 AM_CPPFLAGS = \
   -I$(top_srcdir) \
 	-DG_DISABLE_DEPRECATED \
-	$(YTS_DEBUG_CFLAGS) \
 	$(NULL)
 
 AM_CFLAGS = $(YTS_CFLAGS)

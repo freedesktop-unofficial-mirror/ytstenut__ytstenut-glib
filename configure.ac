@@ -68,31 +68,16 @@ AC_ARG_ENABLE([docs],
 
 AM_CONDITIONAL(ENABLE_DOCS, [test "x$enable_docs" = "xyes"])
 
-m4_define([debug_default], [m4_if(m4_eval(yts_minor_version % 2), [1], [yes], [minimum])])
 AC_ARG_ENABLE([debug],
-              [AC_HELP_STRING([--enable-debug=@<:@no/minimum/yes@:>@],
-                              [Control Ytstenut debugging level @<:@default=debug_default@:>@])],
-              [],
-              [enable_debug=debug_default])
-
-AS_CASE([$enable_debug],
-
-        [yes],
-        [
-          test "$cflags_set" = set || CFLAGS="$CFLAGS -g -O0"
-          YTS_DEBUG_CFLAGS="-DYTS_ENABLE_DEBUG"
-        ],
-
-        [minimum],
-        [YTS_DEBUG_CFLAGS="-DYTS_ENABLE_DEBUG -DG_DISABLE_CAST_CHECKS"],
-
-        [no],
-        [YTS_DEBUG_CFLAGS="-DG_DISABLE_ASSERT -DG_DISABLE_CHECKS -DG_DISABLE_CAST_CHECKS"],
-
-        [AC_MSG_ERROR([Unknown argument for --enable-debug])]
+              [AC_HELP_STRING([--enable-debug],
+                              [Enable debugging code])],
+              [ enable_debug=$enableval ]
 )
-
-AC_SUBST(YTS_DEBUG_CFLAGS)
+AC_MSG_CHECKING([whether to enable debugging code])
+AC_MSG_RESULT([$enable_debug])
+if test "$enable_debug" != "no"; then
+  AC_DEFINE([YTS_ENABLE_DEBUG], [1], [Defined when debugging code is enabled])
+fi
 
 have_introspection=no
 AC_ARG_WITH(introspection,
