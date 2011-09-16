@@ -45,6 +45,8 @@ AC_ISC_POSIX
 AC_HEADER_STDC
 AM_PROG_LIBTOOL
 
+AC_CHECK_TOOL([NM], [nm])
+
 GTK_DOC_CHECK([1.11], [--flavour no-tmpl])
 
 AM_CONDITIONAL([BUILD_GTK_DOC], [test "x$enable_gtk_doc" = "xyes" || test ! -f "autogen.sh"])

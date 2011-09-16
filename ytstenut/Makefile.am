@@ -258,7 +258,7 @@ DISTCLEANFILES= yts-version.h		\
 all-local:
 	$(AM_V_GEN) b=`tput bold` && \
 	n=`tput sgr0` && \
-	NM_CMD="nm --defined-only --extern-only" && \
+	NM_CMD="$(NM) --defined-only --extern-only" && \
 	exported_syms=`$${NM_CMD} ".libs/libytstenut-$(YTS_API_VERSION).so" | cut -d' ' -f3` && \
 	for sym in `cat $(srcdir)/ytstenut.sym`; do \
 		if [ "`echo $${exported_syms} | grep $${sym}`" = "" ]; then \
