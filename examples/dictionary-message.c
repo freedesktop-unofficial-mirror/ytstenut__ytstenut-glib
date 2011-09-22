@@ -24,10 +24,10 @@
 
 #include <ytstenut/ytstenut.h>
 
-#define CAPABILITY "org.freedesktop.ytstenut.InvocationMessage"
+#define CAPABILITY "org.freedesktop.ytstenut.DictionaryMessage"
 
-#define CLIENT_UID "org.freedesktop.ytstenut.InvocationMessageClient"
-#define SERVER_UID "org.freedesktop.ytstenut.InvocationMessageServer"
+#define CLIENT_UID "org.freedesktop.ytstenut.DictionaryMessageClient"
+#define SERVER_UID "org.freedesktop.ytstenut.DictionaryMessageServer"
 
 /*
  * Client
@@ -55,12 +55,11 @@ _client_disconnected (YtsClient  *client,
 }
 
 static void
-_client_message (YtsClient   *client,
-                 YtsMessage  *msg,
-                 void         *data)
+_client_raw_message (YtsClient  *client,
+                     char const *xml_payload,
+                     void       *data)
 {
-  g_debug ("%s()", __FUNCTION__);
-
+  g_debug ("%s() '%s'", __FUNCTION__, xml_payload);
 }
 
 static gboolean
@@ -81,19 +80,17 @@ _client_roster_service_added (YtsRoster  *roster,
                               void        *data)
 {
   char const *uid;
+  char const *const dict[] = {
+    "arg1", "1",
+    "arg2", "two",
+    NULL
+  };
 
   uid = yts_service_get_id (service);
 
   if (0 == g_strcmp0 (uid, SERVER_UID)) {
 
-    GVariant *args = g_variant_new_parsed (
-                                "[ {\"arg1\", <1>}, {\"arg2\", <\"two\">} ]");
-
-    YtsMetadata *message = yts_invocation_message_new ("1",
-                                                         CAPABILITY,
-                                                         "method1",
-                                                         args);
-    yts_service_send_message (service, message);
+    yts_service_send_dictionary (service, dict, -1);
   }
 }
 
@@ -111,8 +108,8 @@ run_client (void)
                     G_CALLBACK (_client_ready), NULL);
   g_signal_connect (client, "disconnected",
                     G_CALLBACK (_client_disconnected), NULL);
-  g_signal_connect (client, "message",
-                    G_CALLBACK (_client_message), NULL);
+  g_signal_connect (client, "raw-message",
+                    G_CALLBACK (_client_raw_message), NULL);
   g_signal_connect (client, "incoming-file",
                     G_CALLBACK (_client_incoming_file), NULL);
 
@@ -155,21 +152,21 @@ _server_disconnected (YtsClient  *client,
 }
 
 static void
-_server_message (YtsClient   *client,
-                 YtsMessage  *msg,
-                 void         *data)
+_server_dictionary_message (YtsClient         *client,
+                            char const *const *dictionary,
+                            void              *data)
 {
-  char const  *method;
-  char const  *args;
-  char        *unescaped_args;
+  char const *const *iter;
 
-  method = yts_metadata_get_attribute (YTS_METADATA (msg), "aspect");
-  args = yts_metadata_get_attribute (YTS_METADATA (msg), "arguments");
-  unescaped_args = g_uri_unescape_string (args, NULL);
+  g_debug ("%s()", __FUNCTION__);
 
-  g_debug ("%s() %s %s", __FUNCTION__, method, unescaped_args);
-
-  g_free (unescaped_args);
+  if (NULL != (iter = dictionary)) {
+    do {
+      char const *name = *iter++;
+      char const *value = *iter++;
+      g_debug ("  %s = %s", name, value);
+    } while (*iter);
+  }
 }
 
 static gboolean
@@ -199,8 +196,8 @@ run_server (void)
                     G_CALLBACK (_server_ready), NULL);
   g_signal_connect (client, "disconnected",
                     G_CALLBACK (_server_disconnected), NULL);
-  g_signal_connect (client, "message",
-                    G_CALLBACK (_server_message), NULL);
+  g_signal_connect (client, "dictionary-message",
+                    G_CALLBACK (_server_dictionary_message), NULL);
   g_signal_connect (client, "incoming-file",
                     G_CALLBACK (_server_incoming_file), NULL);
 

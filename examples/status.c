@@ -100,11 +100,7 @@ _client_roster_service_added (YtsRoster  *roster,
 
   if (0 == g_strcmp0 (uid, SERVER_UID)) {
 
-    const char *payload[] = {
-        "ping", "pong",
-        NULL
-    };
-    YtsMetadata  *message = (YtsMetadata*)yts_message_new ((const char**)&payload);
+    char const text[] = "ping pong";
 
     /* Hook up to server status changes. */
     g_signal_connect (service, "status",
@@ -112,9 +108,9 @@ _client_roster_service_added (YtsRoster  *roster,
 
 
     g_debug ("%s() %s", __FUNCTION__, uid);
-    g_debug ("Sending message \"%s\"", payload[1]);
+    g_debug ("Sending message \"%s\"", text);
 
-    yts_service_send_message (service, message);
+    yts_service_send_text (service, text);
   }
 }
 

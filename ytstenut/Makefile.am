@@ -21,7 +21,6 @@ source_h =						\
 		$(srcdir)/yts-debug.h			\
 		$(srcdir)/yts-error.h			\
 		$(srcdir)/yts-main.h			\
-		$(srcdir)/yts-message.h		\
 		$(srcdir)/yts-metadata.h		\
 		$(srcdir)/yts-metadata-service.h	\
 		$(srcdir)/yts-roster.h			\
@@ -31,12 +30,8 @@ source_h =						\
 		$(srcdir)/yts-version.h		\
 		\
 		$(srcdir)/yts-capability-status.h \
-		$(srcdir)/yts-error-message.h \
-		$(srcdir)/yts-event-message.h \
-		$(srcdir)/yts-invocation-message.h \
 		$(srcdir)/yts-proxy.h \
 		$(srcdir)/yts-proxy-service.h \
-		$(srcdir)/yts-response-message.h \
 		$(srcdir)/yts-service-adapter.h \
 		\
 		$(srcdir)/video-profile/yts-vp-content.h \
@@ -109,6 +104,12 @@ private_h = \
 		$(srcdir)/yts-proxy-service-internal.h \
 		$(srcdir)/yts-roster-internal.h \
 		$(srcdir)/yts-service-factory.h \
+		\
+		$(srcdir)/yts-message.h		\
+		$(srcdir)/yts-error-message.h \
+		$(srcdir)/yts-event-message.h \
+		$(srcdir)/yts-invocation-message.h \
+		$(srcdir)/yts-response-message.h \
 		\
 		$(srcdir)/profile/yts-profile.h \
 		$(srcdir)/profile/yts-profile-impl.h \

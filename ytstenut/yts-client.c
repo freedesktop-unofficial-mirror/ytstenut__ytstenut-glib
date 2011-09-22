@@ -16,6 +16,7 @@
  * <http://www.gnu.org/licenses/>.
  *
  * Authored by: Tomas Frydrych <tf@linux.intel.com>
+ *              Rob Staudinger <robsta@linux.intel.com>
  */
 
 /**
@@ -141,7 +142,10 @@ enum
   AUTHENTICATED,
   READY,
   DISCONNECTED,
-  MESSAGE,
+  RAW_MESSAGE,
+  TEXT_MESSAGE,
+  LIST_MESSAGE,
+  DICTIONARY_MESSAGE,
   ERROR,
   INCOMING_FILE,
   INCOMING_FILE_FINISHED,
@@ -817,7 +821,8 @@ yts_client_disconnected (YtsClient *client)
 }
 
 static void
-yts_client_message (YtsClient *client, YtsMessage *msg)
+yts_client_raw_message (YtsClient   *client,
+                        char const  *xml_payload)
 {
 }
 
@@ -903,7 +908,7 @@ yts_client_class_init (YtsClientClass *klass)
   klass->authenticated       = yts_client_authenticated;
   klass->ready               = yts_client_ready;
   klass->disconnected        = yts_client_disconnected;
-  klass->message             = yts_client_message;
+  klass->raw_message         = yts_client_raw_message;
   klass->incoming_file       = yts_client_incoming_file;
 
   /**
@@ -1012,15 +1017,42 @@ yts_client_class_init (YtsClientClass *klass)
    *
    * Since: 0.1
    */
-  signals[MESSAGE] =
-    g_signal_new ("message",
+  signals[RAW_MESSAGE] =
+    g_signal_new ("raw-message",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST,
-                  G_STRUCT_OFFSET (YtsClientClass, message),
+                  G_STRUCT_OFFSET (YtsClientClass, raw_message),
                   NULL, NULL,
-                  yts_marshal_VOID__OBJECT,
+                  yts_marshal_VOID__STRING,
                   G_TYPE_NONE, 1,
-                  YTS_TYPE_MESSAGE);
+                  G_TYPE_STRING);
+
+  signals[TEXT_MESSAGE] =
+    g_signal_new ("text-message",
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  0, NULL, NULL,
+                  yts_marshal_VOID__STRING,
+                  G_TYPE_NONE, 1,
+                  G_TYPE_STRING);
+
+  signals[LIST_MESSAGE] =
+    g_signal_new ("list-message",
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  0, NULL, NULL,
+                  yts_marshal_VOID__POINTER,
+                  G_TYPE_NONE, 1,
+                  G_TYPE_POINTER);
+
+  signals[DICTIONARY_MESSAGE] =
+    g_signal_new ("dictionary-message",
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  0, NULL, NULL,
+                  yts_marshal_VOID__POINTER,
+                  G_TYPE_NONE, 1,
+                  G_TYPE_POINTER);
 
   /**
    * YtsClient::error
@@ -1387,7 +1419,89 @@ dispatch_to_service (YtsClient *self,
     return false;
   }
 
-  if (0 == g_strcmp0 ("invocation", type))
+  /*
+   * Low-level interface
+   */
+
+  if (0 == g_strcmp0 (SERVICE_FQC_ID, capability) &&
+      0 == g_strcmp0 ("text", type))
+    {
+      char const *escaped_payload = rest_xml_node_get_attr (node, "payload");
+      GVariant *payload = escaped_payload ?
+                            variant_new_from_escaped_literal (escaped_payload) :
+                            NULL;
+      if (payload)
+        {
+          char const *text = g_variant_get_string (payload, NULL);
+          g_signal_emit (self, signals[TEXT_MESSAGE], 0, text);
+          g_variant_unref (payload);
+        }
+      else
+        {
+          // FIXME report
+          g_warning ("%s : Message empty", G_STRLOC);
+        }
+    }
+  else if (0 == g_strcmp0 (SERVICE_FQC_ID, capability) &&
+           0 == g_strcmp0 ("list", type))
+    {
+      char const *escaped_payload = rest_xml_node_get_attr (node, "payload");
+      GVariant *payload = escaped_payload ?
+                            variant_new_from_escaped_literal (escaped_payload) :
+                            NULL;
+      if (payload)
+        {
+          char const **list = g_variant_get_strv (payload, NULL);
+          g_signal_emit (self, signals[LIST_MESSAGE], 0, list);
+          g_free (list);
+          g_variant_unref (payload);
+        }
+      else
+        {
+          // FIXME report
+          g_warning ("%s : Message empty", G_STRLOC);
+        }
+    }
+  else if (0 == g_strcmp0 (SERVICE_FQC_ID, capability) &&
+           0 == g_strcmp0 ("dictionary", type))
+    {
+      char const *escaped_payload = rest_xml_node_get_attr (node, "payload");
+      GVariant *payload = escaped_payload ?
+                            variant_new_from_escaped_literal (escaped_payload) :
+                            NULL;
+      if (payload)
+        {
+          GVariantIter iter;
+          char const *name;
+          char const *value;
+          size_t n_entries;
+          if (0 < (n_entries = g_variant_iter_init (&iter, payload)))
+            {
+              char **dictionary = g_new0 (char *, n_entries * 2 + 1);
+              unsigned i = 0;
+              while (g_variant_iter_loop (&iter, "{ss}", &name, &value))
+                {
+                  dictionary[i++] = g_strdup (name);
+                  dictionary[i++] = g_strdup (value);
+                }
+              dictionary[i] = NULL;
+              g_signal_emit (self, signals[DICTIONARY_MESSAGE], 0, dictionary);
+              g_strfreev (dictionary);
+            }
+          g_variant_unref (payload);
+        }
+      else
+        {
+          // FIXME report
+          g_warning ("%s : Message empty", G_STRLOC);
+        }
+    }
+
+  /*
+   * High-level interface
+   */
+
+  else if (0 == g_strcmp0 ("invocation", type))
     {
       /* Deliver to service */
       YtsServiceAdapter *adapter = g_hash_table_lookup (priv->services,
@@ -1478,14 +1592,14 @@ yts_client_yts_channels_received_cb (TpYtsClient *tp_client,
 
           if (!strcmp (k, "org.freedesktop.ytstenut.xpmn.Channel.RequestBody"))
             {
-              const char *xml = g_value_get_string (v);
-              gboolean dispatched = dispatch_to_service (client, from, xml);
+              const char *xml_payload = g_value_get_string (v);
+              gboolean dispatched = dispatch_to_service (client,
+                                                         from,
+                                                         xml_payload);
 
               if (!dispatched)
                 {
-                  YtsMetadata *msg = yts_metadata_new_from_xml (xml);
-                  g_signal_emit (client, signals[MESSAGE], 0, msg);
-                  g_object_unref (msg);
+                  g_signal_emit (client, signals[RAW_MESSAGE], 0, xml_payload);
                 }
             }
         }

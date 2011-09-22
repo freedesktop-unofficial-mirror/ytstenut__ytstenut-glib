@@ -28,7 +28,6 @@
 #include <ytstenut/yts-capability.h>
 #include <ytstenut/yts-caps.h>
 #include <ytstenut/yts-error.h>
-#include <ytstenut/yts-message.h>
 #include <ytstenut/yts-roster.h>
 #include <ytstenut/yts-types.h>
 #include <ytstenut/yts-status.h>
@@ -79,7 +78,7 @@ struct _YtsClientClass
   void     (*authenticated) (YtsClient *client);
   void     (*ready)         (YtsClient *client);
   void     (*disconnected)  (YtsClient *client);
-  void     (*message)       (YtsClient *client, YtsMessage *msg);
+  void     (*raw_message)   (YtsClient *client, char const *xml_payload);
   gboolean (*incoming_file) (YtsClient   *client,
                              const char *from,
                              const char *name,

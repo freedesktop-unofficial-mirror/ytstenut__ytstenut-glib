@@ -13,13 +13,13 @@ AM_LDFLAGS = ../ytstenut/libytstenut-@YTS_API_VERSION@.la
 LDADD = $(YTS_LIBS)
 
 noinst_PROGRAMS = \
-  invocation-message \
+  dictionary-message \
   echo \
   status \
   $(NULL)
 
-invocation_message_SOURCES = \
-  invocation-message.c \
+dictionary_message_SOURCES = \
+  dictionary-message.c \
   $(NULL)
 
 echo_SOURCES = \

@@ -29,7 +29,9 @@
 
 #include "yts-capability.h"
 #include "yts-debug.h"
+#include "yts-invocation-message.h"
 #include "yts-marshal.h"
+#include "yts-message.h"
 #include "yts-service-internal.h"
 #include "config.h"
 
@@ -360,6 +362,90 @@ yts_service_update_status (YtsService *self,
     g_object_notify (G_OBJECT (self), "statuses");
     g_signal_emit (self, _signals[SIG_STATUS_CHANGED], 0, fqc_id, status_xml);
   }
+}
+
+static YtsMetadata *
+create_message (char const  *type,
+                GVariant    *payload)
+{
+
+  RestXmlNode *node;
+  char        *payload_str;
+  char        *payload_str_escaped;;
+
+  node = rest_xml_node_add_child (NULL, "message");
+  /* PONDERING need those keywords be made reserved */
+  rest_xml_node_add_attr (node, "type", type);
+  rest_xml_node_add_attr (node, "capability", SERVICE_FQC_ID);
+
+  payload_str = g_variant_print (payload, false);
+  /* FIXME this is just a stopgap solution to lacking g_markup_unescape_text()
+   * want to move to complex message bodies anywy. */
+  payload_str_escaped = g_uri_escape_string (payload_str, NULL, true);
+  rest_xml_node_add_attr (node, "payload", payload_str_escaped);
+  g_free (payload_str_escaped);
+  g_free (payload_str);
+
+  if (g_variant_is_floating (payload))
+    g_variant_unref (payload);
+
+  return g_object_new (YTS_TYPE_MESSAGE,
+                       "top-level-node", node,
+                       NULL);
+}
+
+void
+yts_service_send_text (YtsService *self,
+                       char const *text)
+{
+  YtsMetadata *message;
+
+  g_return_if_fail (YTS_IS_SERVICE (self));
+
+  message = create_message ("text", g_variant_new_string (text));
+  yts_service_send_message (self, message);
+  g_object_unref (message);
+}
+
+void
+yts_service_send_list (YtsService         *self,
+                       char const *const  *texts,
+                       int                 length)
+{
+  YtsMetadata *message;
+
+  g_return_if_fail (YTS_IS_SERVICE (self));
+
+  message = create_message ("list", g_variant_new_strv (texts, length));
+  yts_service_send_message (self, message);
+  g_object_unref (message);
+}
+
+void
+yts_service_send_dictionary (YtsService         *self,
+                             char const *const  *dictionary,
+                             int                 length)
+{
+  YtsMetadata     *message;
+  GVariantBuilder  builder;
+  int              i;
+
+  g_return_if_fail (YTS_IS_SERVICE (self));
+
+  g_variant_builder_init (&builder, G_VARIANT_TYPE_ARRAY);
+
+  for (i = 0;
+       length >= 0 ? i < length : dictionary[i] != NULL;
+       i++) {
+
+    char const *name = dictionary[i++];
+    char const *value = dictionary[i];
+    g_variant_builder_add (&builder, "{ss}", name, value);
+  }
+
+  message = create_message ("dictionary", g_variant_builder_end (&builder));
+  yts_service_send_message (self, message);
+  g_object_unref (message);
 }
 
 void

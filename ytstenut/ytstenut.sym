@@ -81,7 +81,9 @@ yts_service_get_names
 yts_service_get_service_type
 yts_service_get_statuses
 yts_service_get_type
-yts_service_send_message
+yts_service_send_text
+yts_service_send_list
+yts_service_send_dictionary
 yts_status_get_type
 yts_status_new
 yts_vp_content_get_type

@@ -27,6 +27,8 @@
 
 G_BEGIN_DECLS
 
+#define SERVICE_FQC_ID "org.freedesktop.ytstenut.Service"
+
 #define YTS_TYPE_SERVICE  (yts_service_get_type ())
 
 #define YTS_SERVICE(obj) \
@@ -91,8 +93,18 @@ GHashTable *const
 yts_service_get_statuses (YtsService  *self);
 
 void
-yts_service_send_message (YtsService  *self,
-                          YtsMetadata *message);
+yts_service_send_text (YtsService *self,
+                       char const *text);
+
+void
+yts_service_send_list (YtsService         *self,
+                       char const *const  *texts,
+                       int                 length);
+
+void
+yts_service_send_dictionary (YtsService         *self,
+                             char const *const  *dictionary,
+                             int                 length);
 
 G_END_DECLS
 

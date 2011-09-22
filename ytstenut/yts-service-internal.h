@@ -25,6 +25,10 @@
 #include <ytstenut/yts-contact.h>
 
 void
+yts_service_send_message (YtsService  *self,
+                          YtsMetadata *message);
+
+void
 yts_service_update_status (YtsService *self,
                            char const *fqc_id,
                            char const *status_xml);

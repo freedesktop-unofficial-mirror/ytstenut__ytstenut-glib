@@ -29,7 +29,6 @@
 #include <ytstenut/yts-debug.h>
 #include <ytstenut/yts-error.h>
 #include <ytstenut/yts-main.h>
-#include <ytstenut/yts-message.h>
 #include <ytstenut/yts-metadata.h>
 #include <ytstenut/yts-metadata-service.h>
 #include <ytstenut/yts-roster.h>
@@ -42,12 +41,8 @@
 #include <ytstenut/yts-enum-types.h>
 
 #include <ytstenut/yts-capability-status.h>
-#include <ytstenut/yts-error-message.h>
-#include <ytstenut/yts-event-message.h>
-#include <ytstenut/yts-invocation-message.h>
 #include <ytstenut/yts-proxy.h>
 #include <ytstenut/yts-proxy-service.h>
-#include <ytstenut/yts-response-message.h>
 #include <ytstenut/yts-service-adapter.h>
 
 #include <ytstenut/video-profile/yts-vp-content.h>

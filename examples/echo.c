@@ -53,19 +53,12 @@ _client_disconnected (YtsClient  *client,
 }
 
 static void
-_client_message (YtsClient   *client,
-                 YtsMessage  *msg,
-                 void         *data)
+_client_text_message (YtsClient   *client,
+                      char const  *text,
+                      void         *data)
 {
-  char const *text;
-
   g_debug ("%s()", __FUNCTION__);
-
-  g_return_if_fail (YTS_IS_MESSAGE (msg));
-
-  text = yts_metadata_get_attribute (YTS_METADATA (msg), "message");
   g_debug ("Message is \"%s\"", text);
-
 }
 
 static gboolean
@@ -91,16 +84,10 @@ _client_roster_service_added (YtsRoster  *roster,
 
   if (0 == g_strcmp0 (uid, SERVER_UID)) {
 
-    const char *payload[] = {
-        "message", "hello world",
-        NULL
-    };
-    YtsMetadata  *message = (YtsMetadata*)yts_message_new ((const char**)&payload);
+    char const text[] = "Hello World";
+    g_debug ("Sending message \"%s\"", text);
 
-    g_debug ("%s() %s", __FUNCTION__, uid);
-    g_debug ("Sending message \"%s\"", payload[1]);
-
-    yts_service_send_message (service, message);
+    yts_service_send_text (service, text);
   }
 }
 
@@ -118,8 +105,8 @@ run_client (void)
                     G_CALLBACK (_client_ready), NULL);
   g_signal_connect (client, "disconnected",
                     G_CALLBACK (_client_disconnected), NULL);
-  g_signal_connect (client, "message",
-                    G_CALLBACK (_client_message), NULL);
+  g_signal_connect (client, "text-message",
+                    G_CALLBACK (_client_text_message), NULL);
   g_signal_connect (client, "incoming-file",
                     G_CALLBACK (_client_incoming_file), NULL);
 
@@ -166,27 +153,16 @@ _server_disconnected (YtsClient  *client,
 }
 
 static void
-_server_message (YtsClient   *client,
-                 YtsMessage  *msg,
-                 ServerData   *self)
+_server_text_message (YtsClient   *client,
+                      char const  *text,
+                      ServerData   *self)
 {
   g_debug ("%s() know client: %s", __FUNCTION__,
                                   self->service ? "yes" : "no");
 
-  g_return_if_fail (YTS_IS_MESSAGE (msg));
-
   if (self->service) {
-    YtsMetadata *message;
-    char const *payload[] = {
-      "message", "foo",
-      NULL
-    };
-    char const *text = yts_metadata_get_attribute (YTS_METADATA (msg),
-                                                    "message");
     g_debug ("%s() echoing \"%s\"", __FUNCTION__, text);
-    payload[1] = text;
-    message = (YtsMetadata*)yts_message_new ((const char**)&payload);
-    yts_service_send_message (YTS_SERVICE (self->service), message);
+    yts_service_send_text (YTS_SERVICE (self->service), text);
   }
 }
 
@@ -236,8 +212,8 @@ run_server (void)
                     G_CALLBACK (_server_ready), NULL);
   g_signal_connect (client, "disconnected",
                     G_CALLBACK (_server_disconnected), NULL);
-  g_signal_connect (client, "message",
-                    G_CALLBACK (_server_message), &self);
+  g_signal_connect (client, "text-message",
+                    G_CALLBACK (_server_text_message), &self);
   g_signal_connect (client, "incoming-file",
                     G_CALLBACK (_server_incoming_file), NULL);
 
