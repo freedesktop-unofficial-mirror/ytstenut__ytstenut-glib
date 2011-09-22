@@ -53,15 +53,13 @@ _client_disconnected (YtsClient  *client,
 
 /* Messages that are not handled by any service are emitted by the client. */
 static void
-_client_message (YtsClient   *client,
-                 YtsMessage  *message,
-                 void         *data)
+_client_raw_message (YtsClient  *client,
+                     char const *xml_payload,
+                     void       *data)
 {
   char *message_xml;
 
-  message_xml = yts_metadata_to_string (YTS_METADATA (message));
-  g_debug ("%s() %s", __FUNCTION__, message_xml);
-  g_free (message_xml);
+  g_debug ("%s() %s", __FUNCTION__, xml_payload);
 }
 
 /*
@@ -153,8 +151,8 @@ main (int     argc,
                     G_CALLBACK (_client_ready), NULL);
   g_signal_connect (client, "disconnected",
                     G_CALLBACK (_client_disconnected), NULL);
-  g_signal_connect (client, "message",
-                    G_CALLBACK (_client_message), NULL);
+  g_signal_connect (client, "raw-message",
+                    G_CALLBACK (_client_raw_message), NULL);
 
   /* The roster object tracks other devices and services as they come and go. */
   roster = yts_client_get_roster (client);

@@ -157,18 +157,18 @@ yts_proxy_service_init (YtsProxyService *self)
 }
 
 YtsService *
-yts_proxy_service_new (char const         *service_uid,
+yts_proxy_service_new (char const         *service_id,
                        char const         *type,
                        char const *const  *fqc_ids,
                        GHashTable         *names,
                        GHashTable         *statuses)
 {
   return g_object_new (YTS_TYPE_PROXY_SERVICE,
-                       "fqc-ids",   fqc_ids,
-                       "uid",       service_uid,
-                       "type",      type,
-                       "names",     names,
-                       "statuses",  statuses,
+                       "fqc-ids",     fqc_ids,
+                       "service-id",  service_id,
+                       "type",        type,
+                       "names",       names,
+                       "statuses",    statuses,
                        NULL);
 }
 

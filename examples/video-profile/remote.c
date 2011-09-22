@@ -80,15 +80,11 @@ _client_disconnected (YtsClient  *client,
 }
 
 static void
-_client_message (YtsClient   *client,
-                 YtsMessage  *message,
-                 void         *data)
+_client_raw_message (YtsClient  *client,
+                     char const *xml_payload,
+                     void       *data)
 {
-  char *message_xml;
-
-  message_xml = yts_metadata_to_string (YTS_METADATA (message));
-  g_debug ("%s() %s", __FUNCTION__, message_xml);
-  g_free (message_xml);
+  g_debug ("%s() %s", __FUNCTION__, xml_payload);
 }
 
 static void
@@ -269,7 +265,7 @@ _roster_service_added (YtsRoster   *roster,
 {
   char const *uid;
 
-  uid = yts_service_get_id (service);
+  uid = yts_service_get_service_id (service);
 
   g_debug ("%s() %s", __FUNCTION__, uid);
 
@@ -368,8 +364,8 @@ main (int     argc,
                     G_CALLBACK (_client_ready), &remote);
   g_signal_connect (client, "disconnected",
                     G_CALLBACK (_client_disconnected), &remote);
-  g_signal_connect (client, "message",
-                    G_CALLBACK (_client_message), &remote);
+  g_signal_connect (client, "raw-message",
+                    G_CALLBACK (_client_raw_message), &remote);
 
   roster = yts_client_get_roster (client);
   g_signal_connect (roster, "service-added",

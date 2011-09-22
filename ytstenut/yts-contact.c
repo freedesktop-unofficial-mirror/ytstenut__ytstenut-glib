@@ -125,7 +125,7 @@ static void
 yts_contact_service_added (YtsContact *contact, YtsService *service)
 {
   YtsContactPrivate *priv = contact->priv;
-  const char         *uid  = yts_service_get_id (service);
+  const char         *uid  = yts_service_get_service_id (service);
 
   g_return_if_fail (uid && *uid);
   g_return_if_fail (!g_hash_table_lookup (priv->services, uid));
@@ -142,7 +142,7 @@ static void
 yts_contact_service_removed (YtsContact *contact, YtsService *service)
 {
   YtsContactPrivate *priv = contact->priv;
-  const char         *uid  = yts_service_get_id (service);
+  const char         *uid  = yts_service_get_service_id (service);
 
   g_return_if_fail (uid && *uid);
 

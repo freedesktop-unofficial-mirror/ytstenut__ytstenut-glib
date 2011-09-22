@@ -22,7 +22,6 @@ source_h =						\
 		$(srcdir)/yts-error.h			\
 		$(srcdir)/yts-main.h			\
 		$(srcdir)/yts-metadata.h		\
-		$(srcdir)/yts-metadata-service.h	\
 		$(srcdir)/yts-roster.h			\
 		$(srcdir)/yts-service.h		\
 		$(srcdir)/yts-status.h			\
@@ -54,7 +53,6 @@ source_c =						\
 		$(srcdir)/yts-marshal.c		\
 		$(srcdir)/yts-message.c		\
 		$(srcdir)/yts-metadata.c		\
-		$(srcdir)/yts-metadata-service.c	\
 		$(srcdir)/yts-roster.c			\
 		$(srcdir)/yts-service.c		\
 		$(srcdir)/yts-status.c			\
@@ -98,7 +96,6 @@ private_h = \
 		$(srcdir)/yts-contact-internal.h \
 		$(srcdir)/yts-factory.h \
 		$(srcdir)/yts-metadata-internal.h \
-		$(srcdir)/yts-metadata-service-internal.h \
 		$(srcdir)/yts-proxy-factory.h \
 		$(srcdir)/yts-proxy-internal.h \
 		$(srcdir)/yts-proxy-service-internal.h \

@@ -3554,7 +3554,7 @@ yts_client_cleanup_service (YtsClient   *self,
   GHashTableIter   iter;
   bool             start_over;
 
-  service_id = yts_service_get_id (service);
+  service_id = yts_service_get_service_id (service);
 
   /*
    * Clear pending responses.

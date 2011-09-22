@@ -18,7 +18,7 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
-#include "yts-metadata-service-internal.h"
+#include "yts-service-internal.h"
 #include "yts-proxy-service-internal.h"
 #include "yts-service-factory.h"
 #include "config.h"
@@ -84,11 +84,6 @@ yts_service_factory_create_service (YtsServiceFactory *self,
 
   g_return_val_if_fail (fqc_ids, NULL);
 
-  /* PONDERING
-   * This is a bit of a kludge, if we have a proxy for this FQC then
-   * we'll create a proxy-service, otherwise a metadata-service.
-   * Will go away when we remove metadata-service. */
-
   for (i = 0; fqc_ids[i]; i++) {
     GType proxy_gtype = yts_factory_get_proxy_gtype_for_fqc_id (
                             YTS_FACTORY (self),
@@ -102,10 +97,6 @@ yts_service_factory_create_service (YtsServiceFactory *self,
     }
   }
 
-  return yts_metadata_service_new (service_id,
-                                   type,
-                                   fqc_ids,
-                                   names,
-                                   statuses);
+  return yts_service_new (service_id, type, fqc_ids, names, statuses);
 }
 

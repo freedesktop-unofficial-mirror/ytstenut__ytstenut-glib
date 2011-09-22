@@ -50,7 +50,6 @@ yts_metadata_get_root_node
 yts_metadata_get_type
 yts_metadata_is_equal
 yts_metadata_new_from_xml
-yts_metadata_service_get_type
 yts_metadata_to_string
 yts_presence_get_type
 yts_protocol_get_type
@@ -76,7 +75,7 @@ yts_service_adapter_invoke
 yts_service_adapter_send_error
 yts_service_adapter_send_event
 yts_service_adapter_send_response
-yts_service_get_id
+yts_service_get_service_id
 yts_service_get_names
 yts_service_get_service_type
 yts_service_get_statuses

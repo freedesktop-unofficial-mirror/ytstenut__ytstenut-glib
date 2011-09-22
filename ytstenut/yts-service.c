@@ -38,11 +38,11 @@
 static void
 _capability_interface_init (YtsCapability *interface);
 
-G_DEFINE_ABSTRACT_TYPE_WITH_CODE (YtsService,
-                                  yts_service,
-                                  G_TYPE_OBJECT,
-                                  G_IMPLEMENT_INTERFACE (YTS_TYPE_CAPABILITY,
-                                                         _capability_interface_init))
+G_DEFINE_TYPE_WITH_CODE (YtsService,
+                         yts_service,
+                         G_TYPE_OBJECT,
+                         G_IMPLEMENT_INTERFACE (YTS_TYPE_CAPABILITY,
+                                                _capability_interface_init))
 
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_SERVICE, YtsServicePrivate))
@@ -56,7 +56,7 @@ enum {
   /* YtsService */
   PROP_TYPE,
   PROP_NAMES,
-  PROP_UID,
+  PROP_ID,
   PROP_STATUSES
 };
 
@@ -74,7 +74,7 @@ typedef struct {
   /* YtsService */
   char const  *type;
   GHashTable  *names;
-  char const  *uid;
+  char const  *service_id;
   GHashTable  *statuses;
 
 } YtsServicePrivate;
@@ -114,8 +114,8 @@ _get_property (GObject    *object,
 
     /* YtsService */
 
-    case PROP_UID:
-      g_value_set_string (value, priv->uid);
+    case PROP_ID:
+      g_value_set_string (value, priv->service_id);
       break;
     case PROP_TYPE:
       g_value_set_string (value, priv->type);
@@ -149,8 +149,8 @@ _set_property (GObject      *object,
 
     /* YtsService */
 
-    case PROP_UID:
-      priv->uid = g_intern_string (g_value_get_string (value));
+    case PROP_ID:
+      priv->service_id = g_intern_string (g_value_get_string (value));
       break;
     case PROP_STATUSES:
       /* Construct-only */
@@ -212,16 +212,16 @@ yts_service_class_init (YtsServiceClass *klass)
                                     "fqc-ids");
 
   /**
-   * YtsService:uid:
+   * YtsService:service-id:
    *
-   * The uid of this service.
+   * The unique identifier of this service.
    */
-  pspec = g_param_spec_string ("uid", "", "",
+  pspec = g_param_spec_string ("service-id", "", "",
                                NULL,
                                G_PARAM_READWRITE |
                                G_PARAM_CONSTRUCT_ONLY |
                                G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_UID, pspec);
+  g_object_class_install_property (object_class, PROP_ID, pspec);
 
   /**
    * YtsService:type:
@@ -296,22 +296,21 @@ yts_service_init (YtsService *self)
 }
 
 /**
- * yts_service_get_id:
+ * yts_service_get_service_id:
  * @service: #YtsService
  *
- * Returns the uid of the the given service. The returned pointer is to a
- * canonical representation created with g_intern_string().
+ * Returns the unique id of the the given service.
  *
- * Return value: (transfer none): the uid.
+ * Return value: (transfer none): the service-id.
  */
 char const *
-yts_service_get_id (YtsService *self)
+yts_service_get_service_id (YtsService *self)
 {
   YtsServicePrivate *priv = GET_PRIVATE (self);
 
   g_return_val_if_fail (YTS_IS_SERVICE (self), NULL);
 
-  return priv->uid;
+  return priv->service_id;
 }
 
 char const *
@@ -453,5 +452,23 @@ yts_service_send_message (YtsService  *self,
                           YtsMetadata *message)
 {
   g_signal_emit (self, _signals[SIG_SEND_MESSAGE], 0, message);
+}
+
+YtsService *
+yts_service_new (char const *service_id,
+                 char const *type,
+                 char const *const *fqc_ids,
+                 GHashTable *names,
+                 GHashTable *statuses)
+{
+  g_return_val_if_fail (service_id && *service_id, NULL);
+
+  return g_object_new (YTS_TYPE_SERVICE,
+                       "fqc-ids", fqc_ids,
+                       "service-id", service_id,
+                       "type", type,
+                       "names", names,
+                       "statuses", statuses,
+                       NULL);
 }
 

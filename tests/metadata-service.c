@@ -72,7 +72,7 @@ main (int argc, char **argv)
 
   g_assert (service);
 
-  uid = yts_service_get_id (service);
+  uid = yts_service_get_service_id (service);
 
   g_assert_cmpstr (MYUID, ==, uid);
 

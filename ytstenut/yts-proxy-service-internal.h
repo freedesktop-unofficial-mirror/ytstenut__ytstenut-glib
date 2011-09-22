@@ -24,7 +24,7 @@
 #include <ytstenut/yts-proxy-service.h>
 
 YtsService *
-yts_proxy_service_new (char const         *service_uid,
+yts_proxy_service_new (char const         *service_id,
                        char const         *type,
                        char const *const  *fqc_ids,
                        GHashTable         *names,

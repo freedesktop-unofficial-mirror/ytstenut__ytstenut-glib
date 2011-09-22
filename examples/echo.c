@@ -80,7 +80,7 @@ _client_roster_service_added (YtsRoster  *roster,
 {
   char const *uid;
 
-  uid = yts_service_get_id (service);
+  uid = yts_service_get_service_id (service);
 
   if (0 == g_strcmp0 (uid, SERVER_UID)) {
 
@@ -128,7 +128,7 @@ run_client (void)
  */
 
 typedef struct {
-  YtsMetadataService *service;
+  YtsService *service;
 } ServerData;
 
 static void
@@ -185,7 +185,7 @@ _server_roster_service_added (YtsRoster  *roster,
 {
   char const *uid;
 
-  uid = yts_service_get_id (service);
+  uid = yts_service_get_service_id (service);
 
   g_debug ("%s() %s", __FUNCTION__, uid);
 
@@ -193,7 +193,7 @@ _server_roster_service_added (YtsRoster  *roster,
    * it shows up in our roster? */
   if (0 == g_strcmp0 (uid, CLIENT_UID)) {
     /* Should probably take a weak ref here. */
-    self->service = YTS_METADATA_SERVICE (service);
+    self->service = service;
   }
 }
 

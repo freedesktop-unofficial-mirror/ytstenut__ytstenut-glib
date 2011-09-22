@@ -67,7 +67,7 @@ service_added_cb (YtsRoster *roster, YtsService *service, gpointer data)
   YtsClient  *client  = yts_roster_get_client (roster);
   YtsContact *contact = yts_service_get_contact (service);
   const char  *jid     = yts_contact_get_id (contact);
-  const char  *sid     = yts_service_get_id (service);
+  const char  *sid     = yts_service_get_service_id (service);
   gboolean     our     = FALSE;
 
   static YtsService *service2 = NULL;

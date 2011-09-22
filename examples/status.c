@@ -55,11 +55,11 @@ _client_disconnected (YtsClient  *client,
 }
 
 static void
-_client_message (YtsClient   *client,
-                 YtsMessage  *msg,
-                 void         *data)
+_client_raw_message (YtsClient  *client,
+                     char const *xml_payload,
+                     void       *data)
 {
-  g_debug ("%s()", __FUNCTION__);
+  g_debug ("%s() %s", __FUNCTION__, xml_payload);
 
 }
 
@@ -96,7 +96,7 @@ _client_roster_service_added (YtsRoster  *roster,
 {
   char const *uid;
 
-  uid = yts_service_get_id (service);
+  uid = yts_service_get_service_id (service);
 
   if (0 == g_strcmp0 (uid, SERVER_UID)) {
 
@@ -128,8 +128,8 @@ run_client (void)
                     G_CALLBACK (_client_ready), NULL);
   g_signal_connect (client, "disconnected",
                     G_CALLBACK (_client_disconnected), NULL);
-  g_signal_connect (client, "message",
-                    G_CALLBACK (_client_message), NULL);
+  g_signal_connect (client, "raw-message",
+                    G_CALLBACK (_client_raw_message), NULL);
   g_signal_connect (client, "incoming-file",
                     G_CALLBACK (_client_incoming_file), NULL);
 
@@ -172,9 +172,9 @@ _server_disconnected (YtsClient  *client,
 }
 
 static void
-_server_message (YtsClient   *client,
-                 YtsMessage  *msg,
-                 void         *data)
+_server_text_message (YtsClient   *client,
+                      char const  *text,
+                      void        *data)
 {
   char const *property_name;
 
@@ -215,8 +215,8 @@ run_server (void)
                     G_CALLBACK (_server_ready), NULL);
   g_signal_connect (client, "disconnected",
                     G_CALLBACK (_server_disconnected), NULL);
-  g_signal_connect (client, "message",
-                    G_CALLBACK (_server_message), NULL);
+  g_signal_connect (client, "text-message",
+                    G_CALLBACK (_server_text_message), NULL);
   g_signal_connect (client, "incoming-file",
                     G_CALLBACK (_server_incoming_file), NULL);
 
