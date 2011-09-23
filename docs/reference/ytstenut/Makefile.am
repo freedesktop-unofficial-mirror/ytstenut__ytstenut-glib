@@ -59,18 +59,21 @@ IGNORE_HFILES = \
   yts-adapter-factory.h \
   yts-client-internal.h \
   yts-contact-internal.h \
-  yts-enum-types.h \
+  yts-contact-internal.h \
+  yts-error-message.h \
+  yts-event-message.h \
   yts-factory.h \
-  yts-marshal.h \
+  yts-invocation-message.h \
+  yts-message.h \
   yts-metadata-internal.h \
-  yts-metadata-service-internal.h \
-  yts-profile.h \
-  yts-profile-proxy.h \
   yts-profile-adapter.h \
+  yts-profile.h \
   yts-profile-impl.h \
+  yts-profile-proxy.h \
   yts-proxy-factory.h \
   yts-proxy-internal.h \
   yts-proxy-service-internal.h \
+  yts-response-message.h \
   yts-roster-internal.h \
   yts-service-factory.h \
   yts-service-internal.h \

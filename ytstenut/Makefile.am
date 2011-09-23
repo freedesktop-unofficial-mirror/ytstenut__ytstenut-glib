@@ -13,7 +13,6 @@ AM_CPPFLAGS = \
 AM_CFLAGS = $(YTS_CFLAGS)
 
 source_h =						\
-		$(srcdir)/empathy-tp-file.h		\
 		$(srcdir)/yts-capability.h			\
 		$(srcdir)/yts-caps.h			\
 		$(srcdir)/yts-client.h			\
@@ -90,6 +89,7 @@ source_c =						\
 		$(NULL)
 
 private_h = \
+		$(srcdir)/empathy-tp-file.h		\
 		$(srcdir)/yts-adapter-factory.h \
 		$(srcdir)/yts-client-internal.h \
 		$(srcdir)/yts-contact-internal.h \
