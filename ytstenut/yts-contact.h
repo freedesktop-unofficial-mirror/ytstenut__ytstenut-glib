@@ -51,8 +51,23 @@ G_BEGIN_DECLS
                                YTS_TYPE_CONTACT,                       \
                                YtsContactClass))
 
-typedef struct _YtsContactClass   YtsContactClass;
 typedef struct _YtsContactPrivate YtsContactPrivate;
+
+/**
+ * YtsContact:
+ *
+ * Represents a single XMPP connection (usually a device) in the Ytstenut
+ * mesh. One or more #YtsService<!-- -->s will be available throug a given
+ * contact.
+ */
+typedef struct
+{
+  /*< private >*/
+  GObject parent;
+
+  /*< private >*/
+  YtsContactPrivate *priv;
+} YtsContact;
 
 /**
  * YtsContactClass:
@@ -61,7 +76,7 @@ typedef struct _YtsContactPrivate YtsContactPrivate;
  *
  * #YtsContact class.
  */
-struct _YtsContactClass
+typedef struct
 {
   /*< private >*/
   GObjectClass parent_class;
@@ -74,23 +89,7 @@ struct _YtsContactClass
   /*< public >*/
   void (*service_added)   (YtsContact *contact, YtsService *service);
   void (*service_removed) (YtsContact *contact, YtsService *service);
-};
-
-/**
- * YtsContact:
- *
- * Represents a single XMPP connection (usually a device) in the Ytstenut
- * mesh. One or more #YtsService<!-- -->s will be available throug a given
- * contact.
- */
-struct _YtsContact
-{
-  /*< private >*/
-  GObject parent;
-
-  /*< private >*/
-  YtsContactPrivate *priv;
-};
+} YtsContactClass;
 
 GType yts_contact_get_type (void) G_GNUC_CONST;
 

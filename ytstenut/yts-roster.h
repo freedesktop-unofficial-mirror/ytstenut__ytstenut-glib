@@ -47,34 +47,32 @@ G_BEGIN_DECLS
                                YTS_TYPE_ROSTER,                        \
                                YtsRosterClass))
 
-typedef struct _YtsRoster        YtsRoster;
-typedef struct _YtsRosterClass   YtsRosterClass;
 typedef struct _YtsRosterPrivate YtsRosterPrivate;
-
-/**
- * YtsRosterClass:
- *
- * #YtsRoster class.
- */
-struct _YtsRosterClass
-{
-  /*< private >*/
-  GObjectClass parent_class;
-};
 
 /**
  * YtsRoster:
  *
  * Represents a roster of #YtsContact<!-- -->s known to #YtsClient.
  */
-struct _YtsRoster
+typedef struct
 {
   /*< private >*/
   GObject parent;
 
   /*< private >*/
   YtsRosterPrivate *priv;
-};
+} YtsRoster;
+
+/**
+ * YtsRosterClass:
+ *
+ * #YtsRoster class.
+ */
+typedef struct
+{
+  /*< private >*/
+  GObjectClass parent_class;
+} YtsRosterClass;
 
 GType yts_roster_get_type (void) G_GNUC_CONST;
 

@@ -56,8 +56,20 @@ G_BEGIN_DECLS
                                YTS_TYPE_CLIENT,                        \
                                YtsClientClass))
 
-typedef struct _YtsClientClass   YtsClientClass;
 typedef struct _YtsClientPrivate YtsClientPrivate;
+
+/**
+ * YtsClient:
+ *
+ * Class representing an application connection to the Ytstenut mesh.
+ */
+typedef struct
+{
+  /*< private >*/
+  GObject parent;
+
+  YtsClientPrivate *priv;
+} YtsClient;
 
 /**
  * YtsClientClass:
@@ -69,7 +81,7 @@ typedef struct _YtsClientPrivate YtsClientPrivate;
  *
  * Class for #YtsClient
  */
-struct _YtsClientClass
+typedef struct
 {
   /*< private >*/
   GObjectClass parent_class;
@@ -85,20 +97,7 @@ struct _YtsClientClass
                              guint64     size,
                              guint64     offset,
                              TpChannel  *channel);
-};
-
-/**
- * YtsClient:
- *
- * Class representing an application connection to the Ytstenut mesh.
- */
-struct _YtsClient
-{
-  /*< private >*/
-  GObject parent;
-
-  YtsClientPrivate *priv;
-};
+} YtsClientClass;
 
 GType yts_client_get_type (void) G_GNUC_CONST;
 
