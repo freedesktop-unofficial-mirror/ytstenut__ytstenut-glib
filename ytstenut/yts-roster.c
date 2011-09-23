@@ -464,42 +464,6 @@ yts_roster_clear (YtsRoster *roster)
     }
 }
 
-/**
- * yts_roster_find_contact_by_capability:
- * @roster: #YtsRoster
- * @capability: capability of this contact
- *
- * Finds first contact in roster that advertises the specified capablity.
- *
- * Return value: (transfer none): #YtsContact if found, or %NULL.
- */
-YtsContact *
-yts_roster_find_contact_by_capability (YtsRoster *roster,
-                                        YtsCaps    capability)
-{
-  YtsRosterPrivate *priv;
-  GHashTableIter     iter;
-  gpointer           key, value;
-
-  g_return_val_if_fail (YTS_IS_ROSTER (roster), NULL);
-  g_return_val_if_fail (capability, NULL);
-
-  priv = roster->priv;
-
-  g_hash_table_iter_init (&iter, priv->contacts);
-  while (g_hash_table_iter_next (&iter, &key, &value))
-    {
-      YtsContact *contact = value;
-
-      if (yts_contact_has_capability (contact, capability))
-        {
-          return contact;
-        }
-    }
-
-  return NULL;
-}
-
 YtsRoster*
 yts_roster_new (YtsClient *client)
 {

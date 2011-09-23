@@ -22,7 +22,6 @@
 #define YTS_ROSTER_H
 
 #include <glib-object.h>
-#include <ytstenut/yts-caps.h>
 #include <ytstenut/yts-contact.h>
 
 G_BEGIN_DECLS
@@ -82,9 +81,6 @@ GType yts_roster_get_type (void) G_GNUC_CONST;
 GHashTable        *yts_roster_get_contacts              (YtsRoster *roster);
 YtsContact       *yts_roster_find_contact_by_jid       (YtsRoster *roster,
                                                           const char *jid);
-YtsContact       *yts_roster_find_contact_by_capability (YtsRoster *roster,
-                                                           YtsCaps    capability);
-
 G_END_DECLS
 
 #endif /* YTS_ROSTER_H */
