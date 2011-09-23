@@ -23,7 +23,6 @@
 #define YTS_SERVICE_H
 
 #include <glib-object.h>
-#include <ytstenut/yts-metadata.h>
 
 G_BEGIN_DECLS
 
@@ -49,7 +48,7 @@ G_BEGIN_DECLS
 /**
  * YtsService:
  *
- * Abstract base class for XPMN services; see #YtsMetadataService.
+ * Base class for XPMN services.
  */
 typedef struct {
   /*< private >*/
@@ -64,10 +63,6 @@ typedef struct {
 typedef struct {
   /*< private >*/
   GObjectClass parent;
-
-  void
-  (*send_message) (YtsService   *self,
-                   YtsMetadata  *message);
 
   /*< public >*/
   void

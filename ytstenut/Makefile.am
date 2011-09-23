@@ -19,7 +19,6 @@ source_h =						\
 		$(srcdir)/yts-debug.h			\
 		$(srcdir)/yts-error.h			\
 		$(srcdir)/yts-main.h			\
-		$(srcdir)/yts-metadata.h		\
 		$(srcdir)/yts-roster.h			\
 		$(srcdir)/yts-service.h		\
 		$(srcdir)/yts-types.h			\
@@ -102,6 +101,7 @@ private_h = \
 		$(srcdir)/yts-capability-status.h \
 		$(srcdir)/yts-caps.h \
 		$(srcdir)/yts-message.h		\
+		$(srcdir)/yts-metadata.h		\
 		$(srcdir)/yts-error-message.h \
 		$(srcdir)/yts-event-message.h \
 		$(srcdir)/yts-invocation-message.h \

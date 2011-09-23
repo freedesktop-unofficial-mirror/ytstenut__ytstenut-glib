@@ -259,21 +259,14 @@ yts_service_class_init (YtsServiceClass *klass)
                               G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_STATUSES, pspec);
 
-  /**
-   * YtsService::message:
-   * @service: the service which received the signal
-   * @message: the message
-   *
-   * The ::message signal is emitted when message is received on given service
-   *
-   * Since: 0.1
+  /*
+   * Internal signal, should not be considered by language bindings at this
+   * time. Maybe in the future when we allow for custom service subclasses.
    */
   _signals[SIG_SEND_MESSAGE] = g_signal_new ("send-message",
                                               G_TYPE_FROM_CLASS (object_class),
                                               G_SIGNAL_RUN_LAST,
-                                              G_STRUCT_OFFSET (YtsServiceClass,
-                                                               send_message),
-                                              NULL, NULL,
+                                              0, NULL, NULL,
                                               yts_marshal_VOID__OBJECT,
                                               G_TYPE_NONE, 1,
                                               YTS_TYPE_METADATA);

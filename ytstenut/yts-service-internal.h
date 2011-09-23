@@ -21,8 +21,9 @@
 #ifndef YTS_SERVICE_INTERNAL_H
 #define YTS_SERVICE_INTERNAL_H
 
-#include <ytstenut/yts-service.h>
 #include <ytstenut/yts-contact.h>
+#include <ytstenut/yts-metadata.h>
+#include <ytstenut/yts-service.h>
 
 YtsService *
 yts_service_new (char const *service_id,

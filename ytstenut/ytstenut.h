@@ -28,7 +28,6 @@
 #include <ytstenut/yts-debug.h>
 #include <ytstenut/yts-error.h>
 #include <ytstenut/yts-main.h>
-#include <ytstenut/yts-metadata.h>
 #include <ytstenut/yts-roster.h>
 #include <ytstenut/yts-service.h>
 #include <ytstenut/yts-types.h>

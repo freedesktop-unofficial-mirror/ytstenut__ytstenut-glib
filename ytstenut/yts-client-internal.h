@@ -22,8 +22,9 @@
 #define YTS_CLIENT_INTERNAL_H
 
 #include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
-#include <ytstenut/yts-error.h>
 #include <ytstenut/yts-client.h>
+#include <ytstenut/yts-error.h>
+#include <ytstenut/yts-metadata.h>
 
 void
 yts_client_reconnect_after (YtsClient *client,

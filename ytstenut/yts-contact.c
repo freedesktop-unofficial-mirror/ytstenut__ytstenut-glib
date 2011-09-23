@@ -243,13 +243,14 @@ yts_contact_class_init (YtsContactClass *klass)
   g_object_class_install_property (object_class, PROP_TP_CONTACT,
                                    properties[PROP_TP_CONTACT]);
 
-
+  /*
+   * Internal signal, should not be considered by language bindings at this
+   * time. Maybe in the future when we allow for custom contact subclasses.
+   */
   signals[SEND_MESSAGE] = g_signal_new ("send-message",
                                         G_TYPE_FROM_CLASS (object_class),
                                         G_SIGNAL_RUN_LAST,
-                                        G_STRUCT_OFFSET (YtsContactClass,
-                                                         send_message),
-                                        NULL, NULL,
+                                        0, NULL, NULL,
                                         yts_marshal_VOID__OBJECT_OBJECT,
                                         G_TYPE_NONE, 2,
                                         YTS_TYPE_SERVICE,
