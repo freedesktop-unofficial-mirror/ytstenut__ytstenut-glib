@@ -57,6 +57,7 @@ EXTRA_HFILES=
 IGNORE_HFILES = \
   empathy-tp-file.h \
   yts-adapter-factory.h \
+  yts-capability-status.h \
   yts-caps.h \
   yts-client-internal.h \
   yts-contact-internal.h \
@@ -78,6 +79,7 @@ IGNORE_HFILES = \
   yts-roster-internal.h \
   yts-service-factory.h \
   yts-service-internal.h \
+  yts-status.h \
   yts-vp-playable-proxy.h \
   yts-vp-player-adapter.h \
   yts-vp-player-proxy.h \

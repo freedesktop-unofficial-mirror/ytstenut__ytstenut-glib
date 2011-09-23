@@ -60,6 +60,7 @@
 #include "yts-roster-internal.h"
 #include "yts-service.h"
 #include "yts-service-adapter.h"
+#include "yts-status.h"
 #include "yts-types.h"
 
 #include "profile/yts-profile.h"
@@ -2935,6 +2936,41 @@ yts_client_get_tp_status (YtsClient *client)
   return priv->tp_status;
 }
 
+/**
+ * yts_client_set_status:
+ * @client: #YtsClient
+ * @status: new #YtsStatus
+ *
+ * Changes the status of the service represented by this client to status;
+ */
+static void
+yts_client_set_status (YtsClient *client, YtsStatus *status)
+{
+  YtsClientPrivate *priv;
+
+  g_return_if_fail (YTS_IS_CLIENT (client) && YTS_IS_STATUS (status));
+
+  priv = client->priv;
+
+  g_return_if_fail (priv->caps && priv->caps->len);
+
+  if (status)
+    g_object_ref (status);
+
+  if (priv->status)
+    {
+      g_object_unref (priv->status);
+      priv->status = NULL;
+    }
+
+  priv->status = status;
+
+  if (priv->tp_status)
+    {
+      yts_client_dispatch_status (client);
+    }
+}
+
 /*
  * FIXME -- bad API, constructing the YtsStatus is hard, this should be a
  * private API, with a better public API wrapping it.
@@ -2979,41 +3015,6 @@ yts_client_set_status_by_capability (YtsClient *client,
     }
 
   yts_client_set_status (client, status);
-}
-
-/**
- * yts_client_set_status:
- * @client: #YtsClient
- * @status: new #YtsStatus
- *
- * Changes the status of the service represented by this client to status;
- */
-void
-yts_client_set_status (YtsClient *client, YtsStatus *status)
-{
-  YtsClientPrivate *priv;
-
-  g_return_if_fail (YTS_IS_CLIENT (client) && YTS_IS_STATUS (status));
-
-  priv = client->priv;
-
-  g_return_if_fail (priv->caps && priv->caps->len);
-
-  if (status)
-    g_object_ref (status);
-
-  if (priv->status)
-    {
-      g_object_unref (priv->status);
-      priv->status = NULL;
-    }
-
-  priv->status = status;
-
-  if (priv->tp_status)
-    {
-      yts_client_dispatch_status (client);
-    }
 }
 
 struct YtsCLChannelData

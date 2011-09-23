@@ -28,8 +28,6 @@
 #include <ytstenut/yts-error.h>
 #include <ytstenut/yts-roster.h>
 #include <ytstenut/yts-types.h>
-#include <ytstenut/yts-status.h>
-
 
 G_BEGIN_DECLS
 
@@ -112,7 +110,6 @@ void        yts_client_set_incoming_file_directory (YtsClient *client,
 const char *yts_client_get_incoming_file_directory (YtsClient *client);
 const char *yts_client_get_jid (const YtsClient *client);
 const char *yts_client_get_uid (const YtsClient *client);
-void        yts_client_set_status (YtsClient *client, YtsStatus *status);
 void        yts_client_set_status_by_capability (YtsClient *client,
                                                   const char *capability,
                                                   const char *activity);

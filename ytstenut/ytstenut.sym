@@ -16,7 +16,6 @@ yts_client_foreach_service
 yts_client_register_service
 yts_client_add_capability
 yts_client_set_incoming_file_directory
-yts_client_set_status
 yts_client_set_status_by_capability
 yts_contact_cancel_file
 yts_contact_get_icon
@@ -80,8 +79,6 @@ yts_service_get_type
 yts_service_send_text
 yts_service_send_list
 yts_service_send_dictionary
-yts_status_get_type
-yts_status_new
 yts_vp_content_get_type
 yts_vp_query_get_max_results
 yts_vp_query_get_progress

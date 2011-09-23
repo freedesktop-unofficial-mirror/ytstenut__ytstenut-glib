@@ -76,17 +76,11 @@ _client_incoming_file (YtsClient  *client,
 }
 
 static void
-_server_status (YtsClient  *client,
-                YtsStatus  *status,
-                void        *data)
+_service_status_changed (YtsService  *service,
+                         char const  *fqc_id,
+                         char const  *status_xml)
 {
-  char *dump;
-
-  g_debug ("%s()", __FUNCTION__);
-
-  dump = yts_metadata_to_string (YTS_METADATA (status));
-  g_debug ("%s", dump);
-  g_free (dump);
+  g_debug ("%s() %s : %s", __FUNCTION__, fqc_id, status_xml);
 }
 
 static void
@@ -103,8 +97,8 @@ _client_roster_service_added (YtsRoster  *roster,
     char const text[] = "ping pong";
 
     /* Hook up to server status changes. */
-    g_signal_connect (service, "status",
-                      G_CALLBACK (_server_status), NULL);
+    g_signal_connect (service, "status-changed",
+                      G_CALLBACK (_service_status_changed), NULL);
 
 
     g_debug ("%s() %s", __FUNCTION__, uid);

@@ -22,11 +22,9 @@ source_h =						\
 		$(srcdir)/yts-metadata.h		\
 		$(srcdir)/yts-roster.h			\
 		$(srcdir)/yts-service.h		\
-		$(srcdir)/yts-status.h			\
 		$(srcdir)/yts-types.h			\
 		$(srcdir)/yts-version.h		\
 		\
-		$(srcdir)/yts-capability-status.h \
 		$(srcdir)/yts-proxy.h \
 		$(srcdir)/yts-proxy-service.h \
 		$(srcdir)/yts-service-adapter.h \
@@ -90,7 +88,6 @@ source_c =						\
 private_h = \
 		$(srcdir)/empathy-tp-file.h		\
 		$(srcdir)/yts-adapter-factory.h \
-		$(srcdir)/yts-caps.h \
 		$(srcdir)/yts-client-internal.h \
 		$(srcdir)/yts-contact-internal.h \
 		$(srcdir)/yts-contact-internal.h \
@@ -102,11 +99,14 @@ private_h = \
 		$(srcdir)/yts-roster-internal.h \
 		$(srcdir)/yts-service-factory.h \
 		\
+		$(srcdir)/yts-capability-status.h \
+		$(srcdir)/yts-caps.h \
 		$(srcdir)/yts-message.h		\
 		$(srcdir)/yts-error-message.h \
 		$(srcdir)/yts-event-message.h \
 		$(srcdir)/yts-invocation-message.h \
 		$(srcdir)/yts-response-message.h \
+		$(srcdir)/yts-status.h			\
 		\
 		$(srcdir)/profile/yts-profile.h \
 		$(srcdir)/profile/yts-profile-impl.h \

@@ -31,14 +31,12 @@
 #include <ytstenut/yts-metadata.h>
 #include <ytstenut/yts-roster.h>
 #include <ytstenut/yts-service.h>
-#include <ytstenut/yts-status.h>
 #include <ytstenut/yts-types.h>
 #include <ytstenut/yts-version.h>
 
 #include <ytstenut/yts-marshal.h>
 #include <ytstenut/yts-enum-types.h>
 
-#include <ytstenut/yts-capability-status.h>
 #include <ytstenut/yts-proxy.h>
 #include <ytstenut/yts-proxy-service.h>
 #include <ytstenut/yts-service-adapter.h>
