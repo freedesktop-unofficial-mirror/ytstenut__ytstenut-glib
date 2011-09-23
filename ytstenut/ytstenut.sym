@@ -24,7 +24,6 @@ yts_contact_get_id
 yts_contact_get_name
 yts_contact_get_tp_contact
 yts_contact_get_type
-yts_contact_has_capability
 yts_contact_send_file
 yts_debug_flags_get_type
 yts_error_get_atom

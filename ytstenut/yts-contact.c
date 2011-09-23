@@ -655,24 +655,6 @@ yts_contact_get_tp_contact (const YtsContact  *contact)
   return priv->tp_contact;
 }
 
-/**
- * yts_contact_has_capability:
- * @item: #YtsContact,
- * @cap: #YtsCaps, capability to check for.
- *
- * Checks whether the contact has the given capability.
- *
- * Return value: returns %TRUE if the item advertises the capability, %FALSE
- * otherwise.
- */
-gboolean
-yts_contact_has_capability (const YtsContact *item, YtsCaps cap)
-{
-  g_critical (G_STRLOC ": NOT IMPLEMENTED!!!");
-
-  return FALSE;
-}
-
 static gboolean
 yts_contact_find_cancellable_cb (gpointer key,
                                   gpointer value,

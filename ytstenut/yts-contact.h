@@ -25,9 +25,7 @@
 #include <gio/gio.h>
 #include <telepathy-glib/contact.h>
 
-#include <ytstenut/yts-caps.h>
 #include <ytstenut/yts-error.h>
-#include <ytstenut/yts-types.h>
 #include <ytstenut/yts-service.h>
 
 G_BEGIN_DECLS
@@ -101,8 +99,6 @@ const char *yts_contact_get_name           (const YtsContact  *contact);
 TpContact  *yts_contact_get_tp_contact     (const YtsContact  *contact);
 GFile      *yts_contact_get_icon           (const YtsContact  *contact,
                                              const char        **mime);
-gboolean    yts_contact_has_capability     (const YtsContact  *item,
-                                             YtsCaps            cap);
 
 YtsError   yts_contact_send_file          (const YtsContact *item,
                                              GFile *gfile);
