@@ -97,6 +97,7 @@ private_h = \
 		$(srcdir)/yts-proxy-service-internal.h \
 		$(srcdir)/yts-roster-internal.h \
 		$(srcdir)/yts-service-factory.h \
+		$(srcdir)/yts-service-internal.h \
 		\
 		$(srcdir)/yts-capability-status.h \
 		$(srcdir)/yts-caps.h \
@@ -112,7 +113,6 @@ private_h = \
 		$(srcdir)/profile/yts-profile-impl.h \
 		$(srcdir)/profile/yts-profile-proxy.h \
 		$(srcdir)/profile/yts-profile-adapter.h \
-		$(srcdir)/profile/yts-service-internal.h \
 		\
 		$(srcdir)/video-profile/yts-vp-playable-proxy.h \
 		$(srcdir)/video-profile/yts-vp-player-adapter.h \
