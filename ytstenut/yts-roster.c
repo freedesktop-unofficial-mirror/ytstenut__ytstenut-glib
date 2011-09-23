@@ -508,27 +508,6 @@ yts_roster_new (YtsClient *client)
                        NULL);
 }
 
-/**
- * yts_roster_get_client:
- * @roster: #YtsRoster
- *
- * Retrieves the #YtsClient associated with this roster; the client object
- * must not be freed by the caller.
- *
- * Return value (transfer none): #YtsClient.
- */
-YtsClient*
-yts_roster_get_client (YtsRoster *roster)
-{
-  YtsRosterPrivate *priv;
-
-  g_return_val_if_fail (YTS_IS_ROSTER (roster), NULL);
-
-  priv = roster->priv;
-
-  return priv->client;
-}
-
 static void
 yts_roster_contact_service_removed_cb (YtsContact *contact,
                                         YtsService *service,

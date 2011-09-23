@@ -24,7 +24,6 @@
 #include <glib-object.h>
 #include <ytstenut/yts-caps.h>
 #include <ytstenut/yts-contact.h>
-#include <ytstenut/yts-types.h>
 
 G_BEGIN_DECLS
 
@@ -85,7 +84,6 @@ YtsContact       *yts_roster_find_contact_by_jid       (YtsRoster *roster,
                                                           const char *jid);
 YtsContact       *yts_roster_find_contact_by_capability (YtsRoster *roster,
                                                            YtsCaps    capability);
-YtsClient        *yts_roster_get_client (YtsRoster *roster);
 
 G_END_DECLS
 
