@@ -21,12 +21,10 @@
 #ifndef YTS_CLIENT_H
 #define YTS_CLIENT_H
 
-#include <stdbool.h>
 #include <glib-object.h>
 #include <telepathy-glib/channel.h>
 
 #include <ytstenut/yts-capability.h>
-#include <ytstenut/yts-caps.h>
 #include <ytstenut/yts-error.h>
 #include <ytstenut/yts-roster.h>
 #include <ytstenut/yts-types.h>
@@ -105,7 +103,8 @@ YtsClient *yts_client_new (YtsProtocol protocol, const char *uid);
 
 void        yts_client_disconnect (YtsClient *client);
 void        yts_client_connect (YtsClient *client);
-void        yts_client_set_capabilities (YtsClient *client, YtsCaps caps);
+void        yts_client_add_capability (YtsClient  *client,
+                                       char const *capability);
 YtsRoster *yts_client_get_roster (YtsClient *client);
 void        yts_client_emit_error (YtsClient *client, YtsError error);
 void        yts_client_set_incoming_file_directory (YtsClient *client,

@@ -57,6 +57,7 @@ EXTRA_HFILES=
 IGNORE_HFILES = \
   empathy-tp-file.h \
   yts-adapter-factory.h \
+  yts-caps.h \
   yts-client-internal.h \
   yts-contact-internal.h \
   yts-contact-internal.h \

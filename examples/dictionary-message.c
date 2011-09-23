@@ -188,8 +188,7 @@ run_server (void)
   GMainLoop     *mainloop;
 
   client = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP, SERVER_UID);
-  yts_client_set_capabilities (client,
-                                g_quark_from_static_string (CAPABILITY));
+  yts_client_add_capability (client, CAPABILITY);
   g_signal_connect (client, "authenticated",
                     G_CALLBACK (_server_authenticated), NULL);
   g_signal_connect (client, "ready",

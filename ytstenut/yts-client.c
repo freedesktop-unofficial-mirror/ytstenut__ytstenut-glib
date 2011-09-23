@@ -45,6 +45,7 @@
 
 #include "empathy-tp-file.h"
 #include "yts-adapter-factory.h"
+#include "yts-caps.h"
 #include "yts-client-internal.h"
 #include "yts-contact-internal.h"
 #include "yts-debug.h"
@@ -157,7 +158,6 @@ enum
   PROP_0,
   PROP_UID,
   PROP_PROTOCOL,
-  PROP_CAPABILITIES,
   PROP_ICON_TOKEN,
 };
 
@@ -939,19 +939,6 @@ yts_client_class_init (YtsClientClass *klass)
                              0,
                              G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
   g_object_class_install_property (object_class, PROP_PROTOCOL, pspec);
-
-  /**
-   * YtsClient:capabilites:
-   *
-   * Capabilities of this client, used to filter roster.
-   */
-  pspec = g_param_spec_boxed ("capabilities",
-                              "Capabilities",
-                              "Capabilities of this client",
-                              G_TYPE_ARRAY,
-                              G_PARAM_READWRITE);
-  g_object_class_install_property (object_class, PROP_CAPABILITIES, pspec);
-
 
   /**
    * YtsClient::authenticated
@@ -1741,9 +1728,6 @@ yts_client_get_property (GObject    *object,
     case PROP_ICON_TOKEN:
       g_value_set_string (value, priv->icon_token);
       break;
-    case PROP_CAPABILITIES:
-      g_value_set_boxed (value, priv->caps);
-      break;
     case PROP_PROTOCOL:
       g_value_set_enum (value, priv->protocol);
       break;
@@ -1769,9 +1753,6 @@ yts_client_set_property (GObject      *object,
         g_free (priv->uid);
         priv->uid = g_value_dup_string (value);
       }
-      break;
-    case PROP_CAPABILITIES:
-      yts_client_set_capabilities (client, g_value_get_uint (value));
       break;
     case PROP_PROTOCOL:
       priv->protocol = g_value_get_enum (value);
@@ -2746,9 +2727,9 @@ yts_client_refresh_roster (YtsClient *client)
 }
 
 /**
- * yts_client_set_capabilities:
+ * yts_client_add_capability:
  * @client: #YtsClient,
- * @caps: #YtsCaps
+ * @capability: Name of the capability.
  *
  * Adds a capability to the capability set of this client; multiple capabilities
  * can be added by making mulitiple calls to this function.
@@ -2756,33 +2737,35 @@ yts_client_refresh_roster (YtsClient *client)
  * The capability set is used to filter roster items to match.
  */
 void
-yts_client_set_capabilities (YtsClient *client, YtsCaps caps)
+yts_client_add_capability (YtsClient  *client,
+                           char const *capability)
 {
   YtsClientPrivate *priv;
+  GQuark cap_quark;
+
+  /* FIXME check that there's no collision with service owned capabilities. */
 
   g_return_if_fail (YTS_IS_CLIENT (client));
 
   priv = client->priv;
 
-  if (yts_client_has_capability (client, caps))
-    {
-      YTS_NOTE (CLIENT, "Capablity '%s' already set",
-                 g_quark_to_string (caps));
+  cap_quark = g_quark_from_string (capability);
 
+  if (yts_client_has_capability (client, cap_quark))
+    {
+      YTS_NOTE (CLIENT, "Capablity '%s' already set", capability);
       return;
     }
 
   if (priv->tp_client)
-    tp_yts_client_add_capability (priv->tp_client, g_quark_to_string (caps));
+    tp_yts_client_add_capability (priv->tp_client, capability);
 
   if (!priv->caps)
     priv->caps = g_array_sized_new (FALSE, FALSE, sizeof (YtsCaps), 1);
 
-  g_array_append_val (priv->caps, caps);
+  g_array_append_val (priv->caps, cap_quark);
 
   yts_client_refresh_roster (client);
-
-  g_object_notify ((GObject*)client, "capabilities");
 }
 
 /**
@@ -3456,7 +3439,7 @@ yts_client_register_service (YtsClient      *self,
     g_hash_table_insert (priv->services,
                          g_strdup (fqc_ids[i]),
                          adapter);
-    yts_client_set_capabilities (self, g_quark_from_string (fqc_ids[i]));
+    yts_client_add_capability (self, fqc_ids[i]);
 
     /* Keep the proxy management service up to date. */
     adapter = g_hash_table_lookup (priv->services, YTS_PROFILE_FQC_ID);

@@ -23,7 +23,6 @@
 #define YTSTENUT_H
 
 #include <ytstenut/yts-capability.h>
-#include <ytstenut/yts-caps.h>
 #include <ytstenut/yts-client.h>
 #include <ytstenut/yts-contact.h>
 #include <ytstenut/yts-debug.h>
