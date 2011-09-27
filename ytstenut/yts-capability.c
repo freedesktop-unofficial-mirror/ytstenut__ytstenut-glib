@@ -25,6 +25,13 @@ G_DEFINE_INTERFACE (YtsCapability,
                     yts_capability,
                     G_TYPE_OBJECT)
 
+/**
+ * SECTION:yts-capability
+ * @short_description: Common interface for service implementations and their proxies.
+ *
+ * #YtsCapability ... TODO
+ */
+
 static void
 yts_capability_default_init (YtsCapabilityInterface *interface)
 {
