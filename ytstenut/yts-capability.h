@@ -26,7 +26,8 @@
 
 G_BEGIN_DECLS
 
-#define YTS_TYPE_CAPABILITY (yts_capability_get_type ())
+#define YTS_TYPE_CAPABILITY \
+  (yts_capability_get_type ())
 
 #define YTS_CAPABILITY(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTS_TYPE_CAPABILITY, YtsCapability))
@@ -34,10 +35,8 @@ G_BEGIN_DECLS
 #define YTS_IS_CAPABILITY(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTS_TYPE_CAPABILITY))
 
-#define YTS_CAPABILITY_GET_INTERFACE(obj)                  \
-  (G_TYPE_INSTANCE_GET_INTERFACE ((obj),                    \
-                                  YTS_TYPE_CAPABILITY,     \
-                                  YtsCapabilityInterface))
+#define YTS_CAPABILITY_GET_INTERFACE(obj) \
+  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), YTS_TYPE_CAPABILITY, YtsCapabilityInterface))
 
 typedef struct YtsCapability YtsCapability;
 

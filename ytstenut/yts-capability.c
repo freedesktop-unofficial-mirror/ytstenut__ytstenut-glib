@@ -21,15 +21,15 @@
 #include "yts-capability.h"
 #include "config.h"
 
-G_DEFINE_INTERFACE (YtsCapability,
-                    yts_capability,
-                    G_TYPE_OBJECT)
+G_DEFINE_INTERFACE (YtsCapability, yts_capability, G_TYPE_OBJECT)
 
 /**
  * SECTION:yts-capability
- * @short_description: Common interface for service implementations and their proxies.
+ * @short_description: Common interface for service implementations and their
+ *                     proxies.
  *
- * #YtsCapability ... TODO
+ * #YtsCapability is an iterface to query services and proxies for the fully
+ * qualified capability IDs (FQC-IDs) they are supporting.
  */
 
 static void
@@ -44,6 +44,17 @@ yts_capability_default_init (YtsCapabilityInterface *interface)
   g_object_interface_install_property (interface, pspec);
 }
 
+/**
+ * yts_capability_get_fqc_ids:
+ * @self: object on which to invoke this method.
+ *
+ * Get array of supported FQC-IDs.
+ *
+ * Returns (array zero-terminated=1) (transfer full): Null-terminated array of
+ *         FQC-IDs.
+ *
+ * Since: 0.3
+ */
 char **
 yts_capability_get_fqc_ids (YtsCapability *self)
 {
@@ -57,6 +68,17 @@ yts_capability_get_fqc_ids (YtsCapability *self)
   return fqc_ids;
 }
 
+/**
+ * yts_capability_has_fqc_id:
+ * @self: object on which to invoke this method.
+ * @fqc_id: the capability ID to query for.
+ *
+ * Query @self whether it supports the capability identified by @fqc_id.
+ *
+ * Returns: %true if @fqc_id is supported by @self.
+ *
+ * Since: 0.3
+ */
 bool
 yts_capability_has_fqc_id (YtsCapability  *self,
                            char const     *fqc_id)
