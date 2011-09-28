@@ -104,7 +104,7 @@ yts_client_get_type (void) G_GNUC_CONST;
 
 YtsClient *
 yts_client_new (YtsProtocol  protocol,
-                char const  *uid);
+                char const  *service_id);
 
 void
 yts_client_disconnect (YtsClient *self);

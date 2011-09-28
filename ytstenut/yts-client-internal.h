@@ -26,10 +26,6 @@
 #include <ytstenut/yts-error.h>
 #include <ytstenut/yts-metadata.h>
 
-void
-yts_client_reconnect_after (YtsClient *client,
-                            unsigned   after_seconds);
-
 TpConnection *
 yts_client_get_connection (YtsClient *client);
 
