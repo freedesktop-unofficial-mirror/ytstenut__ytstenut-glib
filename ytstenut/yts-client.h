@@ -16,11 +16,13 @@
  * <http://www.gnu.org/licenses/>.
  *
  * Authored by: Tomas Frydrych <tf@linux.intel.com>
+ *              Rob Staudinger <robsta@linux.intel.com>
  */
 
 #ifndef YTS_CLIENT_H
 #define YTS_CLIENT_H
 
+#include <stdint.h>
 #include <glib-object.h>
 #include <telepathy-glib/channel.h>
 
@@ -55,32 +57,46 @@ typedef struct {
 
 } YtsClient;
 
+/**
+ * YtsClientClass:
+ * @authenticated: virtual function for the YtsClient::authenticated signal.
+ * @disconnected: virtual function for the YtsClient::disconnected signal.
+ * @incoming_file: virtual function for the YtsClient::incoming-file signal.
+ * @raw_message: virtual function for the YtsClient::raw-message signal.
+ * @ready: virtual function for the YtsClient::ready signal.
+ *
+ * Deprecated: the class handlers for signals are deprecated and will be
+               removed in 0.4.
+ * Since: 0.1
+ */
 typedef struct {
 
   /*< private >*/
   GObjectClass parent;
 
   /*< public >*/
-  void     
+
+  void
   (*authenticated) (YtsClient *self);
 
-  void     
-  (*ready) (YtsClient *self);
-
-  void     
+  void
   (*disconnected) (YtsClient *self);
-
-  void     
-  (*raw_message) (YtsClient   *self,
-                  char const  *xml_payload);
 
   bool
   (*incoming_file) (YtsClient   *self,
-                    const char  *from,
-                    const char  *name,
-                    guint64      size,
-                    guint64      offset,
+                    char const  *from,
+                    char const  *name,
+                    uint64_t     size,
+                    uint64_t     offset,
                     TpChannel   *channel);
+
+  void
+  (*raw_message) (YtsClient   *self,
+                  char const  *xml_payload);
+
+  void
+  (*ready) (YtsClient *self);
+
 } YtsClientClass;
 
 GType
@@ -88,7 +104,7 @@ yts_client_get_type (void) G_GNUC_CONST;
 
 YtsClient *
 yts_client_new (YtsProtocol  protocol,
-                const char  *uid);
+                char const  *uid);
 
 void
 yts_client_disconnect (YtsClient *self);
@@ -109,23 +125,23 @@ yts_client_emit_error (YtsClient *self,
 
 void
 yts_client_set_incoming_file_directory (YtsClient *self,
-                                        const char *directory);
-                                                     
-const char *
+                                        char const *directory);
+
+char const *
 yts_client_get_incoming_file_directory (YtsClient *self);
 
-const char *
+char const *
 yts_client_get_jid (const YtsClient *self);
 
-const char *
+char const *
 yts_client_get_uid (const YtsClient *self);
 
 void
 yts_client_set_status_by_capability (YtsClient *self,
-                                     const char *capability,
-                                     const char *activity);
+                                     char const *capability,
+                                     char const *activity);
 
-gboolean
+bool
 yts_client_register_service (YtsClient      *self,
                               YtsCapability  *service);
 

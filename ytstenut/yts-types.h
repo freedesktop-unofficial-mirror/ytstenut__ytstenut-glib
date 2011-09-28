@@ -37,7 +37,7 @@ G_BEGIN_DECLS
 /**
  * YtsProtocol:
  * @YTS_PROTOCOL_XMPP: Jabber
- * @YTS_PROTOCOL_LOCAL_XMPP: Bonjour
+ * @YTS_PROTOCOL_LOCAL_XMPP: XEP-0174 serverless messaging.
  *
  * YtsProtocol represents the xmpp protocol to use
  */
@@ -55,11 +55,7 @@ typedef enum { /*< prefix=YTS_PROTOCOL >*/
  */
 typedef enum { /*< prefix=YTS_PRESENCE >*/
   YTS_PRESENCE_UNAVAILABLE = 0,
-  YTS_PRESENCE_AVAILABLE,
-
-  /* < private > */
-  /* Must be last */
-  _YTS_PRESENCE_LAST_
+  YTS_PRESENCE_AVAILABLE
 } YtsPresence;
 
 /* FIXME maybe create an yts-vs-type.h 

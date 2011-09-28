@@ -505,8 +505,8 @@ yts_client_ft_accept_cb (TpProxy      *proxy,
   YtsClientPrivate *priv = GET_PRIVATE (self);
   const char        *name;
   const char        *jid;
-  guint64            offset;
-  guint64            size;
+  uint64_t            offset;
+  uint64_t            size;
   GHashTable        *iprops;
   YtsContact       *item;
   guint32            ihandle;
@@ -819,8 +819,8 @@ static bool
 yts_client_incoming_file (YtsClient   *self,
                            const char *from,
                            const char *name,
-                           guint64     size,
-                           guint64     offset,
+                           uint64_t     size,
+                           uint64_t     offset,
                            TpChannel  *proxy)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
@@ -3333,7 +3333,7 @@ _service_destroyed (ServiceData *data,
  * The client does not take ownership of the service, it will be
  * unregistered upon destruction.
  */
-gboolean
+bool
 yts_client_register_service (YtsClient      *self,
                               YtsCapability  *service)
 {
