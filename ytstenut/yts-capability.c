@@ -37,6 +37,12 @@ yts_capability_default_init (YtsCapabilityInterface *interface)
 {
   GParamSpec *pspec;
 
+  /**
+   * YtsCapability:fqc-ids:
+   *
+   * Null-terminated array of capability IDs a service or proxy supports.
+   * This property is in fact read-only.
+   */
   pspec = g_param_spec_boxed ("fqc-ids", "", "",
                               G_TYPE_STRV,
                               G_PARAM_READWRITE |

@@ -19,16 +19,6 @@
  *              Rob Staudinger <robsta@linux.intel.com>
  */
 
-/**
- * SECTION:yts-client
- * @short_description: Represents a connection to the Ytstenut mesh.
- *
- * #YtsClient is an object that mediates connection between the current
- * application and the Ytstenut application mesh. It provides access to roster
- * of availalble services (#YtsRoster) and means to advertises status within
- * the mesh.
- */
-
 #include <string.h>
 #include <rest/rest-xml-parser.h>
 #include <telepathy-glib/telepathy-glib.h>
@@ -71,26 +61,25 @@
 
 #define RECONNECT_DELAY 20 /* in seconds */
 
-static void yts_client_dispose (GObject *object);
-static void yts_client_finalize (GObject *object);
-static void yts_client_constructed (GObject *object);
-static void yts_client_get_property (GObject    *object,
-                                      guint       property_id,
-                                      GValue     *value,
-                                      GParamSpec *pspec);
-static void yts_client_set_property (GObject      *object,
-                                      guint         property_id,
-                                      const GValue *value,
-                                      GParamSpec   *pspec);
 static void yts_client_make_connection (YtsClient *client);
 
-G_DEFINE_TYPE (YtsClient, yts_client, G_TYPE_OBJECT);
+G_DEFINE_TYPE (YtsClient, yts_client, G_TYPE_OBJECT)
 
-#define YTS_CLIENT_GET_PRIVATE(o) \
-(G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_CLIENT, YtsClientPrivate))
+#define GET_PRIVATE(o) \
+  (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_CLIENT, YtsClientPrivate))
 
-struct _YtsClientPrivate
-{
+/**
+ * SECTION: yts-client
+ * @title: YtsClient
+ * @short_description: Represents a connection to the Ytstenut mesh.
+ *
+ * #YtsClient is an object that mediates connection between the current
+ * application and the Ytstenut application mesh. It provides access to roster
+ * of availalble services (#YtsRoster) and means to advertises status within
+ * the mesh.
+ */
+
+typedef struct {
   YtsRoster   *roster;    /* the roster of this client */
   YtsRoster   *unwanted;  /* roster of unwanted items */
   GArray       *caps;
@@ -137,7 +126,8 @@ struct _YtsClientPrivate
   bool members_pending; /* requery members when TP set up completed ? */
   bool prepared;        /* are connection features set up ? */
   bool disposed;        /* dispose guard */
-};
+
+} YtsClientPrivate;
 
 enum
 {
@@ -234,7 +224,7 @@ static bool
 client_conclude_invocation (YtsClient  *self,
                             char const  *invocation_id)
 {
-  YtsClientPrivate *priv = self->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   bool found;
 
   found = g_hash_table_remove (priv->invocations, invocation_id);
@@ -293,7 +283,7 @@ client_establish_invocation (YtsClient   *self,
                              YtsContact  *contact,
                              char const   *proxy_id)
 {
-  YtsClientPrivate *priv = self->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   InvocationData *invocation_data;
 
   invocation_data = g_hash_table_lookup (priv->invocations,
@@ -509,11 +499,10 @@ static void
 yts_client_ft_accept_cb (TpProxy      *proxy,
                           GHashTable   *props,
                           const GError *error,
-                          gpointer      data,
+                          gpointer      self,
                           GObject      *weak_object)
 {
-  YtsClient        *client = data;
-  YtsClientPrivate *priv   = client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   const char        *name;
   const char        *jid;
   guint64            offset;
@@ -566,14 +555,14 @@ yts_client_ft_accept_cb (TpProxy      *proxy,
       return;
     }
 
-  g_signal_emit (client, signals[INCOMING_FILE], 0, jid, name, size, offset,
-                 proxy);
+  g_signal_emit (self, signals[INCOMING_FILE], 0,
+                 jid, name, size, offset, proxy);
 }
 
 static void
-yts_client_ft_handle_state (YtsClient *client, TpChannel *proxy, guint state)
+yts_client_ft_handle_state (YtsClient *self, TpChannel *proxy, guint state)
 {
-  YtsClientPrivate *priv   = client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   GHashTable        *props;
   gboolean           requested;
 
@@ -606,9 +595,9 @@ yts_client_ft_handle_state (YtsClient *client, TpChannel *proxy, guint state)
                                            -1,
                                            TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
                                            yts_client_ft_accept_cb,
-                                           client,
+                                           self,
                                            NULL,
-                                           (GObject*) client);
+                                           (GObject*) self);
           }
           break;
         case 2:
@@ -634,7 +623,7 @@ yts_client_ft_handle_state (YtsClient *client, TpChannel *proxy, guint state)
 
                 name   = tp_asv_get_string (props, "Filename");
 
-                g_signal_emit (client, signals[INCOMING_FILE_FINISHED], 0,
+                g_signal_emit (self, signals[INCOMING_FILE_FINISHED], 0,
                                jid, name, state == 4 ? TRUE : FALSE);
               }
           }
@@ -691,11 +680,10 @@ yts_client_channel_cb (TpConnection *proxy,
                         guint         handle_type,
                         guint         handle,
                         gboolean      suppress_handle,
-                        gpointer      data,
+                        gpointer      self,
                         GObject      *weak_object)
 {
-  YtsClient        *client = data;
-  YtsClientPrivate *priv   = client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
   if (!path)
     {
@@ -725,7 +713,7 @@ yts_client_channel_cb (TpConnection *proxy,
               yts_contact_set_ft_channel (item, ch);
 
               tp_proxy_prepare_async (ch, features,
-                                      yts_client_ft_core_cb, client);
+                                      yts_client_ft_core_cb, self);
             }
           else
             {
@@ -743,9 +731,9 @@ yts_client_channel_cb (TpConnection *proxy,
 }
 
 static void
-yts_client_authenticated (YtsClient *client)
+yts_client_authenticated (YtsClient *self)
 {
-  YtsClientPrivate *priv = client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
   priv->authenticated = true;
 
@@ -753,9 +741,9 @@ yts_client_authenticated (YtsClient *client)
 }
 
 static void
-yts_client_ready (YtsClient *client)
+yts_client_ready (YtsClient *self)
 {
-  YtsClientPrivate *priv = client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
   priv->ready = TRUE;
 
@@ -786,9 +774,9 @@ yts_client_ready (YtsClient *client)
 }
 
 static void
-yts_client_cleanup_connection_resources (YtsClient *client)
+yts_client_cleanup_connection_resources (YtsClient *self)
 {
-  YtsClientPrivate *priv = client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
   /*
    * Clean up items associated with this connection.
@@ -811,31 +799,31 @@ yts_client_cleanup_connection_resources (YtsClient *client)
 }
 
 static void
-yts_client_disconnected (YtsClient *client)
+yts_client_disconnected (YtsClient *self)
 {
-  YtsClientPrivate *priv = client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
-  yts_client_cleanup_connection_resources (client);
+  yts_client_cleanup_connection_resources (self);
 
   if (priv->reconnect)
-    yts_client_reconnect_after (client, RECONNECT_DELAY);
+    yts_client_reconnect_after (self, RECONNECT_DELAY);
 }
 
 static void
-yts_client_raw_message (YtsClient   *client,
+yts_client_raw_message (YtsClient   *self,
                         char const  *xml_payload)
 {
 }
 
-static gboolean
-yts_client_incoming_file (YtsClient *client,
+static bool
+yts_client_incoming_file (YtsClient   *self,
                            const char *from,
                            const char *name,
                            guint64     size,
                            guint64     offset,
                            TpChannel  *proxy)
 {
-  YtsClientPrivate *priv = client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   char              *path;
   GFile             *gfile;
   EmpathyTpFile     *tp_file;
@@ -870,7 +858,7 @@ yts_client_incoming_file (YtsClient *client,
                           NULL /*progress_callback*/,
                           NULL /*progress_user_data*/,
                           yts_client_ft_op_cb,
-                          client);
+                          self);
 
   g_free (path);
   g_object_unref (gfile);
@@ -892,231 +880,28 @@ yts_client_stop_accumulator (GSignalInvocationHint *ihint,
   return cont;
 }
 
+/*
+ * Callback for TpProxy::interface-added: we need to add the signals we
+ * care for here.
+ *
+ * TODO -- should we not be able to connect directly to the signal bypassing
+ * the unsightly TP machinery ?
+ */
 static void
-yts_client_class_init (YtsClientClass *klass)
+yts_client_debug_iface_added_cb (TpProxy    *tproxy,
+                                  guint       id,
+                                  DBusGProxy *proxy,
+                                  gpointer    data)
 {
-  GParamSpec   *pspec;
-  GObjectClass *object_class = (GObjectClass *)klass;
+  if (id != TP_IFACE_QUARK_DEBUG)
+    return;
 
-  g_type_class_add_private (klass, sizeof (YtsClientPrivate));
-
-  object_class->dispose      = yts_client_dispose;
-  object_class->finalize     = yts_client_finalize;
-  object_class->constructed  = yts_client_constructed;
-  object_class->get_property = yts_client_get_property;
-  object_class->set_property = yts_client_set_property;
-
-  klass->authenticated       = yts_client_authenticated;
-  klass->ready               = yts_client_ready;
-  klass->disconnected        = yts_client_disconnected;
-  klass->raw_message         = yts_client_raw_message;
-  klass->incoming_file       = yts_client_incoming_file;
-
-  /**
-   * YtsClient:uid:
-   *
-   * The uid of this service
-   *
-   * Since: 0.1
-   */
-  pspec = g_param_spec_string ("uid",
-                               "Service UID",
-                               "Service UID",
-                               NULL,
-                               G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
-  g_object_class_install_property (object_class, PROP_UID, pspec);
-
-  /**
-   * YtsClient:protocol:
-   *
-   * XMPP protocol to use for connection.
-   *
-   * Since: 0.1
-   */
-  pspec = g_param_spec_enum ("protocol",
-                             "Protocol",
-                             "Protocol",
-                             YTS_TYPE_PROTOCOL,
-                             0,
-                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
-  g_object_class_install_property (object_class, PROP_PROTOCOL, pspec);
-
-  /**
-   * YtsClient::authenticated
-   * @client: object which emitted the signal,
-   *
-   * The authenticated signal is emited when connection to the Ytstenut server
-   * is successfully established.
-   *
-   * Since: 0.1
-   */
-  signals[AUTHENTICATED] =
-    g_signal_new ("authenticated",
-                  G_TYPE_FROM_CLASS (object_class),
-                  G_SIGNAL_RUN_FIRST,
-                  G_STRUCT_OFFSET (YtsClientClass, authenticated),
-                  NULL, NULL,
-                  yts_marshal_VOID__VOID,
-                  G_TYPE_NONE, 0);
-
-  /**
-   * YtsClient::ready
-   * @client: object which emitted the signal,
-   *
-   * The ready signal is emited when the initial Telepathy set up is ready.
-   * (In practical terms this means the subscription channels are prepared.)
-   *
-   * Since: 0.1
-   */
-  signals[READY] =
-    g_signal_new ("ready",
-                  G_TYPE_FROM_CLASS (object_class),
-                  G_SIGNAL_RUN_FIRST,
-                  G_STRUCT_OFFSET (YtsClientClass, ready),
-                  NULL, NULL,
-                  yts_marshal_VOID__VOID,
-                  G_TYPE_NONE, 0);
-
-  /**
-   * YtsClient::disconnected
-   * @client: object which emitted the signal,
-   *
-   * The disconnected signal is emited when connection to the Ytstenut server
-   * is successfully established.
-   *
-   * Since: 0.1
-   */
-  signals[DISCONNECTED] =
-    g_signal_new ("disconnected",
-                  G_TYPE_FROM_CLASS (object_class),
-                  G_SIGNAL_RUN_FIRST,
-                  G_STRUCT_OFFSET (YtsClientClass, disconnected),
-                  NULL, NULL,
-                  yts_marshal_VOID__VOID,
-                  G_TYPE_NONE, 0);
-
-  /**
-   * YtsClient::message
-   * @client: object which emitted the signal,
-   * @message: #YtsMessage, the message
-   *
-   * The message signal is emitted when message is received from one of the
-   * contacts.
-   *
-   * Since: 0.1
-   */
-  signals[RAW_MESSAGE] =
-    g_signal_new ("raw-message",
-                  G_TYPE_FROM_CLASS (object_class),
-                  G_SIGNAL_RUN_LAST,
-                  G_STRUCT_OFFSET (YtsClientClass, raw_message),
-                  NULL, NULL,
-                  yts_marshal_VOID__STRING,
-                  G_TYPE_NONE, 1,
-                  G_TYPE_STRING);
-
-  signals[TEXT_MESSAGE] =
-    g_signal_new ("text-message",
-                  G_TYPE_FROM_CLASS (object_class),
-                  G_SIGNAL_RUN_LAST,
-                  0, NULL, NULL,
-                  yts_marshal_VOID__STRING,
-                  G_TYPE_NONE, 1,
-                  G_TYPE_STRING);
-
-  signals[LIST_MESSAGE] =
-    g_signal_new ("list-message",
-                  G_TYPE_FROM_CLASS (object_class),
-                  G_SIGNAL_RUN_LAST,
-                  0, NULL, NULL,
-                  yts_marshal_VOID__POINTER,
-                  G_TYPE_NONE, 1,
-                  G_TYPE_POINTER);
-
-  signals[DICTIONARY_MESSAGE] =
-    g_signal_new ("dictionary-message",
-                  G_TYPE_FROM_CLASS (object_class),
-                  G_SIGNAL_RUN_LAST,
-                  0, NULL, NULL,
-                  yts_marshal_VOID__POINTER,
-                  G_TYPE_NONE, 1,
-                  G_TYPE_POINTER);
-
-  /**
-   * YtsClient::error
-   * @client: object which emitted the signal,
-   * @error: #YtsError
-   *
-   * The error signal is emitted to indicate an error (or eventual success)
-   * during the handling of an operation for which the Ytstenut API initially
-   * returned %YTS_ERROR_PENDING. The original operation can be determined
-   * using the atom part of the #YtsError parameter.
-   *
-   * Since: 0.1
-   */
-  signals[ERROR] =
-    g_signal_new ("error",
-                  G_TYPE_FROM_CLASS (object_class),
-                  G_SIGNAL_RUN_LAST,
-                  0,
-                  NULL, NULL,
-                  yts_marshal_VOID__UINT,
-                  G_TYPE_NONE, 1,
-                  G_TYPE_UINT);
-
-  /**
-   * YtsClient::incoming-file
-   * @client: object which emitted the signal,
-   * @from: jid of the originator
-   * @name: name of the file
-   * @size: size of the file
-   * @offset: offset into the file,
-   * @channel: #TpChannel
-   *
-   * The ::incoming-file signal is emitted when the client receives
-   * incoming request for a file transfer. The signal closure will
-   * kickstart the transfer -- this can be prevented by a connected handler
-   * returning %FALSE.
-   *
-   * Since: 0.1
-   */
-  signals[INCOMING_FILE] =
-    g_signal_new ("incoming-file",
-                  G_TYPE_FROM_CLASS (object_class),
-                  G_SIGNAL_RUN_LAST,
-                  G_STRUCT_OFFSET (YtsClientClass, incoming_file),
-                  yts_client_stop_accumulator, NULL,
-                  yts_marshal_BOOLEAN__STRING_STRING_UINT64_UINT64_OBJECT,
-                  G_TYPE_BOOLEAN, 5,
-                  G_TYPE_STRING,
-                  G_TYPE_STRING,
-                  G_TYPE_UINT64,
-                  G_TYPE_UINT64,
-                  TP_TYPE_CHANNEL);
-
-  /**
-   * YtsClient::incoming-file-finished
-   * @client: object which emitted the signal,
-   * @from: jid of the originator
-   * @name: name of the file
-   * @success: %TRUE if the transfer was completed successfully.
-   *
-   * The ::incoming-file-finished signal is emitted when a file tranfers is
-   * completed.
-   *
-   * Since: 0.1
-   */
-  signals[INCOMING_FILE_FINISHED] =
-    g_signal_new ("incoming-file-finished",
-                  G_TYPE_FROM_CLASS (object_class),
-                  G_SIGNAL_RUN_LAST,
-                  0,
-                  NULL, NULL,
-                  yts_marshal_VOID__STRING_STRING_BOOLEAN,
-                  G_TYPE_NONE, 3,
-                  G_TYPE_STRING,
-                  G_TYPE_STRING,
-                  G_TYPE_BOOLEAN);
+  dbus_g_proxy_add_signal (proxy, "NewDebugMessage",
+                           G_TYPE_DOUBLE,
+                           G_TYPE_STRING,
+                           G_TYPE_UINT,
+                           G_TYPE_STRING,
+                           G_TYPE_INVALID);
 }
 
 /*
@@ -1269,34 +1054,10 @@ yts_client_connect_debug_signals (YtsClient *client, TpProxy *proxy)
                                    "Enabled", &v, NULL, NULL, NULL, NULL);
 }
 
-/*
- * Callback for TpProxy::interface-added: we need to add the signals we
- * care for here.
- *
- * TODO -- should we not be able to connect directly to the signal bypassing
- * the unsightly TP machinery ?
- */
 static void
-yts_client_debug_iface_added_cb (TpProxy    *tproxy,
-                                  guint       id,
-                                  DBusGProxy *proxy,
-                                  gpointer    data)
+yts_client_setup_debug  (YtsClient *self)
 {
-  if (id != TP_IFACE_QUARK_DEBUG)
-    return;
-
-  dbus_g_proxy_add_signal (proxy, "NewDebugMessage",
-                           G_TYPE_DOUBLE,
-                           G_TYPE_STRING,
-                           G_TYPE_UINT,
-                           G_TYPE_STRING,
-                           G_TYPE_INVALID);
-}
-
-static void
-yts_client_setup_debug  (YtsClient *client)
-{
-  YtsClientPrivate *priv = client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   TpDBusDaemon      *dbus;
   GError            *error = NULL;
   TpProxy           *proxy;
@@ -1323,17 +1084,546 @@ yts_client_setup_debug  (YtsClient *client)
   priv->debug_proxy = proxy;
 
   g_signal_connect (proxy, "interface-added",
-                    G_CALLBACK (yts_client_debug_iface_added_cb), client);
+                    G_CALLBACK (yts_client_debug_iface_added_cb), self);
 
   tp_proxy_add_interface_by_id (proxy, TP_IFACE_QUARK_DEBUG);
 
   /*
    * Connecting to the signals triggers the interface-added signal
    */
-  yts_client_connect_debug_signals (client, proxy);
+  yts_client_connect_debug_signals (self, proxy);
 
   g_object_unref (dbus);
   g_free (busname);
+}
+
+/*
+ * Callback from the async tp_account_prepare_async() call
+ *
+ * This function is ready for the New World Order according to Ytstenut ...
+ */
+static void
+yts_client_account_prepared_cb (GObject       *acc,
+                                 GAsyncResult *res,
+                                 gpointer      self)
+{
+  YtsClientPrivate *priv = GET_PRIVATE (self);
+  GError            *error   = NULL;
+  TpAccount         *account = (TpAccount*)acc;
+
+  if (!tp_account_prepare_finish (account, res, &error))
+    {
+      g_error ("Account unprepared: %s", error->message);
+    }
+
+  priv->account = account;
+
+  YTS_NOTE (CONNECTION, "Account successfully opened");
+
+  priv->tp_client = tp_yts_client_new (priv->uid, account);
+
+  if (priv->caps)
+    {
+      unsigned int i;
+      for (i = 0; i < priv->caps->len; i++)
+        {
+          GQuark cap = g_array_index (priv->caps, GQuark, i);
+          tp_yts_client_add_capability (priv->tp_client,
+                                        g_quark_to_string (cap));
+        }
+    }
+
+  /*
+   * If connection has been requested already, make one
+   */
+  if (priv->connect)
+    yts_client_make_connection (self);
+}
+
+static void
+yts_client_account_cb (GObject *object, GAsyncResult *res, gpointer self)
+{
+  YtsClientPrivate *priv = GET_PRIVATE (self);
+  GError            *error      = NULL;
+  const GQuark       features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
+
+  g_assert (TP_IS_YTS_ACCOUNT_MANAGER (object));
+  g_assert (G_IS_ASYNC_RESULT (res));
+
+  priv->account =
+    tp_yts_account_manager_get_account_finish (TP_YTS_ACCOUNT_MANAGER (object),
+                                               res, &error);
+
+  if (error)
+    g_error ("Could not access account: %s", error->message);
+
+  YTS_NOTE (CONNECTION, "Got account");
+
+  if (yts_debug_flags & YTS_DEBUG_TP)
+    tp_debug_set_flags ("all");
+
+  if (yts_debug_flags & YTS_DEBUG_MANAGER)
+    yts_client_setup_debug (self);
+
+  tp_account_prepare_async (priv->account,
+                            &features[0],
+                            yts_client_account_prepared_cb,
+                            self);
+}
+
+static void
+yts_client_constructed (GObject *object)
+{
+  YtsClientPrivate *priv = GET_PRIVATE (object);
+  GError              *error     = NULL;
+
+  if (G_OBJECT_CLASS (yts_client_parent_class)->constructed)
+    G_OBJECT_CLASS (yts_client_parent_class)->constructed (object);
+
+  priv->roster   = yts_roster_new (YTS_CLIENT (object));
+  priv->unwanted = yts_roster_new (YTS_CLIENT (object));
+
+  if (!priv->uid || !*priv->uid)
+    g_error ("UID must be set at construction time.");
+
+  if (priv->protocol == YTS_PROTOCOL_LOCAL_XMPP)
+    priv->mgr_name = g_strdup ("salut");
+  else
+    g_error ("Unknown protocol requested");
+
+  priv->dbus = tp_dbus_daemon_dup (&error);
+
+  if (error)
+    {
+      g_error ("Can't connect to dbus: %s", error->message);
+      return;
+    }
+
+  priv->mgr = tp_yts_account_manager_dup ();
+
+
+  if (!TP_IS_YTS_ACCOUNT_MANAGER (priv->mgr))
+    g_error ("Missing Account Manager");
+
+  tp_yts_account_manager_hold (priv->mgr);
+
+  tp_yts_account_manager_get_account_async (priv->mgr, NULL,
+                                            yts_client_account_cb,
+                                            object);
+}
+
+static void
+yts_client_get_property (GObject    *object,
+                          guint       property_id,
+                          GValue     *value,
+                          GParamSpec *pspec)
+{
+  YtsClientPrivate *priv = GET_PRIVATE (object);
+
+  switch (property_id)
+    {
+    case PROP_UID:
+      g_value_set_string (value, priv->uid);
+      break;
+    case PROP_ICON_TOKEN:
+      g_value_set_string (value, priv->icon_token);
+      break;
+    case PROP_PROTOCOL:
+      g_value_set_enum (value, priv->protocol);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+    }
+}
+
+static void
+yts_client_set_property (GObject      *object,
+                          guint         property_id,
+                          const GValue *value,
+                          GParamSpec   *pspec)
+{
+  YtsClientPrivate *priv = GET_PRIVATE (object);
+
+  switch (property_id)
+    {
+    case PROP_UID:
+      {
+        g_free (priv->uid);
+        priv->uid = g_value_dup_string (value);
+      }
+      break;
+    case PROP_PROTOCOL:
+      priv->protocol = g_value_get_enum (value);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+    }
+}
+
+static void
+yts_client_dispose (GObject *object)
+{
+  YtsClientPrivate *priv = GET_PRIVATE (object);
+
+  if (priv->disposed)
+    return;
+
+  priv->disposed = TRUE;
+
+  if (priv->roster)
+    {
+      g_object_unref (priv->roster);
+      priv->roster = NULL;
+    }
+
+  if (priv->unwanted)
+    {
+      g_object_unref (priv->unwanted);
+      priv->unwanted = NULL;
+    }
+
+  if (priv->connection)
+    {
+      tp_cli_connection_call_disconnect  (priv->connection,
+                                          -1,
+                                          NULL, NULL, NULL, NULL);
+      g_object_unref (priv->connection);
+      priv->connection = NULL;
+    }
+
+  if (priv->mgr)
+    {
+      tp_yts_account_manager_release (priv->mgr);
+
+      g_object_unref (priv->mgr);
+      priv->mgr = NULL;
+    }
+
+  if (priv->debug_proxy)
+    {
+      g_object_unref (priv->debug_proxy);
+      priv->debug_proxy = NULL;
+    }
+
+  if (priv->status)
+    {
+      g_object_unref (priv->status);
+      priv->status = NULL;
+    }
+
+  if (priv->services)
+    {
+      g_hash_table_destroy (priv->services);
+      priv->services = NULL;
+    }
+
+  if (priv->invocations)
+    {
+      g_hash_table_destroy (priv->invocations);
+      priv->invocations = NULL;
+    }
+
+  if (priv->proxies)
+    {
+      g_hash_table_destroy (priv->proxies);
+      priv->proxies = NULL;
+    }
+
+  G_OBJECT_CLASS (yts_client_parent_class)->dispose (object);
+}
+
+static void
+yts_client_finalize (GObject *object)
+{
+  YtsClientPrivate *priv = GET_PRIVATE (object);
+
+  g_free (priv->uid);
+  g_free (priv->icon_token);
+  g_free (priv->icon_mime_type);
+  g_free (priv->mgr_name);
+  g_free (priv->incoming_dir);
+
+  if (priv->caps)
+    g_array_free (priv->caps, TRUE);
+
+  if (priv->icon_data)
+    g_array_free (priv->icon_data, TRUE);
+
+  G_OBJECT_CLASS (yts_client_parent_class)->finalize (object);
+}
+
+static void
+yts_client_class_init (YtsClientClass *klass)
+{
+  GParamSpec   *pspec;
+  GObjectClass *object_class = (GObjectClass *)klass;
+
+  g_type_class_add_private (klass, sizeof (YtsClientPrivate));
+
+  object_class->dispose      = yts_client_dispose;
+  object_class->finalize     = yts_client_finalize;
+  object_class->constructed  = yts_client_constructed;
+  object_class->get_property = yts_client_get_property;
+  object_class->set_property = yts_client_set_property;
+
+  klass->authenticated       = yts_client_authenticated;
+  klass->ready               = yts_client_ready;
+  klass->disconnected        = yts_client_disconnected;
+  klass->raw_message         = yts_client_raw_message;
+  klass->incoming_file       = yts_client_incoming_file;
+
+  /**
+   * YtsClient:uid:
+   *
+   * The uid of this service
+   *
+   * Since: 0.1
+   */
+  pspec = g_param_spec_string ("uid",
+                               "Service UID",
+                               "Service UID",
+                               NULL,
+                               G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
+  g_object_class_install_property (object_class, PROP_UID, pspec);
+
+  /**
+   * YtsClient:protocol:
+   *
+   * XMPP protocol to use for connection.
+   *
+   * Since: 0.1
+   */
+  pspec = g_param_spec_enum ("protocol",
+                             "Protocol",
+                             "Protocol",
+                             YTS_TYPE_PROTOCOL,
+                             0,
+                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
+  g_object_class_install_property (object_class, PROP_PROTOCOL, pspec);
+
+  /**
+   * YtsClient::authenticated:
+   * @self: object which emitted the signal.
+   *
+   * The authenticated signal is emited when connection to the Ytstenut server
+   * is successfully established.
+   *
+   * Since: 0.1
+   */
+  signals[AUTHENTICATED] =
+    g_signal_new ("authenticated",
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_FIRST,
+                  G_STRUCT_OFFSET (YtsClientClass, authenticated),
+                  NULL, NULL,
+                  yts_marshal_VOID__VOID,
+                  G_TYPE_NONE, 0);
+
+  /**
+   * YtsClient::ready
+   * @self: object which emitted the signal,
+   *
+   * The ready signal is emited when the initial Telepathy set up is ready.
+   * (In practical terms this means the subscription channels are prepared.)
+   *
+   * Since: 0.1
+   */
+  signals[READY] =
+    g_signal_new ("ready",
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_FIRST,
+                  G_STRUCT_OFFSET (YtsClientClass, ready),
+                  NULL, NULL,
+                  yts_marshal_VOID__VOID,
+                  G_TYPE_NONE, 0);
+
+  /**
+   * YtsClient::disconnected
+   * @self: object which emitted the signal,
+   *
+   * The disconnected signal is emited when connection to the Ytstenut server
+   * is successfully established.
+   *
+   * Since: 0.1
+   */
+  signals[DISCONNECTED] =
+    g_signal_new ("disconnected",
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_FIRST,
+                  G_STRUCT_OFFSET (YtsClientClass, disconnected),
+                  NULL, NULL,
+                  yts_marshal_VOID__VOID,
+                  G_TYPE_NONE, 0);
+
+  /**
+   * YtsClient::message
+   * @self: object which emitted the signal,
+   * @message: #YtsMessage, the message
+   *
+   * The message signal is emitted when message is received from one of the
+   * contacts.
+   *
+   * Since: 0.1
+   */
+  signals[RAW_MESSAGE] =
+    g_signal_new ("raw-message",
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  G_STRUCT_OFFSET (YtsClientClass, raw_message),
+                  NULL, NULL,
+                  yts_marshal_VOID__STRING,
+                  G_TYPE_NONE, 1,
+                  G_TYPE_STRING);
+
+  signals[TEXT_MESSAGE] =
+    g_signal_new ("text-message",
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  0, NULL, NULL,
+                  yts_marshal_VOID__STRING,
+                  G_TYPE_NONE, 1,
+                  G_TYPE_STRING);
+
+  signals[LIST_MESSAGE] =
+    g_signal_new ("list-message",
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  0, NULL, NULL,
+                  yts_marshal_VOID__POINTER,
+                  G_TYPE_NONE, 1,
+                  G_TYPE_POINTER);
+
+  signals[DICTIONARY_MESSAGE] =
+    g_signal_new ("dictionary-message",
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  0, NULL, NULL,
+                  yts_marshal_VOID__POINTER,
+                  G_TYPE_NONE, 1,
+                  G_TYPE_POINTER);
+
+  /**
+   * YtsClient::error
+   * @self: object which emitted the signal,
+   * @error: #YtsError
+   *
+   * The error signal is emitted to indicate an error (or eventual success)
+   * during the handling of an operation for which the Ytstenut API initially
+   * returned %YTS_ERROR_PENDING. The original operation can be determined
+   * using the atom part of the #YtsError parameter.
+   *
+   * Since: 0.1
+   */
+  signals[ERROR] =
+    g_signal_new ("error",
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  0,
+                  NULL, NULL,
+                  yts_marshal_VOID__UINT,
+                  G_TYPE_NONE, 1,
+                  G_TYPE_UINT);
+
+  /**
+   * YtsClient::incoming-file
+   * @self: object which emitted the signal,
+   * @from: jid of the originator
+   * @name: name of the file
+   * @size: size of the file
+   * @offset: offset into the file,
+   * @channel: #TpChannel
+   *
+   * The ::incoming-file signal is emitted when the client receives
+   * incoming request for a file transfer. The signal closure will
+   * kickstart the transfer -- this can be prevented by a connected handler
+   * returning %FALSE.
+   *
+   * Since: 0.1
+   */
+  signals[INCOMING_FILE] =
+    g_signal_new ("incoming-file",
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  G_STRUCT_OFFSET (YtsClientClass, incoming_file),
+                  yts_client_stop_accumulator, NULL,
+                  yts_marshal_BOOLEAN__STRING_STRING_UINT64_UINT64_OBJECT,
+                  G_TYPE_BOOLEAN, 5,
+                  G_TYPE_STRING,
+                  G_TYPE_STRING,
+                  G_TYPE_UINT64,
+                  G_TYPE_UINT64,
+                  TP_TYPE_CHANNEL);
+
+  /**
+   * YtsClient::incoming-file-finished
+   * @self: object which emitted the signal,
+   * @from: jid of the originator
+   * @name: name of the file
+   * @success: %TRUE if the transfer was completed successfully.
+   *
+   * The ::incoming-file-finished signal is emitted when a file tranfers is
+   * completed.
+   *
+   * Since: 0.1
+   */
+  signals[INCOMING_FILE_FINISHED] =
+    g_signal_new ("incoming-file-finished",
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  0,
+                  NULL, NULL,
+                  yts_marshal_VOID__STRING_STRING_BOOLEAN,
+                  G_TYPE_NONE, 3,
+                  G_TYPE_STRING,
+                  G_TYPE_STRING,
+                  G_TYPE_BOOLEAN);
+}
+
+static void
+yts_client_init (YtsClient *self)
+{
+  YtsClientPrivate *priv = GET_PRIVATE (self);
+
+  yts_client_set_incoming_file_directory (self, NULL);
+
+  priv->services = g_hash_table_new_full (g_str_hash,
+                                          g_str_equal,
+                                          g_free,
+                                          g_object_unref);
+
+  priv->invocations = g_hash_table_new_full (g_str_hash,
+                                             g_str_equal,
+                                             g_free,
+                                             (GDestroyNotify) invocation_data_destroy);
+
+  priv->proxies = g_hash_table_new_full (g_str_hash,
+                                         g_str_equal,
+                                         g_free,
+                                         (GDestroyNotify) proxy_list_destroy);
+}
+
+/**
+ * yts_client_new:
+ * @protocol: #YtsProtocol
+ * @uid: UID for this service; UIDs must follow the dbus convetion for unique
+ * names.
+ *
+ * Creates a new #YtsClient object connected to the provided roster
+ *
+ * Return value: #YtsClient object.
+ */
+YtsClient *
+yts_client_new (YtsProtocol protocol, const char *uid)
+{
+  if (!uid)
+    g_error ("UID must be specified at construction time.");
+
+  return g_object_new (YTS_TYPE_CLIENT,
+                       "protocol", protocol,
+                       "uid",      uid,
+                       NULL);
 }
 
 static GVariant *
@@ -1350,11 +1640,11 @@ variant_new_from_escaped_literal (char const *string)
 }
 
 static gboolean
-dispatch_to_service (YtsClient *self,
+dispatch_to_service (YtsClient  *self,
                      char const *sender_jid,
                      char const *xml)
 {
-  YtsClientPrivate *priv = self->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   RestXmlParser *parser;
   RestXmlNode   *node;
   char const    *proxy_id;
@@ -1594,307 +1884,18 @@ yts_client_yts_channels_received_cb (TpYtsClient *tp_client,
     }
 }
 
-/*
- * Callback from the async tp_account_prepare_async() call
- *
- * This function is ready for the New World Order according to Ytstenut ...
- */
-static void
-yts_client_account_prepared_cb (GObject      *acc,
-                                 GAsyncResult *res,
-                                 gpointer      data)
-{
-  YtsClient        *client  = data;
-  YtsClientPrivate *priv    = client->priv;
-  GError            *error   = NULL;
-  TpAccount         *account = (TpAccount*)acc;
-
-  if (!tp_account_prepare_finish (account, res, &error))
-    {
-      g_error ("Account unprepared: %s", error->message);
-    }
-
-  priv->account = account;
-
-  YTS_NOTE (CONNECTION, "Account successfully opened");
-
-  priv->tp_client = tp_yts_client_new (priv->uid, account);
-
-  if (priv->caps)
-    {
-      unsigned int i;
-      for (i = 0; i < priv->caps->len; i++)
-        {
-          GQuark cap = g_array_index (priv->caps, GQuark, i);
-          tp_yts_client_add_capability (priv->tp_client,
-                                        g_quark_to_string (cap));
-        }
-    }
-
-  /*
-   * If connection has been requested already, make one
-   */
-  if (priv->connect)
-    yts_client_make_connection (client);
-}
-
-static void
-yts_client_account_cb (GObject *object, GAsyncResult *res, gpointer data)
-{
-  YtsClient        *client     = (YtsClient*) data;
-  YtsClientPrivate *priv       = client->priv;
-  GError            *error      = NULL;
-  const GQuark       features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
-
-  g_assert (TP_IS_YTS_ACCOUNT_MANAGER (object));
-  g_assert (G_IS_ASYNC_RESULT (res));
-
-  priv->account =
-    tp_yts_account_manager_get_account_finish (TP_YTS_ACCOUNT_MANAGER (object),
-                                               res, &error);
-
-  if (error)
-    g_error ("Could not access account: %s", error->message);
-
-  YTS_NOTE (CONNECTION, "Got account");
-
-  if (yts_debug_flags & YTS_DEBUG_TP)
-    tp_debug_set_flags ("all");
-
-  if (yts_debug_flags & YTS_DEBUG_MANAGER)
-    yts_client_setup_debug (client);
-
-  tp_account_prepare_async (priv->account,
-                            &features[0],
-                            yts_client_account_prepared_cb,
-                            client);
-}
-
-static void
-yts_client_constructed (GObject *object)
-{
-  YtsClient          *client    = (YtsClient*) object;
-  YtsClientPrivate   *priv      = client->priv;
-  GError              *error     = NULL;
-
-  if (G_OBJECT_CLASS (yts_client_parent_class)->constructed)
-    G_OBJECT_CLASS (yts_client_parent_class)->constructed (object);
-
-  priv->roster   = yts_roster_new (client);
-  priv->unwanted = yts_roster_new (client);
-
-  if (!priv->uid || !*priv->uid)
-    g_error ("UID must be set at construction time.");
-
-  if (priv->protocol == YTS_PROTOCOL_LOCAL_XMPP)
-    priv->mgr_name = g_strdup ("salut");
-  else
-    g_error ("Unknown protocol requested");
-
-  priv->dbus = tp_dbus_daemon_dup (&error);
-
-  if (error)
-    {
-      g_error ("Can't connect to dbus: %s", error->message);
-      return;
-    }
-
-  priv->mgr = tp_yts_account_manager_dup ();
-
-
-  if (!TP_IS_YTS_ACCOUNT_MANAGER (priv->mgr))
-    g_error ("Missing Account Manager");
-
-  tp_yts_account_manager_hold (priv->mgr);
-
-  tp_yts_account_manager_get_account_async (priv->mgr, NULL,
-                                            yts_client_account_cb,
-                                            client);
-}
-
-static void
-yts_client_get_property (GObject    *object,
-                          guint       property_id,
-                          GValue     *value,
-                          GParamSpec *pspec)
-{
-  YtsClient        *client = (YtsClient*) object;
-  YtsClientPrivate *priv   = client->priv;
-
-  switch (property_id)
-    {
-    case PROP_UID:
-      g_value_set_string (value, priv->uid);
-      break;
-    case PROP_ICON_TOKEN:
-      g_value_set_string (value, priv->icon_token);
-      break;
-    case PROP_PROTOCOL:
-      g_value_set_enum (value, priv->protocol);
-      break;
-
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-    }
-}
-
-static void
-yts_client_set_property (GObject      *object,
-                          guint         property_id,
-                          const GValue *value,
-                          GParamSpec   *pspec)
-{
-  YtsClient        *client = (YtsClient*) object;
-  YtsClientPrivate *priv   = client->priv;
-
-  switch (property_id)
-    {
-    case PROP_UID:
-      {
-        g_free (priv->uid);
-        priv->uid = g_value_dup_string (value);
-      }
-      break;
-    case PROP_PROTOCOL:
-      priv->protocol = g_value_get_enum (value);
-      break;
-
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-    }
-}
-
-static void
-yts_client_init (YtsClient *client)
-{
-  YtsClientPrivate *priv = client->priv = YTS_CLIENT_GET_PRIVATE (client);
-
-  yts_client_set_incoming_file_directory (client, NULL);
-
-  priv->services = g_hash_table_new_full (g_str_hash,
-                                          g_str_equal,
-                                          g_free,
-                                          g_object_unref);
-
-  priv->invocations = g_hash_table_new_full (g_str_hash,
-                                             g_str_equal,
-                                             g_free,
-                                             (GDestroyNotify) invocation_data_destroy);
-
-  priv->proxies = g_hash_table_new_full (g_str_hash,
-                                         g_str_equal,
-                                         g_free,
-                                         (GDestroyNotify) proxy_list_destroy);
-}
-
-static void
-yts_client_dispose (GObject *object)
-{
-  YtsClient        *client = (YtsClient*) object;
-  YtsClientPrivate *priv   = client->priv;
-
-  if (priv->disposed)
-    return;
-
-  priv->disposed = TRUE;
-
-  if (priv->roster)
-    {
-      g_object_unref (priv->roster);
-      priv->roster = NULL;
-    }
-
-  if (priv->unwanted)
-    {
-      g_object_unref (priv->unwanted);
-      priv->unwanted = NULL;
-    }
-
-  if (priv->connection)
-    {
-      tp_cli_connection_call_disconnect  (priv->connection,
-                                          -1,
-                                          NULL, NULL, NULL, NULL);
-      g_object_unref (priv->connection);
-      priv->connection = NULL;
-    }
-
-  if (priv->mgr)
-    {
-      tp_yts_account_manager_release (priv->mgr);
-
-      g_object_unref (priv->mgr);
-      priv->mgr = NULL;
-    }
-
-  if (priv->debug_proxy)
-    {
-      g_object_unref (priv->debug_proxy);
-      priv->debug_proxy = NULL;
-    }
-
-  if (priv->status)
-    {
-      g_object_unref (priv->status);
-      priv->status = NULL;
-    }
-
-  if (priv->services)
-    {
-      g_hash_table_destroy (priv->services);
-      priv->services = NULL;
-    }
-
-  if (priv->invocations)
-    {
-      g_hash_table_destroy (priv->invocations);
-      priv->invocations = NULL;
-    }
-
-  if (priv->proxies)
-    {
-      g_hash_table_destroy (priv->proxies);
-      priv->proxies = NULL;
-    }
-
-  G_OBJECT_CLASS (yts_client_parent_class)->dispose (object);
-}
-
-static void
-yts_client_finalize (GObject *object)
-{
-  YtsClient        *client = (YtsClient*) object;
-  YtsClientPrivate *priv   = client->priv;
-
-  g_free (priv->uid);
-  g_free (priv->icon_token);
-  g_free (priv->icon_mime_type);
-  g_free (priv->mgr_name);
-  g_free (priv->incoming_dir);
-
-  if (priv->caps)
-    g_array_free (priv->caps, TRUE);
-
-  if (priv->icon_data)
-    g_array_free (priv->icon_data, TRUE);
-
-  G_OBJECT_CLASS (yts_client_parent_class)->finalize (object);
-}
-
 /**
  * yts_client_disconnect:
- * @client: #YtsClient
+ * @self: #YtsClient
  *
  * Disconnects #YtsClient from Ytstenut mesh.
  */
 void
-yts_client_disconnect (YtsClient *client)
+yts_client_disconnect (YtsClient *self)
 {
-  YtsClientPrivate *priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
-  g_return_if_fail (YTS_IS_CLIENT (client));
-
-  priv = client->priv;
+  g_return_if_fail (YTS_IS_CLIENT (self));
 
   /* cancel any pending reconnect timeout */
   if (priv->reconnect_id)
@@ -1918,13 +1919,13 @@ yts_client_disconnect (YtsClient *client)
 }
 
 static gboolean
-yts_client_reconnect_cb (gpointer data)
+yts_client_reconnect_cb (YtsClient *self)
 {
-  YtsClient *client = data;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
-  client->priv->reconnect_id = 0;
+  priv->reconnect_id = 0;
 
-  yts_client_connect (client);
+  yts_client_connect (self);
 
   /* one off */
   return FALSE;
@@ -1933,40 +1934,38 @@ yts_client_reconnect_cb (gpointer data)
 
 /*
  * yts_client_reconnect_after:
- * @client: #YtsClient
+ * @self: #YtsClient
  * @after_seconds: #guint
  *
  * Attempst to reconnect to server after given number of seconds.
  */
 void
-yts_client_reconnect_after (YtsClient *client, guint after_seconds)
+yts_client_reconnect_after (YtsClient *self, guint after_seconds)
 {
-  YtsClientPrivate *priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
-  g_return_if_fail (YTS_IS_CLIENT (client));
-
-  priv = client->priv;
+  g_return_if_fail (YTS_IS_CLIENT (self));
 
   priv->reconnect = TRUE;
 
   priv->reconnect_id =
-    g_timeout_add_seconds (after_seconds, yts_client_reconnect_cb, client);
+    g_timeout_add_seconds (after_seconds,
+                           (GSourceFunc) yts_client_reconnect_cb,
+                           self);
 }
 
 static void
-yts_client_connected_cb (TpConnection *proxy,
-                          const GError *error,
-                          gpointer      data,
-                          GObject      *weak_object)
+yts_client_connected_cb (TpConnection   *proxy,
+                          const GError  *error,
+                          YtsClient     *self,
+                          GObject       *weak_object)
 {
-  YtsClient *client = data;
-
   if (error)
     {
       g_warning (G_STRLOC ": %s: %s", __FUNCTION__, error->message);
 
-      yts_client_disconnect (client);
-      yts_client_reconnect_after (client, RECONNECT_DELAY);
+      yts_client_disconnect (self);
+      yts_client_reconnect_after (self, RECONNECT_DELAY);
     }
 }
 
@@ -1981,13 +1980,14 @@ yts_client_error_cb (TpConnection *proxy,
 }
 
 static void
-yts_client_status_cb (TpConnection *proxy,
+yts_client_status_cb (TpConnection  *proxy,
                        guint         arg_Status,
                        guint         arg_Reason,
-                       gpointer      data,
+                       YtsClient    *self,
                        GObject      *weak_object)
 {
-  YtsClient   *client = data;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
+
   const char *status[] = {"'connected'   ",
                           "'connecting'  ",
                           "'disconnected'"};
@@ -2009,16 +2009,16 @@ yts_client_status_cb (TpConnection *proxy,
       "CERT_OTHER_ERROR"
     };
 
-  if (client->priv->disposed)
+  if (priv->disposed)
     return;
 
   YTS_NOTE (CONNECTION, "Connection: %s: '%s'",
            status[arg_Status], reason[arg_Reason]);
 
   if (arg_Status == TP_CONNECTION_STATUS_CONNECTED)
-    g_signal_emit (client, signals[AUTHENTICATED], 0);
+    g_signal_emit (self, signals[AUTHENTICATED], 0);
   else if (arg_Status == TP_CONNECTION_STATUS_DISCONNECTED)
-    g_signal_emit (client, signals[DISCONNECTED], 0);
+    g_signal_emit (self, signals[DISCONNECTED], 0);
 }
 
 static gboolean
@@ -2047,12 +2047,12 @@ yts_client_caps_overlap (GArray *mycaps, char **caps)
 }
 
 static gboolean
-yts_client_process_one_service (YtsClient        *client,
-                                 const char        *jid,
-                                 const char        *sid,
-                                 const GValueArray *service_info)
+yts_client_process_one_service (YtsClient         *self,
+                                const char        *jid,
+                                const char        *sid,
+                                const GValueArray *service_info)
 {
-  YtsClientPrivate *priv = client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   const char        *type;
   GHashTable        *names;
   char             **caps;
@@ -2124,30 +2124,30 @@ yts_client_process_one_service (YtsClient        *client,
 }
 
 static void
-yts_client_service_added_cb (TpYtsStatus        *self,
-                              const gchar       *jid,
-                              const gchar       *sid,
-                              const GValueArray *service_info,
-                              YtsClient         *client)
+yts_client_service_added_cb (TpYtsStatus        *tp_status,
+                             const gchar        *jid,
+                             const gchar        *sid,
+                             const GValueArray  *service_info,
+                             YtsClient          *self)
 {
-  yts_client_process_one_service (client, jid, sid, service_info);
+  yts_client_process_one_service (self, jid, sid, service_info);
 }
 
 static void
-yts_client_service_removed_cb (TpYtsStatus *self,
-                                const gchar *jid,
-                                const gchar *sid,
-                                YtsClient  *client)
+yts_client_service_removed_cb (TpYtsStatus  *tp_status,
+                               const gchar  *jid,
+                               const gchar  *sid,
+                               YtsClient    *self)
 {
-  YtsClientPrivate *priv = client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
   yts_roster_remove_service_by_id (priv->roster, jid, sid);
 }
 
 static void
-yts_client_process_status (YtsClient *client)
+yts_client_process_status (YtsClient *self)
 {
-  YtsClientPrivate *priv = client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   GHashTable        *services;
 
   if ((services = tp_yts_status_get_discovered_services (priv->tp_status)))
@@ -2169,7 +2169,7 @@ yts_client_process_status (YtsClient *client)
           g_hash_table_iter_init (&iter2, service);
           while (g_hash_table_iter_next (&iter2, (void**)&sid, (void**)&service_info))
             {
-              yts_client_process_one_service (client, jid, sid, service_info);
+              yts_client_process_one_service (self, jid, sid, service_info);
             }
         }
     }
@@ -2198,15 +2198,11 @@ yts_client_advertise_status_cb (GObject      *source_object,
 }
 
 static void
-yts_client_dispatch_status (YtsClient *client)
+yts_client_dispatch_status (YtsClient *self)
 {
-  YtsClientPrivate *priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   char *xml = NULL;
   unsigned i;
-
-  g_return_if_fail (YTS_IS_CLIENT (client));
-
-  priv = client->priv;
 
   g_return_if_fail (priv->caps && priv->caps->len);
 
@@ -2227,21 +2223,21 @@ yts_client_dispatch_status (YtsClient *client)
                                             xml,
                                             NULL,
                                             yts_client_advertise_status_cb,
-                                            client);
+                                            self);
     }
 
   g_free (xml);
 }
 
 static void
-_tp_yts_status_changed (TpYtsStatus *status,
+_tp_yts_status_changed (TpYtsStatus *tp_status,
                         char const  *contact_id,
                         char const  *fqc_id,
                         char const  *service_id,
                         char const  *status_xml,
                         YtsClient   *self)
 {
-  YtsClientPrivate *priv = self->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
   yts_roster_update_contact_status (priv->roster,
                                     contact_id,
@@ -2251,13 +2247,12 @@ _tp_yts_status_changed (TpYtsStatus *status,
 }
 
 static void
-yts_client_yts_status_cb (GObject      *obj,
-                           GAsyncResult *res,
-                           gpointer      data)
+yts_client_yts_status_cb (GObject       *obj,
+                          GAsyncResult  *res,
+                          YtsClient     *self)
 {
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   TpAccount         *acc    = TP_ACCOUNT (obj);
-  YtsClient        *client = data;
-  YtsClientPrivate *priv   = client->priv;
   GError            *error  = NULL;
   TpYtsStatus       *tp_status;
 
@@ -2272,34 +2267,34 @@ yts_client_yts_status_cb (GObject      *obj,
 
   tp_g_signal_connect_object (tp_status, "service-added",
                               G_CALLBACK (yts_client_service_added_cb),
-                              client, 0);
+                              self, 0);
   tp_g_signal_connect_object (tp_status, "service-removed",
                               G_CALLBACK (yts_client_service_removed_cb),
-                              client, 0);
+                              self, 0);
   tp_g_signal_connect_object (tp_status, "status-changed",
                               G_CALLBACK (_tp_yts_status_changed),
-                              client, 0);
+                              self, 0);
 
 
   if (priv->status)
-    yts_client_dispatch_status (client);
+    yts_client_dispatch_status (self);
 
-  yts_client_process_status (client);
+  yts_client_process_status (self);
 
   if (!priv->ready)
     {
       YTS_NOTE (CLIENT, "Emitting 'ready' signal");
-      g_signal_emit (client, signals[READY], 0);
+      g_signal_emit (self, signals[READY], 0);
     }
 }
 
 static void
 yts_client_connection_ready_cb (TpConnection *conn,
-                                 GParamSpec   *par,
-                                 YtsClient   *client)
+                                GParamSpec   *par,
+                                YtsClient   *self)
 {
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   GCancellable      *cancellable;
-  YtsClientPrivate *priv = client->priv;
 
   if (tp_connection_is_ready (conn))
     {
@@ -2309,8 +2304,8 @@ yts_client_connection_ready_cb (TpConnection *conn,
 
       tp_yts_status_ensure_async (priv->account,
                                   cancellable,
-                                  yts_client_yts_status_cb,
-                                  client);
+                                  (GAsyncReadyCallback) yts_client_yts_status_cb,
+                                  self);
 
       /*
        * TODO -- this should be stored, so we can clean up in dispose any
@@ -2326,11 +2321,10 @@ static void
 yts_client_set_avatar_cb (TpConnection *proxy,
                            const gchar  *token,
                            const GError *error,
-                           gpointer      data,
+                           YtsClient    *self,
                            GObject      *weak_object)
 {
-  YtsClient        *client = data;
-  YtsClientPrivate *priv   = client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
   if (error)
     {
@@ -2346,11 +2340,11 @@ yts_client_set_avatar_cb (TpConnection *proxy,
  * check whether the given avatar mime type is supported.
  */
 static gboolean
-yts_client_is_avatar_type_supported (YtsClient *client,
+yts_client_is_avatar_type_supported (YtsClient *self,
                                       const char *mime_type,
                                       guint       bytes)
 {
-  YtsClientPrivate     *priv = client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   char                 **p;
   const char            *alt_type = NULL;
   TpAvatarRequirements  *req;
@@ -2400,12 +2394,11 @@ yts_client_is_avatar_type_supported (YtsClient *client,
 }
 
 static void
-yts_client_connection_prepare_cb (GObject      *connection,
-                                   GAsyncResult *res,
-                                   gpointer      data)
+yts_client_connection_prepare_cb (GObject       *connection,
+                                  GAsyncResult  *res,
+                                  YtsClient     *self)
 {
-  YtsClient        *client = data;
-  YtsClientPrivate *priv   = client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   GError            *error  = NULL;
 
   if (!tp_proxy_prepare_finish (connection, res, &error))
@@ -2423,21 +2416,22 @@ yts_client_connection_prepare_cb (GObject      *connection,
 
       tp_g_signal_connect_object (priv->tp_client, "received-channels",
                               G_CALLBACK (yts_client_yts_channels_received_cb),
-                              client, 0);
+                              self, 0);
 
       if (priv->icon_data &&
-          yts_client_is_avatar_type_supported (client,
+          yts_client_is_avatar_type_supported (self,
                                               priv->icon_mime_type,
                                               priv->icon_data->len))
         {
-          tp_cli_connection_interface_avatars_call_set_avatar (priv->connection,
-                                                        -1,
-                                                        priv->icon_data,
-                                                        priv->icon_mime_type,
-                                                        yts_client_set_avatar_cb,
-                                                        client,
-                                                        NULL,
-                                                        (GObject*)client);
+          tp_cli_connection_interface_avatars_call_set_avatar (
+                                                          priv->connection,
+                                                          -1,
+                                                          priv->icon_data,
+                                                          priv->icon_mime_type,
+  (tp_cli_connection_interface_avatars_callback_for_set_avatar) yts_client_set_avatar_cb,
+                                                          self,
+                                                          NULL,
+                                                          (GObject*)self);
 
           g_array_free (priv->icon_data, TRUE);
           priv->icon_data = NULL;
@@ -2462,9 +2456,9 @@ yts_client_connection_prepare_cb (GObject      *connection,
  * signals that we care about.
  */
 static void
-yts_client_setup_account_connection (YtsClient *client)
+yts_client_setup_account_connection (YtsClient *self)
 {
-  YtsClientPrivate *priv  = client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   GError            *error = NULL;
   GQuark             features[] = { TP_CONNECTION_FEATURE_CONTACT_INFO,
                                     TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS,
@@ -2483,13 +2477,13 @@ yts_client_setup_account_connection (YtsClient *client)
 
   tp_g_signal_connect_object (priv->connection, "notify::connection-ready",
                               G_CALLBACK (yts_client_connection_ready_cb),
-                              client, 0);
+                              self, 0);
 
   tp_cli_connection_connect_to_connection_error (priv->connection,
                                                  yts_client_error_cb,
-                                                 client,
+                                                 self,
                                                  NULL,
-                                                 (GObject*)client,
+                                                 (GObject*)self,
                                                  &error);
 
   if (error)
@@ -2501,10 +2495,10 @@ yts_client_setup_account_connection (YtsClient *client)
     }
 
   tp_cli_connection_connect_to_status_changed (priv->connection,
-                                               yts_client_status_cb,
-                                               client,
+      (tp_cli_connection_signal_callback_status_changed) yts_client_status_cb,
+                                               self,
                                                NULL,
-                                               (GObject*) client,
+                                               (GObject*) self,
                                                &error);
 
   if (error)
@@ -2517,9 +2511,9 @@ yts_client_setup_account_connection (YtsClient *client)
 
   tp_cli_connection_connect_to_new_channel (priv->connection,
                                             yts_client_channel_cb,
-                                            client,
+                                            self,
                                             NULL,
-                                            (GObject*)client,
+                                            (GObject*)self,
                                             &error);
 
   if (error)
@@ -2532,8 +2526,8 @@ yts_client_setup_account_connection (YtsClient *client)
 
   tp_proxy_prepare_async (priv->connection,
                           features,
-                          yts_client_connection_prepare_cb,
-                          client);
+                          (GAsyncReadyCallback) yts_client_connection_prepare_cb,
+                          self);
 }
 
 /*
@@ -2584,9 +2578,9 @@ yts_client_account_connection_notify_cb (TpAccount  *account,
 }
 
 static void
-yts_client_make_connection (YtsClient *client)
+yts_client_make_connection (YtsClient *self)
 {
-  YtsClientPrivate *priv  = client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
   /*
    * If we don't have an account yet, we do nothing and will make call to this
@@ -2610,22 +2604,22 @@ yts_client_make_connection (YtsClient *client)
 
       g_signal_connect (priv->account, "notify::connection",
                         G_CALLBACK (yts_client_account_connection_notify_cb),
-                        client);
+                        self);
 
       tp_account_request_presence_async (priv->account,
                                          TP_CONNECTION_PRESENCE_TYPE_AVAILABLE,
                                          "online",
                                          "online",
                                          yts_client_account_online_cb,
-                                         client);
+                                         self);
     }
   else
-    yts_client_setup_account_connection (client);
+    yts_client_setup_account_connection (self);
 }
 
 /**
  * yts_client_connect:
- * @client: #YtsClient
+ * @self: #YtsClient
  *
  * Initiates connection to the mesh. Once the connection is established,
  * the YtsClient::authenticated signal will be emitted.
@@ -2634,15 +2628,13 @@ yts_client_make_connection (YtsClient *client)
  *     connection method.
  */
 void
-yts_client_connect (YtsClient *client)
+yts_client_connect (YtsClient *self)
 {
-  YtsClientPrivate *priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
   YTS_NOTE (CONNECTION, "Connecting ...");
 
-  g_return_if_fail (YTS_IS_CLIENT (client));
-
-  priv = client->priv;
+  g_return_if_fail (YTS_IS_CLIENT (self));
 
   /* cancel any pending reconnect timeout */
   if (priv->reconnect_id)
@@ -2660,41 +2652,19 @@ yts_client_connect (YtsClient *client)
        */
       tp_cli_connection_call_connect (priv->connection,
                                       -1,
-                                      yts_client_connected_cb,
-                                      client,
+(tp_cli_connection_callback_for_connect) yts_client_connected_cb,
+                                      self,
                                       NULL,
-                                      (GObject*)client);
+                                      (GObject*)self);
     }
   else if (!priv->dialing)
-    yts_client_make_connection (client);
-}
-
-/**
- * yts_client_new:
- * @protocol: #YtsProtocol
- * @uid: UID for this service; UIDs must follow the dbus convetion for unique
- * names.
- *
- * Creates a new #YtsClient object connected to the provided roster
- *
- * Return value: #YtsClient object.
- */
-YtsClient *
-yts_client_new (YtsProtocol protocol, const char *uid)
-{
-  if (!uid)
-    g_error ("UID must be specified at construction time.");
-
-  return g_object_new (YTS_TYPE_CLIENT,
-                       "protocol", protocol,
-                       "uid",      uid,
-                       NULL);
+    yts_client_make_connection (self);
 }
 
 static gboolean
-yts_client_has_capability (YtsClient *client, YtsCaps cap)
+yts_client_has_capability (YtsClient *self, YtsCaps cap)
 {
-  YtsClientPrivate *priv = client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   unsigned i;
 
   if (!priv->caps)
@@ -2712,9 +2682,9 @@ yts_client_has_capability (YtsClient *client, YtsCaps cap)
 }
 
 static void
-yts_client_refresh_roster (YtsClient *client)
+yts_client_refresh_roster (YtsClient *self)
 {
-  YtsClientPrivate *priv = client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
   YTS_NOTE (CLIENT, "Refreshing roster");
 
@@ -2724,12 +2694,12 @@ yts_client_refresh_roster (YtsClient *client)
   yts_roster_clear (priv->roster);
   yts_roster_clear (priv->unwanted);
 
-  yts_client_process_status (client);
+  yts_client_process_status (self);
 }
 
 /**
  * yts_client_add_capability:
- * @client: #YtsClient,
+ * @self: #YtsClient,
  * @capability: Name of the capability.
  *
  * Adds a capability to the capability set of this client; multiple capabilities
@@ -2738,21 +2708,19 @@ yts_client_refresh_roster (YtsClient *client)
  * The capability set is used to filter roster items to match.
  */
 void
-yts_client_add_capability (YtsClient  *client,
+yts_client_add_capability (YtsClient  *self,
                            char const *capability)
 {
-  YtsClientPrivate *priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   GQuark cap_quark;
 
   /* FIXME check that there's no collision with service owned capabilities. */
 
-  g_return_if_fail (YTS_IS_CLIENT (client));
-
-  priv = client->priv;
+  g_return_if_fail (YTS_IS_CLIENT (self));
 
   cap_quark = g_quark_from_string (capability);
 
-  if (yts_client_has_capability (client, cap_quark))
+  if (yts_client_has_capability (self, cap_quark))
     {
       YTS_NOTE (CLIENT, "Capablity '%s' already set", capability);
       return;
@@ -2766,12 +2734,12 @@ yts_client_add_capability (YtsClient  *client,
 
   g_array_append_val (priv->caps, cap_quark);
 
-  yts_client_refresh_roster (client);
+  yts_client_refresh_roster (self);
 }
 
 /**
  * yts_client_get_roster:
- * @client: #YtsClient
+ * @self: #YtsClient
  *
  * Gets the #YtsRoster for this client. The object is owned by the client
  * and must not be freed by the caller.
@@ -2779,20 +2747,18 @@ yts_client_add_capability (YtsClient  *client,
  * Return value (tranfer none): #YtsRoster.
  */
 YtsRoster *
-yts_client_get_roster (YtsClient *client)
+yts_client_get_roster (YtsClient *self)
 {
-  YtsClientPrivate *priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
-  g_return_val_if_fail (YTS_IS_CLIENT (client), NULL);
-
-  priv = client->priv;
+  g_return_val_if_fail (YTS_IS_CLIENT (self), NULL);
 
   return priv->roster;
 }
 
 /**
  * yts_client_emit_error:
- * @client: #YtsClient,
+ * @self: #YtsClient,
  * @error: #YtsError
  *
  * Emits the #YtsClient::error signal with the suplied error parameter.
@@ -2805,21 +2771,21 @@ yts_client_get_roster (YtsClient *client)
  * completed.
  */
 void
-yts_client_emit_error (YtsClient *client, YtsError error)
+yts_client_emit_error (YtsClient *self, YtsError error)
 {
-  g_return_if_fail (YTS_IS_CLIENT (client));
+  g_return_if_fail (YTS_IS_CLIENT (self));
 
   /*
    * There is no point in throwing an error that has no atom specified.
    */
   g_return_if_fail (yts_error_get_atom (error));
 
-  g_signal_emit (client, signals[ERROR], 0, error);
+  g_signal_emit (self, signals[ERROR], 0, error);
 }
 
 /**
  * yts_client_set_incoming_file_directory:
- * @client: #YtsClient
+ * @self: #YtsClient
  * @directory: path to a directory or %NULL.
  *
  * Sets the directory where incoming files will be stored; if the provided path
@@ -2832,14 +2798,12 @@ yts_client_emit_error (YtsClient *client, YtsError error)
  * callback to the YtsClient::incoming-file signal.
  */
 void
-yts_client_set_incoming_file_directory (YtsClient *client,
+yts_client_set_incoming_file_directory (YtsClient *self,
                                          const char *directory)
 {
-  YtsClientPrivate *priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
-  g_return_if_fail (YTS_IS_CLIENT (client));
-
-  priv = client->priv;
+  g_return_if_fail (YTS_IS_CLIENT (self));
 
   if (!directory || !*directory)
     priv->incoming_dir =
@@ -2850,7 +2814,7 @@ yts_client_set_incoming_file_directory (YtsClient *client,
 
 /**
  * yts_client_get_incoming_file_directory:
- * @client: #YtsClient
+ * @self: #YtsClient
  *
  * Returns the directory into which any files from incoming file transfers will
  * be placed.
@@ -2858,35 +2822,26 @@ yts_client_set_incoming_file_directory (YtsClient *client,
  * Return value: (tranfer none): directory where incoming files are stored.
  */
 const char *
-yts_client_get_incoming_file_directory (YtsClient *client)
+yts_client_get_incoming_file_directory (YtsClient *self)
 {
-  YtsClientPrivate *priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
-  g_return_val_if_fail (YTS_IS_CLIENT (client), NULL);
-
-  priv = client->priv;
+  g_return_val_if_fail (YTS_IS_CLIENT (self), NULL);
 
   return priv->incoming_dir;
 }
 
 /**
  * yts_client_get_jid:
- * @client: #YtsClient
+ * @self: #YtsClient
  *
  * Returns the jabber id associated with the current client.
  *
  * Return value: the jabber id.
  */
 const char *
-yts_client_get_jid (const YtsClient *client)
+yts_client_get_jid (const YtsClient *self)
 {
-/*
-  YtsClientPrivate *priv;
-
-  g_return_val_if_fail (YTS_IS_CLIENT (client), NULL);
-
-  priv = client->priv;
-*/
   g_warning (G_STRLOC ": NOT IMPLEMENTED !!!");
 
   return NULL;
@@ -2894,63 +2849,56 @@ yts_client_get_jid (const YtsClient *client)
 
 /**
  * yts_client_get_uid:
- * @client: #YtsClient
+ * @self: #YtsClient
  *
  * Returns uid of the service this client represents.
  *
  * Return value: the service uid.
  */
 const char *
-yts_client_get_uid (const YtsClient *client)
+yts_client_get_uid (const YtsClient *self)
 {
-  YtsClientPrivate *priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
-  g_return_val_if_fail (YTS_IS_CLIENT (client), NULL);
-
-  priv = client->priv;
+  g_return_val_if_fail (YTS_IS_CLIENT (self), NULL);
 
   return priv->uid;
 }
 
 TpConnection *
-yts_client_get_connection (YtsClient *client)
+yts_client_get_connection (YtsClient *self)
 {
-  YtsClientPrivate *priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
-  g_return_val_if_fail (YTS_IS_CLIENT (client), NULL);
-
-  priv = client->priv;
+  g_return_val_if_fail (YTS_IS_CLIENT (self), NULL);
 
   return priv->connection;
 }
 
 TpYtsStatus *
-yts_client_get_tp_status (YtsClient *client)
+yts_client_get_tp_status (YtsClient *self)
 {
-  YtsClientPrivate *priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
-  g_return_val_if_fail (YTS_IS_CLIENT (client), NULL);
-
-  priv = client->priv;
+  g_return_val_if_fail (YTS_IS_CLIENT (self), NULL);
 
   return priv->tp_status;
 }
 
 /**
  * yts_client_set_status:
- * @client: #YtsClient
+ * @self: #YtsClient
  * @status: new #YtsStatus
  *
  * Changes the status of the service represented by this client to status;
  */
 static void
-yts_client_set_status (YtsClient *client, YtsStatus *status)
+yts_client_set_status (YtsClient *self, YtsStatus *status)
 {
-  YtsClientPrivate *priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
-  g_return_if_fail (YTS_IS_CLIENT (client) && YTS_IS_STATUS (status));
-
-  priv = client->priv;
+  g_return_if_fail (YTS_IS_CLIENT (self));
+  g_return_if_fail (YTS_IS_STATUS (status));
 
   g_return_if_fail (priv->caps && priv->caps->len);
 
@@ -2967,7 +2915,7 @@ yts_client_set_status (YtsClient *client, YtsStatus *status)
 
   if (priv->tp_status)
     {
-      yts_client_dispatch_status (client);
+      yts_client_dispatch_status (self);
     }
 }
 
@@ -2978,23 +2926,21 @@ yts_client_set_status (YtsClient *client, YtsStatus *status)
 
 /**
  * yts_client_set_status_by_capability:
- * @client: #YtsClient
+ * @self: #YtsClient
  * @capability: the capability to set status for
  * @activity: the activity to set the status to.
  *
  * Changes the status of the service represented by this client to status.
  */
 void
-yts_client_set_status_by_capability (YtsClient *client,
+yts_client_set_status_by_capability (YtsClient *self,
                                       const char *capability,
                                       const char *activity)
 {
-  YtsClientPrivate *priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   YtsStatus        *status = NULL;
 
-  g_return_if_fail (YTS_IS_CLIENT (client) && capability);
-
-  priv = client->priv;
+  g_return_if_fail (YTS_IS_CLIENT (self) && capability);
 
   g_return_if_fail (priv->caps && priv->caps->len);
 
@@ -3014,7 +2960,7 @@ yts_client_set_status_by_capability (YtsClient *client,
       status = yts_status_new ((const char**)&attributes);
     }
 
-  yts_client_set_status (client, status);
+  yts_client_set_status (self, status);
 }
 
 struct YtsCLChannelData
@@ -3210,7 +3156,7 @@ static YtsError
 yts_client_dispatch_message (struct YtsCLChannelData *d)
 {
   TpContact         *tp_contact;
-  YtsClientPrivate *priv = d->client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (d->client);
 
   YTS_NOTE (CLIENT, "Dispatching delayed message to %s", d->uid);
 
@@ -3315,7 +3261,7 @@ _adapter_event (YtsServiceAdapter  *adapter,
                 GVariant            *arguments,
                 YtsClient          *self)
 {
-  YtsClientPrivate *priv = self->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   YtsMetadata *message;
   ProxyList   *proxy_list;
   char        *fqc_id;
@@ -3345,7 +3291,7 @@ _adapter_response (YtsServiceAdapter *adapter,
                    GVariant           *return_value,
                    YtsClient         *self)
 {
-  YtsClientPrivate *priv = self->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   InvocationData  *invocation;
   YtsMetadata    *message;
   char            *fqc_id;
@@ -3376,7 +3322,7 @@ static void
 _service_destroyed (ServiceData *data,
                     void        *stale_service_ptr)
 {
-  YtsClientPrivate *priv = data->client->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (data->client);
 
   g_hash_table_remove (priv->services, data->capability);
   service_data_destroy (data);
@@ -3391,7 +3337,7 @@ gboolean
 yts_client_register_service (YtsClient      *self,
                               YtsCapability  *service)
 {
-  YtsClientPrivate *priv = self->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   YtsServiceAdapter   *adapter;
   YtsProfileImpl      *profile_impl;
   ServiceData          *service_data;
@@ -3479,7 +3425,7 @@ void
 yts_client_cleanup_contact (YtsClient         *self,
                              YtsContact const  *contact)
 {
-  YtsClientPrivate *priv = self->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   GHashTableIter   iter;
   bool             start_over;
 
@@ -3533,7 +3479,7 @@ void
 yts_client_cleanup_service (YtsClient   *self,
                              YtsService  *service)
 {
-  YtsClientPrivate *priv = self->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   char const      *service_id;
   GHashTableIter   iter;
   bool             start_over;
@@ -3592,7 +3538,7 @@ yts_client_get_invocation_proxy (YtsClient   *self,
                                   YtsContact **contact,
                                   char const  **proxy_id)
 {
-  YtsClientPrivate *priv = self->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   InvocationData const *invocation;
 
   g_return_val_if_fail (YTS_IS_CLIENT (self), false);
@@ -3614,7 +3560,7 @@ yts_client_register_proxy (YtsClient  *self,
                             YtsContact *contact,
                             char const  *proxy_id)
 {
-  YtsClientPrivate *priv = self->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   ProxyList           *proxy_list;
   YtsServiceAdapter  *adapter = NULL;
   GVariant            *properties = NULL;
@@ -3653,7 +3599,7 @@ yts_client_unregister_proxy (YtsClient  *self,
                               char const  *capability,
                               char const  *proxy_id)
 {
-  YtsClientPrivate *priv = self->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   ProxyList *proxy_list;
 
   g_return_val_if_fail (YTS_IS_CLIENT (self), false);
@@ -3680,7 +3626,7 @@ yts_client_foreach_service (YtsClient                 *self,
                             YtsClientServiceIterator   callback,
                             void                      *user_data)
 {
-  YtsClientPrivate *priv = self->priv;
+  YtsClientPrivate *priv = GET_PRIVATE (self);
   GHashTableIter     iter;
   char const        *fqc_id;
   YtsServiceAdapter *adapter;

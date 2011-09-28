@@ -31,95 +31,106 @@
 
 G_BEGIN_DECLS
 
-#define YTS_TYPE_CLIENT                                                \
-   (yts_client_get_type())
-#define YTS_CLIENT(obj)                                                \
-   (G_TYPE_CHECK_INSTANCE_CAST ((obj),                                  \
-                                YTS_TYPE_CLIENT,                       \
-                                YtsClient))
-#define YTS_CLIENT_CLASS(klass)                                        \
-   (G_TYPE_CHECK_CLASS_CAST ((klass),                                   \
-                             YTS_TYPE_CLIENT,                          \
-                             YtsClientClass))
-#define YTS_IS_CLIENT(obj)                                             \
-   (G_TYPE_CHECK_INSTANCE_TYPE ((obj),                                  \
-                                YTS_TYPE_CLIENT))
-#define YTS_IS_CLIENT_CLASS(klass)                                     \
-   (G_TYPE_CHECK_CLASS_TYPE ((klass),                                   \
-                             YTS_TYPE_CLIENT))
-#define YTS_CLIENT_GET_CLASS(obj)                                      \
-   (G_TYPE_INSTANCE_GET_CLASS ((obj),                                   \
-                               YTS_TYPE_CLIENT,                        \
-                               YtsClientClass))
+#define YTS_TYPE_CLIENT (yts_client_get_type())
 
-typedef struct _YtsClientPrivate YtsClientPrivate;
+#define YTS_CLIENT(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTS_TYPE_CLIENT, YtsClient))
 
-/**
- * YtsClient:
- *
- * Class representing an application connection to the Ytstenut mesh.
- */
-typedef struct
-{
+#define YTS_CLIENT_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST ((klass), YTS_TYPE_CLIENT, YtsClientClass))
+
+#define YTS_IS_CLIENT(obj) \
+   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTS_TYPE_CLIENT))
+
+#define YTS_IS_CLIENT_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), YTS_TYPE_CLIENT))
+
+#define YTS_CLIENT_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), YTS_TYPE_CLIENT, YtsClientClass))
+
+typedef struct {
+
   /*< private >*/
   GObject parent;
 
-  YtsClientPrivate *priv;
 } YtsClient;
 
-/**
- * YtsClientClass:
- * @authenticated: signal handler for #YtsClient::authenticated
- * @ready: signal handler for #YtsClient::ready
- * @disconnected: signal handler for #YtsClient::disconnected
- * @message: signal handler for #YtsClient::message
- * @incoming_file: signal handler for #YtsClient::incoming-file
- *
- * Class for #YtsClient
- */
-typedef struct
-{
+typedef struct {
+
   /*< private >*/
-  GObjectClass parent_class;
+  GObjectClass parent;
 
   /*< public >*/
-  void     (*authenticated) (YtsClient *client);
-  void     (*ready)         (YtsClient *client);
-  void     (*disconnected)  (YtsClient *client);
-  void     (*raw_message)   (YtsClient *client, char const *xml_payload);
-  gboolean (*incoming_file) (YtsClient   *client,
-                             const char *from,
-                             const char *name,
-                             guint64     size,
-                             guint64     offset,
-                             TpChannel  *channel);
+  void     
+  (*authenticated) (YtsClient *self);
+
+  void     
+  (*ready) (YtsClient *self);
+
+  void     
+  (*disconnected) (YtsClient *self);
+
+  void     
+  (*raw_message) (YtsClient   *self,
+                  char const  *xml_payload);
+
+  bool
+  (*incoming_file) (YtsClient   *self,
+                    const char  *from,
+                    const char  *name,
+                    guint64      size,
+                    guint64      offset,
+                    TpChannel   *channel);
 } YtsClientClass;
 
-GType yts_client_get_type (void) G_GNUC_CONST;
+GType
+yts_client_get_type (void) G_GNUC_CONST;
 
-YtsClient *yts_client_new (YtsProtocol protocol, const char *uid);
+YtsClient *
+yts_client_new (YtsProtocol  protocol,
+                const char  *uid);
 
-void        yts_client_disconnect (YtsClient *client);
-void        yts_client_connect (YtsClient *client);
-void        yts_client_add_capability (YtsClient  *client,
-                                       char const *capability);
-YtsRoster *yts_client_get_roster (YtsClient *client);
-void        yts_client_emit_error (YtsClient *client, YtsError error);
-void        yts_client_set_incoming_file_directory (YtsClient *client,
-                                                     const char *directory);
-const char *yts_client_get_incoming_file_directory (YtsClient *client);
-const char *yts_client_get_jid (const YtsClient *client);
-const char *yts_client_get_uid (const YtsClient *client);
-void        yts_client_set_status_by_capability (YtsClient *client,
-                                                  const char *capability,
-                                                  const char *activity);
+void
+yts_client_disconnect (YtsClient *self);
+
+void
+yts_client_connect (YtsClient *self);
+
+void
+yts_client_add_capability (YtsClient  *self,
+                           char const *capability);
+
+YtsRoster *
+yts_client_get_roster (YtsClient *self);
+
+void
+yts_client_emit_error (YtsClient *self,
+                       YtsError error);
+
+void
+yts_client_set_incoming_file_directory (YtsClient *self,
+                                        const char *directory);
+                                                     
+const char *
+yts_client_get_incoming_file_directory (YtsClient *self);
+
+const char *
+yts_client_get_jid (const YtsClient *self);
+
+const char *
+yts_client_get_uid (const YtsClient *self);
+
+void
+yts_client_set_status_by_capability (YtsClient *self,
+                                     const char *capability,
+                                     const char *activity);
 
 gboolean
 yts_client_register_service (YtsClient      *self,
                               YtsCapability  *service);
 
 typedef void
-(*YtsClientServiceIterator) (YtsClient      *client,
+(*YtsClientServiceIterator) (YtsClient      *self,
                              char const     *fqc_id,
                              YtsCapability  *service,
                              void           *user_data);
