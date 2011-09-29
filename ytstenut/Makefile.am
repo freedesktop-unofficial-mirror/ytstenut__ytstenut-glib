@@ -263,3 +263,16 @@ all-local:
 	done
 
 -include $(top_srcdir)/git.mk
+		
+Android.mk: Makefile.am $(BUILT_SOURCES)
+		androgenizer -:PROJECT ytstenut-glib \
+		-:SHARED ytstenut -:TAGS eng debug \
+		-:REL_TOP $(top_srcdir) -:ABS_TOP $(abs_top_srcdir) \
+		-:SOURCES $(libytstenut_@YTS_API_VERSION@_la_SOURCES) \
+		-:CFLAGS $(DEFS) $(CFLAGS) $(DEFAULT_INCLUDES) $(INCLUDES)  \
+		$(AM_CFLAGS) -I../../librest \
+		-:CPPFLAGS $(CPPFLAGS) $(AM_CPPFLAGS) \
+		-:LDFLAGS $(AM_LDFLAGS) $(YTS_LT_LDFLAGS) \
+		$(libytstenut_@YTS_API_VERSION@_la_LIBADD) \
+		-ltelepathy-ytstenut -lxml2 -lrest -lglib-2.0\
+		> $@
