@@ -26,59 +26,48 @@
 
 G_BEGIN_DECLS
 
-#define YTS_TYPE_ROSTER                                                \
-   (yts_roster_get_type())
-#define YTS_ROSTER(obj)                                                \
-   (G_TYPE_CHECK_INSTANCE_CAST ((obj),                                  \
-                                YTS_TYPE_ROSTER,                       \
-                                YtsRoster))
-#define YTS_ROSTER_CLASS(klass)                                        \
-   (G_TYPE_CHECK_CLASS_CAST ((klass),                                   \
-                             YTS_TYPE_ROSTER,                          \
-                             YtsRosterClass))
-#define YTS_IS_ROSTER(obj)                                             \
-   (G_TYPE_CHECK_INSTANCE_TYPE ((obj),                                  \
-                                YTS_TYPE_ROSTER))
-#define YTS_IS_ROSTER_CLASS(klass)                                     \
-   (G_TYPE_CHECK_CLASS_TYPE ((klass),                                   \
-                             YTS_TYPE_ROSTER))
-#define YTS_ROSTER_GET_CLASS(obj)                                      \
-   (G_TYPE_INSTANCE_GET_CLASS ((obj),                                   \
-                               YTS_TYPE_ROSTER,                        \
-                               YtsRosterClass))
+#define YTS_TYPE_ROSTER (yts_roster_get_type())
 
-typedef struct _YtsRosterPrivate YtsRosterPrivate;
+#define YTS_ROSTER(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTS_TYPE_ROSTER, YtsRoster))
 
-/**
- * YtsRoster:
- *
- * Represents a roster of #YtsContact<!-- -->s known to #YtsClient.
- */
-typedef struct
-{
+#define YTS_ROSTER_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST ((klass), YTS_TYPE_ROSTER, YtsRosterClass))
+
+#define YTS_IS_ROSTER(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTS_TYPE_ROSTER))
+
+#define YTS_IS_ROSTER_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), YTS_TYPE_ROSTER))
+
+#define YTS_ROSTER_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), YTS_TYPE_ROSTER, YtsRosterClass))
+
+typedef struct {
+
   /*< private >*/
   GObject parent;
 
-  /*< private >*/
-  YtsRosterPrivate *priv;
 } YtsRoster;
 
-/**
- * YtsRosterClass:
- *
- * #YtsRoster class.
- */
-typedef struct
-{
+typedef struct {
+
   /*< private >*/
   GObjectClass parent_class;
+
 } YtsRosterClass;
 
-GType yts_roster_get_type (void) G_GNUC_CONST;
+GType
+yts_roster_get_type (void) G_GNUC_CONST;
 
-GHashTable        *yts_roster_get_contacts              (YtsRoster *roster);
-YtsContact       *yts_roster_find_contact_by_jid       (YtsRoster *roster,
-                                                          const char *jid);
+GHashTable *const
+yts_roster_get_contacts (YtsRoster const *self);
+
+YtsContact *const
+yts_roster_find_contact_by_jid (YtsRoster const *self,
+                                char const      *jid);
+
 G_END_DECLS
 
 #endif /* YTS_ROSTER_H */
+

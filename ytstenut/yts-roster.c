@@ -16,6 +16,7 @@
  * <http://www.gnu.org/licenses/>.
  *
  * Authored by: Tomas Frydrych <tf@linux.intel.com>
+ *              Rob Staudinger <robsta@linux.intel.com>
  */
 
 /**
@@ -52,16 +53,17 @@ static void yts_roster_set_property (GObject      *object,
 
 G_DEFINE_TYPE (YtsRoster, yts_roster, G_TYPE_OBJECT);
 
-#define YTS_ROSTER_GET_PRIVATE(o) \
+#define GET_PRIVATE(o) \
 (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_ROSTER, YtsRosterPrivate))
 
-struct _YtsRosterPrivate
-{
+typedef struct {
+
   GHashTable *contacts; /* hash of YtsContact this roster holds */
   YtsClient *client;   /* back-reference to the client object that owns us */
 
   guint disposed : 1;
-};
+
+} YtsRosterPrivate;
 
 enum
 {
@@ -88,7 +90,7 @@ _contact_send_message (YtsContact   *contact,
                        YtsMetadata  *message,
                        YtsRoster    *self)
 {
-  YtsRosterPrivate *priv = self->priv;
+  YtsRosterPrivate *priv = GET_PRIVATE (self);
   char const *service_id = yts_service_get_service_id (service);
 
   yts_client_send_message (priv->client,
@@ -230,8 +232,7 @@ yts_roster_set_property (GObject      *object,
                           const GValue *value,
                           GParamSpec   *pspec)
 {
-  YtsRoster        *self = (YtsRoster*) object;
-  YtsRosterPrivate *priv = self->priv;
+  YtsRosterPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id)
     {
@@ -246,17 +247,18 @@ yts_roster_set_property (GObject      *object,
 static void
 yts_roster_init (YtsRoster *self)
 {
-  self->priv = YTS_ROSTER_GET_PRIVATE (self);
+  YtsRosterPrivate *priv = GET_PRIVATE (self);
 
-  self->priv->contacts = g_hash_table_new_full (g_str_hash, g_str_equal,
-                                                g_free, g_object_unref);
+  priv->contacts = g_hash_table_new_full (g_str_hash,
+                                          g_str_equal,
+                                          g_free,
+                                          g_object_unref);
 }
 
 static void
 yts_roster_dispose (GObject *object)
 {
-  YtsRoster         *self = (YtsRoster*) object;
-  YtsRosterPrivate  *priv = self->priv;
+  YtsRosterPrivate *priv = GET_PRIVATE (object);
   GHashTableIter     iter;
   char const        *contact_id;
   YtsContact        *contact;
@@ -299,14 +301,12 @@ yts_roster_finalize (GObject *object)
  * Return value: (transfer none): #GHashTable of #YtsContact; the hash table is
  * owned by the roster and must not be modified or freed by the caller.
  */
-GHashTable *
-yts_roster_get_contacts (YtsRoster *roster)
+GHashTable *const
+yts_roster_get_contacts (YtsRoster const *self)
 {
-  YtsRosterPrivate *priv;
+  YtsRosterPrivate *priv = GET_PRIVATE (self);
 
-  g_return_val_if_fail (YTS_IS_ROSTER (roster), NULL);
-
-  priv = roster->priv;
+  g_return_val_if_fail (YTS_IS_ROSTER (self), NULL);
 
   return priv->contacts;
 }
@@ -322,19 +322,17 @@ yts_roster_get_contacts (YtsRoster *roster)
  * For use by #YtsClient.
  */
 void
-yts_roster_remove_service_by_id (YtsRoster *roster,
-                                   const char *jid,
-                                   const char *uid)
+yts_roster_remove_service_by_id (YtsRoster *self,
+                                   char const *jid,
+                                   char const *uid)
 {
-  YtsRosterPrivate *priv;
+  YtsRosterPrivate *priv = GET_PRIVATE (self);
   YtsContact       *contact;
   gboolean           emit = FALSE;
 
-  g_return_if_fail (YTS_IS_ROSTER (roster));
+  g_return_if_fail (YTS_IS_ROSTER (self));
 
-  priv = roster->priv;
-
-  if (!(contact = (YtsContact*)yts_roster_find_contact_by_jid (roster, jid)))
+  if (!(contact = (YtsContact*)yts_roster_find_contact_by_jid (self, jid)))
     {
       g_warning ("Contact for service not found");
       return;
@@ -348,10 +346,10 @@ yts_roster_remove_service_by_id (YtsRoster *roster,
     {
       g_signal_handlers_disconnect_by_func (contact,
                                             _contact_send_message,
-                                            roster);
+                                            self);
       g_object_ref (contact);
       g_hash_table_remove (priv->contacts, jid);
-      g_signal_emit (roster, signals[CONTACT_REMOVED], 0, contact);
+      g_signal_emit (self, signals[CONTACT_REMOVED], 0, contact);
       g_object_unref (contact);
     }
 }
@@ -366,15 +364,14 @@ yts_roster_remove_service_by_id (YtsRoster *roster,
  * Return value: (transfer none): #YtsContact if found, or %NULL.
  */
 YtsContact *
-yts_roster_find_contact_by_handle (YtsRoster *roster, guint handle)
+yts_roster_find_contact_by_handle (YtsRoster *self,
+                                   guint handle)
 {
-  YtsRosterPrivate *priv;
+  YtsRosterPrivate *priv = GET_PRIVATE (self);
   GHashTableIter     iter;
   gpointer           key, value;
 
-  g_return_val_if_fail (YTS_IS_ROSTER (roster), NULL);
-
-  priv = roster->priv;
+  g_return_val_if_fail (YTS_IS_ROSTER (self), NULL);
 
   g_hash_table_iter_init (&iter, priv->contacts);
   while (g_hash_table_iter_next (&iter, &key, &value))
@@ -401,22 +398,21 @@ yts_roster_find_contact_by_handle (YtsRoster *roster, guint handle)
  *
  * Return value: (transfer none): #YtsContact if found, or %NULL.
  */
-YtsContact *
-yts_roster_find_contact_by_jid (YtsRoster *roster, const char *jid)
+YtsContact *const
+yts_roster_find_contact_by_jid (YtsRoster const *self,
+                                char const      *jid)
 {
-  YtsRosterPrivate *priv;
+  YtsRosterPrivate *priv = GET_PRIVATE (self);
   GHashTableIter     iter;
   gpointer           key, value;
 
-  g_return_val_if_fail (YTS_IS_ROSTER (roster) && jid, NULL);
-
-  priv = roster->priv;
+  g_return_val_if_fail (YTS_IS_ROSTER (self) && jid, NULL);
 
   g_hash_table_iter_init (&iter, priv->contacts);
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
       YtsContact *contact = value;
-      const gchar *j       = key;
+      char const *j       = key;
 
       if (j && !strcmp (j, jid))
         {
@@ -436,17 +432,17 @@ yts_roster_find_contact_by_jid (YtsRoster *roster, const char *jid)
  * forecefully run.
  */
 void
-yts_roster_clear (YtsRoster *roster)
+yts_roster_clear (YtsRoster *self)
 {
-  YtsRosterPrivate *priv;
+  YtsRosterPrivate *priv = GET_PRIVATE (self);
   GHashTableIter     iter;
   gpointer           key, value;
 
-  g_return_if_fail (YTS_IS_ROSTER (roster));
-
-  priv = roster->priv;
+  g_return_if_fail (YTS_IS_ROSTER (self));
 
   // FIXME changing the hash while iterating seems not safe?!
+  // also we can probably get rid of that run_dispose() once the
+  // client referencing frenzy is no more.
 
   g_hash_table_iter_init (&iter, priv->contacts);
   while (g_hash_table_iter_next (&iter, &key, &value))
@@ -457,7 +453,7 @@ yts_roster_clear (YtsRoster *roster)
 
       g_hash_table_iter_remove (&iter);
 
-      g_signal_emit (roster, signals[CONTACT_REMOVED], 0, contact);
+      g_signal_emit (self, signals[CONTACT_REMOVED], 0, contact);
       g_object_run_dispose ((GObject*)contact);
 
       g_object_unref (contact);
@@ -489,24 +485,22 @@ yts_roster_contact_service_added_cb (YtsContact *contact,
 }
 
 void
-yts_roster_add_service (YtsRoster           *roster,
-                          const char        *jid,
-                          const char        *sid,
-                          const char        *type,
+yts_roster_add_service (YtsRoster           *self,
+                          char const        *jid,
+                          char const        *sid,
+                          char const        *type,
                           char const *const *caps,
                           GHashTable        *names,
                           GHashTable        *statuses)
 {
-  YtsRosterPrivate  *priv;
+  YtsRosterPrivate *priv = GET_PRIVATE (self);
   YtsContact        *contact;
   YtsService        *service;
   YtsServiceFactory *factory = yts_service_factory_get_default ();
 
-  g_return_if_fail (YTS_IS_ROSTER (roster));
+  g_return_if_fail (YTS_IS_ROSTER (self));
 
-  priv = roster->priv;
-
-  if (!(contact = (YtsContact*)yts_roster_find_contact_by_jid (roster, jid)))
+  if (!(contact = (YtsContact*)yts_roster_find_contact_by_jid (self, jid)))
     {
       YTS_NOTE (ROSTER, "Creating new contact for %s", jid);
 
@@ -514,18 +508,18 @@ yts_roster_add_service (YtsRoster           *roster,
 
       g_signal_connect (contact, "service-added",
                         G_CALLBACK (yts_roster_contact_service_added_cb),
-                        roster);
+                        self);
       g_signal_connect (contact, "service-removed",
                         G_CALLBACK (yts_roster_contact_service_removed_cb),
-                        roster);
+                        self);
 
       g_hash_table_insert (priv->contacts, g_strdup (jid), contact);
 
       YTS_NOTE (ROSTER, "Emitting contact-added for new contact %s", jid);
-      g_signal_emit (roster, signals[CONTACT_ADDED], 0, contact);
+      g_signal_emit (self, signals[CONTACT_ADDED], 0, contact);
 
       g_signal_connect (contact, "send-message",
-                        G_CALLBACK (_contact_send_message), roster);
+                        G_CALLBACK (_contact_send_message), self);
     }
 
   YTS_NOTE (ROSTER, "Adding service %s:%s", jid, sid);
@@ -549,7 +543,7 @@ yts_roster_update_contact_status (YtsRoster   *self,
                                   char const  *fqc_id,
                                   char const  *status_xml)
 {
-  YtsRosterPrivate *priv = self->priv;
+  YtsRosterPrivate *priv = GET_PRIVATE (self);
   YtsContact *contact;
 
   contact = g_hash_table_lookup (priv->contacts, contact_id);
