@@ -59,11 +59,11 @@ typedef struct {
 
 /**
  * YtsClientClass:
- * @authenticated: virtual function for the YtsClient::authenticated signal.
- * @disconnected: virtual function for the YtsClient::disconnected signal.
- * @incoming_file: virtual function for the YtsClient::incoming-file signal.
- * @raw_message: virtual function for the YtsClient::raw-message signal.
- * @ready: virtual function for the YtsClient::ready signal.
+ * @authenticated: virtual function for the #YtsClient::authenticated signal.
+ * @disconnected: virtual function for the #YtsClient::disconnected signal.
+ * @incoming_file: virtual function for the #YtsClient::incoming-file signal.
+ * @raw_message: virtual function for the #YtsClient::raw-message signal.
+ * @ready: virtual function for the #YtsClient::ready signal.
  *
  * Deprecated: the class handlers for signals are deprecated and will be
                removed in 0.4.
@@ -145,6 +145,17 @@ bool
 yts_client_register_service (YtsClient      *self,
                               YtsCapability  *service);
 
+/**
+ * YtsClientServiceIterator:
+ * @self: object owning @service.
+ * @fqc_id: capability ID.
+ * @service: service implementation.
+ * @user_data: data passed to yts_client_foreach_service().
+ *
+ * Callback signature for iterating a an #YtsClient's published services.
+ *
+ * Since: 0.3
+ */
 typedef void
 (*YtsClientServiceIterator) (YtsClient      *self,
                              char const     *fqc_id,

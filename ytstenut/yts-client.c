@@ -909,7 +909,7 @@ yts_client_stop_accumulator (GSignalInvocationHint *ihint,
 }
 
 /*
- * Callback for TpProxy::interface-added: we need to add the signals we
+ * Callback for #TpProxy::interface-added: we need to add the signals we
  * care for here.
  *
  * TODO -- should we not be able to connect directly to the signal bypassing
@@ -1450,7 +1450,7 @@ yts_client_class_init (YtsClientClass *klass)
                   G_TYPE_NONE, 0);
 
   /**
-   * YtsClient::ready
+   * YtsClient::ready:
    * @self: object which emitted the signal,
    *
    * The ready signal is emited when the initial Telepathy set up is ready.
@@ -1468,7 +1468,7 @@ yts_client_class_init (YtsClientClass *klass)
                   G_TYPE_NONE, 0);
 
   /**
-   * YtsClient::disconnected
+   * YtsClient::disconnected:
    * @self: object which emitted the signal,
    *
    * The disconnected signal is emited when connection to the Ytstenut server
@@ -1486,14 +1486,14 @@ yts_client_class_init (YtsClientClass *klass)
                   G_TYPE_NONE, 0);
 
   /**
-   * YtsClient::message
-   * @self: object which emitted the signal,
+   * YtsClient::raw-message:
+   * @self: object which emitted the signal.
    * @message: #YtsMessage, the message
    *
    * The message signal is emitted when message is received from one of the
    * contacts.
    *
-   * Since: 0.1
+   * Since: 0.3
    */
   signals[RAW_MESSAGE] =
     g_signal_new ("raw-message",
@@ -1505,6 +1505,15 @@ yts_client_class_init (YtsClientClass *klass)
                   G_TYPE_NONE, 1,
                   G_TYPE_STRING);
 
+  /**
+   * YtsClient::text-message:
+   * @ytsclient: object which emitted the signal.
+   * @arg1: Message payload.
+   *
+   * This signal is emitted when a remote service sent a text message.
+   *
+   * Since: 0.3
+   */
   signals[TEXT_MESSAGE] =
     g_signal_new ("text-message",
                   G_TYPE_FROM_CLASS (object_class),
@@ -1514,6 +1523,15 @@ yts_client_class_init (YtsClientClass *klass)
                   G_TYPE_NONE, 1,
                   G_TYPE_STRING);
 
+  /**
+   * YtsClient::list-message:
+   * @ytsclient: object which emitted the signal.
+   * @arg1: %NULL-terminated string vector holding the message content.
+   *
+   * This signal is emitted when a remote service sent a list of strings.
+   *
+   * Since: 0.3
+   */
   signals[LIST_MESSAGE] =
     g_signal_new ("list-message",
                   G_TYPE_FROM_CLASS (object_class),
@@ -1523,17 +1541,27 @@ yts_client_class_init (YtsClientClass *klass)
                   G_TYPE_NONE, 1,
                   G_TYPE_POINTER);
 
+  /**
+   * YtsClient::dictionary-message:
+   * @ytsclient: object which emitted the signal.
+   * @arg1: %NULL-terminated string vector where even indices are keys and 
+   *        odd ones are values.
+   *
+   * This signal is emitted when a remote service sent a dictionary message.
+   *
+   * Since: 0.3
+   */
   signals[DICTIONARY_MESSAGE] =
     g_signal_new ("dictionary-message",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST,
                   0, NULL, NULL,
-                  yts_marshal_VOID__POINTER,
+                  yts_marshal_VOID__BOXED,
                   G_TYPE_NONE, 1,
-                  G_TYPE_POINTER);
+                  G_TYPE_STRV);
 
   /**
-   * YtsClient::error
+   * YtsClient::error:
    * @self: object which emitted the signal,
    * @error: #YtsError
    *
@@ -1555,7 +1583,7 @@ yts_client_class_init (YtsClientClass *klass)
                   G_TYPE_UINT);
 
   /**
-   * YtsClient::incoming-file
+   * YtsClient::incoming-file:
    * @self: object which emitted the signal,
    * @from: jid of the originator
    * @name: name of the file
@@ -1563,7 +1591,7 @@ yts_client_class_init (YtsClientClass *klass)
    * @offset: offset into the file,
    * @channel: #TpChannel
    *
-   * The ::incoming-file signal is emitted when the client receives
+   * The #YtsClient::incoming-file signal is emitted when the client receives
    * incoming request for a file transfer. The signal closure will
    * kickstart the transfer -- this can be prevented by a connected handler
    * returning %FALSE.
@@ -1585,14 +1613,14 @@ yts_client_class_init (YtsClientClass *klass)
                   TP_TYPE_CHANNEL);
 
   /**
-   * YtsClient::incoming-file-finished
+   * YtsClient::incoming-file-finished:
    * @self: object which emitted the signal,
    * @from: jid of the originator
    * @name: name of the file
    * @success: %TRUE if the transfer was completed successfully.
    *
-   * The ::incoming-file-finished signal is emitted when a file tranfers is
-   * completed.
+   * The #YtsClient::incoming-file-finished signal is emitted when a file
+   * tranfer is completed.
    *
    * Since: 0.1
    */
@@ -2615,13 +2643,12 @@ yts_client_make_connection (YtsClient *self)
 
 /**
  * yts_client_connect:
- * @self: #YtsClient
+ * @self: object on which to invoke this method.
  *
  * Initiates connection to the mesh. Once the connection is established,
- * the YtsClient::authenticated signal will be emitted.
+ * the #YtsClient::authenticated signal will be emitted.
  *
- * NB: this function long name is to avoid collision with the GIR singnal
- *     connection method.
+ * Since 0.3
  */
 void
 yts_client_connect (YtsClient *self)
@@ -2695,13 +2722,13 @@ yts_client_refresh_roster (YtsClient *self)
 
 /**
  * yts_client_add_capability:
- * @self: #YtsClient,
+ * @self: object on which to invoke this method.
  * @capability: Name of the capability.
  *
  * Adds a capability to the capability set of this client; multiple capabilities
  * can be added by making mulitiple calls to this function.
  *
- * The capability set is used to filter roster items to match.
+ * Since: 0.3
  */
 void
 yts_client_add_capability (YtsClient  *self,
@@ -2735,12 +2762,12 @@ yts_client_add_capability (YtsClient  *self,
 
 /**
  * yts_client_get_roster:
- * @self: #YtsClient
+ * @self: object on which to invoke this method.
  *
  * Gets the #YtsRoster for this client. The object is owned by the client
  * and must not be freed by the caller.
  *
- * Return value (tranfer none): #YtsRoster.
+ * Returns (tranfer none): #YtsRoster.
  */
 YtsRoster *
 yts_client_get_roster (YtsClient *self)
@@ -2754,7 +2781,7 @@ yts_client_get_roster (YtsClient *self)
 
 /**
  * yts_client_emit_error:
- * @self: #YtsClient,
+ * @self: object on which to invoke this method.
  * @error: #YtsError
  *
  * Emits the #YtsClient::error signal with the suplied error parameter.
@@ -2765,6 +2792,8 @@ yts_client_get_roster (YtsClient *self)
  * eventually lead to emission of the ::error signal with either an appropriate
  * error code or %YTS_ERROR_SUCCESS to indicate the operation successfully
  * completed.
+ *
+ * Deprecated: This function will be removed in 0.4
  */
 void
 yts_client_emit_error (YtsClient *self, YtsError error)
@@ -2781,7 +2810,7 @@ yts_client_emit_error (YtsClient *self, YtsError error)
 
 /**
  * yts_client_set_incoming_file_directory:
- * @self: #YtsClient
+ * @self: object on which to invoke this method.
  * @directory: path to a directory or %NULL.
  *
  * Sets the directory where incoming files will be stored; if the provided path
@@ -2791,7 +2820,7 @@ yts_client_emit_error (YtsClient *self, YtsError error)
  * of 0700.
  *
  * To change the directory for a specific file call this function from a
- * callback to the YtsClient::incoming-file signal.
+ * callback to the #YtsClient::incoming-file signal.
  */
 void
 yts_client_set_incoming_file_directory (YtsClient *self,
@@ -2810,12 +2839,12 @@ yts_client_set_incoming_file_directory (YtsClient *self,
 
 /**
  * yts_client_get_incoming_file_directory:
- * @self: #YtsClient
+ * @self: object on which to invoke this method.
  *
  * Returns the directory into which any files from incoming file transfers will
  * be placed.
  *
- * Return value: (tranfer none): directory where incoming files are stored.
+ * Returns (tranfer none): directory where incoming files are stored.
  */
 char const *
 yts_client_get_incoming_file_directory (YtsClient *self)
@@ -2829,11 +2858,11 @@ yts_client_get_incoming_file_directory (YtsClient *self)
 
 /**
  * yts_client_get_jid:
- * @self: #YtsClient
+ * @self: object on which to invoke this method.
  *
  * Returns the jabber id associated with the current client.
  *
- * Return value: the jabber id.
+ * Returns (tranfer none): the jabber id.
  */
 char const *
 yts_client_get_jid (const YtsClient *self)
@@ -2845,11 +2874,11 @@ yts_client_get_jid (const YtsClient *self)
 
 /**
  * yts_client_get_uid:
- * @self: #YtsClient
+ * @self: object on which to invoke this method.
  *
  * Returns uid of the service this client represents.
  *
- * Return value: the service uid.
+ * Returns (tranfer none): the service uid.
  */
 char const *
 yts_client_get_uid (const YtsClient *self)
@@ -2883,7 +2912,7 @@ yts_client_get_tp_status (YtsClient *self)
 
 /**
  * yts_client_set_status:
- * @self: #YtsClient
+ * @self: object on which to invoke this method.
  * @status: new #YtsStatus
  *
  * Changes the status of the service represented by this client to status;
@@ -2915,18 +2944,14 @@ yts_client_set_status (YtsClient *self, YtsStatus *status)
     }
 }
 
-/*
- * FIXME -- bad API, constructing the YtsStatus is hard, this should be a
- * private API, with a better public API wrapping it.
- */
-
 /**
  * yts_client_set_status_by_capability:
- * @self: #YtsClient
+ * @self: object on which to invoke this method.
  * @capability: the capability to set status for
  * @activity: the activity to set the status to.
  *
- * Changes the status of the service represented by this client to status.
+ * Set the status of the service represented by this client to @activity for
+ * @capability.
  */
 void
 yts_client_set_status_by_capability (YtsClient *self,
@@ -3324,15 +3349,26 @@ _service_destroyed (ServiceData *data,
   service_data_destroy (data);
 }
 
-/*
- * TODO add GError reporting
- * The client does not take ownership of the service, it will be
- * unregistered upon destruction.
+/**
+ * yts_client_register_service:
+ * @self: object on which to invoke this method.
+ * @service: Service implementation.
+ *
+ * Publish a service to the Ytstenut network.
+ *
+ * Returns: %true if publishing succeeded.
+ *
+ * Since 0.3
  */
 bool
 yts_client_register_service (YtsClient      *self,
                               YtsCapability  *service)
 {
+/*
+ * TODO add GError reporting
+ * The client does not take ownership of the service, it will be
+ * unregistered upon destruction.
+ */
   YtsClientPrivate *priv = GET_PRIVATE (self);
   YtsServiceAdapter   *adapter;
   YtsProfileImpl      *profile_impl;
@@ -3617,6 +3653,16 @@ yts_client_unregister_proxy (YtsClient  *self,
   return true;
 }
 
+/**
+ * yts_client_foreach_service:
+ * @self: object on which to invoke this method.
+ * @callback: iterator function.
+ * @user_data: context to pass to the iterator function.
+ *
+ * Iterate over @self's published services.
+ *
+ * Since: 0.3
+ */
 void
 yts_client_foreach_service (YtsClient                 *self,
                             YtsClientServiceIterator   callback,
