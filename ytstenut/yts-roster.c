@@ -116,7 +116,7 @@ yts_roster_class_init (YtsRosterClass *klass)
   /**
    * YtsRoster:client:
    *
-   * #YtsClient this roster represents
+   * #YtsClient this roster represents.
    */
   pspec = g_param_spec_object ("client",
                                "YtsClient",
@@ -126,8 +126,8 @@ yts_roster_class_init (YtsRosterClass *klass)
   g_object_class_install_property (object_class, PROP_CLIENT, pspec);
 
   /**
-   * YtsRoster::contact-added
-   * @roster: #YtsRoster object which emitted the signal,
+   * YtsRoster::contact-added:
+   * @self: object which emitted the signal.
    * @contact: #YtsContact that was added.
    *
    * Emitted when contact is added to the roster.
@@ -145,8 +145,8 @@ yts_roster_class_init (YtsRosterClass *klass)
                   YTS_TYPE_CONTACT);
 
   /**
-   * YtsRoster::contact-removed
-   * @roster: #YtsRoster object which emitted the signal,
+   * YtsRoster::contact-removed:
+   * @self: object which emitted the signal.
    * @contact: #YtsContact that was removed.
    *
    * Emitted when contact is removed from the roster. Applications that
@@ -166,8 +166,8 @@ yts_roster_class_init (YtsRosterClass *klass)
                   YTS_TYPE_CONTACT);
 
   /**
-   * YtsRoster::service-added
-   * @roster: #YtsRoster object which emitted the signal,
+   * YtsRoster::service-added:
+   * @self: object which emitted the signal.
    * @service: #YtsService that was added.
    *
    * Emitted when service is added to the roster.
@@ -185,8 +185,8 @@ yts_roster_class_init (YtsRosterClass *klass)
                   YTS_TYPE_SERVICE);
 
   /**
-   * YtsRoster::service-removed
-   * @roster: #YtsRoster object which emitted the signal,
+   * YtsRoster::service-removed:
+   * @self: object which emitted the signal.
    * @service: #YtsService that was removed.
    *
    * Emitted when service is removed from the roster. Applications that
@@ -294,7 +294,7 @@ yts_roster_finalize (GObject *object)
 
 /**
  * yts_roster_get_contacts:
- * @roster: #YtsRoster
+ * @self: object on which to invoke this method.
  *
  * Returns contacts in this #YtsRoster.
  *
@@ -313,7 +313,7 @@ yts_roster_get_contacts (YtsRoster const *self)
 
 /*
  * yts_roster_remove_service_by_id:
- * @roster: #YtsRoster
+ * @self: object on which to invoke this method.
  * @jid: JID of the contact that the service is running on
  * @uid: the service UID.
  *
@@ -391,7 +391,7 @@ yts_roster_find_contact_by_handle (YtsRoster *self,
 
 /**
  * yts_roster_find_contact_by_jid:
- * @roster: #YtsRoster
+ * @self: object on which to invoke this method.
  * @jid: jid of this contact
  *
  * Finds contact in a roster.
@@ -425,7 +425,7 @@ yts_roster_find_contact_by_jid (YtsRoster const *self,
 
 /*
  * yts_roster_clear:
- * @roster: #YtsRoster
+ * @self: object on which to invoke this method.
  *
  * Removes all contacts from the roster; for each contact removed, the
  * contact-removed signal is emitted and the contact's dispose method is
