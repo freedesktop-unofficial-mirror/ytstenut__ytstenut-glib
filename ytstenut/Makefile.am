@@ -16,7 +16,6 @@ source_h =						\
 		$(srcdir)/yts-capability.h			\
 		$(srcdir)/yts-client.h			\
 		$(srcdir)/yts-contact.h		\
-		$(srcdir)/yts-debug.h			\
 		$(srcdir)/yts-error.h			\
 		$(srcdir)/yts-main.h			\
 		$(srcdir)/yts-roster.h			\
@@ -90,6 +89,7 @@ private_h = \
 		$(srcdir)/yts-client-internal.h \
 		$(srcdir)/yts-contact-internal.h \
 		$(srcdir)/yts-contact-internal.h \
+		$(srcdir)/yts-debug.h \
 		$(srcdir)/yts-factory.h \
 		$(srcdir)/yts-metadata-internal.h \
 		$(srcdir)/yts-proxy-factory.h \

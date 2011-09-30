@@ -59,6 +59,7 @@ IGNORE_HFILES = \
   yts-client-internal.h \
   yts-contact-internal.h \
   yts-contact-internal.h \
+  yts-debug.h \
   yts-error-message.h \
   yts-event-message.h \
   yts-factory.h \
