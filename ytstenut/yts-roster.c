@@ -54,7 +54,7 @@ static void yts_roster_set_property (GObject      *object,
 G_DEFINE_TYPE (YtsRoster, yts_roster, G_TYPE_OBJECT);
 
 #define GET_PRIVATE(o) \
-(G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_ROSTER, YtsRosterPrivate))
+  (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_ROSTER, YtsRosterPrivate))
 
 typedef struct {
 

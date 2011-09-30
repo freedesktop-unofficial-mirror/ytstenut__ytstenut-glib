@@ -22,10 +22,10 @@
  */
 
 /**
- * SECTION:yts-main
- * @short_description: Global Functions
+ * SECTION: yts-main
+ * @title: Initialisation functions
+ * @short_description: Ytstenut initialisation functions
  *
- * This section list global function in libytstenut
  */
 
 #define _GNU_SOURCE /* for getresuid(), getresgid() */
