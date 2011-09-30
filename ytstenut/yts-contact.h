@@ -21,6 +21,7 @@
 #ifndef YTS_CONTACT_H
 #define YTS_CONTACT_H
 
+#include <stdbool.h>
 #include <glib-object.h>
 #include <gio/gio.h>
 #include <telepathy-glib/contact.h>
@@ -30,75 +31,81 @@
 
 G_BEGIN_DECLS
 
-#define YTS_TYPE_CONTACT                                               \
-   (yts_contact_get_type())
-#define YTS_CONTACT(obj)                                               \
-   (G_TYPE_CHECK_INSTANCE_CAST ((obj),                                  \
-                                YTS_TYPE_CONTACT,                      \
-                                YtsContact))
-#define YTS_CONTACT_CLASS(klass)                                       \
-   (G_TYPE_CHECK_CLASS_CAST ((klass),                                   \
-                             YTS_TYPE_CONTACT,                         \
-                             YtsContactClass))
-#define YTS_IS_CONTACT(obj)                                            \
-   (G_TYPE_CHECK_INSTANCE_TYPE ((obj),                                  \
-                                YTS_TYPE_CONTACT))
-#define YTS_IS_CONTACT_CLASS(klass)                                    \
-   (G_TYPE_CHECK_CLASS_TYPE ((klass),                                   \
-                             YTS_TYPE_CONTACT))
-#define YTS_CONTACT_GET_CLASS(obj)                                     \
-   (G_TYPE_INSTANCE_GET_CLASS ((obj),                                   \
-                               YTS_TYPE_CONTACT,                       \
-                               YtsContactClass))
+#define YTS_TYPE_CONTACT (yts_contact_get_type())
 
-typedef struct _YtsContactPrivate YtsContactPrivate;
+#define YTS_CONTACT(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTS_TYPE_CONTACT, YtsContact))
 
-/**
- * YtsContact:
- *
- * Represents a single XMPP connection (usually a device) in the Ytstenut
- * mesh. One or more #YtsService<!-- -->s will be available throug a given
- * contact.
- */
+#define YTS_CONTACT_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST ((klass), YTS_TYPE_CONTACT, YtsContactClass))
+
+#define YTS_IS_CONTACT(obj) \
+   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTS_TYPE_CONTACT))
+
+#define YTS_IS_CONTACT_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), YTS_TYPE_CONTACT))
+
+#define YTS_CONTACT_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), YTS_TYPE_CONTACT, YtsContactClass))
+
 typedef struct
 {
   /*< private >*/
   GObject parent;
 
-  /*< private >*/
-  YtsContactPrivate *priv;
 } YtsContact;
 
 /**
  * YtsContactClass:
- * @service_added: signal handler for #YtsContact::service-added
- * @service_removed: signal handler for #YtsContact::service-removed
+ * @service_added: signal handler for #YtsContact::service-added.
+ * @service_removed: signal handler for #YtsContact::service-removed.
  *
- * #YtsContact class.
+ * Deprecated: the class handlers for signals are deprecated and will be
+ *             removed in 0.4.
+ *
+ * Since 0.1
  */
 typedef struct
 {
   /*< private >*/
-  GObjectClass parent_class;
+  GObjectClass parent;
 
   /*< public >*/
-  void (*service_added)   (YtsContact *contact, YtsService *service);
-  void (*service_removed) (YtsContact *contact, YtsService *service);
+  void
+  (*service_added) (YtsContact *self,
+                    YtsService *service);
+
+  void
+  (*service_removed) (YtsContact *self,
+                      YtsService *service);
+
 } YtsContactClass;
 
-GType yts_contact_get_type (void) G_GNUC_CONST;
+GType
+yts_contact_get_type (void) G_GNUC_CONST;
 
-const char *yts_contact_get_id            (const YtsContact  *contact);
-const char *yts_contact_get_name           (const YtsContact  *contact);
-TpContact  *yts_contact_get_tp_contact     (const YtsContact  *contact);
-GFile      *yts_contact_get_icon           (const YtsContact  *contact,
-                                             const char        **mime);
+char const *
+yts_contact_get_id (YtsContact const *self);
 
-YtsError   yts_contact_send_file          (const YtsContact *item,
-                                             GFile *gfile);
-gboolean    yts_contact_cancel_file        (const YtsContact *item,
-                                             GFile             *gfile);
+char const *
+yts_contact_get_name (YtsContact const *self);
+
+TpContact *const
+yts_contact_get_tp_contact (YtsContact const  *self);
+
+GFile *
+yts_contact_get_icon (YtsContact const  *self,
+                      char const        **mime);
+
+YtsError
+yts_contact_send_file (YtsContact *self,
+                       GFile      *file);
+
+bool
+yts_contact_cancel_file (YtsContact *self,
+                         GFile      *file);
 
 G_END_DECLS
 
 #endif /* YTS_CONTACT_H */
+

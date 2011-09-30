@@ -68,11 +68,10 @@ static void yts_contact_avatar_file_cb (TpContact   *contact,
 
 G_DEFINE_TYPE (YtsContact, yts_contact, G_TYPE_OBJECT);
 
-#define YTS_CONTACT_GET_PRIVATE(o) \
-(G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_CONTACT, YtsContactPrivate))
+#define GET_PRIVATE(o) \
+  (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_CONTACT, YtsContactPrivate))
 
-struct _YtsContactPrivate
-{
+typedef struct {
   const char   *jid;
   GHashTable   *services;   /* hash of YtsService instances */
   TpContact    *tp_contact; /* TpContact associated with YtsContact */
@@ -86,7 +85,7 @@ struct _YtsContactPrivate
   GHashTable   *ft_cancellables;
 
   guint disposed : 1;
-};
+} YtsContactPrivate;
 
 enum
 {
@@ -122,9 +121,10 @@ _service_send_message (YtsService   *service,
 }
 
 static void
-yts_contact_service_added (YtsContact *contact, YtsService *service)
+yts_contact_service_added (YtsContact *self,
+                           YtsService *service)
 {
-  YtsContactPrivate *priv = contact->priv;
+  YtsContactPrivate *priv = GET_PRIVATE (self);
   const char         *uid  = yts_service_get_service_id (service);
 
   g_return_if_fail (uid && *uid);
@@ -135,13 +135,14 @@ yts_contact_service_added (YtsContact *contact, YtsService *service)
                        g_object_ref (service));
 
   g_signal_connect (service, "send-message",
-                    G_CALLBACK (_service_send_message), contact);
+                    G_CALLBACK (_service_send_message), self);
 }
 
 static void
-yts_contact_service_removed (YtsContact *contact, YtsService *service)
+yts_contact_service_removed (YtsContact *self,
+                             YtsService *service)
 {
-  YtsContactPrivate *priv = contact->priv;
+  YtsContactPrivate *priv = GET_PRIVATE (self);
   const char         *uid  = yts_service_get_service_id (service);
 
   g_return_if_fail (uid && *uid);
@@ -153,7 +154,7 @@ yts_contact_service_removed (YtsContact *contact, YtsService *service)
 
   g_signal_handlers_disconnect_by_func (service,
                                         _service_send_message,
-                                        contact);
+                                        self);
 }
 
 static void
@@ -302,9 +303,9 @@ yts_contact_presence_cb (TpContact    *tp_contact,
                           guint         type,
                           gchar        *status,
                           gchar        *message,
-                          YtsContact  *contact)
+                          YtsContact  *self)
 {
-  YtsContactPrivate *priv = contact->priv;
+  YtsContactPrivate *priv = GET_PRIVATE (self);
   YtsPresence        presence;
 
   YTS_NOTE (CONTACT, "Presence for %s changed: %s [%s]",
@@ -335,7 +336,7 @@ yts_contact_presence_cb (TpContact    *tp_contact,
   if (priv->presence != presence)
     {
       priv->presence = presence;
-      g_object_notify_by_pspec ((GObject*)contact, properties[PROP_PRESENCE]);
+      g_object_notify_by_pspec (G_OBJECT (self), properties[PROP_PRESENCE]);
     }
 }
 
@@ -349,8 +350,8 @@ yts_contact_tp_contact_cb (TpConnection       *connection,
                             gpointer            data,
                             GObject            *object)
 {
-  YtsContact        *contact = (YtsContact*) object;
-  YtsContactPrivate *priv    = contact->priv;
+  YtsContact        *self = YTS_CONTACT (object);
+  YtsContactPrivate *priv = GET_PRIVATE (self);
 
   if (error)
     {
@@ -368,26 +369,25 @@ yts_contact_tp_contact_cb (TpConnection       *connection,
    */
   tp_g_signal_connect_object (priv->tp_contact, "presence-changed",
                               G_CALLBACK (yts_contact_presence_cb),
-                              contact, 0);
+                              self, 0);
 
   tp_g_signal_connect_object (priv->tp_contact, "notify::avatar-file",
                               G_CALLBACK (yts_contact_avatar_file_cb),
-                              contact, 0);
+                              self, 0);
 
-  g_object_notify_by_pspec ((GObject*)contact,
-                            properties[PROP_TP_CONTACT]);
+  g_object_notify_by_pspec (G_OBJECT (self), properties[PROP_TP_CONTACT]);
 }
 
 static void
 yts_contact_constructed (GObject *object)
 {
-  TpConnection       *connection;
-  YtsContact        *contact = (YtsContact*) object;
-  YtsContactPrivate *priv    = contact->priv;
-  TpContactFeature    features[] = { TP_CONTACT_FEATURE_PRESENCE,
-                                     TP_CONTACT_FEATURE_CONTACT_INFO,
-                                     TP_CONTACT_FEATURE_AVATAR_DATA,
-                                     TP_CONTACT_FEATURE_CAPABILITIES};
+  YtsContact        *self = YTS_CONTACT (object);
+  YtsContactPrivate *priv = GET_PRIVATE (self);
+  TpConnection      *connection;
+  TpContactFeature   features[] = { TP_CONTACT_FEATURE_PRESENCE,
+                                    TP_CONTACT_FEATURE_CONTACT_INFO,
+                                    TP_CONTACT_FEATURE_AVATAR_DATA,
+                                    TP_CONTACT_FEATURE_CAPABILITIES};
 
   if (G_OBJECT_CLASS (yts_contact_parent_class)->constructed)
     G_OBJECT_CLASS (yts_contact_parent_class)->constructed (object);
@@ -404,9 +404,9 @@ yts_contact_constructed (GObject *object)
                                     G_N_ELEMENTS (features),
                                     (const TpContactFeature *)&features,
                                     yts_contact_tp_contact_cb,
-                                    contact,
+                                    self,
                                     NULL,
-                                    (GObject*)contact);
+                                    (GObject*) object);
 }
 
 static void
@@ -415,8 +415,8 @@ yts_contact_get_property (GObject    *object,
                            GValue     *value,
                            GParamSpec *pspec)
 {
-  YtsContact        *self = (YtsContact*) object;
-  YtsContactPrivate *priv = self->priv;
+  YtsContact        *self = YTS_CONTACT (object);
+  YtsContactPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id)
     {
@@ -446,10 +446,10 @@ yts_contact_get_property (GObject    *object,
 
 static void
 yts_contact_avatar_file_cb (TpContact   *contact,
-                             GParamSpec  *param,
-                             YtsContact *ycontact)
+                            GParamSpec  *param,
+                            YtsContact  *self)
 {
-  YtsContactPrivate *priv  = ycontact->priv;
+  YtsContactPrivate *priv  = GET_PRIVATE (self);
   const char         *token = tp_contact_get_avatar_token (contact);
 
   if ((priv->icon_token && token && !strcmp (priv->icon_token, token)) ||
@@ -461,7 +461,7 @@ yts_contact_avatar_file_cb (TpContact   *contact,
   g_free (priv->icon_token);
   priv->icon_token = g_strdup (token);
 
-  g_object_notify_by_pspec ((GObject*)ycontact, properties[PROP_ICON]);
+  g_object_notify_by_pspec (G_OBJECT (self), properties[PROP_ICON]);
 }
 
 static void
@@ -470,8 +470,7 @@ yts_contact_set_property (GObject      *object,
                            const GValue *value,
                            GParamSpec   *pspec)
 {
-  YtsContact        *self = (YtsContact*) object;
-  YtsContactPrivate *priv = self->priv;
+  YtsContactPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id)
     {
@@ -490,9 +489,7 @@ yts_contact_set_property (GObject      *object,
 static void
 yts_contact_init (YtsContact *self)
 {
-  YtsContactPrivate *priv;
-
-  priv = self->priv = YTS_CONTACT_GET_PRIVATE (self);
+  YtsContactPrivate *priv = GET_PRIVATE (self);
 
   priv->services = g_hash_table_new_full (g_str_hash,
                                           g_str_equal,
@@ -510,8 +507,7 @@ yts_contact_init (YtsContact *self)
 static void
 yts_contact_dispose (GObject *object)
 {
-  YtsContact        *self = (YtsContact*) object;
-  YtsContactPrivate *priv = self->priv;
+  YtsContactPrivate *priv = GET_PRIVATE (object);
 
   if (priv->disposed)
     return;
@@ -538,8 +534,7 @@ yts_contact_dispose (GObject *object)
 static void
 yts_contact_finalize (GObject *object)
 {
-  YtsContact        *self = (YtsContact*) object;
-  YtsContactPrivate *priv = self->priv;
+  YtsContactPrivate *priv = GET_PRIVATE (object);
 
   g_free (priv->icon_token);
 
@@ -558,15 +553,11 @@ yts_contact_finalize (GObject *object)
  * Return value: (transfer none): The jid of this contact.
  */
 const char *
-yts_contact_get_id (const YtsContact *contact)
+yts_contact_get_id (YtsContact const *self)
 {
-  YtsContactPrivate *priv;
+  YtsContactPrivate *priv = GET_PRIVATE (self);
 
-  g_return_val_if_fail (YTS_IS_CONTACT (contact), NULL);
-
-  priv = contact->priv;
-
-  g_return_val_if_fail (!priv->disposed, NULL);
+  g_return_val_if_fail (YTS_IS_CONTACT (self), NULL);
 
   return priv->jid;
 }
@@ -580,7 +571,7 @@ yts_contact_get_id (const YtsContact *contact)
  * Return value: (transfer none): The name of this contact.
  */
 const char *
-yts_contact_get_name (const YtsContact *contact)
+yts_contact_get_name (YtsContact const *self)
 {
   /* FIXME -- */
   g_warning (G_STRLOC ": %s is not implemented", __FUNCTION__);
@@ -601,14 +592,13 @@ yts_contact_get_name (const YtsContact *contact)
  * it when no longer needed with g_object_unref().
  */
 GFile *
-yts_contact_get_icon (const YtsContact  *contact, const char **mime)
+yts_contact_get_icon (YtsContact const   *self,
+                      const char        **mime)
 {
-  YtsContactPrivate  *priv;
+  YtsContactPrivate *priv = GET_PRIVATE (self);
   GFile               *file;
 
-  g_return_val_if_fail (YTS_IS_CONTACT (contact), NULL);
-
-  priv = contact->priv;
+  g_return_val_if_fail (YTS_IS_CONTACT (self), NULL);
 
   g_return_val_if_fail (!priv->disposed, NULL);
 
@@ -642,16 +632,12 @@ yts_contact_new (YtsClient *client, const char *jid)
  *
  * Return value (transfer none): The associated #TpContact.
  */
-TpContact *
-yts_contact_get_tp_contact (const YtsContact  *contact)
+TpContact *const
+yts_contact_get_tp_contact (YtsContact const *self)
 {
-  YtsContactPrivate *priv;
+  YtsContactPrivate *priv = GET_PRIVATE (self);
 
-  g_return_val_if_fail (YTS_IS_CONTACT (contact), NULL);
-
-  priv = contact->priv;
-
-  g_return_val_if_fail (!priv->disposed, NULL);
+  g_return_val_if_fail (YTS_IS_CONTACT (self), NULL);
 
   return priv->tp_contact;
 }
@@ -707,8 +693,8 @@ yts_contact_ft_op_cb (EmpathyTpFile *tp_file,
   GCancellable       *cancellable;
   YtsError           e;
   YtsCFtOp          *op     = data;
-  YtsContact        *item   = op->item;
-  YtsContactPrivate *priv   = item->priv;
+  YtsContact        *self   = op->item;
+  YtsContactPrivate *priv   = GET_PRIVATE (self);
   YtsClient         *client = priv->client;
   guint32             atom   = op->atom;
 
@@ -716,7 +702,7 @@ yts_contact_ft_op_cb (EmpathyTpFile *tp_file,
     {
       e = (atom | YTS_ERROR_UNKNOWN);
       g_warning ("File transfer to %s failed: %s",
-                 yts_contact_get_id (item), error->message);
+                 yts_contact_get_id (self), error->message);
     }
   else
     e = (atom | YTS_ERROR_SUCCESS);
@@ -785,7 +771,7 @@ yts_c_dispatch_file (YtsCPendingFile *file)
   g_return_val_if_fail (file && file->item && file->ft_channel && file->file,
                         YTS_ERROR_INVALID_PARAMETER);
 
-  priv = file->item->priv;
+  priv = GET_PRIVATE (file->item);
 
   op = yts_c_ft_op_new ((YtsContact*)file->item, file->atom);
 
@@ -842,11 +828,11 @@ yts_contact_find_file_cb (gconstpointer a, gconstpointer b)
 }
 
 static void
-yts_contact_do_set_ft_channel (YtsContact *item,
+yts_contact_do_set_ft_channel (YtsContact *self,
                                 TpChannel    *channel,
                                 const char   *name)
 {
-  YtsContactPrivate *priv = item->priv;
+  YtsContactPrivate *priv = GET_PRIVATE (self);
   YtsCPendingFile   *file;
   GList              *l;
 
@@ -910,9 +896,10 @@ yts_contact_ft_filename_cb (TpProxy      *proxy,
  * Sets the channel file transfer item for this item.
  */
 void
-yts_contact_set_ft_channel (YtsContact *item, TpChannel *channel)
+yts_contact_set_ft_channel (YtsContact  *self,
+                            TpChannel   *channel)
 {
-  YtsContactPrivate *priv = item->priv;
+  YtsContactPrivate *priv = GET_PRIVATE (self);
 
   g_return_if_fail (!priv->disposed);
 
@@ -921,9 +908,9 @@ yts_contact_set_ft_channel (YtsContact *item, TpChannel *channel)
                                    TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
                                    "Filename",
                                    yts_contact_ft_filename_cb,
-                                   item,
+                                   self,
                                    NULL,
-                                   (GObject*) item);
+                                   (GObject*) self);
 }
 
 static void
@@ -934,22 +921,26 @@ yts_contact_create_ft_channel_cb (TpConnection *proxy,
                                    gpointer      data,
                                    GObject      *weak_object)
 {
+  YtsContact        *self = YTS_CONTACT (weak_object);
+  YtsContactPrivate *priv = GET_PRIVATE (self);
+
   if (error)
     {
-      YtsContact      *item = YTS_CONTACT (weak_object);
       YtsCPendingFile *file = data;
       YtsError         e    = (YTS_ERROR_NO_ROUTE | file->atom);
 
-      yts_client_emit_error (item->priv->client, e);
+      yts_client_emit_error (priv->client, e);
 
       g_warning ("Failed to open channel: %s", error->message);
     }
 }
 
 static YtsError
-yts_contact_do_send_file (const YtsContact *item, GFile *gfile, guint32 atom)
+yts_contact_do_send_file (YtsContact  *self,
+                          GFile       *gfile,
+                          guint32      atom)
 {
-  YtsContactPrivate *priv;
+  YtsContactPrivate *priv = GET_PRIVATE (self);
   const char         *content_type = "binary";
   GFileInfo          *finfo;
   GError             *error = NULL;
@@ -958,10 +949,8 @@ yts_contact_do_send_file (const YtsContact *item, GFile *gfile, guint32 atom)
   TpConnection       *conn;
   guint               handle;
 
-  g_return_val_if_fail (YTS_IS_CONTACT (item) && gfile,
+  g_return_val_if_fail (YTS_IS_CONTACT (self) && gfile,
                         YTS_ERROR_INVALID_PARAMETER);
-
-  priv = item->priv;
 
   g_return_val_if_fail (!priv->disposed, YTS_ERROR_OBJECT_DISPOSED);
 
@@ -981,7 +970,7 @@ yts_contact_do_send_file (const YtsContact *item, GFile *gfile, guint32 atom)
       return YTS_ERROR_INVALID_PARAMETER;
     }
 
-  file = yts_c_pending_file_new (item, gfile,
+  file = yts_c_pending_file_new (self, gfile,
                                   g_file_info_get_display_name (finfo), atom);
 
   g_queue_push_tail (priv->pending_files, file);
@@ -1020,7 +1009,7 @@ yts_contact_do_send_file (const YtsContact *item, GFile *gfile, guint32 atom)
                                             yts_contact_create_ft_channel_cb,
                                             file,
                                             NULL,
-                                            (GObject*)item);
+                                            (GObject*)self);
 
   g_object_unref (finfo);
 
@@ -1067,17 +1056,16 @@ yts_contact_notify_tp_contact_cb (YtsContact              *contact,
  * emitting the #YtsClient::error signal at that time.
  */
 YtsError
-yts_contact_send_file (const YtsContact *item, GFile *gfile)
+yts_contact_send_file (YtsContact *self,
+                       GFile      *gfile)
 {
-  YtsContactPrivate *priv;
+  YtsContactPrivate *priv = GET_PRIVATE (self);
   GFileInfo          *finfo;
   GError             *error = NULL;
   guint32             atom;
 
-  g_return_val_if_fail (YTS_IS_CONTACT (item) && gfile,
+  g_return_val_if_fail (YTS_IS_CONTACT (self) && gfile,
                         YTS_ERROR_INVALID_PARAMETER);
-
-  priv = item->priv;
 
   g_return_val_if_fail (!priv->disposed, YTS_ERROR_OBJECT_DISPOSED);
 
@@ -1106,7 +1094,7 @@ yts_contact_send_file (const YtsContact *item, GFile *gfile)
 
   if (priv->tp_contact)
     {
-      yts_contact_do_send_file (item, gfile, atom);
+      yts_contact_do_send_file (self, gfile, atom);
     }
   else
     {
@@ -1118,7 +1106,7 @@ yts_contact_send_file (const YtsContact *item, GFile *gfile)
       YTS_NOTE (FILE_TRANSFER,
                  "Contact not ready, postponing message file transfer");
 
-      g_signal_connect ((GObject*)item, "notify::tp-contact",
+      g_signal_connect (self, "notify::tp-contact",
                         G_CALLBACK (yts_contact_notify_tp_contact_cb),
                         d);
     }
@@ -1136,16 +1124,15 @@ yts_contact_send_file (const YtsContact *item, GFile *gfile)
  * Return value: returns %TRUE if the transfer was successfully cancelled; if
  * the tansfer was already completed, returns %FALSE.
  */
-gboolean
-yts_contact_cancel_file (const YtsContact *item, GFile *gfile)
+bool
+yts_contact_cancel_file (YtsContact *self,
+                         GFile      *gfile)
 {
-  YtsContactPrivate *priv;
+  YtsContactPrivate *priv = GET_PRIVATE (self);
   GCancellable       *cancellable;
   char               *path;
 
-  g_return_val_if_fail (YTS_IS_CONTACT (item) && gfile, FALSE);
-
-  priv = item->priv;
+  g_return_val_if_fail (YTS_IS_CONTACT (self) && gfile, FALSE);
 
   g_return_val_if_fail (!priv->disposed, FALSE);
 
@@ -1168,9 +1155,10 @@ yts_contact_cancel_file (const YtsContact *item, GFile *gfile)
 }
 
 void
-yts_contact_add_service (YtsContact *contact, YtsService *service)
+yts_contact_add_service (YtsContact *self,
+                         YtsService *service)
 {
-  YtsContactPrivate *priv = contact->priv;
+  YtsContactPrivate *priv = GET_PRIVATE (self);
 
   /*
    * Emit the signal; the run-first signal closure will do the rest
@@ -1179,13 +1167,14 @@ yts_contact_add_service (YtsContact *contact, YtsService *service)
              yts_service_get_id (service),
              priv->jid);
 
-  g_signal_emit (contact, signals[SERVICE_ADDED], 0, service);
+  g_signal_emit (self, signals[SERVICE_ADDED], 0, service);
 }
 
 void
-yts_contact_remove_service_by_uid (YtsContact *contact, const char *uid)
+yts_contact_remove_service_by_uid (YtsContact *self,
+                                   const char *uid)
 {
-  YtsContactPrivate *priv = contact->priv;
+  YtsContactPrivate *priv = GET_PRIVATE (self);
   YtsService        *service;
 
   g_return_if_fail (uid && *uid);
@@ -1197,7 +1186,7 @@ yts_contact_remove_service_by_uid (YtsContact *contact, const char *uid)
   service = g_hash_table_lookup (priv->services, uid);
   if (service)
     {
-      g_signal_emit (contact, signals[SERVICE_REMOVED], 0, service);
+      g_signal_emit (self, signals[SERVICE_REMOVED], 0, service);
     }
   else
     {
@@ -1208,9 +1197,9 @@ yts_contact_remove_service_by_uid (YtsContact *contact, const char *uid)
 }
 
 bool
-yts_contact_is_empty (YtsContact *contact)
+yts_contact_is_empty (YtsContact *self)
 {
-  YtsContactPrivate *priv = contact->priv;
+  YtsContactPrivate *priv = GET_PRIVATE (self);
 
   return (g_hash_table_size (priv->services) == 0);
 }
@@ -1221,7 +1210,7 @@ yts_contact_dispatch_event (YtsContact  *self,
                              char const   *aspect,
                              GVariant     *arguments)
 {
-  YtsContactPrivate *priv = self->priv;
+  YtsContactPrivate *priv = GET_PRIVATE (self);
   char const      *service_uid;
   YtsService     *service;
   GHashTableIter   iter;
@@ -1253,7 +1242,7 @@ yts_contact_dispatch_response (YtsContact *self,
                                 char const  *invocation_id,
                                 GVariant    *response)
 {
-  YtsContactPrivate *priv = self->priv;
+  YtsContactPrivate *priv = GET_PRIVATE (self);
   char const      *service_uid;
   YtsService     *service;
   GHashTableIter   iter;
@@ -1287,7 +1276,7 @@ yts_contact_update_service_status (YtsContact *self,
                                    char const *fqc_id,
                                    char const *status_xml)
 {
-  YtsContactPrivate *priv = self->priv;
+  YtsContactPrivate *priv = GET_PRIVATE (self);
   YtsService *service;
 
   service = g_hash_table_lookup (priv->services, service_id);
