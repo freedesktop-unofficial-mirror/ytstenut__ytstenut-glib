@@ -66,7 +66,7 @@ typedef struct {
  * @ready: virtual function for the #YtsClient::ready signal.
  *
  * Deprecated: the class handlers for signals are deprecated and will be
-               removed in 0.4.
+ *             removed in 0.4.
  * Since: 0.1
  */
 typedef struct {
@@ -116,25 +116,25 @@ void
 yts_client_add_capability (YtsClient  *self,
                            char const *capability);
 
-YtsRoster *
-yts_client_get_roster (YtsClient *self);
+YtsRoster *const
+yts_client_get_roster (YtsClient const *self);
 
 void
-yts_client_emit_error (YtsClient *self,
-                       YtsError error);
+yts_client_emit_error (YtsClient  *self,
+                       YtsError    error);
 
 void
-yts_client_set_incoming_file_directory (YtsClient *self,
-                                        char const *directory);
+yts_client_set_incoming_file_directory (YtsClient   *self,
+                                        char const  *directory);
 
 char const *
-yts_client_get_incoming_file_directory (YtsClient *self);
+yts_client_get_incoming_file_directory (YtsClient const *self);
 
 char const *
-yts_client_get_jid (const YtsClient *self);
+yts_client_get_jid (YtsClient const *self);
 
 char const *
-yts_client_get_uid (const YtsClient *self);
+yts_client_get_uid (YtsClient const *self);
 
 void
 yts_client_set_status_by_capability (YtsClient *self,
@@ -143,7 +143,7 @@ yts_client_set_status_by_capability (YtsClient *self,
 
 bool
 yts_client_register_service (YtsClient      *self,
-                              YtsCapability  *service);
+                             YtsCapability  *service);
 
 /**
  * YtsClientServiceIterator:

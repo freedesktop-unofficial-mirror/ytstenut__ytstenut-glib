@@ -2769,8 +2769,8 @@ yts_client_add_capability (YtsClient  *self,
  *
  * Returns (tranfer none): #YtsRoster.
  */
-YtsRoster *
-yts_client_get_roster (YtsClient *self)
+YtsRoster *const
+yts_client_get_roster (YtsClient const *self)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
 
@@ -2847,7 +2847,7 @@ yts_client_set_incoming_file_directory (YtsClient *self,
  * Returns (tranfer none): directory where incoming files are stored.
  */
 char const *
-yts_client_get_incoming_file_directory (YtsClient *self)
+yts_client_get_incoming_file_directory (YtsClient const *self)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
 
