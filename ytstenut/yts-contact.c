@@ -19,7 +19,8 @@
  */
 
 /**
- * SECTION:yts-contact
+ * SECTION: yts-contact
+ * @title: YtsContact
  * @short_description: Represents a device connected to the
  * Ytstenut mesh.
  *
@@ -244,9 +245,11 @@ yts_contact_class_init (YtsContactClass *klass)
   g_object_class_install_property (object_class, PROP_TP_CONTACT,
                                    properties[PROP_TP_CONTACT]);
 
-  /*
-   * Internal signal, should not be considered by language bindings at this
-   * time. Maybe in the future when we allow for custom contact subclasses.
+  /**
+   * YtsContact::send-message:
+   *
+   * <note>Internal signal, should not be considered by users at this time.
+   * Maybe in the future when we allow for custom contact subclasses.</note>
    */
   signals[SEND_MESSAGE] = g_signal_new ("send-message",
                                         G_TYPE_FROM_CLASS (object_class),
@@ -259,7 +262,7 @@ yts_contact_class_init (YtsContactClass *klass)
 
   /**
    * YtsContact::service-added:
-   * @contact: the contact which received the signal
+   * @self: object which emitted the signal.
    * @service: the service
    *
    * The ::service-added signal is emitted when a new services is added to
@@ -279,7 +282,7 @@ yts_contact_class_init (YtsContactClass *klass)
 
   /**
    * YtsContact::service-removed:
-   * @contact: the contact which received the signal
+   * @self: object which emitted the signal.
    * @service: the service
    *
    * The ::service-removed signal is emitted when a services is removed from
@@ -546,11 +549,11 @@ yts_contact_finalize (GObject *object)
 
 /**
  * yts_contact_get_id:
- * @contact: #YtsContact
+ * @self: object on which to invoke this method.
  *
  * Retrieves the jabber identifier of this contact.
  *
- * Return value: (transfer none): The jid of this contact.
+ * Returns: (transfer none): The jid of this contact.
  */
 const char *
 yts_contact_get_id (YtsContact const *self)
@@ -564,11 +567,11 @@ yts_contact_get_id (YtsContact const *self)
 
 /**
  * yts_contact_get_name:
- * @contact: #YtsContact
+ * @self: object on which to invoke this method.
  *
  * Retrieves human readable name of this client
  *
- * Return value: (transfer none): The name of this contact.
+ * Returns: (transfer none): The name of this contact.
  */
 const char *
 yts_contact_get_name (YtsContact const *self)
@@ -580,14 +583,14 @@ yts_contact_get_name (YtsContact const *self)
 
 /**
  * yts_contact_get_icon:
- * @contact: #YtsContact
+ * @self: object on which to invoke this method.
  * @mime: (transfer none): location to store a pointer to the icon mime type
  *
  * Retrieves icon of this contact. If the mime parameter is provided, on return
  * it will contain the mime type of the icon, this pointer must not be modified
  * or freed by the caller.
  *
- * Return value: (transfer full): #GFile pointing to the icon image, can be
+ * Returns: (transfer full): #GFile pointing to the icon image, can be
  * %NULL. The caller owns a reference on the returned object, and must release
  * it when no longer needed with g_object_unref().
  */
@@ -624,7 +627,7 @@ yts_contact_new (YtsClient *client, const char *jid)
 
 /**
  * yts_contact_get_tp_contact:
- * @contact: #YtsContact
+ * @self: object on which to invoke this method.
  *
  * Retrieves the #TpContact associated with this #YtsContact object; can be
  * %NULL. When the #TpContact is available, the YtsContact::notify-tp-contact
@@ -735,7 +738,7 @@ typedef struct
 
 static YtsCPendingFile *
 yts_c_pending_file_new (const YtsContact *item,
-                         GFile              *gfile,
+                         GFile              *file,
                          const char         *name,
                          guint32             atom)
 {
@@ -743,7 +746,7 @@ yts_c_pending_file_new (const YtsContact *item,
 
   m->item       = item;
   m->name       = g_strdup (name);
-  m->file       = g_object_ref (gfile);
+  m->file       = g_object_ref (file);
   m->atom       = atom;
   m->ft_channel = NULL;
 
@@ -890,7 +893,7 @@ yts_contact_ft_filename_cb (TpProxy      *proxy,
 
 /*
  * yts_contact_set_ft_channel:
- * @item: #YtsContact,
+ * @self: object on which to invoke this method.
  * @channel: #TpChannel
  *
  * Sets the channel file transfer item for this item.
@@ -926,8 +929,8 @@ yts_contact_create_ft_channel_cb (TpConnection *proxy,
 
   if (error)
     {
-      YtsCPendingFile *file = data;
-      YtsError         e    = (YTS_ERROR_NO_ROUTE | file->atom);
+      YtsCPendingFile *pending_file = data;
+      YtsError         e    = (YTS_ERROR_NO_ROUTE | pending_file->atom);
 
       yts_client_emit_error (priv->client, e);
 
@@ -937,19 +940,19 @@ yts_contact_create_ft_channel_cb (TpConnection *proxy,
 
 static YtsError
 yts_contact_do_send_file (YtsContact  *self,
-                          GFile       *gfile,
+                          GFile       *file,
                           guint32      atom)
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
   const char         *content_type = "binary";
   GFileInfo          *finfo;
   GError             *error = NULL;
-  YtsCPendingFile   *file;
+  YtsCPendingFile   *pending_file;
   GHashTable         *request;
   TpConnection       *conn;
   guint               handle;
 
-  g_return_val_if_fail (YTS_IS_CONTACT (self) && gfile,
+  g_return_val_if_fail (YTS_IS_CONTACT (self) && file,
                         YTS_ERROR_INVALID_PARAMETER);
 
   g_return_val_if_fail (!priv->disposed, YTS_ERROR_OBJECT_DISPOSED);
@@ -957,7 +960,7 @@ yts_contact_do_send_file (YtsContact  *self,
   if (!priv->tp_contact)
     return YTS_ERROR_NO_ROUTE;
 
-  finfo = g_file_query_info (gfile,
+  finfo = g_file_query_info (file,
                              "standard::*",
                              0,
                              NULL,
@@ -970,10 +973,10 @@ yts_contact_do_send_file (YtsContact  *self,
       return YTS_ERROR_INVALID_PARAMETER;
     }
 
-  file = yts_c_pending_file_new (self, gfile,
+  pending_file = yts_c_pending_file_new (self, file,
                                   g_file_info_get_display_name (finfo), atom);
 
-  g_queue_push_tail (priv->pending_files, file);
+  g_queue_push_tail (priv->pending_files, pending_file);
 
   conn = tp_contact_get_connection (priv->tp_contact);
   handle = tp_contact_get_handle (priv->tp_contact);
@@ -1007,7 +1010,7 @@ yts_contact_do_send_file (YtsContact  *self,
                                             -1,
                                             request,
                                             yts_contact_create_ft_channel_cb,
-                                            file,
+                                            pending_file,
                                             NULL,
                                             (GObject*)self);
 
@@ -1041,13 +1044,13 @@ yts_contact_notify_tp_contact_cb (YtsContact              *contact,
 
 /**
  * yts_contact_send_file:
- * @item: #YtsContact,
- * @gfile: #GFile to send
+ * @self: object on which to invoke this method.
+ * @file: #GFile to send
  *
  * Sends file to the contact represented by this item. The caller can safely
  * release reference on the supplied #GFile after calling this function.
  *
- * Return value: Returns %YTS_ERROR_SUCCESS on success, return value
+ * Returns: %YTS_ERROR_SUCCESS on success, return value
  * %YTS_ERROR_NOT_ALLOWED indicates that the current client is not mutually
  * approved to exchange files with the item. %YTS_ERROR_PENDING is returned if
  * the execution of the command has to be deferred until the communication
@@ -1057,19 +1060,19 @@ yts_contact_notify_tp_contact_cb (YtsContact              *contact,
  */
 YtsError
 yts_contact_send_file (YtsContact *self,
-                       GFile      *gfile)
+                       GFile      *file)
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
   GFileInfo          *finfo;
   GError             *error = NULL;
   guint32             atom;
 
-  g_return_val_if_fail (YTS_IS_CONTACT (self) && gfile,
+  g_return_val_if_fail (YTS_IS_CONTACT (self) && file,
                         YTS_ERROR_INVALID_PARAMETER);
 
   g_return_val_if_fail (!priv->disposed, YTS_ERROR_OBJECT_DISPOSED);
 
-  finfo = g_file_query_info (gfile,
+  finfo = g_file_query_info (file,
                              "standard::*",
                              0,
                              NULL,
@@ -1094,13 +1097,13 @@ yts_contact_send_file (YtsContact *self,
 
   if (priv->tp_contact)
     {
-      yts_contact_do_send_file (self, gfile, atom);
+      yts_contact_do_send_file (self, file, atom);
     }
   else
     {
       struct YtsContactFTData *d = g_new (struct YtsContactFTData, 1);
 
-      d->gfile = g_object_ref (gfile);
+      d->gfile = g_object_ref (file);
       d->atom  = atom;
 
       YTS_NOTE (FILE_TRANSFER,
@@ -1116,27 +1119,27 @@ yts_contact_send_file (YtsContact *self,
 
 /**
  * yts_contact_cancel_file:
- * @item: #YtsContact,
- * @gfile: #GFile to cancel
+ * @self: object on which to invoke this method.
+ * @file: #GFile to cancel
  *
  * Cancels file transfer in progress.
  *
- * Return value: returns %TRUE if the transfer was successfully cancelled; if
+ * Returns: %TRUE if the transfer was successfully cancelled; if
  * the tansfer was already completed, returns %FALSE.
  */
 bool
 yts_contact_cancel_file (YtsContact *self,
-                         GFile      *gfile)
+                         GFile      *file)
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
   GCancellable       *cancellable;
   char               *path;
 
-  g_return_val_if_fail (YTS_IS_CONTACT (self) && gfile, FALSE);
+  g_return_val_if_fail (YTS_IS_CONTACT (self) && file, FALSE);
 
   g_return_val_if_fail (!priv->disposed, FALSE);
 
-  if (!(path = g_file_get_path (gfile)))
+  if (!(path = g_file_get_path (file)))
     return FALSE;
 
   if (!(cancellable = g_hash_table_lookup (priv->ft_cancellables, path)))

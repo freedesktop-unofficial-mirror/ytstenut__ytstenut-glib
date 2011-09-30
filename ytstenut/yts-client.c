@@ -1620,7 +1620,7 @@ yts_client_class_init (YtsClientClass *klass)
    * @success: %TRUE if the transfer was completed successfully.
    *
    * The #YtsClient::incoming-file-finished signal is emitted when a file
-   * tranfer is completed.
+   * transfer is completed.
    *
    * Since: 0.1
    */
@@ -1668,7 +1668,7 @@ yts_client_init (YtsClient *self)
  *
  * Creates a new #YtsClient object.
  *
- * Returns: (tranfer full): a #YtsClient object.
+ * Returns: (transfer full): a #YtsClient object.
  *
  * Since: 0.1
  */
@@ -2767,7 +2767,7 @@ yts_client_add_capability (YtsClient  *self,
  * Gets the #YtsRoster for this client. The object is owned by the client
  * and must not be freed by the caller.
  *
- * Returns: (tranfer none): #YtsRoster.
+ * Returns: (transfer none): #YtsRoster.
  */
 YtsRoster *const
 yts_client_get_roster (YtsClient const *self)
@@ -2844,7 +2844,7 @@ yts_client_set_incoming_file_directory (YtsClient *self,
  * Returns the directory into which any files from incoming file transfers will
  * be placed.
  *
- * Returns: (tranfer none): directory where incoming files are stored.
+ * Returns: (transfer none): directory where incoming files are stored.
  */
 char const *
 yts_client_get_incoming_file_directory (YtsClient const *self)
@@ -2862,7 +2862,7 @@ yts_client_get_incoming_file_directory (YtsClient const *self)
  *
  * Returns the jabber id associated with the current client.
  *
- * Returns: (tranfer none): the jabber id.
+ * Returns: (transfer none): the jabber id.
  */
 char const *
 yts_client_get_jid (const YtsClient *self)
@@ -2878,7 +2878,7 @@ yts_client_get_jid (const YtsClient *self)
  *
  * Returns uid of the service this client represents.
  *
- * Returns: (tranfer none): the service uid.
+ * Returns: (transfer none): the service uid.
  */
 char const *
 yts_client_get_uid (const YtsClient *self)
