@@ -1507,8 +1507,8 @@ yts_client_class_init (YtsClientClass *klass)
 
   /**
    * YtsClient::text-message:
-   * @ytsclient: object which emitted the signal.
-   * @arg1: Message payload.
+   * @self: object which emitted the signal.
+   * @text: Message payload.
    *
    * This signal is emitted when a remote service sent a text message.
    *
@@ -1525,8 +1525,8 @@ yts_client_class_init (YtsClientClass *klass)
 
   /**
    * YtsClient::list-message:
-   * @ytsclient: object which emitted the signal.
-   * @arg1: %NULL-terminated string vector holding the message content.
+   * @self: object which emitted the signal.
+   * @list: %NULL-terminated string vector holding the message content.
    *
    * This signal is emitted when a remote service sent a list of strings.
    *
@@ -1537,15 +1537,15 @@ yts_client_class_init (YtsClientClass *klass)
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST,
                   0, NULL, NULL,
-                  yts_marshal_VOID__POINTER,
+                  yts_marshal_VOID__BOXED,
                   G_TYPE_NONE, 1,
-                  G_TYPE_POINTER);
+                  G_TYPE_STRV);
 
   /**
    * YtsClient::dictionary-message:
-   * @ytsclient: object which emitted the signal.
-   * @arg1: %NULL-terminated string vector where even indices are keys and 
-   *        odd ones are values.
+   * @self: object which emitted the signal.
+   * @dictionary: %NULL-terminated string vector where even indices are keys and
+   *              odd ones are values.
    *
    * This signal is emitted when a remote service sent a dictionary message.
    *
