@@ -45,10 +45,12 @@ G_BEGIN_DECLS
   (G_TYPE_INSTANCE_GET_CLASS ((obj), YTS_TYPE_PROXY_SERVICE, YtsProxyServiceClass))
 
 typedef struct {
+  /*< private >*/
   YtsService parent;
 } YtsProxyService;
 
 typedef struct {
+  /*< private >*/
   YtsServiceClass parent;
 } YtsProxyServiceClass;
 

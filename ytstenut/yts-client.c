@@ -1451,7 +1451,7 @@ yts_client_class_init (YtsClientClass *klass)
 
   /**
    * YtsClient::ready:
-   * @self: object which emitted the signal,
+   * @self: object which emitted the signal.
    *
    * The ready signal is emited when the initial Telepathy set up is ready.
    * (In practical terms this means the subscription channels are prepared.)
@@ -1469,7 +1469,7 @@ yts_client_class_init (YtsClientClass *klass)
 
   /**
    * YtsClient::disconnected:
-   * @self: object which emitted the signal,
+   * @self: object which emitted the signal.
    *
    * The disconnected signal is emited when connection to the Ytstenut server
    * is successfully established.
@@ -1562,7 +1562,7 @@ yts_client_class_init (YtsClientClass *klass)
 
   /**
    * YtsClient::error:
-   * @self: object which emitted the signal,
+   * @self: object which emitted the signal.
    * @error: #YtsError
    *
    * The error signal is emitted to indicate an error (or eventual success)
@@ -1584,7 +1584,7 @@ yts_client_class_init (YtsClientClass *klass)
 
   /**
    * YtsClient::incoming-file:
-   * @self: object which emitted the signal,
+   * @self: object which emitted the signal.
    * @from: jid of the originator
    * @name: name of the file
    * @size: size of the file
@@ -1614,7 +1614,7 @@ yts_client_class_init (YtsClientClass *klass)
 
   /**
    * YtsClient::incoming-file-finished:
-   * @self: object which emitted the signal,
+   * @self: object which emitted the signal.
    * @from: jid of the originator
    * @name: name of the file
    * @success: %TRUE if the transfer was completed successfully.

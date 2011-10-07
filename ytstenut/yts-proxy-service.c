@@ -37,6 +37,12 @@ G_DEFINE_TYPE (YtsProxyService, yts_proxy_service, YTS_TYPE_SERVICE)
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_PROXY_SERVICE, YtsProxyServicePrivate))
 
+/**
+ * SECTION: yts-proxy-service
+ * @title: YtsProxyService
+ * @short_description: Represents a remote service with method invocation support.
+ */
+
 enum {
   SIG_PROXY_CREATED,
   N_SIGNALS
@@ -131,6 +137,17 @@ yts_proxy_service_class_init (YtsProxyServiceClass *klass)
 
   /* Signals */
 
+  /**
+   * YtsProxyService::proxy-created:
+   * @self: object which emitted the signal.
+   * @proxy: Proxy for the remote object.
+   *
+   * The YtsProxyService::proxy-created signal is emitted asynchronously in
+   * response to yts_proxy_service_create_proxy() and delivers the initialised
+   * and ready to use proxy object.
+   *
+   * Since: 0.3
+   */
   _signals[SIG_PROXY_CREATED] = g_signal_new ("proxy-created",
                                               YTS_TYPE_PROXY_SERVICE,
                                               G_SIGNAL_RUN_LAST,
@@ -234,6 +251,19 @@ _proxy_destroyed (YtsProxyService  *self,
   }
 }
 
+/**
+ * yts_proxy_service_create_proxy:
+ * @self: object on which to invoke this method.
+ * @capability: Fully qualified capability ID of the server-side object for
+ *              which the proxy should be created.
+ *
+ * Create a proxy for a remote object of service @self, specified by @capability.
+ *
+ * Returns: %true if the YtsProxyService::proxy-created can be expected to 
+ *          deliver.
+ *
+ * Since: 0.3
+ */
 bool
 yts_proxy_service_create_proxy (YtsProxyService *self,
                                  char const       *capability)
