@@ -34,6 +34,14 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (YtsProxy,
                                   G_IMPLEMENT_INTERFACE (YTS_TYPE_CAPABILITY,
                                                          _capability_interface_init))
 
+/**
+ * SECTION: yts-proxy
+ * @title: YtsProxy
+ * @short_description: Represents a remote object, part of a remote service.
+ *
+ * A YtsProxy is a local representation of a remote object.
+ */
+
 enum {
   PROP_0,
   PROP_CAPABILITY_FQC_IDS
@@ -108,8 +116,11 @@ yts_proxy_class_init (YtsProxyClass *klass)
                                     PROP_CAPABILITY_FQC_IDS,
                                     "fqc-ids");
 
-  /* Signals */
-
+  /**
+   * YtsProxy::invoke-service:
+   *
+   * Internal API, not for public consumption.
+   */
   _signals[INVOKE_SERVICE_SIGNAL] =
                   g_signal_new ("invoke-service",
                                 YTS_TYPE_PROXY,
@@ -120,6 +131,16 @@ yts_proxy_class_init (YtsProxyClass *klass)
                                 G_TYPE_NONE, 3,
                                 G_TYPE_STRING, G_TYPE_STRING, G_TYPE_VARIANT);
 
+  /**
+   * YtsProxy::service-event:
+   * @self: object which emitted the signal.
+   * @event: event name.
+   * @data: event data.
+   *
+   * This signal delivers an event emitted by the remote object.
+   *
+   * Since: 0.3
+   */
   _signals[SERVICE_EVENT_SIGNAL] =
                                 g_signal_new ("service-event",
                                               YTS_TYPE_PROXY,
@@ -131,6 +152,16 @@ yts_proxy_class_init (YtsProxyClass *klass)
                                               G_TYPE_NONE, 2,
                                               G_TYPE_STRING, G_TYPE_VARIANT);
 
+  /**
+   * YtsProxy::service-response:
+   * @self: object which emitted the signal.
+   * @invocation_id: unique invocation identifier passed to yts_proxy_invoke().
+   * @data: response data.
+   *
+   * This signal delivers the response to a remote method invocation.
+   *
+   * Since: 0.3
+   */
   _signals[SERVICE_RESPONSE_SIGNAL] =
                               g_signal_new ("service-response",
                                             YTS_TYPE_PROXY,
@@ -148,6 +179,17 @@ yts_proxy_init (YtsProxy *self)
 {
 }
 
+/**
+ * yts_proxy_get_fqc_id:
+ * @self: object on which to invoke this method.
+ *
+ * #YtsProxy subclasses can only implement a single FCQ-ID, so this is a
+ * simplified accessor for #YtsCapability #YtsCapability:fqc-ids.
+ *
+ * Returns: the fully qualified capability ID of the remote object.
+ *
+ * Since: 0.3
+ */
 char *
 yts_proxy_get_fqc_id (YtsProxy *self)
 {
@@ -171,6 +213,16 @@ yts_proxy_get_fqc_id (YtsProxy *self)
   return fqc_id;
 }
 
+/**
+ * yts_proxy_create_invocation_id:
+ * @self: object on which to invoke this method.
+ *
+ * Convenience function to create a unique string ID for
+ *
+ * Returns (transfer full): unique string ID.
+ *
+ * Since: 0.3
+ */
 char *
 yts_proxy_create_invocation_id (YtsProxy *self)
 {
@@ -188,6 +240,21 @@ yts_proxy_create_invocation_id (YtsProxy *self)
   return invocation_id;
 }
 
+/**
+ * yts_proxy_invoke:
+ * @self: object on which to invoke this method.
+ * @invocation_id: a unique identifier for this invocation, this is going to
+ *                 be passed back with the response, so it can be mapped.
+ * @aspec: name of the method to invoce.
+ * @arguments: arguments to pass, this must be an a{sv} that maps to argument
+ *             names and types.
+ *
+ *
+ * Invoke a method on the remote object. The response is delivered by the
+ * #YtsProxy::service-response signal.
+ *
+ * Since: 0.3
+ */
 void
 yts_proxy_invoke (YtsProxy  *self,
                    char const *invocation_id,
