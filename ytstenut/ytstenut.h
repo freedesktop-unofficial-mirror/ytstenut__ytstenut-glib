@@ -38,7 +38,6 @@
 
 #include <ytstenut/yts-proxy.h>
 #include <ytstenut/yts-proxy-service.h>
-#include <ytstenut/yts-service-adapter.h>
 
 #include <ytstenut/video-profile/yts-vp-content.h>
 #include <ytstenut/video-profile/yts-vp-playable.h>

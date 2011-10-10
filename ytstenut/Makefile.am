@@ -25,7 +25,6 @@ source_h =						\
 		\
 		$(srcdir)/yts-proxy.h \
 		$(srcdir)/yts-proxy-service.h \
-		$(srcdir)/yts-service-adapter.h \
 		\
 		$(srcdir)/video-profile/yts-vp-content.h \
 		$(srcdir)/video-profile/yts-vp-playable.h \
@@ -96,6 +95,7 @@ private_h = \
 		$(srcdir)/yts-proxy-internal.h \
 		$(srcdir)/yts-proxy-service-internal.h \
 		$(srcdir)/yts-roster-internal.h \
+		$(srcdir)/yts-service-adapter.h \
 		$(srcdir)/yts-service-factory.h \
 		$(srcdir)/yts-service-internal.h \
 		\
