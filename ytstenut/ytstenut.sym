@@ -70,6 +70,7 @@ yts_service_get_type
 yts_service_send_text
 yts_service_send_list
 yts_service_send_dictionary
+yts_status_new
 yts_vp_content_get_type
 yts_vp_query_get_max_results
 yts_vp_query_get_progress

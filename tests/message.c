@@ -19,6 +19,7 @@
  */
 
 #include <ytstenut/ytstenut.h>
+#include "ytstenut/yts-message.h"
 #include "ytstenut/yts-metadata-internal.h"
 
 int

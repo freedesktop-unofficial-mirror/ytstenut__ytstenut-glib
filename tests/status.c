@@ -19,6 +19,8 @@
  */
 
 #include <ytstenut/ytstenut.h>
+#include "ytstenut/yts-message.h"
+#include "ytstenut/yts-status.h"
 
 int
 main (int argc, char **argv)
