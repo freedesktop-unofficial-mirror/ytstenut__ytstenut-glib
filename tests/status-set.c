@@ -49,11 +49,12 @@ authenticated_cb (YtsClient *client, gpointer data)
 }
 
 static void
-status_cb (YtsClient *client, YtsStatus *status, gpointer data)
+_status_changed (YtsService *service,
+                 char const *fqc_id,
+                 char const *status,
+                 gpointer    data)
 {
-  YtsMetadata *md = (YtsMetadata*)status;
-
-  g_assert (YTS_IS_STATUS (status));
+  g_debug ("%s() %s %s", __FUNCTION__, fqc_id, status);
 
   /* TODO -- check what is in the status ... */
   retval = 0;
@@ -62,17 +63,16 @@ status_cb (YtsClient *client, YtsStatus *status, gpointer data)
 }
 
 static void
-service_added_cb (YtsRoster *roster, YtsService *service, gpointer data)
+service_added_cb (YtsRoster   *roster,
+                  YtsService  *service,
+                  YtsClient   *client)
 {
-  YtsClient  *client  = yts_roster_get_client (roster);
-  YtsContact *contact = yts_service_get_contact (service);
-  const char  *jid     = yts_contact_get_id (contact);
   const char  *sid     = yts_service_get_service_id (service);
   gboolean     our     = FALSE;
 
   static YtsService *service2 = NULL;
 
-  g_debug ("Service %s:%s", jid, sid);
+  g_debug ("Service: %s", sid);
 
   if (client == client1 && strstr (sid, "org.freedesktop.ytstenut.SetStatusTest2"))
     {
@@ -86,7 +86,8 @@ service_added_cb (YtsRoster *roster, YtsService *service, gpointer data)
       ready2   = TRUE;
       our      = TRUE;
 
-      g_signal_connect (service, "status", G_CALLBACK (status_cb), NULL);
+      g_signal_connect (service, "status-changed",
+                        G_CALLBACK (_status_changed), NULL);
     }
 
   /*
@@ -94,22 +95,9 @@ service_added_cb (YtsRoster *roster, YtsService *service, gpointer data)
    */
   if (our && ready1 && ready2)
     {
-      YtsStatus *status;
-      const char   *attributes[] =
-        {
-          "capability", "urn:ytstenut:capabilities:yts-caps-video",
-          "activity", "yts-activity-playing",
-          "from-service", "org.freedesktop.ytstenut.SetStatusTest1",
-          NULL
-        };
-
-      g_debug ("Both test services are ready, setting status");
-
-      status = yts_status_new ((const char**)&attributes);
-
       yts_client_set_status_by_capability (client1,
-                                    "urn:ytstenut:capabilities:yts-caps-video",
-                                    "yts-activity-playing");
+                                           "yts-caps-video",
+                                           "yts-activity-playing");
     }
 }
 
@@ -125,22 +113,22 @@ main (int argc, char **argv)
 
   client1 = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP,
                              "org.freedesktop.ytstenut.SetStatusTest1");
-  yts_client_set_capabilities (client1, YTS_CAPS_VIDEO);
+  yts_client_add_capability (client1, "yts-caps-video");
   g_signal_connect (client1, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);
   roster1 = yts_client_get_roster (client1);
   g_signal_connect (roster1, "service-added",
-                    G_CALLBACK (service_added_cb), NULL);
+                    G_CALLBACK (service_added_cb), client1);
   yts_client_connect (client1);
 
   client2 = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP,
                              "org.freedesktop.ytstenut.SetStatusTest2");
-  yts_client_set_capabilities (client2, YTS_CAPS_VIDEO);
+  yts_client_add_capability (client1, "yts-caps-video");
   g_signal_connect (client2, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);
   roster2 = yts_client_get_roster (client2);
   g_signal_connect (roster2, "service-added",
-                    G_CALLBACK (service_added_cb), NULL);
+                    G_CALLBACK (service_added_cb), client2);
   yts_client_connect (client2);
 
   g_timeout_add_seconds (TEST_LENGTH, timeout_test_cb, loop);
