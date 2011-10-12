@@ -19,6 +19,7 @@
  */
 
 #include <ytstenut/ytstenut.h>
+#include "ytstenut/yts-message.h"
 
 #define TEST_LENGTH 5
 

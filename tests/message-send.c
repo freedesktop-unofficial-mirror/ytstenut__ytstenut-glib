@@ -20,6 +20,7 @@
 
 #include <string.h>
 #include <ytstenut/ytstenut.h>
+#include "ytstenut/yts-message.h"
 
 #define TEST_LENGTH 10
 
@@ -49,31 +50,43 @@ authenticated_cb (YtsClient *client, gpointer data)
 }
 
 static void
-message_cb (YtsClient *client, YtsMessage *msg, gpointer data)
+_dictionary_message (YtsClient          *client,
+                     char const *const  *dictionary,
+                     gpointer            data)
 {
-  YtsMetadata *md = (YtsMetadata*)msg;
+  unsigned    length;
+  unsigned    i;
+  char const *a1 = NULL;
+  char const *a2 = NULL;
 
-  g_assert (YTS_IS_MESSAGE (msg));
+  length = g_strv_length ((char **) dictionary);
 
-  g_assert_cmpstr ("v1", ==, yts_metadata_get_attribute (md, "a1"));
-  g_assert_cmpstr ("v2", ==, yts_metadata_get_attribute (md, "a2"));
+  g_assert (length == 4);
+
+  for (i = 0; i < length && !(a1 && a2); i++) {
+    if (0 == g_strcmp0 ("a1", dictionary[2*i])) {
+      a1 = dictionary[2*i + 1];
+    } else if (0 == g_strcmp0 ("a2", dictionary[2*i])) {
+      a2 = dictionary[2*i + 1];
+    }
+  }
+
+  g_assert_cmpstr ("v1", ==, a1);
+  g_assert_cmpstr ("v2", ==, a2);
 
   retval = 0;
   g_main_loop_quit (loop);
 }
 
 static void
-service_added_cb (YtsRoster *roster, YtsService *service, gpointer data)
+service_added_cb (YtsRoster *roster, YtsService *service, YtsClient *client)
 {
-  YtsClient  *client  = yts_roster_get_client (roster);
-  YtsContact *contact = yts_service_get_contact (service);
-  const char  *jid     = yts_contact_get_id (contact);
   const char  *sid     = yts_service_get_service_id (service);
   gboolean     our     = FALSE;
 
   static YtsService *service2 = NULL;
 
-  g_debug ("Service %s:%s", jid, sid);
+  g_debug ("Service %s", sid);
 
   if (client == client1 && strstr (sid, "org.freedesktop.ytstenut.SendMessageTest2"))
     {
@@ -87,7 +100,8 @@ service_added_cb (YtsRoster *roster, YtsService *service, gpointer data)
       ready2   = TRUE;
       our      = TRUE;
 
-      g_signal_connect (client, "message", G_CALLBACK (message_cb), NULL);
+      g_signal_connect (client, "dictionary-message",
+                        G_CALLBACK (_dictionary_message), NULL);
     }
 
   /*
@@ -96,7 +110,6 @@ service_added_cb (YtsRoster *roster, YtsService *service, gpointer data)
   if (our && ready1 && ready2)
     {
       YtsError     e;
-      YtsMetadata *metadata;
       const char   *attributes[] =
         {
           "a1", "v1",
@@ -104,14 +117,9 @@ service_added_cb (YtsRoster *roster, YtsService *service, gpointer data)
           NULL
         };
 
-      metadata = (YtsMetadata*)yts_message_new ((const char**)&attributes);
-
       g_debug ("Both test services are ready, sending message");
 
-      e = yts_metadata_service_send_metadata ((YtsMetadataService *)service2,
-                                               metadata);
-
-      g_assert (yts_error_get_code (e) == YTS_ERROR_PENDING);
+      yts_service_send_dictionary (service2, attributes, -1);
     }
 }
 
@@ -131,7 +139,7 @@ main (int argc, char **argv)
                     G_CALLBACK (authenticated_cb), NULL);
   roster1 = yts_client_get_roster (client1);
   g_signal_connect (roster1, "service-added",
-                    G_CALLBACK (service_added_cb), NULL);
+                    G_CALLBACK (service_added_cb), client1);
   yts_client_connect (client1);
 
   client2 = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP,
@@ -140,7 +148,7 @@ main (int argc, char **argv)
                     G_CALLBACK (authenticated_cb), NULL);
   roster2 = yts_client_get_roster (client2);
   g_signal_connect (roster2, "service-added",
-                    G_CALLBACK (service_added_cb), NULL);
+                    G_CALLBACK (service_added_cb), client2);
   yts_client_connect (client2);
 
   g_timeout_add_seconds (TEST_LENGTH, timeout_test_cb, loop);

@@ -1,5 +1,5 @@
 
-TESTS = message status metadata-service local-connection message-send status-set
+TESTS = message status local-connection message-send status-set
 
 AM_CPPFLAGS = \
   -I$(top_srcdir) \
@@ -18,9 +18,6 @@ message_LDADD            = $(YTS_LIBS)
 
 status_SOURCES           = status.c
 status_LDADD             = $(YTS_LIBS)
-
-metadata_service_SOURCES = metadata-service.c
-metadata_service_LDADD   = $(YTS_LIBS)
 
 local_connection_SOURCES = local-connection.c
 local_connection_LDADD   = $(YTS_LIBS)
