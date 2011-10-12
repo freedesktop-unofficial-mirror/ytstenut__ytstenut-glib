@@ -1,5 +1,10 @@
 
-TESTS = message status local-connection message-send status-set
+TESTS = \
+  message \
+  status \
+  message-send \
+  status-set \
+  $(NULL)
 
 AM_CPPFLAGS = \
   -I$(top_srcdir) \
@@ -18,9 +23,6 @@ message_LDADD            = $(YTS_LIBS)
 
 status_SOURCES           = status.c
 status_LDADD             = $(YTS_LIBS)
-
-local_connection_SOURCES = local-connection.c
-local_connection_LDADD   = $(YTS_LIBS)
 
 ## File transfer can't be tested this way, because it is not possible to do
 ## FT to self (i.e., there would need to be two separate contacts, but as we

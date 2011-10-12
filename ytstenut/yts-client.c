@@ -2867,9 +2867,12 @@ yts_client_get_incoming_file_directory (YtsClient const *self)
 char const *
 yts_client_get_jid (const YtsClient *self)
 {
-  g_warning (G_STRLOC ": NOT IMPLEMENTED !!!");
+  YtsClientPrivate *priv = GET_PRIVATE (self);
 
-  return NULL;
+  g_return_val_if_fail (YTS_IS_CLIENT (self), NULL);
+  g_return_val_if_fail (priv->account, NULL);
+
+  return tp_account_get_normalized_name (priv->account);
 }
 
 /**
