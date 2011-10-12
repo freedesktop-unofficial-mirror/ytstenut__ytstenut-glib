@@ -19,14 +19,6 @@
  *              Rob Staudinger <robsta@linux.intel.com>
  */
 
-/**
- * SECTION:yts-service
- * @short_description: Represents a service connected to the Ytstenut
- * application mesh.
- *
- * #YtsService represents a known service in the Ytstenut application mesh.
- */
-
 #include "yts-capability.h"
 #include "yts-debug.h"
 #include "yts-invocation-message.h"
@@ -43,6 +35,14 @@ G_DEFINE_TYPE_WITH_CODE (YtsService,
                          G_TYPE_OBJECT,
                          G_IMPLEMENT_INTERFACE (YTS_TYPE_CAPABILITY,
                                                 _capability_interface_init))
+
+/**
+ * SECTION:yts-service
+ * @short_description: Represents a service connected to the Ytstenut
+ * application mesh.
+ *
+ * #YtsService represents a known service in the Ytstenut application mesh.
+ */
 
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_SERVICE, YtsServicePrivate))
@@ -238,7 +238,9 @@ yts_service_class_init (YtsServiceClass *klass)
   /**
    * YtsService:names:
    *
-   * The names of this service.
+   * The names of this service, as they should be shown in a user interface.
+   * Keys of the hash-table are locale names like %en_GB, pointing to the
+   * respective localised name.
    */
   pspec = g_param_spec_boxed ("names", "", "",
                               G_TYPE_HASH_TABLE,
@@ -250,7 +252,8 @@ yts_service_class_init (YtsServiceClass *klass)
   /**
    * YtsService:statuses:
    *
-   * The current statuses of this service.
+   * The current statuses of this service. The hash table contains an FQC-ID
+   * to status (XML) text mapping.
    */
   pspec = g_param_spec_boxed ("statuses", "", "",
                               G_TYPE_HASH_TABLE,
@@ -259,7 +262,9 @@ yts_service_class_init (YtsServiceClass *klass)
                               G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_STATUSES, pspec);
 
-  /*
+  /**
+   * YtsService::send-message:
+   *
    * Internal signal, should not be considered by language bindings at this
    * time. Maybe in the future when we allow for custom service subclasses.
    */
@@ -271,6 +276,19 @@ yts_service_class_init (YtsServiceClass *klass)
                                               G_TYPE_NONE, 1,
                                               YTS_TYPE_METADATA);
 
+  /**
+   * YtsService::status-changed:
+   * @self: object which emitted the signal.
+   * @fqc_id: fully qualified capability ID of the changed status.
+   * @status_xml: current status xml string.
+   *
+   * This signal is emitted when a the status of capability @fqc_id
+   * of the remote service changed.
+   *
+   * See also #YtsService:statuses, which holds all statuses of the service.
+   *
+   * Since: 0.3
+   */
   _signals[SIG_STATUS_CHANGED] = g_signal_new ("status-changed",
                                               G_TYPE_FROM_CLASS (object_class),
                                               G_SIGNAL_RUN_LAST,
@@ -306,6 +324,14 @@ yts_service_get_service_id (YtsService *self)
   return priv->service_id;
 }
 
+/**
+ * yts_service_get_service_type:
+ * @self: object on which to invoke this method.
+ *
+ * Returns: #YtsService:type
+ *
+ * Since: 0.3
+ */
 char const *
 yts_service_get_service_type (YtsService *self)
 {
@@ -316,6 +342,14 @@ yts_service_get_service_type (YtsService *self)
   return priv->type;
 }
 
+/**
+ * yts_service_get_names:
+ * @self: object on which to invoke this method.
+ *
+ * Returns: #YtsService:names
+ *
+ * Since: 0.3
+ */
 GHashTable *const
 yts_service_get_names (YtsService *self)
 {
@@ -326,6 +360,14 @@ yts_service_get_names (YtsService *self)
   return priv->names;
 }
 
+/**
+ * yts_service_get_statuses:
+ * @self: object on which to invoke this method.
+ *
+ * Returns: #YtsService:statuses
+ *
+ * Since: 0.3
+ */
 GHashTable *const
 yts_service_get_statuses (YtsService  *self)
 {
@@ -386,6 +428,15 @@ create_message (char const  *type,
                        NULL);
 }
 
+/**
+ * yts_service_send_text:
+ * @self: object on which to invoke this method.
+ * @text: message to send to the remote service.
+ *
+ * Send a text message to remote service @self.
+ *
+ * Since: 0.3
+ */
 void
 yts_service_send_text (YtsService *self,
                        char const *text)
@@ -399,6 +450,16 @@ yts_service_send_text (YtsService *self,
   g_object_unref (message);
 }
 
+/**
+ * yts_service_send_list:
+ * @self: object on which to invoke this method.
+ * @texts: messages to send to the remote service.
+ * @length: number of elements in @texts, or -1 if @texts is %NULL-terminated.
+ *
+ * Send a list of text messages to remote service @self.
+ *
+ * Since: 0.3
+ */
 void
 yts_service_send_list (YtsService         *self,
                        char const *const  *texts,
@@ -413,6 +474,18 @@ yts_service_send_list (YtsService         *self,
   g_object_unref (message);
 }
 
+/**
+ * yts_service_send_dictionary:
+ * @self: object on which to invoke this method.
+ * @dictionary: dictionary to send to the remote service.
+ * @length: number of elements in @dictionary, or -1 if @dictionary is
+ *          %NULL-terminated. This is the number of array elements, not
+ *          dictionary entry pairs.
+ *
+ * Send a list of text messages to remote service @self.
+ *
+ * Since: 0.3
+ */
 void
 yts_service_send_dictionary (YtsService         *self,
                              char const *const  *dictionary,

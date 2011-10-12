@@ -45,21 +45,11 @@ G_BEGIN_DECLS
 #define YTS_SERVICE_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), YTS_TYPE_SERVICE, YtsServiceClass))
 
-/**
- * YtsService:
- *
- * Base class for XPMN services.
- */
 typedef struct {
   /*< private >*/
   GObject parent;
 } YtsService;
 
-/**
- * YtsServiceClass:
- *
- * #YtsService class.
- */
 typedef struct {
   /*< private >*/
   GObjectClass parent;
