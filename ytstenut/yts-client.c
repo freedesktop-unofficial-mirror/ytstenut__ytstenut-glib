@@ -2160,12 +2160,59 @@ yts_client_service_added_cb (TpYtsStatus        *tp_status,
 static void
 yts_client_service_removed_cb (TpYtsStatus  *tp_status,
                                char const   *jid,
-                               char const   *sid,
+                               char const   *service_id,
                                YtsClient    *self)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
+  GHashTableIter   iter;
+  bool             start_over;
 
-  yts_roster_remove_service_by_id (priv->roster, jid, sid);
+  yts_roster_remove_service_by_id (priv->roster, jid, service_id);
+
+  /*
+   * Clear pending responses.
+   */
+
+  // FIXME this would be better solved using g_hash_table_foreach_remove().
+  do {
+    char const *invocation_id;
+    InvocationData *data;
+    start_over = false;
+    g_hash_table_iter_init (&iter, priv->invocations);
+    while (g_hash_table_iter_next (&iter,
+                                   (void **) &invocation_id,
+                                   (void **) &data)) {
+
+      if (0 == g_strcmp0 (data->proxy_id, service_id)) {
+        g_hash_table_remove (priv->invocations, invocation_id);
+        start_over = true;
+        break;
+      }
+    }
+  } while (start_over);
+
+  /*
+   * Unregister proxies
+   */
+
+  // FIXME this would be better solved using g_hash_table_foreach_remove().
+  do {
+    char const *capability;
+    ProxyList *proxy_list;
+    start_over = false;
+    g_hash_table_iter_init (&iter, priv->proxies);
+    while (g_hash_table_iter_next (&iter,
+                                   (void **) &capability,
+                                   (void **) &proxy_list)) {
+
+      proxy_list_purge_proxy_id (proxy_list, service_id);
+      if (proxy_list_is_empty (proxy_list)) {
+        g_hash_table_remove (priv->proxies, capability);
+        start_over = true;
+        break;
+      }
+    }
+  } while (start_over);
 }
 
 static void
@@ -3501,63 +3548,6 @@ yts_client_cleanup_contact (YtsClient         *self,
                                    (void **) &proxy_list)) {
 
       proxy_list_purge_contact (proxy_list, contact);
-      if (proxy_list_is_empty (proxy_list)) {
-        g_hash_table_remove (priv->proxies, capability);
-        start_over = true;
-        break;
-      }
-    }
-  } while (start_over);
-}
-
-void
-yts_client_cleanup_service (YtsClient   *self,
-                             YtsService  *service)
-{
-  YtsClientPrivate *priv = GET_PRIVATE (self);
-  char const      *service_id;
-  GHashTableIter   iter;
-  bool             start_over;
-
-  service_id = yts_service_get_service_id (service);
-
-  /*
-   * Clear pending responses.
-   */
-
-  // FIXME this would be better solved using g_hash_table_foreach_remove().
-  do {
-    char const *invocation_id;
-    InvocationData *data;
-    start_over = false;
-    g_hash_table_iter_init (&iter, priv->invocations);
-    while (g_hash_table_iter_next (&iter,
-                                   (void **) &invocation_id,
-                                   (void **) &data)) {
-
-      if (0 == g_strcmp0 (data->proxy_id, service_id)) {
-        g_hash_table_remove (priv->invocations, invocation_id);
-        start_over = true;
-        break;
-      }
-    }
-  } while (start_over);
-
-  /*
-   * Unregister proxies
-   */
-
-  // FIXME this would be better solved using g_hash_table_foreach_remove().
-  do {
-    char const *capability;
-    ProxyList *proxy_list;
-    start_over = false;
-    g_hash_table_iter_init (&iter, priv->proxies);
-    while (g_hash_table_iter_next (&iter,
-                                   (void **) &capability,
-                                   (void **) &proxy_list)) {
-
-      proxy_list_purge_proxy_id (proxy_list, service_id);
       if (proxy_list_is_empty (proxy_list)) {
         g_hash_table_remove (priv->proxies, capability);
         start_over = true;

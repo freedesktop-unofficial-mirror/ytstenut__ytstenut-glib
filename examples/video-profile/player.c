@@ -162,7 +162,7 @@ main (int     argc,
                     G_CALLBACK (_roster_contact_removed), NULL);
   g_signal_connect (roster, "service-added",
                     G_CALLBACK (_roster_service_added), NULL);
-  g_signal_connect (roster, "contact-added",
+  g_signal_connect (roster, "service-removed",
                     G_CALLBACK (_roster_service_removed), NULL);
 
   /* Instantiate and publish example player object so others can access it. */

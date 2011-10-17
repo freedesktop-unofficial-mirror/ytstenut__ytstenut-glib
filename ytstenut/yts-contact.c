@@ -148,8 +148,6 @@ yts_contact_service_removed (YtsContact *self,
 
   g_return_if_fail (uid && *uid);
 
-  yts_client_cleanup_service (priv->client, service);
-
   if (!g_hash_table_remove (priv->services, uid))
     g_warning (G_STRLOC ": unknown service with uid %s", uid);
 

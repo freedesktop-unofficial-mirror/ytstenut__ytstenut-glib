@@ -43,10 +43,6 @@ void
 yts_client_cleanup_contact (YtsClient         *self,
                              YtsContact const  *contact);
 
-void
-yts_client_cleanup_service (YtsClient   *self,
-                             YtsService  *service);
-
 bool
 yts_client_get_invocation_proxy (YtsClient   *self,
                                   char const   *invocation_id,
