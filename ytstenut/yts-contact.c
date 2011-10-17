@@ -80,7 +80,6 @@ typedef struct {
   char         *icon_token; /* token identifying this contacts avatar */
 
   YtsClient   *client;     /* back-reference to the client that owns us */
-  YtsPresence  presence;   /* presence state of this client */
 
   GQueue       *pending_files;    /* files dispatched before channel open */
   GHashTable   *ft_cancellables;
@@ -103,7 +102,6 @@ enum
   PROP_JID,
   PROP_ICON,
   PROP_CLIENT,
-  PROP_PRESENCE,
   PROP_TP_CONTACT,
 
   PROP_LAST
@@ -204,20 +202,6 @@ yts_contact_class_init (YtsContactClass *klass)
                                    properties[PROP_CLIENT]);
 
   /**
-   * YtsContact:presence:
-   *
-   * #YtsPresence state for this contact
-   */
-  properties[PROP_PRESENCE] = g_param_spec_enum ("presence",
-                                                 "YtsPresence",
-                                                 "YtsPresence",
-                                                 YTS_TYPE_PRESENCE,
-                                                 YTS_PRESENCE_UNAVAILABLE,
-                                                 G_PARAM_READABLE);
-  g_object_class_install_property (object_class, PROP_PRESENCE,
-                                   properties[PROP_PRESENCE]);
-
-  /**
    * YtsContact:jid:
    *
    * The jid of this contact
@@ -300,48 +284,6 @@ yts_contact_class_init (YtsContactClass *klass)
 }
 
 static void
-yts_contact_presence_cb (TpContact    *tp_contact,
-                          guint         type,
-                          gchar        *status,
-                          gchar        *message,
-                          YtsContact  *self)
-{
-  YtsContactPrivate *priv = GET_PRIVATE (self);
-  YtsPresence        presence;
-
-  YTS_NOTE (CONTACT, "Presence for %s changed: %s [%s]",
-             tp_contact_get_identifier (tp_contact), status, message);
-
-
-  /*
-   * The Ytstenut presence differs from the human IM presence; basically, we
-   * only care whether the user is online or offline.
-   */
-  switch (type)
-    {
-    case TP_CONNECTION_PRESENCE_TYPE_AVAILABLE:
-    case TP_CONNECTION_PRESENCE_TYPE_AWAY:
-    case TP_CONNECTION_PRESENCE_TYPE_EXTENDED_AWAY:
-    case TP_CONNECTION_PRESENCE_TYPE_BUSY:
-    case TP_CONNECTION_PRESENCE_TYPE_HIDDEN:
-    default:
-      presence = YTS_PRESENCE_AVAILABLE;
-      break;
-
-    case TP_CONNECTION_PRESENCE_TYPE_UNKNOWN:
-    case TP_CONNECTION_PRESENCE_TYPE_OFFLINE:
-    case TP_CONNECTION_PRESENCE_TYPE_ERROR:
-      presence = YTS_PRESENCE_UNAVAILABLE;
-    }
-
-  if (priv->presence != presence)
-    {
-      priv->presence = presence;
-      g_object_notify_by_pspec (G_OBJECT (self), properties[PROP_PRESENCE]);
-    }
-}
-
-static void
 yts_contact_tp_contact_cb (TpConnection       *connection,
                             guint               n_contacts,
                             TpContact * const  *contacts,
@@ -363,14 +305,6 @@ yts_contact_tp_contact_cb (TpConnection       *connection,
   YTS_NOTE (CONTACT, "Got TpContact for %s", priv->jid);
 
   priv->tp_contact = g_object_ref (contacts[0]);
-
-  /*
-   * TODO -- do we need to do this ? I think all services will disappear if
-   * if the contact goes off line.
-   */
-  tp_g_signal_connect_object (priv->tp_contact, "presence-changed",
-                              G_CALLBACK (yts_contact_presence_cb),
-                              self, 0);
 
   tp_g_signal_connect_object (priv->tp_contact, "notify::avatar-file",
                               G_CALLBACK (yts_contact_avatar_file_cb),
@@ -432,9 +366,6 @@ yts_contact_get_property (GObject    *object,
         g_warning ("Should use ytst_contact_get_icon() instead of querying "
                    "YstgContact:icon");
       }
-      break;
-    case PROP_PRESENCE:
-      g_value_set_enum (value, priv->presence);
       break;
     case PROP_TP_CONTACT:
       g_value_set_object (value, priv->tp_contact);

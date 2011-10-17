@@ -48,7 +48,6 @@ yts_metadata_get_type
 yts_metadata_is_equal
 yts_metadata_new_from_xml
 yts_metadata_to_string
-yts_presence_get_type
 yts_protocol_get_type
 yts_proxy_create_invocation_id
 yts_proxy_get_fqc_id

@@ -46,18 +46,6 @@ typedef enum { /*< prefix=YTS_PROTOCOL >*/
   YTS_PROTOCOL_LOCAL_XMPP
 } YtsProtocol;
 
-/**
- * YtsPresence:
- * @YTS_PRESENCE_UNAVAILABLE: Client is not available
- * @YTS_PRESENCE_AVAILABLE: Client is available
- *
- * YtsPresence represents the presence status of #YtsClient.
- */
-typedef enum { /*< prefix=YTS_PRESENCE >*/
-  YTS_PRESENCE_UNAVAILABLE = 0,
-  YTS_PRESENCE_AVAILABLE
-} YtsPresence;
-
 /* FIXME maybe create an yts-vs-type.h 
  * so YTS_TYPE_VS_QUERY_RESULT_ORDER can become YTS_VP_TYPE_QUERY_RESULT_ORDER */
 typedef enum { /*< prefix=YTS_VP_QUERY >*/
