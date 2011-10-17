@@ -51,7 +51,6 @@
 #include "yts-service.h"
 #include "yts-service-adapter.h"
 #include "yts-status.h"
-#include "yts-types.h"
 
 #include "profile/yts-profile.h"
 #include "profile/yts-profile-adapter.h"

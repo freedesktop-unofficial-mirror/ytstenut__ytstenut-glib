@@ -23,7 +23,6 @@
 
 #include <stdbool.h>
 #include <glib-object.h>
-#include <ytstenut/yts-types.h>
 
 G_BEGIN_DECLS
 
@@ -66,6 +65,15 @@ yts_vp_query_get_progress (YtsVPQuery *self);
 
 GList *
 yts_vp_query_get_results (YtsVPQuery *self);
+
+/* FIXME maybe create an yts-vs-type.h
+ * so YTS_TYPE_VS_QUERY_RESULT_ORDER can become YTS_VP_TYPE_QUERY_RESULT_ORDER */
+typedef enum { /*< prefix=YTS_VP_QUERY >*/
+  YTS_VP_QUERY_NONE = 0,
+  YTS_VP_QUERY_CHRONOLOGICAL,
+  YTS_VP_QUERY_DATE,
+  YTS_VP_QUERY_RELEVANCE
+} YtsVPQueryResultOrder;
 
 YtsVPQueryResultOrder
 yts_vp_query_get_result_order (YtsVPQuery *self);

@@ -29,7 +29,6 @@
 #include <ytstenut/yts-capability.h>
 #include <ytstenut/yts-error.h>
 #include <ytstenut/yts-roster.h>
-#include <ytstenut/yts-types.h>
 
 G_BEGIN_DECLS
 
@@ -101,6 +100,18 @@ typedef struct {
 
 GType
 yts_client_get_type (void) G_GNUC_CONST;
+
+/**
+ * YtsProtocol:
+ * @YTS_PROTOCOL_XMPP: Jabber
+ * @YTS_PROTOCOL_LOCAL_XMPP: XEP-0174 serverless messaging.
+ *
+ * YtsProtocol represents the xmpp protocol to use
+ */
+typedef enum { /*< prefix=YTS_PROTOCOL >*/
+  YTS_PROTOCOL_XMPP = 0,
+  YTS_PROTOCOL_LOCAL_XMPP
+} YtsProtocol;
 
 YtsClient *
 yts_client_new (YtsProtocol  protocol,

@@ -20,7 +20,6 @@ source_h =						\
 		$(srcdir)/yts-main.h			\
 		$(srcdir)/yts-roster.h			\
 		$(srcdir)/yts-service.h		\
-		$(srcdir)/yts-types.h			\
 		$(srcdir)/yts-version.h		\
 		\
 		$(srcdir)/yts-proxy.h \

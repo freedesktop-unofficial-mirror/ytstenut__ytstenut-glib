@@ -46,7 +46,6 @@
 #include "yts-marshal.h"
 #include "yts-proxy-service-internal.h"
 #include "yts-service-internal.h"
-#include "yts-types.h"
 #include "config.h"
 
 static void yts_c_pending_file_free (gpointer file);

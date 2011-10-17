@@ -21,7 +21,7 @@
 #ifndef YTS_ERROR_H
 #define YTS_ERROR_H
 
-#include <ytstenut/yts-types.h>
+#include <glib-object.h>
 
 G_BEGIN_DECLS
 
