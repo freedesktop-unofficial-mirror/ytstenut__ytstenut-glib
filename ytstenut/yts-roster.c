@@ -116,11 +116,6 @@ _dispose (GObject *object)
 {
   YtsRosterPrivate *priv = GET_PRIVATE (object);
 
-  if (priv->client) {
-    /* no ownership */
-    priv->client = NULL;
-  }
-
   if (priv->contacts) {
 
     GHashTableIter iter;
@@ -135,10 +130,17 @@ _dispose (GObject *object)
       g_signal_handlers_disconnect_by_func (contact,
                                             _contact_send_message,
                                             object);
+
+      yts_client_cleanup_contact (priv->client, contact);
     }
 
     g_hash_table_destroy (priv->contacts);
     priv->contacts = NULL;
+  }
+
+  if (priv->client) {
+    /* no ownership */
+    priv->client = NULL;
   }
 
   G_OBJECT_CLASS (yts_roster_parent_class)->dispose (object);
@@ -303,6 +305,7 @@ yts_roster_remove_service_by_id (YtsRoster  *self,
     g_signal_handlers_disconnect_by_func (contact,
                                           _contact_send_message,
                                           self);
+    yts_client_cleanup_contact (priv->client, contact);
     g_object_ref (contact);
     g_hash_table_remove (priv->contacts, contact_id);
     g_signal_emit (self, _signals[SIG_CONTACT_REMOVED], 0, contact);
@@ -405,6 +408,12 @@ yts_roster_clear (YtsRoster *self)
     {
       YtsContact *contact = value;
 
+      g_signal_handlers_disconnect_by_func (contact,
+                                            _contact_send_message,
+                                            self);
+
+      yts_client_cleanup_contact (priv->client, contact);
+
       g_object_ref (contact);
 
       g_hash_table_iter_remove (&iter);
@@ -440,45 +449,74 @@ yts_roster_contact_service_added_cb (YtsContact *contact,
   g_signal_emit (roster, _signals[SIG_SERVICE_ADDED], 0, service);
 }
 
+static void
+_connection_get_contacts (TpConnection        *connection,
+                            guint              n_contacts,
+                            TpContact *const  *contacts,
+                            const char *const *requested_ids,
+                            GHashTable        *failed_id_errors,
+                            const GError      *error,
+                            gpointer           self_,
+                            GObject           *service_)
+{
+  YtsRoster *self = YTS_ROSTER (self_);
+  YtsRosterPrivate *priv = GET_PRIVATE (self);
+  YtsService *service = YTS_SERVICE (service_);
+
+  if (n_contacts == 0) {
+
+    GError const *error;
+
+    g_return_if_fail (requested_ids && requested_ids[0]);
+    g_return_if_fail (failed_id_errors);
+
+    error = g_hash_table_lookup (failed_id_errors, requested_ids[0]);
+    g_critical ("%s : %s", G_STRLOC, error->message);
+
+  } else {
+
+    YtsContact *contact;
+    char const *contact_id = requested_ids[0];
+    TpContact *tp_contact = TP_CONTACT (contacts[0]);
+
+    YTS_NOTE (ROSTER, "Creating new contact for %s", contact_id);
+
+    contact = yts_contact_new (tp_contact);
+
+    g_signal_connect (contact, "service-added",
+                      G_CALLBACK (yts_roster_contact_service_added_cb),
+                      self);
+    g_signal_connect (contact, "service-removed",
+                      G_CALLBACK (yts_roster_contact_service_removed_cb),
+                      self);
+
+    g_hash_table_insert (priv->contacts, g_strdup (contact_id), contact);
+
+    YTS_NOTE (ROSTER, "Emitting contact-added for new contact %s", contact_id);
+    g_signal_emit (self, _signals[SIG_CONTACT_ADDED], 0, contact);
+
+    g_signal_connect (contact, "send-message",
+                      G_CALLBACK (_contact_send_message), self);
+
+    yts_contact_add_service (contact, service);
+    g_object_unref (service);
+  }
+}
+
 void
-yts_roster_add_service (YtsRoster           *self,
-                          char const        *contact_id,
-                          char const        *service_id,
-                          char const        *type,
-                          char const *const *caps,
-                          GHashTable        *names,
-                          GHashTable        *statuses)
+yts_roster_add_service (YtsRoster         *self,
+                        TpConnection      *tp_connection,
+                        char const        *contact_id,
+                        char const        *service_id,
+                        char const        *type,
+                        char const *const *caps,
+                        GHashTable        *names,
+                        GHashTable        *statuses)
 {
   YtsRosterPrivate *priv = GET_PRIVATE (self);
   YtsContact        *contact;
   YtsService        *service;
   YtsServiceFactory *factory = yts_service_factory_get_default ();
-
-  g_return_if_fail (YTS_IS_ROSTER (self));
-
-  if (!(contact = (YtsContact*)yts_roster_find_contact_by_jid (self, contact_id)))
-    {
-      YTS_NOTE (ROSTER, "Creating new contact for %s", contact_id);
-
-      contact = yts_contact_new (priv->client, contact_id);
-
-      g_signal_connect (contact, "service-added",
-                        G_CALLBACK (yts_roster_contact_service_added_cb),
-                        self);
-      g_signal_connect (contact, "service-removed",
-                        G_CALLBACK (yts_roster_contact_service_removed_cb),
-                        self);
-
-      g_hash_table_insert (priv->contacts, g_strdup (contact_id), contact);
-
-      YTS_NOTE (ROSTER, "Emitting contact-added for new contact %s", contact_id);
-      g_signal_emit (self, _signals[SIG_CONTACT_ADDED], 0, contact);
-
-      g_signal_connect (contact, "send-message",
-                        G_CALLBACK (_contact_send_message), self);
-    }
-
-  YTS_NOTE (ROSTER, "Adding service %s:%s", contact_id, service_id);
 
   service = yts_service_factory_create_service (factory,
                                                 caps,
@@ -487,9 +525,28 @@ yts_roster_add_service (YtsRoster           *self,
                                                 names,
                                                 statuses);
 
-  yts_contact_add_service (contact, service);
+  contact = yts_roster_find_contact_by_jid (self, contact_id);
+  if (contact) {
 
-  g_object_unref (service);
+    yts_contact_add_service (contact, service);
+
+  } else {
+
+    TpContactFeature const features[] = { TP_CONTACT_FEATURE_PRESENCE,
+                                          TP_CONTACT_FEATURE_CONTACT_INFO,
+                                          TP_CONTACT_FEATURE_AVATAR_DATA,
+                                          TP_CONTACT_FEATURE_CAPABILITIES };
+
+    tp_connection_get_contacts_by_id (tp_connection,
+                                      1,
+                                      &contact_id,
+                                      G_N_ELEMENTS (features),
+                                      features,
+                                      _connection_get_contacts,
+                                      self,
+                                      NULL,
+                                      G_OBJECT (service));
+  }
 }
 
 void

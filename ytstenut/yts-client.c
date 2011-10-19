@@ -2134,6 +2134,7 @@ yts_client_process_one_service (YtsClient         *self,
   }
 
   yts_roster_add_service (roster,
+                          priv->connection,
                           jid,
                           sid,
                           type,

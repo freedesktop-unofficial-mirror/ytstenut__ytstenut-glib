@@ -38,7 +38,7 @@
 #include <telepathy-glib/channel.h>
 
 #include "empathy-tp-file.h"
-#include "yts-client-internal.h"
+#include "yts-capability.h"
 #include "yts-contact-internal.h"
 #include "yts-debug.h"
 #include "yts-enum-types.h"
@@ -52,7 +52,6 @@ static void yts_c_pending_file_free (gpointer file);
 
 static void yts_contact_dispose (GObject *object);
 static void yts_contact_finalize (GObject *object);
-static void yts_contact_constructed (GObject *object);
 static void yts_contact_get_property (GObject    *object,
                                        guint       property_id,
                                        GValue     *value,
@@ -78,8 +77,6 @@ typedef struct {
 
   char         *icon_token; /* token identifying this contacts avatar */
 
-  YtsClient   *client;     /* back-reference to the client that owns us */
-
   GQueue       *pending_files;    /* files dispatched before channel open */
   GHashTable   *ft_cancellables;
 
@@ -100,7 +97,6 @@ enum
   PROP_0,
   PROP_JID,
   PROP_ICON,
-  PROP_CLIENT,
   PROP_TP_CONTACT,
 
   PROP_LAST
@@ -162,7 +158,6 @@ yts_contact_class_init (YtsContactClass *klass)
 
   object_class->dispose      = yts_contact_dispose;
   object_class->finalize     = yts_contact_finalize;
-  object_class->constructed  = yts_contact_constructed;
   object_class->get_property = yts_contact_get_property;
   object_class->set_property = yts_contact_set_property;
 
@@ -188,19 +183,6 @@ yts_contact_class_init (YtsContactClass *klass)
                                    properties[PROP_ICON]);
 
   /**
-   * YtsContact:client:
-   *
-   * #YtsClient that owns the roster
-   */
-  properties[PROP_CLIENT] = g_param_spec_object ("client",
-                                               "Client",
-                                               "Client",
-                                               YTS_TYPE_CLIENT,
-                               G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY);
-  g_object_class_install_property (object_class, PROP_CLIENT,
-                                   properties[PROP_CLIENT]);
-
-  /**
    * YtsContact:jid:
    *
    * The jid of this contact
@@ -218,12 +200,12 @@ yts_contact_class_init (YtsContactClass *klass)
    *
    * #TpContact of this item.
    */
-  properties[PROP_TP_CONTACT] = g_param_spec_object ("tp-contact",
-                                                     "TP Contact",
-                                                     "TP Contact",
+  properties[PROP_TP_CONTACT] = g_param_spec_object ("tp-contact", "", "",
                                                      TP_TYPE_CONTACT,
-                                                     G_PARAM_READABLE);
-  g_object_class_install_property (object_class, PROP_TP_CONTACT,
+                                                     G_PARAM_READWRITE |
+                                                     G_PARAM_CONSTRUCT_ONLY);
+  g_object_class_install_property (object_class,
+                                   PROP_TP_CONTACT,
                                    properties[PROP_TP_CONTACT]);
 
   /**
@@ -286,7 +268,7 @@ static void
 yts_contact_tp_contact_cb (TpConnection       *connection,
                             guint               n_contacts,
                             TpContact * const  *contacts,
-                            const char * const *requesed_ids,
+                            const char * const *requested_ids,
                             GHashTable         *failed_id_errors,
                             const GError       *error,
                             gpointer            data,
@@ -310,37 +292,6 @@ yts_contact_tp_contact_cb (TpConnection       *connection,
                               self, 0);
 
   g_object_notify_by_pspec (G_OBJECT (self), properties[PROP_TP_CONTACT]);
-}
-
-static void
-yts_contact_constructed (GObject *object)
-{
-  YtsContact        *self = YTS_CONTACT (object);
-  YtsContactPrivate *priv = GET_PRIVATE (self);
-  TpConnection      *connection;
-  TpContactFeature   features[] = { TP_CONTACT_FEATURE_PRESENCE,
-                                    TP_CONTACT_FEATURE_CONTACT_INFO,
-                                    TP_CONTACT_FEATURE_AVATAR_DATA,
-                                    TP_CONTACT_FEATURE_CAPABILITIES};
-
-  if (G_OBJECT_CLASS (yts_contact_parent_class)->constructed)
-    G_OBJECT_CLASS (yts_contact_parent_class)->constructed (object);
-
-  connection = yts_client_get_connection (priv->client);
-
-  g_assert (connection);
-
-  YTS_NOTE (CONTACT, "Requesting TpContact for %s", priv->contact_id);
-
-  tp_connection_get_contacts_by_id (connection,
-                                    1,
-                                    &priv->contact_id,
-                                    G_N_ELEMENTS (features),
-                                    (const TpContactFeature *)&features,
-                                    yts_contact_tp_contact_cb,
-                                    self,
-                                    NULL,
-                                    (GObject*) object);
 }
 
 static void
@@ -408,10 +359,9 @@ yts_contact_set_property (GObject      *object,
     case PROP_JID:
       priv->contact_id = g_intern_string (g_value_get_string (value));
       break;
-    case PROP_CLIENT:
-      priv->client = g_value_get_object (value);
+    case PROP_TP_CONTACT:
+      priv->tp_contact = g_value_dup_object (value);
       break;
-
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -444,11 +394,6 @@ yts_contact_dispose (GObject *object)
     return;
 
   priv->disposed = TRUE;
-
-  if (priv->client) {
-    yts_client_cleanup_contact (priv->client, YTS_CONTACT (object));
-    priv->client = NULL;
-  }
 
   g_hash_table_destroy (priv->services);
   priv->services = NULL;
@@ -497,7 +442,7 @@ yts_contact_get_id (YtsContact const *self)
  * yts_contact_get_name:
  * @self: object on which to invoke this method.
  *
- * Retrieves human readable name of this client
+ * Retrieves human readable name of this contact.
  *
  * Returns: (transfer none): The name of this contact.
  */
@@ -542,14 +487,10 @@ yts_contact_get_icon (YtsContact const   *self,
 }
 
 YtsContact *
-yts_contact_new (YtsClient *client, const char *contact_id)
+yts_contact_new (TpContact *tp_contact)
 {
-  g_return_val_if_fail (YTS_IS_CLIENT (client), NULL);
-  g_return_val_if_fail (contact_id && *contact_id, NULL);
-
   return g_object_new (YTS_TYPE_CONTACT,
-                       "client", client,
-                       "jid",    contact_id,
+                       "tp-contact", tp_contact,
                        NULL);
 }
 
@@ -626,7 +567,6 @@ yts_contact_ft_op_cb (EmpathyTpFile *tp_file,
   YtsCFtOp          *op     = data;
   YtsContact        *self   = op->item;
   YtsContactPrivate *priv   = GET_PRIVATE (self);
-  YtsClient         *client = priv->client;
   guint32             atom   = op->atom;
 
   if (error)
@@ -651,7 +591,6 @@ yts_contact_ft_op_cb (EmpathyTpFile *tp_file,
     }
 
   yts_c_ft_op_free (op);
-  yts_client_emit_error (client, e);
 }
 
 typedef struct
@@ -860,9 +799,7 @@ yts_contact_create_ft_channel_cb (TpConnection *proxy,
       YtsCPendingFile *pending_file = data;
       YtsError         e    = (YTS_ERROR_NO_ROUTE | pending_file->atom);
 
-      yts_client_emit_error (priv->client, e);
-
-      g_warning ("Failed to open channel: %s", error->message);
+      g_critical ("Failed to open channel: %s", error->message);
     }
 }
 

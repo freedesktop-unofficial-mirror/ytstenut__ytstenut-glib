@@ -23,6 +23,7 @@
 
 #include <stdbool.h>
 #include <glib.h>
+#include <telepathy-glib/connection.h>
 #include <ytstenut/yts-contact.h>
 #include <ytstenut/yts-roster.h>
 
@@ -40,6 +41,7 @@ yts_roster_remove_contact (YtsRoster  *roster,
 
 void
 yts_roster_add_service (YtsRoster         *roster,
+                        TpConnection      *tp_connection,
                         char const        *contact_id,
                         char const        *service_id,
                         char const        *type,

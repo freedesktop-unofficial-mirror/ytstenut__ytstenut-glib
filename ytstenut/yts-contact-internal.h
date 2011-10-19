@@ -22,11 +22,11 @@
 #define YTS_CONTACT_INTERNAL_H
 
 #include <stdbool.h>
+#include <telepathy-glib/contact.h>
 #include <ytstenut/yts-contact.h>
 
 YtsContact *
-yts_contact_new (YtsClient  *client,
-                 char const *contact_id);
+yts_contact_new (TpContact *tp_contact);
 
 bool
 yts_contact_dispatch_event (YtsContact  *self,
