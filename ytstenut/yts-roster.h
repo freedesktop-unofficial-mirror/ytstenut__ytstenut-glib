@@ -65,7 +65,7 @@ yts_roster_get_contacts (YtsRoster const *self);
 
 YtsContact *const
 yts_roster_find_contact_by_jid (YtsRoster const *self,
-                                char const      *jid);
+                                char const      *contact_id);
 
 G_END_DECLS
 

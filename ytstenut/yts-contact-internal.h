@@ -26,7 +26,7 @@
 
 YtsContact *
 yts_contact_new (YtsClient  *client,
-                 char const *jid);
+                 char const *contact_id);
 
 bool
 yts_contact_dispatch_event (YtsContact  *self,
@@ -45,8 +45,8 @@ yts_contact_add_service (YtsContact *contact,
                          YtsService *service);
 
 void
-yts_contact_remove_service_by_uid (YtsContact *contact,
-                                   char const *uid);
+yts_contact_remove_service_by_id (YtsContact  *contact,
+                                  char const  *service_id);
 
 bool
 yts_contact_is_empty (YtsContact *contact);

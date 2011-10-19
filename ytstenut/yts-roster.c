@@ -314,8 +314,8 @@ yts_roster_get_contacts (YtsRoster const *self)
 /*
  * yts_roster_remove_service_by_id:
  * @self: object on which to invoke this method.
- * @jid: JID of the contact that the service is running on
- * @uid: the service UID.
+ * @contact_id: JID of the contact that the service is running on
+ * @service_id: the service UID.
  *
  * Removes service from a roster and emits YtsRoster::service-removed signal.
  *
@@ -323,8 +323,8 @@ yts_roster_get_contacts (YtsRoster const *self)
  */
 void
 yts_roster_remove_service_by_id (YtsRoster *self,
-                                   char const *jid,
-                                   char const *uid)
+                                   char const *contact_id,
+                                   char const *service_id)
 {
   YtsRosterPrivate *priv = GET_PRIVATE (self);
   YtsContact       *contact;
@@ -332,13 +332,13 @@ yts_roster_remove_service_by_id (YtsRoster *self,
 
   g_return_if_fail (YTS_IS_ROSTER (self));
 
-  if (!(contact = (YtsContact*)yts_roster_find_contact_by_jid (self, jid)))
+  if (!(contact = (YtsContact*)yts_roster_find_contact_by_jid (self, contact_id)))
     {
       g_warning ("Contact for service not found");
       return;
     }
 
-  yts_contact_remove_service_by_uid (contact, uid);
+  yts_contact_remove_service_by_id (contact, service_id);
 
   emit = yts_contact_is_empty (contact);
 
@@ -348,7 +348,7 @@ yts_roster_remove_service_by_id (YtsRoster *self,
                                             _contact_send_message,
                                             self);
       g_object_ref (contact);
-      g_hash_table_remove (priv->contacts, jid);
+      g_hash_table_remove (priv->contacts, contact_id);
       g_signal_emit (self, signals[CONTACT_REMOVED], 0, contact);
       g_object_unref (contact);
     }
@@ -392,7 +392,7 @@ yts_roster_find_contact_by_handle (YtsRoster *self,
 /**
  * yts_roster_find_contact_by_jid:
  * @self: object on which to invoke this method.
- * @jid: jid of this contact
+ * @contact_id: JID of this contact
  *
  * Finds contact in a roster.
  *
@@ -400,13 +400,13 @@ yts_roster_find_contact_by_handle (YtsRoster *self,
  */
 YtsContact *const
 yts_roster_find_contact_by_jid (YtsRoster const *self,
-                                char const      *jid)
+                                char const      *contact_id)
 {
   YtsRosterPrivate *priv = GET_PRIVATE (self);
   GHashTableIter     iter;
   gpointer           key, value;
 
-  g_return_val_if_fail (YTS_IS_ROSTER (self) && jid, NULL);
+  g_return_val_if_fail (YTS_IS_ROSTER (self) && contact_id, NULL);
 
   g_hash_table_iter_init (&iter, priv->contacts);
   while (g_hash_table_iter_next (&iter, &key, &value))
@@ -414,7 +414,7 @@ yts_roster_find_contact_by_jid (YtsRoster const *self,
       YtsContact *contact = value;
       char const *j       = key;
 
-      if (j && !strcmp (j, jid))
+      if (j && !strcmp (j, contact_id))
         {
           return contact;
         }
@@ -484,10 +484,19 @@ yts_roster_contact_service_added_cb (YtsContact *contact,
   g_signal_emit (roster, signals[SERVICE_ADDED], 0, service);
 }
 
+typedef struct {
+  char const        *contact_id;
+  char const        *service_id;
+  char const        *type;
+  char const *const *caps;
+  GHashTable        *names;
+  GHashTable        *statuses;
+} ServiceData;
+
 void
 yts_roster_add_service (YtsRoster           *self,
-                          char const        *jid,
-                          char const        *sid,
+                          char const        *contact_id,
+                          char const        *service_id,
                           char const        *type,
                           char const *const *caps,
                           GHashTable        *names,
@@ -500,11 +509,11 @@ yts_roster_add_service (YtsRoster           *self,
 
   g_return_if_fail (YTS_IS_ROSTER (self));
 
-  if (!(contact = (YtsContact*)yts_roster_find_contact_by_jid (self, jid)))
+  if (!(contact = (YtsContact*)yts_roster_find_contact_by_jid (self, contact_id)))
     {
-      YTS_NOTE (ROSTER, "Creating new contact for %s", jid);
+      YTS_NOTE (ROSTER, "Creating new contact for %s", contact_id);
 
-      contact = yts_contact_new (priv->client, jid);
+      contact = yts_contact_new (priv->client, contact_id);
 
       g_signal_connect (contact, "service-added",
                         G_CALLBACK (yts_roster_contact_service_added_cb),
@@ -513,20 +522,20 @@ yts_roster_add_service (YtsRoster           *self,
                         G_CALLBACK (yts_roster_contact_service_removed_cb),
                         self);
 
-      g_hash_table_insert (priv->contacts, g_strdup (jid), contact);
+      g_hash_table_insert (priv->contacts, g_strdup (contact_id), contact);
 
-      YTS_NOTE (ROSTER, "Emitting contact-added for new contact %s", jid);
+      YTS_NOTE (ROSTER, "Emitting contact-added for new contact %s", contact_id);
       g_signal_emit (self, signals[CONTACT_ADDED], 0, contact);
 
       g_signal_connect (contact, "send-message",
                         G_CALLBACK (_contact_send_message), self);
     }
 
-  YTS_NOTE (ROSTER, "Adding service %s:%s", jid, sid);
+  YTS_NOTE (ROSTER, "Adding service %s:%s", contact_id, service_id);
 
   service = yts_service_factory_create_service (factory,
                                                 caps,
-                                                sid,
+                                                service_id,
                                                 type,
                                                 names,
                                                 statuses);

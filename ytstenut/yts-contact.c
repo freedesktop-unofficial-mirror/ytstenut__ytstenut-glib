@@ -72,7 +72,7 @@ G_DEFINE_TYPE (YtsContact, yts_contact, G_TYPE_OBJECT);
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_CONTACT, YtsContactPrivate))
 
 typedef struct {
-  const char   *jid;
+  const char   *contact_id;
   GHashTable   *services;   /* hash of YtsService instances */
   TpContact    *tp_contact; /* TpContact associated with YtsContact */
 
@@ -301,7 +301,7 @@ yts_contact_tp_contact_cb (TpConnection       *connection,
       return;
     }
 
-  YTS_NOTE (CONTACT, "Got TpContact for %s", priv->jid);
+  YTS_NOTE (CONTACT, "Got TpContact for %s", priv->contact_id);
 
   priv->tp_contact = g_object_ref (contacts[0]);
 
@@ -330,11 +330,11 @@ yts_contact_constructed (GObject *object)
 
   g_assert (connection);
 
-  YTS_NOTE (CONTACT, "Requesting TpContact for %s", priv->jid);
+  YTS_NOTE (CONTACT, "Requesting TpContact for %s", priv->contact_id);
 
   tp_connection_get_contacts_by_id (connection,
                                     1,
-                                    &priv->jid,
+                                    &priv->contact_id,
                                     G_N_ELEMENTS (features),
                                     (const TpContactFeature *)&features,
                                     yts_contact_tp_contact_cb,
@@ -355,7 +355,7 @@ yts_contact_get_property (GObject    *object,
   switch (property_id)
     {
     case PROP_JID:
-      g_value_set_string (value, priv->jid);
+      g_value_set_string (value, priv->contact_id);
       break;
     case PROP_ICON:
       {
@@ -406,7 +406,7 @@ yts_contact_set_property (GObject      *object,
   switch (property_id)
     {
     case PROP_JID:
-      priv->jid = g_intern_string (g_value_get_string (value));
+      priv->contact_id = g_intern_string (g_value_get_string (value));
       break;
     case PROP_CLIENT:
       priv->client = g_value_get_object (value);
@@ -481,7 +481,7 @@ yts_contact_finalize (GObject *object)
  *
  * Retrieves the jabber identifier of this contact.
  *
- * Returns: (transfer none): The jid of this contact.
+ * Returns: (transfer none): The JID of this contact.
  */
 const char *
 yts_contact_get_id (YtsContact const *self)
@@ -490,7 +490,7 @@ yts_contact_get_id (YtsContact const *self)
 
   g_return_val_if_fail (YTS_IS_CONTACT (self), NULL);
 
-  return priv->jid;
+  return priv->contact_id;
 }
 
 /**
@@ -542,14 +542,14 @@ yts_contact_get_icon (YtsContact const   *self,
 }
 
 YtsContact *
-yts_contact_new (YtsClient *client, const char *jid)
+yts_contact_new (YtsClient *client, const char *contact_id)
 {
   g_return_val_if_fail (YTS_IS_CLIENT (client), NULL);
-  g_return_val_if_fail (jid && *jid, NULL);
+  g_return_val_if_fail (contact_id && *contact_id, NULL);
 
   return g_object_new (YTS_TYPE_CONTACT,
                        "client", client,
-                       "jid",    jid,
+                       "jid",    contact_id,
                        NULL);
 }
 
@@ -1096,25 +1096,25 @@ yts_contact_add_service (YtsContact *self,
    */
   YTS_NOTE (CONTACT, "New service %s on %s",
              yts_service_get_id (service),
-             priv->jid);
+             priv->contact_id);
 
   g_signal_emit (self, signals[SERVICE_ADDED], 0, service);
 }
 
 void
-yts_contact_remove_service_by_uid (YtsContact *self,
-                                   const char *uid)
+yts_contact_remove_service_by_id (YtsContact  *self,
+                                  const char  *service_id)
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
   YtsService        *service;
 
-  g_return_if_fail (uid && *uid);
+  g_return_if_fail (service_id && *service_id);
 
   /*
    * Look up the service and emit the service-removed signal; the signal closure
    *  will take care of the rest.
    */
-  service = g_hash_table_lookup (priv->services, uid);
+  service = g_hash_table_lookup (priv->services, service_id);
   if (service)
     {
       g_signal_emit (self, signals[SERVICE_REMOVED], 0, service);
@@ -1123,7 +1123,7 @@ yts_contact_remove_service_by_uid (YtsContact *self,
     {
       g_warning ("%s : Trying to remove service %s but not found?!",
                  G_STRLOC,
-                 uid);
+                 service_id);
     }
 }
 
@@ -1142,7 +1142,7 @@ yts_contact_dispatch_event (YtsContact  *self,
                              GVariant     *arguments)
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
-  char const      *service_uid;
+  char const      *service_id;
   YtsService     *service;
   GHashTableIter   iter;
   gboolean         dispatched = FALSE;
@@ -1151,7 +1151,7 @@ yts_contact_dispatch_event (YtsContact  *self,
 
   g_hash_table_iter_init (&iter, priv->services);
   while (g_hash_table_iter_next (&iter,
-                                 (void **) &service_uid,
+                                 (void **) &service_id,
                                  (void **) &service)) {
     if (YTS_IS_PROXY_SERVICE (service) &&
         yts_capability_has_fqc_id (YTS_CAPABILITY (service), capability)) {
@@ -1174,7 +1174,7 @@ yts_contact_dispatch_response (YtsContact *self,
                                 GVariant    *response)
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
-  char const      *service_uid;
+  char const      *service_id;
   YtsService     *service;
   GHashTableIter   iter;
   gboolean         dispatched = FALSE;
@@ -1183,7 +1183,7 @@ yts_contact_dispatch_response (YtsContact *self,
 
   g_hash_table_iter_init (&iter, priv->services);
   while (g_hash_table_iter_next (&iter,
-                                 (void **) &service_uid,
+                                 (void **) &service_id,
                                  (void **) &service)) {
     if (YTS_IS_PROXY_SERVICE (service) &&
         yts_capability_has_fqc_id (YTS_CAPABILITY (service), capability)) {

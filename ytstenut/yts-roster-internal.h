@@ -40,8 +40,8 @@ yts_roster_remove_contact (YtsRoster  *roster,
 
 void
 yts_roster_add_service (YtsRoster         *roster,
-                        char const        *jid,
-                        char const        *sid,
+                        char const        *contact_id,
+                        char const        *service_id,
                         char const        *type,
                         char const *const *caps,
                         GHashTable        *names,
@@ -49,7 +49,7 @@ yts_roster_add_service (YtsRoster         *roster,
 
 void
 yts_roster_remove_service_by_id (YtsRoster  *roster,
-                                 char const *jid,
+                                 char const *contact_id,
                                  char const *uid);
 
 void
