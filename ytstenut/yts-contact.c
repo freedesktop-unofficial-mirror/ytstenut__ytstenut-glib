@@ -55,12 +55,8 @@ G_DEFINE_TYPE (YtsContact, yts_contact, G_TYPE_OBJECT);
 typedef struct {
   GHashTable   *services;   /* hash of YtsService instances */
   TpContact    *tp_contact; /* TpContact associated with YtsContact */
-
-  char         *icon_token; /* token identifying this contacts avatar */
-
   GQueue       *pending_files;    /* files dispatched before channel open */
   GHashTable   *ft_cancellables;
-
 } YtsContactPrivate;
 
 enum {
@@ -74,7 +70,6 @@ enum {
 enum {
   PROP_0,
   PROP_CONTACT_ID,
-  PROP_ICON,
   PROP_TP_CONTACT,
 
   PROP_LAST
@@ -231,26 +226,6 @@ yts_c_pending_file_free (gpointer file)
 }
 
 static void
-yts_contact_avatar_file_cb (TpContact   *contact,
-                            GParamSpec  *param,
-                            YtsContact  *self)
-{
-  YtsContactPrivate *priv  = GET_PRIVATE (self);
-  const char         *token = tp_contact_get_avatar_token (contact);
-
-  if ((priv->icon_token && token && !strcmp (priv->icon_token, token)) ||
-      (!priv->icon_token && !token))
-    {
-      return;
-    }
-
-  g_free (priv->icon_token);
-  priv->icon_token = g_strdup (token);
-
-  g_object_notify (G_OBJECT (self), "icon");
-}
-
-static void
 _service_send_message (YtsService   *service,
                        YtsMetadata  *message,
                        YtsContact   *self)
@@ -308,15 +283,6 @@ _get_property (GObject    *object,
       g_value_set_string (value,
                           yts_contact_get_contact_id (YTS_CONTACT (object)));
       break;
-    case PROP_ICON:
-      {
-        GFile *file = yts_contact_get_icon (self, NULL);
-        g_value_take_object (value, file);
-
-        g_warning ("Should use ytst_contact_get_icon() instead of querying "
-                   "YstgContact:icon");
-      }
-      break;
     case PROP_TP_CONTACT:
       g_value_set_object (value, priv->tp_contact);
       break;
@@ -367,8 +333,6 @@ _finalize (GObject *object)
 {
   YtsContactPrivate *priv = GET_PRIVATE (object);
 
-  g_free (priv->icon_token);
-
   g_queue_foreach (priv->pending_files, (GFunc)yts_c_pending_file_free, NULL);
   g_queue_free (priv->pending_files);
 
@@ -390,21 +354,6 @@ yts_contact_class_init (YtsContactClass *klass)
 
   klass->service_added       = yts_contact_service_added;
   klass->service_removed     = yts_contact_service_removed;
-
-  /**
-   * YtsContact:icon:
-   *
-   * Icon for this item.
-   *
-   * The property holds a GFile* pointing to the latest
-   * cached image.
-   *
-   * Since: 0.1
-   */
-  pspec = g_param_spec_object ("icon", "", "",
-                               G_TYPE_FILE,
-                               G_PARAM_READABLE);
-  g_object_class_install_property (object_class, PROP_ICON, pspec);
 
   /**
    * YtsContact:jid:
@@ -534,37 +483,6 @@ yts_contact_get_name (YtsContact const *self)
   /* FIXME -- */
   g_warning (G_STRLOC ": %s is not implemented", __FUNCTION__);
   return NULL;
-}
-
-/**
- * yts_contact_get_icon:
- * @self: object on which to invoke this method.
- * @mime: (transfer none): location to store a pointer to the icon mime type
- *
- * Retrieves icon of this contact. If the mime parameter is provided, on return
- * it will contain the mime type of the icon, this pointer must not be modified
- * or freed by the caller.
- *
- * Returns: (transfer full): #GFile pointing to the icon image, can be
- * %NULL. The caller owns a reference on the returned object, and must release
- * it when no longer needed with g_object_unref().
- */
-GFile *
-yts_contact_get_icon (YtsContact const   *self,
-                      const char        **mime)
-{
-  YtsContactPrivate *priv = GET_PRIVATE (self);
-  GFile               *file;
-
-  g_return_val_if_fail (YTS_IS_CONTACT (self), NULL);
-  g_return_val_if_fail (priv->tp_contact, NULL);
-
-  if (!(file = tp_contact_get_avatar_file (priv->tp_contact)))
-    return NULL;
-
-  if (mime)
-    *mime = tp_contact_get_avatar_mime_type (priv->tp_contact);
-  return g_object_ref (file);
 }
 
 YtsContact *

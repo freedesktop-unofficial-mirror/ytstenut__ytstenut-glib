@@ -18,7 +18,6 @@ yts_client_add_capability
 yts_client_set_incoming_file_directory
 yts_client_set_status_by_capability
 yts_contact_cancel_file
-yts_contact_get_icon
 yts_contact_get_contact_id
 yts_contact_get_name
 yts_contact_get_tp_contact

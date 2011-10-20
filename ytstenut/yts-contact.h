@@ -87,10 +87,6 @@ yts_contact_get_contact_id (YtsContact const *self);
 char const *
 yts_contact_get_name (YtsContact const *self);
 
-GFile *
-yts_contact_get_icon (YtsContact const   *self,
-                      char const        **mime);
-
 YtsError
 yts_contact_send_file (YtsContact *self,
                        GFile      *file);
