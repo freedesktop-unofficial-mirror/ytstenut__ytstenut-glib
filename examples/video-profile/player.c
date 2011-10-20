@@ -167,7 +167,7 @@ main (int     argc,
 
   /* Instantiate and publish example player object so others can access it. */
   player = mock_player_new ();
-  yts_client_register_service (client, YTS_CAPABILITY (player));
+  yts_client_publish_service (client, YTS_CAPABILITY (player));
 
   g_signal_connect (player, "notify::current-text",
                     G_CALLBACK (_player_notify_current_text), NULL);

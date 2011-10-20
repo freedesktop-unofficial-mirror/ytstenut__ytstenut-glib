@@ -138,8 +138,8 @@ yts_client_set_status_by_capability (YtsClient *self,
                                      char const *activity);
 
 bool
-yts_client_register_service (YtsClient      *self,
-                             YtsCapability  *service);
+yts_client_publish_service (YtsClient     *self,
+                            YtsCapability *service);
 
 /**
  * YtsClientServiceIterator:

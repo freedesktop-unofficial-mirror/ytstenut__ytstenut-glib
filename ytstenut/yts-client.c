@@ -3402,7 +3402,7 @@ _service_destroyed (ServiceData *data,
 }
 
 /**
- * yts_client_register_service:
+ * yts_client_publish_service:
  * @self: object on which to invoke this method.
  * @service: Service implementation.
  *
@@ -3413,8 +3413,8 @@ _service_destroyed (ServiceData *data,
  * Since 0.3
  */
 bool
-yts_client_register_service (YtsClient      *self,
-                              YtsCapability  *service)
+yts_client_publish_service (YtsClient     *self,
+                            YtsCapability *service)
 {
 /*
  * TODO add GError reporting
@@ -3671,8 +3671,8 @@ yts_client_foreach_service (YtsClient                 *self,
   YtsServiceAdapter *adapter;
   bool               ret = true;
 
-  g_return_if_fail (YTS_IS_CLIENT (self));
-  g_return_if_fail (iterator);
+  g_return_val_if_fail (YTS_IS_CLIENT (self), false);
+  g_return_val_if_fail (iterator, false);
 
   g_hash_table_iter_init (&iter, priv->services);
   while (ret &&
