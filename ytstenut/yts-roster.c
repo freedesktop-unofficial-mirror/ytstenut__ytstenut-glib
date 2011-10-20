@@ -252,25 +252,6 @@ yts_roster_init (YtsRoster *self)
                                           g_object_unref);
 }
 
-/**
- * yts_roster_get_contacts:
- * @self: object on which to invoke this method.
- *
- * Returns contacts in this #YtsRoster.
- *
- * Return value: (transfer none): #GHashTable of #YtsContact; the hash table is
- * owned by the roster and must not be modified or freed by the caller.
- */
-GHashTable *const
-yts_roster_get_contacts (YtsRoster const *self)
-{
-  YtsRosterPrivate *priv = GET_PRIVATE (self);
-
-  g_return_val_if_fail (YTS_IS_ROSTER (self), NULL);
-
-  return priv->contacts;
-}
-
 /*
  * yts_roster_remove_service_by_id:
  * @self: object on which to invoke this method.
@@ -563,5 +544,42 @@ yts_roster_update_contact_status (YtsRoster   *self,
   g_return_if_fail (contact);
 
   yts_contact_update_service_status (contact, service_id, fqc_id, status_xml);
+}
+
+/**
+ * yts_roster_foreach_contact:
+ * @self: object on which to invoke this method.
+ * @iterator: iterator function.
+ * @user_data: context to pass to the iterator function.
+ *
+ * Iterate over @self's contacts.
+ *
+ * Returns: %true if all the contacts have been iterated.
+ *
+ * Since: 0.4
+ */
+bool
+yts_roster_foreach_contact (YtsRoster                 *self,
+                            YtsRosterContactIterator   iterator,
+                            void                      *user_data)
+{
+  YtsRosterPrivate *priv = GET_PRIVATE (self);
+  GHashTableIter   iter;
+  char const      *contact_id;
+  YtsContact      *contact;
+  bool             ret = true;
+
+  g_return_val_if_fail (YTS_IS_ROSTER (self), false);
+  g_return_val_if_fail (iterator, false);
+
+  g_hash_table_iter_init (&iter, priv->contacts);
+  while (ret &&
+         g_hash_table_iter_next (&iter,
+                                 (void **) &contact_id,
+                                 (void **) &contact)) {
+    ret = iterator (self, contact_id, contact, user_data);
+  }
+
+  return ret;
 }
 

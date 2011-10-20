@@ -1047,8 +1047,8 @@ yts_contact_foreach_service (YtsContact                 *self,
   YtsService      *service;
   bool             ret = true;
 
-  g_return_if_fail (YTS_IS_CONTACT (self));
-  g_return_if_fail (iterator);
+  g_return_val_if_fail (YTS_IS_CONTACT (self), false);
+  g_return_val_if_fail (iterator, false);
 
   g_hash_table_iter_init (&iter, priv->services);
   while (ret &&

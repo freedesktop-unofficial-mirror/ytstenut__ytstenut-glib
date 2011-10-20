@@ -60,12 +60,33 @@ typedef struct {
 GType
 yts_roster_get_type (void) G_GNUC_CONST;
 
-GHashTable *const
-yts_roster_get_contacts (YtsRoster const *self);
-
 YtsContact *const
 yts_roster_find_contact_by_id (YtsRoster const  *self,
                                char const       *contact_id);
+
+/**
+ * YtsRosterContactIterator:
+ * @self: object owning @service.
+ * @contact_id: contact JID.
+ * @contact: contact object.
+ * @user_data: data passed to yts_client_foreach_service().
+ *
+ * Callback signature for iterating a an #YtsRoster's published services.
+ *
+ * Returns: %false to abort the iteration.
+ *
+ * Since: 0.4
+ */
+typedef bool
+(*YtsRosterContactIterator) (YtsRoster  *self,
+                             char const *contact_id,
+                             YtsContact *contact,
+                             void       *user_data);
+
+bool
+yts_roster_foreach_contact (YtsRoster                 *self,
+                            YtsRosterContactIterator   iterator,
+                            void                      *user_data);
 
 G_END_DECLS
 
