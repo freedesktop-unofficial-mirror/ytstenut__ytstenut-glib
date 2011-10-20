@@ -56,7 +56,7 @@ enum {
   /* YtsService */
   PROP_TYPE,
   PROP_NAMES,
-  PROP_ID,
+  PROP_SERVICE_ID,
   PROP_STATUSES
 };
 
@@ -114,7 +114,7 @@ _get_property (GObject    *object,
 
     /* YtsService */
 
-    case PROP_ID:
+    case PROP_SERVICE_ID:
       g_value_set_string (value, priv->service_id);
       break;
     case PROP_TYPE:
@@ -149,7 +149,7 @@ _set_property (GObject      *object,
 
     /* YtsService */
 
-    case PROP_ID:
+    case PROP_SERVICE_ID:
       priv->service_id = g_intern_string (g_value_get_string (value));
       break;
     case PROP_STATUSES:
@@ -221,7 +221,7 @@ yts_service_class_init (YtsServiceClass *klass)
                                G_PARAM_READWRITE |
                                G_PARAM_CONSTRUCT_ONLY |
                                G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_ID, pspec);
+  g_object_class_install_property (object_class, PROP_SERVICE_ID, pspec);
 
   /**
    * YtsService:type:

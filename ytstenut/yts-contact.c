@@ -53,7 +53,6 @@ G_DEFINE_TYPE (YtsContact, yts_contact, G_TYPE_OBJECT);
  */
 
 typedef struct {
-  const char   *contact_id;
   GHashTable   *services;   /* hash of YtsService instances */
   TpContact    *tp_contact; /* TpContact associated with YtsContact */
 
@@ -74,7 +73,7 @@ enum {
 
 enum {
   PROP_0,
-  PROP_JID,
+  PROP_CONTACT_ID,
   PROP_ICON,
   PROP_TP_CONTACT,
 
@@ -140,7 +139,7 @@ yts_contact_ft_op_cb (EmpathyTpFile *tp_file,
     {
       e = (atom | YTS_ERROR_UNKNOWN);
       g_warning ("File transfer to %s failed: %s",
-                 yts_contact_get_id (self), error->message);
+                 yts_contact_get_contact_id (self), error->message);
     }
   else
     e = (atom | YTS_ERROR_SUCCESS);
@@ -305,8 +304,9 @@ _get_property (GObject    *object,
   YtsContactPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
-    case PROP_JID:
-      g_value_set_string (value, priv->contact_id);
+    case PROP_CONTACT_ID:
+      g_value_set_string (value,
+                          yts_contact_get_contact_id (YTS_CONTACT (object)));
       break;
     case PROP_ICON:
       {
@@ -335,9 +335,6 @@ _set_property (GObject      *object,
   YtsContactPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
-    case PROP_JID:
-      priv->contact_id = g_intern_string (g_value_get_string (value));
-      break;
     case PROP_TP_CONTACT:
       priv->tp_contact = g_value_dup_object (value);
       break;
@@ -414,11 +411,10 @@ yts_contact_class_init (YtsContactClass *klass)
    *
    * The jid of this contact
    */
-  pspec = g_param_spec_string ("jid", "", "",
+  pspec = g_param_spec_string ("contact-id", "", "",
                                NULL,
-                               G_PARAM_READWRITE |
-                               G_PARAM_CONSTRUCT_ONLY);
-  g_object_class_install_property (object_class, PROP_JID, pspec);
+                               G_PARAM_READABLE);
+  g_object_class_install_property (object_class, PROP_CONTACT_ID, pspec);
 
   /**
    * YtsContact:tp-contact:
@@ -506,7 +502,7 @@ yts_contact_init (YtsContact *self)
 }
 
 /**
- * yts_contact_get_id:
+ * yts_contact_get_contact_id:
  * @self: object on which to invoke this method.
  *
  * Retrieves the jabber identifier of this contact.
@@ -514,13 +510,14 @@ yts_contact_init (YtsContact *self)
  * Returns: (transfer none): The JID of this contact.
  */
 const char *
-yts_contact_get_id (YtsContact const *self)
+yts_contact_get_contact_id (YtsContact const *self)
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
 
   g_return_val_if_fail (YTS_IS_CONTACT (self), NULL);
+  g_return_val_if_fail (priv->tp_contact, NULL);
 
-  return priv->contact_id;
+  return tp_contact_get_identifier (priv->tp_contact);
 }
 
 /**
