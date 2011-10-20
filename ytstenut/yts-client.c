@@ -40,7 +40,6 @@
 #include "yts-contact-internal.h"
 #include "yts-debug.h"
 #include "yts-enum-types.h"
-#include "yts-error.h"
 #include "yts-error-message.h"
 #include "yts-event-message.h"
 #include "yts-invocation-message.h"

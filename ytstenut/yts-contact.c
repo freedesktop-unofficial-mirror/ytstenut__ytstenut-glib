@@ -791,39 +791,35 @@ yts_contact_notify_tp_contact_cb (YtsContact              *contact,
  * Sends file to the contact represented by this item. The caller can safely
  * release reference on the supplied #GFile after calling this function.
  *
- * Returns: %YTS_ERROR_SUCCESS on success, return value
- * %YTS_ERROR_NOT_ALLOWED indicates that the current client is not mutually
- * approved to exchange files with the item. %YTS_ERROR_PENDING is returned if
- * the execution of the command has to be deferred until the communication
- * channel is ready; in this case the file will be automatically send at the
- * appropriate time, and any errors, or eventaul success, will be indicated by
- * emitting the #YtsClient::error signal at that time.
+ * Returns: %true on success.
  */
-YtsError
-yts_contact_send_file (YtsContact *self,
-                       GFile      *file)
+bool
+yts_contact_send_file (YtsContact  *self,
+                       GFile       *file,
+                       GError     **error_out)
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
   GFileInfo          *finfo;
   GError             *error = NULL;
   guint32             atom;
 
-  g_return_val_if_fail (YTS_IS_CONTACT (self) && file,
-                        YTS_ERROR_INVALID_PARAMETER);
-
-  g_return_val_if_fail (priv->tp_contact, YTS_ERROR_OBJECT_DISPOSED);
+  g_return_val_if_fail (YTS_IS_CONTACT (self) && file, false);
+  g_return_val_if_fail (priv->tp_contact, false);
 
   finfo = g_file_query_info (file,
                              "standard::*",
                              0,
                              NULL,
-                             &error);
+                             error_out);
 
-  if (error)
+  if (NULL == finfo)
     {
-      g_warning ("Unable to query file, %s", error->message);
-      g_clear_error (&error);
-      return YTS_ERROR_INVALID_PARAMETER;
+      char *path = g_file_get_path (file);
+      if (error_out && *error_out)
+        g_critical ("%s", (*error_out)->message);
+      g_critical ("%s : Unable to query file, %s", G_STRLOC, path);
+      g_free (path);
+      return false;
     }
 
   g_object_unref (finfo);
@@ -855,7 +851,7 @@ yts_contact_send_file (YtsContact *self,
                         d);
     }
 
-  return (atom & YTS_ERROR_PENDING);
+  return true;
 }
 
 /**

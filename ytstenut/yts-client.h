@@ -25,7 +25,6 @@
 #include <stdint.h>
 #include <glib-object.h>
 #include <ytstenut/yts-capability.h>
-#include <ytstenut/yts-error.h>
 #include <ytstenut/yts-roster.h>
 
 G_BEGIN_DECLS
@@ -119,10 +118,6 @@ yts_client_add_capability (YtsClient  *self,
 
 YtsRoster *const
 yts_client_get_roster (YtsClient const *self);
-
-void
-yts_client_emit_error (YtsClient  *self,
-                       YtsError    error);
 
 void
 yts_client_set_incoming_file_directory (YtsClient   *self,

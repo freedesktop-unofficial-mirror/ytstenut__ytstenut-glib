@@ -5,7 +5,6 @@ yts_capability_status_get_type
 yts_capability_status_new
 yts_client_connect
 yts_client_disconnect
-yts_client_emit_error
 yts_client_get_incoming_file_directory
 yts_client_get_jid
 yts_client_get_roster
@@ -23,14 +22,6 @@ yts_contact_get_name
 yts_contact_get_tp_contact
 yts_contact_get_type
 yts_contact_send_file
-yts_error_get_atom
-yts_error_get_code
-yts_error_get_type
-yts_error_make
-yts_error_message_get_type
-yts_error_message_new
-yts_error_new
-yts_error_new_atom
 yts_event_message_get_type
 yts_event_message_new
 yts_get_option_group

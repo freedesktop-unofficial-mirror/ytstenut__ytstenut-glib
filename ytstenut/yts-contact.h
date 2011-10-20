@@ -25,7 +25,6 @@
 #include <glib-object.h>
 #include <gio/gio.h>
 
-#include <ytstenut/yts-error.h>
 #include <ytstenut/yts-service.h>
 
 G_BEGIN_DECLS
@@ -87,9 +86,10 @@ yts_contact_get_contact_id (YtsContact const *self);
 char const *
 yts_contact_get_name (YtsContact const *self);
 
-YtsError
-yts_contact_send_file (YtsContact *self,
-                       GFile      *file);
+bool
+yts_contact_send_file (YtsContact  *self,
+                       GFile       *file,
+                       GError     **error_out);
 
 bool
 yts_contact_cancel_file (YtsContact *self,
