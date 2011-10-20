@@ -53,7 +53,7 @@ typedef struct {
 typedef struct {
 
   /*< private >*/
-  GObjectClass parent_class;
+  GObjectClass parent;
 
 } YtsRosterClass;
 
@@ -64,8 +64,8 @@ GHashTable *const
 yts_roster_get_contacts (YtsRoster const *self);
 
 YtsContact *const
-yts_roster_find_contact_by_jid (YtsRoster const *self,
-                                char const      *contact_id);
+yts_roster_find_contact_by_id (YtsRoster const  *self,
+                               char const       *contact_id);
 
 G_END_DECLS
 

@@ -58,7 +58,7 @@ yts_proxy_service_get_type
 yts_proxy_service_new
 yts_response_message_get_type
 yts_response_message_new
-yts_roster_find_contact_by_jid
+yts_roster_find_contact_by_id
 yts_roster_get_contacts
 yts_roster_get_type
 yts_service_get_service_id

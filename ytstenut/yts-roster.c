@@ -35,7 +35,7 @@ G_DEFINE_TYPE (YtsRoster, yts_roster, G_TYPE_OBJECT);
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_ROSTER, YtsRosterPrivate))
 
 /**
- * SECTION:yts-roster
+ * SECTION: yts-roster
  * @short_description: Represents a roster of devices and services
  * connected to the Ytstenut application mesh.
  *
@@ -292,7 +292,7 @@ yts_roster_remove_service_by_id (YtsRoster  *self,
 
   g_return_if_fail (YTS_IS_ROSTER (self));
 
-  contact = yts_roster_find_contact_by_jid (self, contact_id);
+  contact = yts_roster_find_contact_by_id (self, contact_id);
   if (!contact) {
     g_critical ("Contact for service not found");
     return;
@@ -349,7 +349,7 @@ yts_roster_find_contact_by_handle (YtsRoster  *self,
 }
 
 /**
- * yts_roster_find_contact_by_jid:
+ * yts_roster_find_contact_by_id:
  * @self: object on which to invoke this method.
  * @contact_id: JID of this contact
  *
@@ -358,8 +358,8 @@ yts_roster_find_contact_by_handle (YtsRoster  *self,
  * Return value: (transfer none): #YtsContact if found, or %NULL.
  */
 YtsContact *const
-yts_roster_find_contact_by_jid (YtsRoster const *self,
-                                char const      *contact_id)
+yts_roster_find_contact_by_id (YtsRoster const  *self,
+                               char const       *contact_id)
 {
   YtsRosterPrivate *priv = GET_PRIVATE (self);
   GHashTableIter     iter;
@@ -525,7 +525,7 @@ yts_roster_add_service (YtsRoster         *self,
                                                 names,
                                                 statuses);
 
-  contact = yts_roster_find_contact_by_jid (self, contact_id);
+  contact = yts_roster_find_contact_by_id (self, contact_id);
   if (contact) {
 
     yts_contact_add_service (contact, service);

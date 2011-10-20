@@ -1745,7 +1745,7 @@ dispatch_to_service (YtsClient  *self,
     return false;
   }
 
-  contact = yts_roster_find_contact_by_jid (priv->roster, sender_jid);
+  contact = yts_roster_find_contact_by_id (priv->roster, sender_jid);
   if (NULL == contact) {
     // FIXME report error
     g_critical ("%s : Contact for '%s' not found",
