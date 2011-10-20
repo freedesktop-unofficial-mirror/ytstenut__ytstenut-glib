@@ -70,6 +70,7 @@ enum {
 enum {
   PROP_0,
   PROP_CONTACT_ID,
+  PROP_NAME,
   PROP_TP_CONTACT,
 
   PROP_LAST
@@ -226,6 +227,14 @@ yts_c_pending_file_free (gpointer file)
 }
 
 static void
+_tp_contact_notify_alias (GObject     *tp_contact,
+                          GParamSpec  *pspec,
+                          YtsContact  *self)
+{
+  g_object_notify (G_OBJECT (self), "name");
+}
+
+static void
 _service_send_message (YtsService   *service,
                        YtsMetadata  *message,
                        YtsContact   *self)
@@ -283,6 +292,10 @@ _get_property (GObject    *object,
       g_value_set_string (value,
                           yts_contact_get_contact_id (YTS_CONTACT (object)));
       break;
+    case PROP_NAME:
+      g_value_set_string (value,
+                          tp_contact_get_alias (priv->tp_contact));
+      break;
     case PROP_TP_CONTACT:
       g_value_set_object (value, priv->tp_contact);
       break;
@@ -301,9 +314,12 @@ _set_property (GObject      *object,
   YtsContactPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
-    case PROP_TP_CONTACT:
+    case PROP_TP_CONTACT: {
+      g_return_if_fail (g_value_get_object (value));
       priv->tp_contact = g_value_dup_object (value);
-      break;
+      g_signal_connect (priv->tp_contact, "notify::alias",
+                        G_CALLBACK (_tp_contact_notify_alias), object);
+    } break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
@@ -356,14 +372,24 @@ yts_contact_class_init (YtsContactClass *klass)
   klass->service_removed     = yts_contact_service_removed;
 
   /**
-   * YtsContact:jid:
+   * YtsContact:contact-id:
    *
-   * The jid of this contact
+   * The JID of this contact.
    */
   pspec = g_param_spec_string ("contact-id", "", "",
                                NULL,
                                G_PARAM_READABLE);
   g_object_class_install_property (object_class, PROP_CONTACT_ID, pspec);
+
+  /**
+   * YtsContact:name:
+   *
+   * The display name of this contact.
+   */
+  pspec = g_param_spec_string ("name", "", "",
+                               NULL,
+                               G_PARAM_READABLE);
+  g_object_class_install_property (object_class, PROP_NAME, pspec);
 
   /**
    * YtsContact:tp-contact:
@@ -450,6 +476,14 @@ yts_contact_init (YtsContact *self)
                                                   g_object_unref);
 }
 
+YtsContact *
+yts_contact_new (TpContact *tp_contact)
+{
+  return g_object_new (YTS_TYPE_CONTACT,
+                       "tp-contact", tp_contact,
+                       NULL);
+}
+
 /**
  * yts_contact_get_contact_id:
  * @self: object on which to invoke this method.
@@ -473,24 +507,21 @@ yts_contact_get_contact_id (YtsContact const *self)
  * yts_contact_get_name:
  * @self: object on which to invoke this method.
  *
- * Retrieves human readable name of this contact.
+ * Retrieves human readable name of this contact. This has undefined semantics
+ * with ytstenut, as there can be multiple services running under a single
+ * account, and potentially use different names.
  *
  * Returns: (transfer none): The name of this contact.
  */
 const char *
 yts_contact_get_name (YtsContact const *self)
 {
-  /* FIXME -- */
-  g_warning (G_STRLOC ": %s is not implemented", __FUNCTION__);
-  return NULL;
-}
+  YtsContactPrivate *priv = GET_PRIVATE (self);
 
-YtsContact *
-yts_contact_new (TpContact *tp_contact)
-{
-  return g_object_new (YTS_TYPE_CONTACT,
-                       "tp-contact", tp_contact,
-                       NULL);
+  g_return_val_if_fail (YTS_IS_CONTACT (self), NULL);
+  g_return_val_if_fail (priv->tp_contact, NULL);
+
+  return tp_contact_get_alias (priv->tp_contact);
 }
 
 /**
