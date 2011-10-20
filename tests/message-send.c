@@ -109,7 +109,6 @@ service_added_cb (YtsRoster *roster, YtsService *service, YtsClient *client)
    */
   if (our && ready1 && ready2)
     {
-      YtsError     e;
       const char   *attributes[] =
         {
           "a1", "v1",

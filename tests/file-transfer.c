@@ -19,6 +19,7 @@
  */
 
 #include <ytstenut/ytstenut.h>
+#include "ytstenut/yts-error.h"
 
 #define TEST_LENGTH 10
 
