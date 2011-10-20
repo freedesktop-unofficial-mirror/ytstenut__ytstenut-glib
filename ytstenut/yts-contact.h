@@ -86,6 +86,30 @@ yts_contact_get_contact_id (YtsContact const *self);
 char const *
 yts_contact_get_name (YtsContact const *self);
 
+/**
+ * YtsContactServiceIterator:
+ * @self: object owning @service.
+ * @service_id: service ID.
+ * @service: service instance.
+ * @user_data: data passed to yts_contact_foreach_service().
+ *
+ * Callback signature for iterating a an #YtsContact's services.
+ *
+ * Returns: %false to abort the iteration.
+ *
+ * Since: 0.4
+ */
+typedef bool
+(*YtsContactServiceIterator) (YtsContact   *self,
+                              char const  *service_id,
+                              YtsService  *service,
+                              void        *user_data);
+
+bool
+yts_contact_foreach_service (YtsContact                 *self,
+                             YtsContactServiceIterator   iterator,
+                             void                       *user_data);
+
 bool
 yts_contact_send_file (YtsContact  *self,
                        GFile       *file,

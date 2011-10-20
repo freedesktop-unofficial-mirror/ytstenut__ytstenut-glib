@@ -1024,3 +1024,40 @@ yts_contact_update_service_status (YtsContact *self,
   yts_service_update_status (service, fqc_id, status_xml);
 }
 
+/**
+ * yts_contact_foreach_service:
+ * @self: object on which to invoke this method.
+ * @iterator: iterator function.
+ * @user_data: context to pass to the iterator function.
+ *
+ * Iterate over @self's services.
+ *
+ * Returns: %true if all the services have been iterated.
+ *
+ * Since: 0.4
+ */
+bool
+yts_contact_foreach_service (YtsContact                 *self,
+                             YtsContactServiceIterator   iterator,
+                             void                       *user_data)
+{
+  YtsContactPrivate *priv = GET_PRIVATE (self);
+  GHashTableIter   iter;
+  char const      *service_id;
+  YtsService      *service;
+  bool             ret = true;
+
+  g_return_if_fail (YTS_IS_CONTACT (self));
+  g_return_if_fail (iterator);
+
+  g_hash_table_iter_init (&iter, priv->services);
+  while (ret &&
+         g_hash_table_iter_next (&iter,
+                                 (void **) &service_id,
+                                 (void **) &service)) {
+    ret = iterator (self, service_id, service, user_data);
+  }
+
+  return ret;
+}
+

@@ -150,17 +150,19 @@ yts_client_register_service (YtsClient      *self,
  *
  * Callback signature for iterating a an #YtsClient's published services.
  *
+ * Returns: %false to abort the iteration.
+ *
  * Since: 0.3
  */
-typedef void
+typedef bool
 (*YtsClientServiceIterator) (YtsClient      *self,
                              char const     *fqc_id,
                              YtsCapability  *service,
                              void           *user_data);
 
-void
+bool
 yts_client_foreach_service (YtsClient                 *self,
-                            YtsClientServiceIterator   callback,
+                            YtsClientServiceIterator   iterator,
                             void                      *user_data);
 
 G_END_DECLS
