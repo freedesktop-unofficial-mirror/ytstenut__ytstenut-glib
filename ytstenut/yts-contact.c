@@ -18,17 +18,6 @@
  * Authored by: Tomas Frydrych <tf@linux.intel.com>
  */
 
-/**
- * SECTION: yts-contact
- * @title: YtsContact
- * @short_description: Represents a device connected to the
- * Ytstenut mesh.
- *
- * #YtsContact represents a known device in the Ytstenut application mesh,
- * and provides access to any services (#YtsService) available on the device.
- */
-
-#include <string.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/interfaces.h>
@@ -48,27 +37,20 @@
 #include "yts-service-internal.h"
 #include "config.h"
 
-static void yts_c_pending_file_free (gpointer file);
-
-static void yts_contact_dispose (GObject *object);
-static void yts_contact_finalize (GObject *object);
-static void yts_contact_get_property (GObject    *object,
-                                       guint       property_id,
-                                       GValue     *value,
-                                       GParamSpec *pspec);
-static void yts_contact_set_property (GObject      *object,
-                                       guint         property_id,
-                                       const GValue *value,
-                                       GParamSpec   *pspec);
-
-static void yts_contact_avatar_file_cb (TpContact   *contact,
-                                         GParamSpec  *param,
-                                         YtsContact *ycontact);
-
 G_DEFINE_TYPE (YtsContact, yts_contact, G_TYPE_OBJECT);
 
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_CONTACT, YtsContactPrivate))
+
+/**
+ * SECTION: yts-contact
+ * @title: YtsContact
+ * @short_description: Represents a device connected to the
+ * Ytstenut mesh.
+ *
+ * #YtsContact represents a known device in the Ytstenut application mesh,
+ * and provides access to any services (#YtsService) available on the device.
+ */
 
 typedef struct {
   const char   *contact_id;
@@ -80,20 +62,17 @@ typedef struct {
   GQueue       *pending_files;    /* files dispatched before channel open */
   GHashTable   *ft_cancellables;
 
-  guint disposed : 1;
 } YtsContactPrivate;
 
-enum
-{
-  SEND_MESSAGE,
-  SERVICE_ADDED,
-  SERVICE_REMOVED,
+enum {
+  SIG_SEND_MESSAGE,
+  SIG_SERVICE_ADDED,
+  SIG_SERVICE_REMOVED,
 
-  N_SIGNALS,
+  N_SIGNALS
 };
 
-enum
-{
+enum {
   PROP_0,
   PROP_JID,
   PROP_ICON,
@@ -102,440 +81,11 @@ enum
   PROP_LAST
 };
 
-static guint signals[N_SIGNALS] = {0};
-static GParamSpec *properties[PROP_LAST];
+static unsigned _signals[N_SIGNALS] = { 0, };
 
-static void
-_service_send_message (YtsService   *service,
-                       YtsMetadata  *message,
-                       YtsContact   *self)
-{
-  g_signal_emit (self, signals[SEND_MESSAGE], 0,
-                 service, message);
-}
-
-static void
-yts_contact_service_added (YtsContact *self,
-                           YtsService *service)
-{
-  YtsContactPrivate *priv = GET_PRIVATE (self);
-  const char         *uid  = yts_service_get_service_id (service);
-
-  g_return_if_fail (uid && *uid);
-  g_return_if_fail (!g_hash_table_lookup (priv->services, uid));
-
-  g_hash_table_insert (priv->services,
-                       g_strdup (uid),
-                       g_object_ref (service));
-
-  g_signal_connect (service, "send-message",
-                    G_CALLBACK (_service_send_message), self);
-}
-
-static void
-yts_contact_service_removed (YtsContact *self,
-                             YtsService *service)
-{
-  YtsContactPrivate *priv = GET_PRIVATE (self);
-  const char         *uid  = yts_service_get_service_id (service);
-
-  g_return_if_fail (uid && *uid);
-
-  if (!g_hash_table_remove (priv->services, uid))
-    g_warning (G_STRLOC ": unknown service with uid %s", uid);
-
-  g_signal_handlers_disconnect_by_func (service,
-                                        _service_send_message,
-                                        self);
-}
-
-static void
-yts_contact_class_init (YtsContactClass *klass)
-{
-  GObjectClass *object_class = (GObjectClass *)klass;
-
-  g_type_class_add_private (klass, sizeof (YtsContactPrivate));
-
-  object_class->dispose      = yts_contact_dispose;
-  object_class->finalize     = yts_contact_finalize;
-  object_class->get_property = yts_contact_get_property;
-  object_class->set_property = yts_contact_set_property;
-
-  klass->service_added       = yts_contact_service_added;
-  klass->service_removed     = yts_contact_service_removed;
-
-  /**
-   * YtsContact:icon:
-   *
-   * Icon for this item.
-   *
-   * The property holds a GFile* pointing to the latest
-   * cached image.
-   *
-   * Since: 0.1
-   */
-  properties[PROP_ICON] = g_param_spec_object ("icon",
-                                               "Icon",
-                                               "Icon",
-                                               G_TYPE_FILE,
-                                               G_PARAM_READABLE);
-  g_object_class_install_property (object_class, PROP_ICON,
-                                   properties[PROP_ICON]);
-
-  /**
-   * YtsContact:jid:
-   *
-   * The jid of this contact
-   */
-  properties[PROP_JID] = g_param_spec_string ("jid",
-                                              "jid",
-                                              "jid",
-                                              NULL,
-                               G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
-  g_object_class_install_property (object_class, PROP_JID,
-                                   properties[PROP_JID]);
-
-  /**
-   * YtsContact:tp-contact:
-   *
-   * #TpContact of this item.
-   */
-  properties[PROP_TP_CONTACT] = g_param_spec_object ("tp-contact", "", "",
-                                                     TP_TYPE_CONTACT,
-                                                     G_PARAM_READWRITE |
-                                                     G_PARAM_CONSTRUCT_ONLY);
-  g_object_class_install_property (object_class,
-                                   PROP_TP_CONTACT,
-                                   properties[PROP_TP_CONTACT]);
-
-  /**
-   * YtsContact::send-message:
-   *
-   * <note>Internal signal, should not be considered by users at this time.
-   * Maybe in the future when we allow for custom contact subclasses.</note>
-   */
-  signals[SEND_MESSAGE] = g_signal_new ("send-message",
-                                        G_TYPE_FROM_CLASS (object_class),
-                                        G_SIGNAL_RUN_LAST,
-                                        0, NULL, NULL,
-                                        yts_marshal_VOID__OBJECT_OBJECT,
-                                        G_TYPE_NONE, 2,
-                                        YTS_TYPE_SERVICE,
-                                        YTS_TYPE_METADATA);
-
-  /**
-   * YtsContact::service-added:
-   * @self: object which emitted the signal.
-   * @service: the service
-   *
-   * The ::service-added signal is emitted when a new services is added to
-   * the contact.
-   *
-   * Since: 0.1
-   */
-  signals[SERVICE_ADDED] =
-    g_signal_new ("service-added",
-                  G_TYPE_FROM_CLASS (object_class),
-                  G_SIGNAL_RUN_FIRST,
-                  G_STRUCT_OFFSET (YtsContactClass, service_added),
-                  NULL, NULL,
-                  yts_marshal_VOID__OBJECT,
-                  G_TYPE_NONE, 1,
-                  YTS_TYPE_SERVICE);
-
-  /**
-   * YtsContact::service-removed:
-   * @self: object which emitted the signal.
-   * @service: the service
-   *
-   * The ::service-removed signal is emitted when a services is removed from
-   * the contact.
-   *
-   * Since: 0.1
-   */
-  signals[SERVICE_REMOVED] =
-    g_signal_new ("service-removed",
-                  G_TYPE_FROM_CLASS (object_class),
-                  G_SIGNAL_RUN_LAST,
-                  G_STRUCT_OFFSET (YtsContactClass, service_removed),
-                  NULL, NULL,
-                  yts_marshal_VOID__OBJECT,
-                  G_TYPE_NONE, 1,
-                  YTS_TYPE_SERVICE);
-}
-
-static void
-yts_contact_tp_contact_cb (TpConnection       *connection,
-                            guint               n_contacts,
-                            TpContact * const  *contacts,
-                            const char * const *requested_ids,
-                            GHashTable         *failed_id_errors,
-                            const GError       *error,
-                            gpointer            data,
-                            GObject            *object)
-{
-  YtsContact        *self = YTS_CONTACT (object);
-  YtsContactPrivate *priv = GET_PRIVATE (self);
-
-  if (error)
-    {
-      g_warning (G_STRLOC ": %s: %s", __FUNCTION__, error->message);
-      return;
-    }
-
-  YTS_NOTE (CONTACT, "Got TpContact for %s", priv->contact_id);
-
-  priv->tp_contact = g_object_ref (contacts[0]);
-
-  tp_g_signal_connect_object (priv->tp_contact, "notify::avatar-file",
-                              G_CALLBACK (yts_contact_avatar_file_cb),
-                              self, 0);
-
-  g_object_notify_by_pspec (G_OBJECT (self), properties[PROP_TP_CONTACT]);
-}
-
-static void
-yts_contact_get_property (GObject    *object,
-                           guint       property_id,
-                           GValue     *value,
-                           GParamSpec *pspec)
-{
-  YtsContact        *self = YTS_CONTACT (object);
-  YtsContactPrivate *priv = GET_PRIVATE (object);
-
-  switch (property_id)
-    {
-    case PROP_JID:
-      g_value_set_string (value, priv->contact_id);
-      break;
-    case PROP_ICON:
-      {
-        GFile *file = yts_contact_get_icon (self, NULL);
-        g_value_take_object (value, file);
-
-        g_warning ("Should use ytst_contact_get_icon() instead of querying "
-                   "YstgContact:icon");
-      }
-      break;
-    case PROP_TP_CONTACT:
-      g_value_set_object (value, priv->tp_contact);
-      break;
-
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-    }
-}
-
-static void
-yts_contact_avatar_file_cb (TpContact   *contact,
-                            GParamSpec  *param,
-                            YtsContact  *self)
-{
-  YtsContactPrivate *priv  = GET_PRIVATE (self);
-  const char         *token = tp_contact_get_avatar_token (contact);
-
-  if ((priv->icon_token && token && !strcmp (priv->icon_token, token)) ||
-      (!priv->icon_token && !token))
-    {
-      return;
-    }
-
-  g_free (priv->icon_token);
-  priv->icon_token = g_strdup (token);
-
-  g_object_notify_by_pspec (G_OBJECT (self), properties[PROP_ICON]);
-}
-
-static void
-yts_contact_set_property (GObject      *object,
-                           guint         property_id,
-                           const GValue *value,
-                           GParamSpec   *pspec)
-{
-  YtsContactPrivate *priv = GET_PRIVATE (object);
-
-  switch (property_id)
-    {
-    case PROP_JID:
-      priv->contact_id = g_intern_string (g_value_get_string (value));
-      break;
-    case PROP_TP_CONTACT:
-      priv->tp_contact = g_value_dup_object (value);
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-    }
-}
-
-static void
-yts_contact_init (YtsContact *self)
-{
-  YtsContactPrivate *priv = GET_PRIVATE (self);
-
-  priv->services = g_hash_table_new_full (g_str_hash,
-                                          g_str_equal,
-                                          g_free,
-                                          g_object_unref);
-
-  priv->pending_files = g_queue_new ();
-
-  priv->ft_cancellables  = g_hash_table_new_full (g_str_hash,
-                                                  g_str_equal,
-                                                  g_free,
-                                                  g_object_unref);
-}
-
-static void
-yts_contact_dispose (GObject *object)
-{
-  YtsContactPrivate *priv = GET_PRIVATE (object);
-
-  if (priv->disposed)
-    return;
-
-  priv->disposed = TRUE;
-
-  g_hash_table_destroy (priv->services);
-  priv->services = NULL;
-
-  if (priv->tp_contact)
-    {
-      g_object_unref (priv->tp_contact);
-      priv->tp_contact = NULL;
-    }
-
-  G_OBJECT_CLASS (yts_contact_parent_class)->dispose (object);
-}
-
-static void
-yts_contact_finalize (GObject *object)
-{
-  YtsContactPrivate *priv = GET_PRIVATE (object);
-
-  g_free (priv->icon_token);
-
-  g_queue_foreach (priv->pending_files, (GFunc)yts_c_pending_file_free, NULL);
-  g_queue_free (priv->pending_files);
-
-  G_OBJECT_CLASS (yts_contact_parent_class)->finalize (object);
-}
-
-/**
- * yts_contact_get_id:
- * @self: object on which to invoke this method.
- *
- * Retrieves the jabber identifier of this contact.
- *
- * Returns: (transfer none): The JID of this contact.
- */
-const char *
-yts_contact_get_id (YtsContact const *self)
-{
-  YtsContactPrivate *priv = GET_PRIVATE (self);
-
-  g_return_val_if_fail (YTS_IS_CONTACT (self), NULL);
-
-  return priv->contact_id;
-}
-
-/**
- * yts_contact_get_name:
- * @self: object on which to invoke this method.
- *
- * Retrieves human readable name of this contact.
- *
- * Returns: (transfer none): The name of this contact.
- */
-const char *
-yts_contact_get_name (YtsContact const *self)
-{
-  /* FIXME -- */
-  g_warning (G_STRLOC ": %s is not implemented", __FUNCTION__);
-  return NULL;
-}
-
-/**
- * yts_contact_get_icon:
- * @self: object on which to invoke this method.
- * @mime: (transfer none): location to store a pointer to the icon mime type
- *
- * Retrieves icon of this contact. If the mime parameter is provided, on return
- * it will contain the mime type of the icon, this pointer must not be modified
- * or freed by the caller.
- *
- * Returns: (transfer full): #GFile pointing to the icon image, can be
- * %NULL. The caller owns a reference on the returned object, and must release
- * it when no longer needed with g_object_unref().
- */
-GFile *
-yts_contact_get_icon (YtsContact const   *self,
-                      const char        **mime)
-{
-  YtsContactPrivate *priv = GET_PRIVATE (self);
-  GFile               *file;
-
-  g_return_val_if_fail (YTS_IS_CONTACT (self), NULL);
-
-  g_return_val_if_fail (!priv->disposed, NULL);
-
-  if (!(file = tp_contact_get_avatar_file (priv->tp_contact)))
-    return NULL;
-
-  if (mime)
-    *mime = tp_contact_get_avatar_mime_type (priv->tp_contact);
-  return g_object_ref (file);
-}
-
-YtsContact *
-yts_contact_new (TpContact *tp_contact)
-{
-  return g_object_new (YTS_TYPE_CONTACT,
-                       "tp-contact", tp_contact,
-                       NULL);
-}
-
-/**
- * yts_contact_get_tp_contact:
- * @self: object on which to invoke this method.
- *
- * Retrieves the #TpContact associated with this #YtsContact object; can be
- * %NULL. When the #TpContact is available, the YtsContact::notify-tp-contact
- * signal will be emitted.
- *
- * Return value (transfer none): The associated #TpContact.
- */
-TpContact *const
-yts_contact_get_tp_contact (YtsContact const *self)
-{
-  YtsContactPrivate *priv = GET_PRIVATE (self);
-
-  g_return_val_if_fail (YTS_IS_CONTACT (self), NULL);
-
-  return priv->tp_contact;
-}
-
-static gboolean
-yts_contact_find_cancellable_cb (gpointer key,
-                                  gpointer value,
-                                  gpointer data)
-{
-  gpointer *the_thing = data;
-
-
-  if (value == *the_thing)
-    {
-      *the_thing = key;
-      return TRUE;
-    }
-
-  return FALSE;
-}
-
-typedef struct
-{
+typedef struct {
   YtsContact *item;
   guint32      atom;
-
 } YtsCFtOp;
 
 static YtsCFtOp *
@@ -555,6 +105,23 @@ yts_c_ft_op_free (gpointer op)
   YtsCFtOp *o = op;
 
   g_slice_free (YtsCFtOp, o);
+}
+
+static gboolean
+yts_contact_find_cancellable_cb (gpointer key,
+                                  gpointer value,
+                                  gpointer data)
+{
+  gpointer *the_thing = data;
+
+
+  if (value == *the_thing)
+    {
+      *the_thing = key;
+      return TRUE;
+    }
+
+  return FALSE;
 }
 
 static void
@@ -620,16 +187,6 @@ yts_c_pending_file_new (const YtsContact *item,
   return m;
 }
 
-static void
-yts_c_pending_file_free (gpointer file)
-{
-  YtsCPendingFile *m = file;
-
-  g_object_unref (m->file);
-  g_free (m->name);
-  g_slice_free (YtsCPendingFile, m);
-}
-
 static YtsError
 yts_c_dispatch_file (YtsCPendingFile *file)
 {
@@ -662,6 +219,383 @@ yts_c_dispatch_file (YtsCPendingFile *file)
                        cancellable);
 
   return (file->atom | YTS_ERROR_PENDING);
+}
+
+static void
+yts_c_pending_file_free (gpointer file)
+{
+  YtsCPendingFile *m = file;
+
+  g_object_unref (m->file);
+  g_free (m->name);
+  g_slice_free (YtsCPendingFile, m);
+}
+
+static void
+yts_contact_avatar_file_cb (TpContact   *contact,
+                            GParamSpec  *param,
+                            YtsContact  *self)
+{
+  YtsContactPrivate *priv  = GET_PRIVATE (self);
+  const char         *token = tp_contact_get_avatar_token (contact);
+
+  if ((priv->icon_token && token && !strcmp (priv->icon_token, token)) ||
+      (!priv->icon_token && !token))
+    {
+      return;
+    }
+
+  g_free (priv->icon_token);
+  priv->icon_token = g_strdup (token);
+
+  g_object_notify (G_OBJECT (self), "icon");
+}
+
+static void
+_service_send_message (YtsService   *service,
+                       YtsMetadata  *message,
+                       YtsContact   *self)
+{
+  g_signal_emit (self, _signals[SIG_SEND_MESSAGE], 0,
+                 service, message);
+}
+
+static void
+yts_contact_service_added (YtsContact *self,
+                           YtsService *service)
+{
+  YtsContactPrivate *priv = GET_PRIVATE (self);
+  const char         *uid  = yts_service_get_service_id (service);
+
+  g_return_if_fail (uid && *uid);
+  g_return_if_fail (!g_hash_table_lookup (priv->services, uid));
+
+  g_hash_table_insert (priv->services,
+                       g_strdup (uid),
+                       g_object_ref (service));
+
+  g_signal_connect (service, "send-message",
+                    G_CALLBACK (_service_send_message), self);
+}
+
+static void
+yts_contact_service_removed (YtsContact *self,
+                             YtsService *service)
+{
+  YtsContactPrivate *priv = GET_PRIVATE (self);
+  const char         *uid  = yts_service_get_service_id (service);
+
+  g_return_if_fail (uid && *uid);
+
+  if (!g_hash_table_remove (priv->services, uid))
+    g_warning (G_STRLOC ": unknown service with uid %s", uid);
+
+  g_signal_handlers_disconnect_by_func (service,
+                                        _service_send_message,
+                                        self);
+}
+
+static void
+_get_property (GObject    *object,
+               unsigned    property_id,
+               GValue     *value,
+               GParamSpec *pspec)
+{
+  YtsContact        *self = YTS_CONTACT (object);
+  YtsContactPrivate *priv = GET_PRIVATE (object);
+
+  switch (property_id) {
+    case PROP_JID:
+      g_value_set_string (value, priv->contact_id);
+      break;
+    case PROP_ICON:
+      {
+        GFile *file = yts_contact_get_icon (self, NULL);
+        g_value_take_object (value, file);
+
+        g_warning ("Should use ytst_contact_get_icon() instead of querying "
+                   "YstgContact:icon");
+      }
+      break;
+    case PROP_TP_CONTACT:
+      g_value_set_object (value, priv->tp_contact);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+  }
+}
+
+static void
+_set_property (GObject      *object,
+               unsigned      property_id,
+               const GValue *value,
+               GParamSpec   *pspec)
+{
+  YtsContactPrivate *priv = GET_PRIVATE (object);
+
+  switch (property_id) {
+    case PROP_JID:
+      priv->contact_id = g_intern_string (g_value_get_string (value));
+      break;
+    case PROP_TP_CONTACT:
+      priv->tp_contact = g_value_dup_object (value);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+  }
+}
+
+static void
+_dispose (GObject *object)
+{
+  YtsContactPrivate *priv = GET_PRIVATE (object);
+
+  if (priv->services) {
+    g_hash_table_destroy (priv->services);
+    priv->services = NULL;
+  }
+
+  // FIXME tie to tp_contact lifecycle
+  if (priv->tp_contact) {
+    g_object_unref (priv->tp_contact);
+    priv->tp_contact = NULL;
+  }
+
+  G_OBJECT_CLASS (yts_contact_parent_class)->dispose (object);
+}
+
+static void
+_finalize (GObject *object)
+{
+  YtsContactPrivate *priv = GET_PRIVATE (object);
+
+  g_free (priv->icon_token);
+
+  g_queue_foreach (priv->pending_files, (GFunc)yts_c_pending_file_free, NULL);
+  g_queue_free (priv->pending_files);
+
+  G_OBJECT_CLASS (yts_contact_parent_class)->finalize (object);
+}
+
+static void
+yts_contact_class_init (YtsContactClass *klass)
+{
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  GParamSpec *pspec;
+
+  g_type_class_add_private (klass, sizeof (YtsContactPrivate));
+
+  object_class->dispose      = _dispose;
+  object_class->finalize     = _finalize;
+  object_class->get_property = _get_property;
+  object_class->set_property = _set_property;
+
+  klass->service_added       = yts_contact_service_added;
+  klass->service_removed     = yts_contact_service_removed;
+
+  /**
+   * YtsContact:icon:
+   *
+   * Icon for this item.
+   *
+   * The property holds a GFile* pointing to the latest
+   * cached image.
+   *
+   * Since: 0.1
+   */
+  pspec = g_param_spec_object ("icon", "", "",
+                               G_TYPE_FILE,
+                               G_PARAM_READABLE);
+  g_object_class_install_property (object_class, PROP_ICON, pspec);
+
+  /**
+   * YtsContact:jid:
+   *
+   * The jid of this contact
+   */
+  pspec = g_param_spec_string ("jid", "", "",
+                               NULL,
+                               G_PARAM_READWRITE |
+                               G_PARAM_CONSTRUCT_ONLY);
+  g_object_class_install_property (object_class, PROP_JID, pspec);
+
+  /**
+   * YtsContact:tp-contact:
+   *
+   * #TpContact of this item.
+   */
+  pspec = g_param_spec_object ("tp-contact", "", "",
+                               TP_TYPE_CONTACT,
+                               G_PARAM_READWRITE |
+                               G_PARAM_CONSTRUCT_ONLY);
+  g_object_class_install_property (object_class, PROP_TP_CONTACT, pspec);
+
+  /**
+   * YtsContact::send-message:
+   *
+   * <note>Internal signal, should not be considered by users at this time.
+   * Maybe in the future when we allow for custom contact subclasses.</note>
+   */
+  _signals[SIG_SEND_MESSAGE] = g_signal_new ("send-message",
+                                        G_TYPE_FROM_CLASS (object_class),
+                                        G_SIGNAL_RUN_LAST,
+                                        0, NULL, NULL,
+                                        yts_marshal_VOID__OBJECT_OBJECT,
+                                        G_TYPE_NONE, 2,
+                                        YTS_TYPE_SERVICE,
+                                        YTS_TYPE_METADATA);
+
+  /**
+   * YtsContact::service-added:
+   * @self: object which emitted the signal.
+   * @service: the service
+   *
+   * The ::service-added signal is emitted when a new services is added to
+   * the contact.
+   *
+   * Since: 0.1
+   */
+  _signals[SIG_SERVICE_ADDED] =
+    g_signal_new ("service-added",
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_FIRST,
+                  G_STRUCT_OFFSET (YtsContactClass, service_added),
+                  NULL, NULL,
+                  yts_marshal_VOID__OBJECT,
+                  G_TYPE_NONE, 1,
+                  YTS_TYPE_SERVICE);
+
+  /**
+   * YtsContact::service-removed:
+   * @self: object which emitted the signal.
+   * @service: the service
+   *
+   * The ::service-removed signal is emitted when a services is removed from
+   * the contact.
+   *
+   * Since: 0.1
+   */
+  _signals[SIG_SERVICE_REMOVED] =
+    g_signal_new ("service-removed",
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  G_STRUCT_OFFSET (YtsContactClass, service_removed),
+                  NULL, NULL,
+                  yts_marshal_VOID__OBJECT,
+                  G_TYPE_NONE, 1,
+                  YTS_TYPE_SERVICE);
+}
+
+static void
+yts_contact_init (YtsContact *self)
+{
+  YtsContactPrivate *priv = GET_PRIVATE (self);
+
+  priv->services = g_hash_table_new_full (g_str_hash,
+                                          g_str_equal,
+                                          g_free,
+                                          g_object_unref);
+
+  priv->pending_files = g_queue_new ();
+
+  priv->ft_cancellables  = g_hash_table_new_full (g_str_hash,
+                                                  g_str_equal,
+                                                  g_free,
+                                                  g_object_unref);
+}
+
+/**
+ * yts_contact_get_id:
+ * @self: object on which to invoke this method.
+ *
+ * Retrieves the jabber identifier of this contact.
+ *
+ * Returns: (transfer none): The JID of this contact.
+ */
+const char *
+yts_contact_get_id (YtsContact const *self)
+{
+  YtsContactPrivate *priv = GET_PRIVATE (self);
+
+  g_return_val_if_fail (YTS_IS_CONTACT (self), NULL);
+
+  return priv->contact_id;
+}
+
+/**
+ * yts_contact_get_name:
+ * @self: object on which to invoke this method.
+ *
+ * Retrieves human readable name of this contact.
+ *
+ * Returns: (transfer none): The name of this contact.
+ */
+const char *
+yts_contact_get_name (YtsContact const *self)
+{
+  /* FIXME -- */
+  g_warning (G_STRLOC ": %s is not implemented", __FUNCTION__);
+  return NULL;
+}
+
+/**
+ * yts_contact_get_icon:
+ * @self: object on which to invoke this method.
+ * @mime: (transfer none): location to store a pointer to the icon mime type
+ *
+ * Retrieves icon of this contact. If the mime parameter is provided, on return
+ * it will contain the mime type of the icon, this pointer must not be modified
+ * or freed by the caller.
+ *
+ * Returns: (transfer full): #GFile pointing to the icon image, can be
+ * %NULL. The caller owns a reference on the returned object, and must release
+ * it when no longer needed with g_object_unref().
+ */
+GFile *
+yts_contact_get_icon (YtsContact const   *self,
+                      const char        **mime)
+{
+  YtsContactPrivate *priv = GET_PRIVATE (self);
+  GFile               *file;
+
+  g_return_val_if_fail (YTS_IS_CONTACT (self), NULL);
+  g_return_val_if_fail (priv->tp_contact, NULL);
+
+  if (!(file = tp_contact_get_avatar_file (priv->tp_contact)))
+    return NULL;
+
+  if (mime)
+    *mime = tp_contact_get_avatar_mime_type (priv->tp_contact);
+  return g_object_ref (file);
+}
+
+YtsContact *
+yts_contact_new (TpContact *tp_contact)
+{
+  return g_object_new (YTS_TYPE_CONTACT,
+                       "tp-contact", tp_contact,
+                       NULL);
+}
+
+/**
+ * yts_contact_get_tp_contact:
+ * @self: object on which to invoke this method.
+ *
+ * Retrieves the #TpContact associated with this #YtsContact object; can be
+ * %NULL. When the #TpContact is available, the YtsContact::notify-tp-contact
+ * signal will be emitted.
+ *
+ * Return value (transfer none): The associated #TpContact.
+ */
+TpContact *const
+yts_contact_get_tp_contact (YtsContact const *self)
+{
+  YtsContactPrivate *priv = GET_PRIVATE (self);
+
+  g_return_val_if_fail (YTS_IS_CONTACT (self), NULL);
+
+  return priv->tp_contact;
 }
 
 static void
@@ -705,8 +639,6 @@ yts_contact_do_set_ft_channel (YtsContact *self,
   YtsContactPrivate *priv = GET_PRIVATE (self);
   YtsCPendingFile   *file;
   GList              *l;
-
-  g_return_if_fail (!priv->disposed);
 
   if (!(l = g_queue_find_custom (priv->pending_files,
                                  name,
@@ -771,8 +703,6 @@ yts_contact_set_ft_channel (YtsContact  *self,
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
 
-  g_return_if_fail (!priv->disposed);
-
   tp_cli_dbus_properties_call_get (channel,
                                    -1,
                                    TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
@@ -820,7 +750,7 @@ yts_contact_do_send_file (YtsContact  *self,
   g_return_val_if_fail (YTS_IS_CONTACT (self) && file,
                         YTS_ERROR_INVALID_PARAMETER);
 
-  g_return_val_if_fail (!priv->disposed, YTS_ERROR_OBJECT_DISPOSED);
+  g_return_val_if_fail (priv->tp_contact, YTS_ERROR_OBJECT_DISPOSED);
 
   if (!priv->tp_contact)
     return YTS_ERROR_NO_ROUTE;
@@ -935,7 +865,7 @@ yts_contact_send_file (YtsContact *self,
   g_return_val_if_fail (YTS_IS_CONTACT (self) && file,
                         YTS_ERROR_INVALID_PARAMETER);
 
-  g_return_val_if_fail (!priv->disposed, YTS_ERROR_OBJECT_DISPOSED);
+  g_return_val_if_fail (priv->tp_contact, YTS_ERROR_OBJECT_DISPOSED);
 
   finfo = g_file_query_info (file,
                              "standard::*",
@@ -1001,8 +931,7 @@ yts_contact_cancel_file (YtsContact *self,
   char               *path;
 
   g_return_val_if_fail (YTS_IS_CONTACT (self) && file, FALSE);
-
-  g_return_val_if_fail (!priv->disposed, FALSE);
+  g_return_val_if_fail (priv->tp_contact, FALSE);
 
   if (!(path = g_file_get_path (file)))
     return FALSE;
@@ -1035,7 +964,7 @@ yts_contact_add_service (YtsContact *self,
              yts_service_get_id (service),
              priv->contact_id);
 
-  g_signal_emit (self, signals[SERVICE_ADDED], 0, service);
+  g_signal_emit (self, _signals[SIG_SERVICE_ADDED], 0, service);
 }
 
 void
@@ -1054,7 +983,7 @@ yts_contact_remove_service_by_id (YtsContact  *self,
   service = g_hash_table_lookup (priv->services, service_id);
   if (service)
     {
-      g_signal_emit (self, signals[SERVICE_REMOVED], 0, service);
+      g_signal_emit (self, _signals[SIG_SERVICE_REMOVED], 0, service);
     }
   else
     {
@@ -1080,9 +1009,9 @@ yts_contact_dispatch_event (YtsContact  *self,
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
   char const      *service_id;
-  YtsService     *service;
+  YtsService      *service;
   GHashTableIter   iter;
-  gboolean         dispatched = FALSE;
+  bool             dispatched = FALSE;
 
   g_return_val_if_fail (YTS_IS_CONTACT (self), FALSE);
 
@@ -1112,9 +1041,9 @@ yts_contact_dispatch_response (YtsContact *self,
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
   char const      *service_id;
-  YtsService     *service;
+  YtsService      *service;
   GHashTableIter   iter;
-  gboolean         dispatched = FALSE;
+  bool             dispatched = FALSE;
 
   g_return_val_if_fail (YTS_IS_CONTACT (self), FALSE);
 
