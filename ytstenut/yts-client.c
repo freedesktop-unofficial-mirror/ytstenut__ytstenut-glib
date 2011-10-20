@@ -844,11 +844,12 @@ yts_client_raw_message (YtsClient   *self,
 
 static bool
 yts_client_incoming_file (YtsClient   *self,
-                           char const *from,
-                           char const *name,
-                           uint64_t     size,
-                           uint64_t     offset,
-                           TpChannel  *proxy)
+                          char const  *from,
+                          char const  *name,
+                          uint64_t     size,
+                          uint64_t     offset,
+                          TpChannel   *proxy,
+                          void        *data)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
   char              *path;
@@ -1399,7 +1400,6 @@ yts_client_class_init (YtsClientClass *klass)
   klass->ready               = yts_client_ready;
   klass->disconnected        = yts_client_disconnected;
   klass->raw_message         = yts_client_raw_message;
-  klass->incoming_file       = yts_client_incoming_file;
 
   /**
    * YtsClient:uid:
@@ -1601,7 +1601,7 @@ yts_client_class_init (YtsClientClass *klass)
     g_signal_new ("incoming-file",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST,
-                  G_STRUCT_OFFSET (YtsClientClass, incoming_file),
+                  0,
                   yts_client_stop_accumulator, NULL,
                   yts_marshal_BOOLEAN__STRING_STRING_UINT64_UINT64_OBJECT,
                   G_TYPE_BOOLEAN, 5,
@@ -1657,6 +1657,9 @@ yts_client_init (YtsClient *self)
                                          g_str_equal,
                                          g_free,
                                          (GDestroyNotify) proxy_list_destroy);
+
+  g_signal_connect (self, "incoming-file",
+                    G_CALLBACK (yts_client_incoming_file), self);
 }
 
 /**

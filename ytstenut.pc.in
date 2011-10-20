@@ -8,7 +8,7 @@ apiversion=@YTS_API_VERSION@
 
 Name: Ytstenut
 Description: GObject based convenience library for Ytstenut
-Requires: telepathy-glib @TELEPATHY_VERSION@
+Requires: gio-2.0 gobject-2.0 glib-2.0
 Version: @YTS_VERSION@
 Libs: -L${libdir} -lytstenut-${apiversion}
 Cflags: -I${includedir}/ytstenut-${apiversion}

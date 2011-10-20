@@ -24,8 +24,6 @@
 
 #include <stdint.h>
 #include <glib-object.h>
-#include <telepathy-glib/channel.h>
-
 #include <ytstenut/yts-capability.h>
 #include <ytstenut/yts-error.h>
 #include <ytstenut/yts-roster.h>
@@ -80,14 +78,6 @@ typedef struct {
 
   void
   (*disconnected) (YtsClient *self);
-
-  bool
-  (*incoming_file) (YtsClient   *self,
-                    char const  *from,
-                    char const  *name,
-                    uint64_t     size,
-                    uint64_t     offset,
-                    TpChannel   *channel);
 
   void
   (*raw_message) (YtsClient   *self,

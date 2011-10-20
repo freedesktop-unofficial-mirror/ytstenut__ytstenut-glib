@@ -24,7 +24,6 @@
 #include <stdbool.h>
 #include <glib-object.h>
 #include <gio/gio.h>
-#include <telepathy-glib/contact.h>
 
 #include <ytstenut/yts-error.h>
 #include <ytstenut/yts-service.h>
@@ -88,11 +87,8 @@ yts_contact_get_id (YtsContact const *self);
 char const *
 yts_contact_get_name (YtsContact const *self);
 
-TpContact *const
-yts_contact_get_tp_contact (YtsContact const  *self);
-
 GFile *
-yts_contact_get_icon (YtsContact const  *self,
+yts_contact_get_icon (YtsContact const   *self,
                       char const        **mime);
 
 YtsError

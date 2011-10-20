@@ -22,6 +22,7 @@
 #define YTS_CONTACT_INTERNAL_H
 
 #include <stdbool.h>
+#include <telepathy-glib/channel.h>
 #include <telepathy-glib/contact.h>
 #include <ytstenut/yts-contact.h>
 
@@ -43,6 +44,9 @@ yts_contact_dispatch_response (YtsContact *self,
 void
 yts_contact_add_service (YtsContact *contact,
                          YtsService *service);
+
+TpContact *const
+yts_contact_get_tp_contact (YtsContact const *self);
 
 void
 yts_contact_remove_service_by_id (YtsContact  *contact,

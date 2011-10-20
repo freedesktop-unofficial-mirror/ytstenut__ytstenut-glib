@@ -62,18 +62,6 @@ _client_raw_message (YtsClient  *client,
   g_debug ("%s() '%s'", __FUNCTION__, xml_payload);
 }
 
-static gboolean
-_client_incoming_file (YtsClient  *client,
-                       const char  *from,
-                       const char  *name,
-                       guint64      size,
-                       guint64      offset,
-                       TpChannel   *channel)
-{
-  g_debug ("%s()", __FUNCTION__);
-  return false;
-}
-
 static void
 _client_roster_service_added (YtsRoster  *roster,
                               YtsService *service,
@@ -110,8 +98,6 @@ run_client (void)
                     G_CALLBACK (_client_disconnected), NULL);
   g_signal_connect (client, "raw-message",
                     G_CALLBACK (_client_raw_message), NULL);
-  g_signal_connect (client, "incoming-file",
-                    G_CALLBACK (_client_incoming_file), NULL);
 
   roster = yts_client_get_roster (client);
   g_signal_connect (roster, "service-added",
@@ -169,18 +155,6 @@ _server_dictionary_message (YtsClient         *client,
   }
 }
 
-static gboolean
-_server_incoming_file (YtsClient  *client,
-                       const char  *from,
-                       const char  *name,
-                       guint64      size,
-                       guint64      offset,
-                       TpChannel   *channel)
-{
-  g_debug ("%s()", __FUNCTION__);
-  return false;
-}
-
 static int
 run_server (void)
 {
@@ -197,8 +171,6 @@ run_server (void)
                     G_CALLBACK (_server_disconnected), NULL);
   g_signal_connect (client, "dictionary-message",
                     G_CALLBACK (_server_dictionary_message), NULL);
-  g_signal_connect (client, "incoming-file",
-                    G_CALLBACK (_server_incoming_file), NULL);
 
   yts_client_connect (client);
 
