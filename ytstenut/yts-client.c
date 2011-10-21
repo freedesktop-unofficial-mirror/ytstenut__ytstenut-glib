@@ -696,7 +696,7 @@ yts_client_channel_cb (TpConnection *proxy,
     {
     case TP_HANDLE_TYPE_CONTACT:
       /* FIXME -- this is where the messaging channel will go */
-      if (!strcmp (type, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER))
+      if (!g_strcmp0 (type, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER))
         {
           GError      *error = NULL;
           TpChannel   *ch;
@@ -1927,7 +1927,7 @@ yts_client_yts_channels_received_cb (TpYtsClient *tp_client,
           GValue      *v = value;
           char        *k = key;
 
-          if (!strcmp (k, "org.freedesktop.ytstenut.xpmn.Channel.RequestBody"))
+          if (!g_strcmp0 (k, "org.freedesktop.ytstenut.xpmn.Channel.RequestBody"))
             {
               char const *xml_payload = g_value_get_string (v);
               gboolean dispatched = dispatch_to_service (client,
@@ -2060,7 +2060,7 @@ yts_client_caps_overlap (GArray *mycaps, char **caps)
 
       for (p = caps; *p; ++p)
         {
-          if (!strcmp (g_quark_to_string (g_array_index (mycaps, YtsCaps, i)),
+          if (!g_strcmp0 (g_quark_to_string (g_array_index (mycaps, YtsCaps, i)),
                        *p))
             {
               return TRUE;
@@ -2448,14 +2448,14 @@ yts_client_is_avatar_type_supported (YtsClient *self,
    * image/jpeg (we get the former when querying existing avatars, and the
    * latter when quering avatar requirements), so we need to handle both.
    */
-  if (!strcmp (mime_type, "image/jpg"))
+  if (!g_strcmp0 (mime_type, "image/jpg"))
     alt_type = "image/jpeg";
-  else if (!strcmp (mime_type, "image/jpeg"))
+  else if (!g_strcmp0 (mime_type, "image/jpeg"))
     alt_type = "image/jpg";
 
   for (p = req->supported_mime_types; *p; ++p)
     {
-      if (!strcmp (*p, mime_type) || (alt_type && !strcmp (*p, alt_type)))
+      if (!g_strcmp0 (*p, mime_type) || (alt_type && !g_strcmp0 (*p, alt_type)))
         {
           return TRUE;
         }

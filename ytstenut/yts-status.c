@@ -27,7 +27,6 @@
  * mesh.
  */
 
-#include <string.h>
 #include <rest/rest-xml-node.h>
 
 #include "yts-metadata-internal.h"

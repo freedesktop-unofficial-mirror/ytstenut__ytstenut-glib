@@ -40,7 +40,6 @@
 #endif
 
 #include <locale.h>
-#include <string.h>
 #include <glib.h>
 #include <glib-object.h>
 

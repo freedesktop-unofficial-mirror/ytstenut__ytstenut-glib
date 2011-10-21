@@ -318,7 +318,7 @@ yts_metadata_new_from_node (RestXmlNode       *node,
 
   g_return_val_if_fail (node && node->name, NULL);
 
-  if (!strcmp (node->name, "message"))
+  if (!g_strcmp0 (node->name, "message"))
     {
       if (attributes)
         mdata = g_object_new (YTS_TYPE_MESSAGE,
@@ -328,7 +328,7 @@ yts_metadata_new_from_node (RestXmlNode       *node,
       else
         mdata = g_object_new (YTS_TYPE_MESSAGE, "top-level-node", node, NULL);
     }
-  else if (!strcmp (node->name, "status"))
+  else if (!g_strcmp0 (node->name, "status"))
     {
       if (attributes)
         {
@@ -340,13 +340,13 @@ yts_metadata_new_from_node (RestXmlNode       *node,
 
           for (p = attributes; *p; ++p)
             {
-              if (!strcmp (*p, "capability"))
+              if (!g_strcmp0 (*p, "capability"))
                 have_caps = TRUE;
-              else if (!strcmp (*p, "activity"))
+              else if (!g_strcmp0 (*p, "activity"))
                 have_activity = TRUE;
-              else if (!strcmp (*p, "xmlns"))
+              else if (!g_strcmp0 (*p, "xmlns"))
                 have_xmlns = TRUE;
-              else if (!strcmp (*p, "from-service"))
+              else if (!g_strcmp0 (*p, "from-service"))
                 have_from = TRUE;
             }
 
@@ -528,7 +528,7 @@ yts_rest_xml_node_check_attrs (RestXmlNode *node0, RestXmlNode *node1)
       if (!value && !at1)
         continue;
 
-      if ((!at1 && value) || (at1 && !value) || strcmp (value, at1))
+      if ((!at1 && value) || (at1 && !value) || g_strcmp0 (value, at1))
         return FALSE;
     }
 
