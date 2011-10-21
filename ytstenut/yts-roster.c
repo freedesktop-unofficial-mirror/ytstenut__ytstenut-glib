@@ -343,24 +343,11 @@ yts_roster_find_contact_by_id (YtsRoster const  *self,
                                char const       *contact_id)
 {
   YtsRosterPrivate *priv = GET_PRIVATE (self);
-  GHashTableIter     iter;
-  gpointer           key, value;
 
-  g_return_val_if_fail (YTS_IS_ROSTER (self) && contact_id, NULL);
+  g_return_val_if_fail (YTS_IS_ROSTER (self), NULL);
+  g_return_val_if_fail (contact_id, NULL);
 
-  g_hash_table_iter_init (&iter, priv->contacts);
-  while (g_hash_table_iter_next (&iter, &key, &value))
-    {
-      YtsContact *contact = value;
-      char const *j       = key;
-
-      if (j && !strcmp (j, contact_id))
-        {
-          return contact;
-        }
-    }
-
-  return NULL;
+  return g_hash_table_lookup (priv->contacts, contact_id);
 }
 
 /*
