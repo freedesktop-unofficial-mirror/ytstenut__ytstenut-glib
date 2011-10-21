@@ -74,7 +74,7 @@ fi
 
 CFLAGS="$CFLAGS $WARN_CFLAGS -DG_DISABLE_DEPRECATED"
 if test "$GCC" = "yes"; then
-  for option in -Wno-system-headers -Wfloat-equal -Wpointer-arith \
+  for option in -std=c99 -Wno-system-headers -Wfloat-equal -Wpointer-arith \
                 -Wbad-function-cast -Wwrite-strings -Wsign-compare \
                 -Waggregate-return -Wstrict-prototypes -Wmissing-prototypes \
                 -Wmissing-declarations -Wformat=2 -Wnested-externs -Winline \
