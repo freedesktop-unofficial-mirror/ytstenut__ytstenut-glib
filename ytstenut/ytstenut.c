@@ -67,10 +67,20 @@ _log (char const      *log_domain,
     }
 
     if (_debug_flags & topic_flag) {
-      /* Prepend topic on the message. */
-      char *msg = g_strdup_printf ("%s: %s", topic, message);
-      g_log_default_handler (log_domain, log_level, msg, NULL);
-      g_free (msg);
+
+      char *msg = NULL;
+
+      /* Prepend topic on the message, if we have one. */
+      if (0 != g_strcmp0 ("unspecified", topic)) {
+        msg = g_strdup_printf ("%s: %s", topic, message);
+      }
+
+      g_log_default_handler (log_domain, log_level,
+                             msg ? msg : message,
+                             NULL);
+
+      if (msg)
+        g_free (msg);
     }
 
   } else {
@@ -81,11 +91,22 @@ _log (char const      *log_domain,
                               G_LOG_LEVEL_CRITICAL |
                               G_LOG_LEVEL_WARNING |
                               G_LOG_LEVEL_DEBUG;
+
     if (log_level & log_mask) {
-      /* Prepend topic on the message. */
-      char *msg = g_strdup_printf ("%s: %s", topic, message);
-      g_log_default_handler (log_domain, log_level, msg, NULL);
-      g_free (msg);
+
+      char *msg = NULL;
+
+      /* Prepend topic on the message, if we have one. */
+      if (0 != g_strcmp0 ("unspecified", topic)) {
+        msg = g_strdup_printf ("%s: %s", topic, message);
+      }
+
+      g_log_default_handler (log_domain, log_level,
+                             msg ? msg : message,
+                             NULL);
+
+      if (msg)
+        g_free (msg);
     }
   }
 }
