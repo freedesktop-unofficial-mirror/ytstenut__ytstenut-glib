@@ -20,7 +20,6 @@
  */
 
 #include "yts-capability.h"
-#include "yts-debug.h"
 #include "yts-invocation-message.h"
 #include "yts-marshal.h"
 #include "yts-message.h"
@@ -46,6 +45,9 @@ G_DEFINE_TYPE_WITH_CODE (YtsService,
 
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_SERVICE, YtsServicePrivate))
+
+#undef G_LOG_DOMAIN
+#define G_LOG_DOMAIN PACKAGE"\0service"
 
 enum {
   PROP_0,

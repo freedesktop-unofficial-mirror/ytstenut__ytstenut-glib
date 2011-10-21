@@ -25,7 +25,6 @@
 #include <ytstenut/yts-capability.h>
 #include <ytstenut/yts-client.h>
 #include <ytstenut/yts-contact.h>
-#include <ytstenut/yts-main.h>
 #include <ytstenut/yts-roster.h>
 #include <ytstenut/yts-service.h>
 #include <ytstenut/yts-version.h>

@@ -34,11 +34,11 @@
 #include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
 
 #include "empathy-tp-file.h"
+#include "ytstenut-internal.h"
 #include "yts-adapter-factory.h"
 #include "yts-caps.h"
 #include "yts-client-internal.h"
 #include "yts-contact-internal.h"
-#include "yts-debug.h"
 #include "yts-enum-types.h"
 #include "yts-error-message.h"
 #include "yts-event-message.h"
@@ -65,6 +65,9 @@ G_DEFINE_TYPE (YtsClient, yts_client, G_TYPE_OBJECT)
 
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_CLIENT, YtsClientPrivate))
+
+#undef G_LOG_DOMAIN
+#define G_LOG_DOMAIN PACKAGE"\0client"
 
 /**
  * SECTION: yts-client
@@ -580,13 +583,11 @@ yts_client_ft_handle_state (YtsClient *self, TpChannel *proxy, guint state)
         case 1:
           {
             if (item)
-              YTS_NOTE (FILE_TRANSFER,
-                         "Got request for FT channel from %s (%s)",
+              g_message ("Got request for FT channel from %s (%s)",
                          yts_contact_get_contact_id (item),
                          tp_proxy_get_bus_name (proxy));
             else
-              YTS_NOTE (FILE_TRANSFER,
-                         "Got request for FT channel from handle %d",
+              g_message ("Got request for FT channel from handle %d",
                          ihandle);
 
             tp_cli_dbus_properties_call_get_all (proxy,
@@ -599,16 +600,16 @@ yts_client_ft_handle_state (YtsClient *self, TpChannel *proxy, guint state)
           }
           break;
         case 2:
-          YTS_NOTE (FILE_TRANSFER, "Incoming stream state (%s) --> 'accepted'",
+          g_message ("Incoming stream state (%s) --> 'accepted'",
                      tp_proxy_get_bus_name (proxy));
           break;
         case 3:
-          YTS_NOTE (FILE_TRANSFER, "Incoming stream state (%s) --> 'open'",
+          g_message ("Incoming stream state (%s) --> 'open'",
                      tp_proxy_get_bus_name (proxy));
           break;
         case 4:
         case 5:
-          YTS_NOTE (FILE_TRANSFER, "Incoming stream state (%s) --> '%s'",
+          g_message ("Incoming stream state (%s) --> '%s'",
                      tp_proxy_get_bus_name (proxy),
                      state == 4 ? "completed" : "cancelled");
           {
@@ -627,11 +628,11 @@ yts_client_ft_handle_state (YtsClient *self, TpChannel *proxy, guint state)
           }
           break;
         default:
-          YTS_NOTE (FILE_TRANSFER, "Invalid value of stream state: %d", state);
+          g_message ("Invalid value of stream state: %d", state);
         }
     }
   else
-    YTS_NOTE (FILE_TRANSFER, "The FT channel was requested by us ... (%s)",
+    g_message ("The FT channel was requested by us ... (%s)",
              tp_proxy_get_bus_name (proxy));
 }
 
@@ -644,8 +645,7 @@ yts_client_ft_state_cb (TpChannel *proxy,
 {
   YtsClient *client = data;
 
-  YTS_NOTE (FILE_TRANSFER,
-             "FT channel changed status to %d (reason %d)", state, reason);
+  g_message ("FT channel changed status to %d (reason %d)", state, reason);
 
   yts_client_ft_handle_state (client, proxy, state);
 }
@@ -657,7 +657,7 @@ yts_client_ft_core_cb (GObject *proxy, GAsyncResult *res, gpointer data)
   TpChannel  *channel = (TpChannel*) proxy;
   GError     *error   = NULL;
 
-  YTS_NOTE (FILE_TRANSFER, "FT channel ready");
+  g_message ("FT channel ready");
 
   tp_cli_channel_type_file_transfer_connect_to_file_transfer_state_changed
     (channel,
@@ -689,7 +689,7 @@ yts_client_channel_cb (TpConnection *proxy,
       return;
     }
 
-  YTS_NOTE (CLIENT, "New channel: %s: %s: h type %d, h %d",
+  g_message ("New channel: %s: %s: h type %d, h %d",
              path, type, handle_type, handle);
 
   switch (handle_type)
@@ -735,7 +735,7 @@ yts_client_authenticated (YtsClient *self)
 
   priv->authenticated = true;
 
-  YTS_NOTE (CONNECTION, "Authenticated");
+  g_message ("Authenticated");
 }
 
 static void
@@ -745,7 +745,7 @@ yts_client_ready (YtsClient *self)
 
   priv->ready = TRUE;
 
-  YTS_NOTE (CLIENT, "YtsClient is ready");
+  g_message ("YtsClient is ready");
 
   if (priv->tp_status && priv->status)
     {
@@ -856,7 +856,7 @@ yts_client_incoming_file (YtsClient   *self,
   EmpathyTpFile     *tp_file;
   GCancellable      *cancellable;
 
-  YTS_NOTE (FILE_TRANSFER, "Incoming file from %s", from);
+  g_message ("Incoming file from %s", from);
 
   if (g_mkdir_with_parents (priv->incoming_dir, 0700))
     {
@@ -960,7 +960,7 @@ yts_client_debug_msg_cb (TpProxy    *proxy,
       g_message ("%s: %s", domain, msg);
       break;
     case 5:
-      YTS_NOTE (MANAGER, "%s: %s", domain, msg);
+      g_message ("%s: %s", domain, msg);
     }
 }
 
@@ -1073,7 +1073,7 @@ yts_client_connect_debug_signals (YtsClient *client, TpProxy *proxy)
 
   if (error)
     {
-      YTS_NOTE (MANAGER, "%s", error->message);
+      g_message ("%s", error->message);
       g_clear_error (&error);
     }
 
@@ -1145,7 +1145,7 @@ yts_client_account_prepared_cb (GObject       *acc,
 
   priv->account = account;
 
-  YTS_NOTE (CONNECTION, "Account successfully opened");
+  g_message ("Account successfully opened");
 
   priv->tp_client = tp_yts_client_new (priv->uid, account);
 
@@ -1184,12 +1184,12 @@ yts_client_account_cb (GObject *object, GAsyncResult *res, gpointer self)
   if (error)
     g_error ("Could not access account: %s", error->message);
 
-  YTS_NOTE (CONNECTION, "Got account");
+  g_message ("Got account");
 
-  if (yts_debug_flags & YTS_DEBUG_TP)
+  if (YTS_DEBUG_TELEPATHY & ytstenut_get_debug_flags ())
     tp_debug_set_flags ("all");
 
-  if (yts_debug_flags & YTS_DEBUG_MANAGER)
+  if (YTS_DEBUG_CLIENT & ytstenut_get_debug_flags ())
     yts_client_setup_debug (self);
 
   tp_account_prepare_async (priv->account,
@@ -1386,6 +1386,13 @@ yts_client_class_init (YtsClientClass *klass)
 {
   GParamSpec   *pspec;
   GObjectClass *object_class = (GObjectClass *)klass;
+
+  /* Initialize logging. */
+  static bool is_initialized = false;
+  if (!is_initialized) {
+    ytstenut_init ();
+    is_initialized = true;
+  }
 
   g_type_class_add_private (klass, sizeof (YtsClientPrivate));
 
@@ -2001,7 +2008,7 @@ yts_client_error_cb (TpConnection *proxy,
                       gpointer      user_data,
                       GObject      *weak_object)
 {
-  YTS_NOTE (CLIENT, "Error: %s", arg_Error);
+  g_message ("Error: %s", arg_Error);
 }
 
 static void
@@ -2037,7 +2044,7 @@ yts_client_status_cb (TpConnection  *proxy,
   if (priv->disposed)
     return;
 
-  YTS_NOTE (CONNECTION, "Connection: %s: '%s'",
+  g_message ("Connection: %s: '%s'",
            status[arg_Status], reason[arg_Reason]);
 
   if (arg_Status == TP_CONNECTION_STATUS_CONNECTED)
@@ -2091,7 +2098,7 @@ yts_client_process_one_service (YtsClient         *self,
       return FALSE;
     }
 
-  YTS_NOTE (CLIENT, "Processing service %s:%s", jid, sid);
+  g_message ("Processing service %s:%s", jid, sid);
 
   type  = g_value_get_string (&service_info->values[0]);
   names = g_value_get_boxed (&service_info->values[1]);
@@ -2103,7 +2110,7 @@ yts_client_process_one_service (YtsClient         *self,
   else
     roster = priv->unwanted;
 
-  YTS_NOTE (CLIENT, "Using roster %s",
+  g_message ("Using roster %s",
              roster == priv->roster ? "wanted" : "unwanted");
 
   service_statuses = g_hash_table_new_full (g_str_hash,
@@ -2230,7 +2237,7 @@ yts_client_process_status (YtsClient *self)
       GHashTableIter  iter;
 
       if (g_hash_table_size (services) <= 0)
-        YTS_NOTE (CLIENT, "No services discovered so far");
+        g_message ("No services discovered so far");
 
       g_hash_table_iter_init (&iter, services);
       while (g_hash_table_iter_next (&iter, (void**)&jid, (void**)&service))
@@ -2247,7 +2254,7 @@ yts_client_process_status (YtsClient *self)
         }
     }
   else
-    YTS_NOTE (CLIENT, "No discovered services");
+    g_message ("No discovered services");
 }
 
 static void
@@ -2264,7 +2271,7 @@ yts_client_advertise_status_cb (GObject      *source_object,
     }
   else
     {
-      YTS_NOTE (CLIENT, "Advertising of status succeeded");
+      g_message ("Advertising of status succeeded");
     }
 
   g_clear_error (&error);
@@ -2282,7 +2289,7 @@ yts_client_dispatch_status (YtsClient *self)
   if (priv->status)
     xml = yts_metadata_to_string ((YtsMetadata*)priv->status);
 
-  YTS_NOTE (CLIENT, "Setting status to\n%s", xml);
+  g_message ("Setting status to\n%s", xml);
 
   for (i = 0; i < priv->caps->len; ++i)
     {
@@ -2334,7 +2341,7 @@ yts_client_yts_status_cb (GObject       *obj,
       g_error ("Failed to obtain tp_status: %s", error->message);
     }
 
-  YTS_NOTE (CLIENT, "Processing tp_status");
+  g_message ("Processing tp_status");
 
   priv->tp_status = tp_status;
 
@@ -2356,7 +2363,7 @@ yts_client_yts_status_cb (GObject       *obj,
 
   if (!priv->ready)
     {
-      YTS_NOTE (CLIENT, "Emitting 'ready' signal");
+      g_message ("Emitting 'ready' signal");
       g_signal_emit (self, signals[READY], 0);
     }
 }
@@ -2371,7 +2378,7 @@ yts_client_connection_ready_cb (TpConnection *conn,
 
   if (tp_connection_is_ready (conn))
     {
-      YTS_NOTE (CONNECTION, "TP Connection entered ready state");
+      g_message ("TP Connection entered ready state");
 
       cancellable = g_cancellable_new ();
 
@@ -2485,7 +2492,7 @@ yts_client_connection_prepare_cb (GObject       *connection,
           g_error ("Failed to register account: %s", error->message);
         }
       else
-        YTS_NOTE (CONNECTION, "Registered TpYtsClient");
+        g_message ("Registered TpYtsClient");
 
       tp_g_signal_connect_object (priv->tp_client, "received-channels",
                               G_CALLBACK (yts_client_yts_channels_received_cb),
@@ -2545,7 +2552,7 @@ yts_client_setup_account_connection (YtsClient *self)
 
   priv->dialing = FALSE;
 
-  YTS_NOTE (CONNECTION, "Connection ready ?: %d",
+  g_message ("Connection ready ?: %d",
              tp_connection_is_ready (priv->connection));
 
   tp_g_signal_connect_object (priv->connection, "notify::connection-ready",
@@ -2625,8 +2632,7 @@ yts_client_account_online_cb (GObject      *acc,
 
   presence = tp_account_get_current_presence (account, &stat, &msg);
 
-  YTS_NOTE (CONNECTION,
-             "Request to change presence to 'online' succeeded: %d, %s:%s",
+  g_message ("Request to change presence to 'online' succeeded: %d, %s:%s",
              presence, stat, msg);
 
   g_free (stat);
@@ -2641,7 +2647,7 @@ yts_client_account_connection_notify_cb (TpAccount  *account,
                                           GParamSpec *pspec,
                                           YtsClient *client)
 {
-  YTS_NOTE (CONNECTION, "We got connection!");
+  g_message ("We got connection!");
 
   g_signal_handlers_disconnect_by_func (account,
                                    yts_client_account_connection_notify_cb,
@@ -2661,7 +2667,7 @@ yts_client_make_connection (YtsClient *self)
    */
   if (!priv->account)
     {
-      YTS_NOTE (CONNECTION, "Account not yet available");
+      g_message ("Account not yet available");
       return;
     }
 
@@ -2673,7 +2679,7 @@ yts_client_make_connection (YtsClient *self)
    */
   if (!tp_account_get_connection (priv->account))
     {
-      YTS_NOTE (CONNECTION, "Currently off line, changing ...");
+      g_message ("Currently off line, changing ...");
 
       g_signal_connect (priv->account, "notify::connection",
                         G_CALLBACK (yts_client_account_connection_notify_cb),
@@ -2704,7 +2710,7 @@ yts_client_connect (YtsClient *self)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
 
-  YTS_NOTE (CONNECTION, "Connecting ...");
+  g_message ("Connecting ...");
 
   g_return_if_fail (YTS_IS_CLIENT (self));
 
@@ -2758,7 +2764,7 @@ yts_client_refresh_roster (YtsClient *self)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
 
-  YTS_NOTE (CLIENT, "Refreshing roster");
+  g_message ("Refreshing roster");
 
   if (!priv->tp_status)
     return;
@@ -2794,7 +2800,7 @@ yts_client_add_capability (YtsClient  *self,
 
   if (yts_client_has_capability (self, cap_quark))
     {
-      YTS_NOTE (CLIENT, "Capablity '%s' already set", capability);
+      g_message ("Capablity '%s' already set", capability);
       return;
     }
 
@@ -3027,8 +3033,8 @@ yts_client_set_status_by_capability (YtsClient *self,
           NULL
         };
 
-      g_debug ("Constructing status for %s, %s, %s",
-               capability, activity, priv->uid);
+      g_message ("Constructing status for %s, %s, %s",
+                 capability, activity, priv->uid);
 
       status = yts_status_new ((char const**)&attributes);
     }
@@ -3080,17 +3086,17 @@ yts_client_msg_replied_cb (TpYtsChannel *proxy,
   gpointer                  key, value;
   struct YtsCLChannelData *d = data;
 
-  YTS_NOTE (MESSAGE, "Got reply with attributes:");
+  g_message ("Got reply with attributes:");
 
   g_hash_table_iter_init (&iter, attributes);
 
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
-      YTS_NOTE (MESSAGE, "    %s = %s\n",
+      g_message ("    %s = %s\n",
                  (char const *) key, (char const  *) value);
     }
 
-  YTS_NOTE (MESSAGE, "    body: %s\n", body);
+  g_message ("    body: %s\n", body);
 
   if (!d->status_done)
     {
@@ -3142,7 +3148,7 @@ yts_client_msg_closed_cb (TpChannel *channel,
 {
   struct YtsCLChannelData *d = data;
 
-  YTS_NOTE (MESSAGE, "Channel closed");
+  g_message ("Channel closed");
 
   if (!d->status_done)
     {
@@ -3174,7 +3180,7 @@ yts_client_msg_request_cb (GObject      *source_object,
     }
   else
     {
-      YTS_NOTE (MESSAGE, "Channel requested");
+      g_message ("Channel requested");
     }
 
   g_clear_error (&error);
@@ -3206,7 +3212,7 @@ yts_client_outgoing_channel_cb (GObject      *obj,
     }
   else
     {
-      YTS_NOTE (MESSAGE, "Got message channel, sending request");
+      g_message ("Got message channel, sending request");
 
       tp_yts_channel_connect_to_replied (ch, yts_client_msg_replied_cb,
                                          yts_cl_channel_data_ref (d),
@@ -3231,7 +3237,7 @@ yts_client_dispatch_message (struct YtsCLChannelData *d)
   TpContact         *tp_contact;
   YtsClientPrivate *priv = GET_PRIVATE (d->client);
 
-  YTS_NOTE (CLIENT, "Dispatching delayed message to %s", d->uid);
+  g_message ("Dispatching delayed message to %s", d->uid);
 
   tp_contact = yts_contact_get_tp_contact (d->contact);
   g_assert (tp_contact);
@@ -3254,7 +3260,7 @@ yts_client_notify_tp_contact_cb (YtsContact              *contact,
                                   GParamSpec               *pspec,
                                   struct YtsCLChannelData *d)
 {
-  YTS_NOTE (CLIENT, "Contact ready");
+  g_message ("Contact ready");
   yts_client_dispatch_message (d);
   g_signal_handlers_disconnect_by_func (contact,
                                         yts_client_notify_tp_contact_cb,
@@ -3299,7 +3305,7 @@ yts_client_send_message (YtsClient   *client,
     }
   else
     {
-      YTS_NOTE (CLIENT, "Contact not ready, postponing message dispatch");
+      g_message ("Contact not ready, postponing message dispatch");
 
       g_signal_connect (contact, "notify::tp-contact",
                         G_CALLBACK (yts_client_notify_tp_contact_cb),

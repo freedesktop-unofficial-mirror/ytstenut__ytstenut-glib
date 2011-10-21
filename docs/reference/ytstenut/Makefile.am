@@ -17,7 +17,7 @@ DOC_MAIN_SGML_FILE=$(DOC_MODULE)-docs.xml
 DOC_SOURCE_DIR=../../../ytstenut
 
 # Extra options to pass to gtkdoc-scangobj. Not normally needed.
-SCANGOBJ_OPTIONS=--type-init-func="yts_init (NULL, NULL)"
+SCANGOBJ_OPTIONS=
 
 # Extra options to supply to gtkdoc-scan.
 # e.g. SCAN_OPTIONS=--deprecated-guards="GTK_DISABLE_DEPRECATED"
@@ -59,7 +59,6 @@ IGNORE_HFILES = \
   yts-client-internal.h \
   yts-contact-internal.h \
   yts-contact-internal.h \
-  yts-debug.h \
   yts-error-message.h \
   yts-event-message.h \
   yts-factory.h \

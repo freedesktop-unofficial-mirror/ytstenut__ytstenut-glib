@@ -23,7 +23,6 @@
 
 #include "yts-client-internal.h"
 #include "yts-contact-internal.h"
-#include "yts-debug.h"
 #include "yts-marshal.h"
 #include "yts-roster-internal.h"
 #include "yts-service-factory.h"
@@ -33,6 +32,9 @@ G_DEFINE_TYPE (YtsRoster, yts_roster, G_TYPE_OBJECT);
 
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_ROSTER, YtsRosterPrivate))
+
+#undef G_LOG_DOMAIN
+#define G_LOG_DOMAIN PACKAGE"\0roster"
 
 /**
  * SECTION: yts-roster
@@ -447,7 +449,7 @@ _connection_get_contacts (TpConnection        *connection,
     char const *contact_id = requested_ids[0];
     TpContact *tp_contact = TP_CONTACT (contacts[0]);
 
-    YTS_NOTE (ROSTER, "Creating new contact for %s", contact_id);
+    g_message ("Creating new contact for %s", contact_id);
 
     contact = yts_contact_new (tp_contact);
 
@@ -460,7 +462,7 @@ _connection_get_contacts (TpConnection        *connection,
 
     g_hash_table_insert (priv->contacts, g_strdup (contact_id), contact);
 
-    YTS_NOTE (ROSTER, "Emitting contact-added for new contact %s", contact_id);
+    g_message ("Emitting contact-added for new contact %s", contact_id);
     g_signal_emit (self, _signals[SIG_CONTACT_ADDED], 0, contact);
 
     g_signal_connect (contact, "send-message",

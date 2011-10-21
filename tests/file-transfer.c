@@ -136,7 +136,7 @@ main (int argc, char **argv)
   YtsRoster *roster1;
   YtsRoster *roster2;
 
-  yts_init (0, NULL);
+  g_type_init ();
 
   loop = g_main_loop_new (NULL, FALSE);
 

@@ -15,20 +15,33 @@
  * License along with this library. If not, see
  * <http://www.gnu.org/licenses/>.
  *
- * Authored by: Tomas Frydrych <tf@linux.intel.com>
+ * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
-#ifndef YTS_MAIN_H
-#define YTS_MAIN_H
+#ifndef YTSTENUT_INTERNAL_H
+#define YTSTENUT_INTERNAL_H
 
-#include <glib.h>
+#include <stdbool.h>
 
-G_BEGIN_DECLS
+typedef enum {
+  YTS_DEBUG_CLIENT            = 1 << 0,
+  YTS_DEBUG_CONTACT           = 1 << 1,
+  YTS_DEBUG_FILE_TRANSFER     = 1 << 2,
+  YTS_DEBUG_MAIN              = 1 << 3,
+  YTS_DEBUG_PROXY             = 1 << 4,
+  YTS_DEBUG_PROXY_SERVICE     = 1 << 5,
+  YTS_DEBUG_ROSTER            = 1 << 6,
+  YTS_DEBUG_SERVICE_ADAPTER   = 1 << 7,
+  YTS_DEBUG_SERVICE           = 1 << 8,
+  YTS_DEBUG_TELEPATHY         = 1 << 9,
+  YTS_DEBUG_UNSPECIFIED       = 1 << 10
+} YtsDebugFlags;
 
-int           yts_init             (int *argc, char ***argv);
-GOptionGroup *yts_get_option_group (void);
+bool
+ytstenut_init (void);
 
-G_END_DECLS
+YtsDebugFlags
+ytstenut_get_debug_flags (void);
 
-#endif /* YTS_MAIN_H */
+#endif /* YTSTENUT_INTERNAL_H */
 

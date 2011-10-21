@@ -29,7 +29,6 @@
 #include "empathy-tp-file.h"
 #include "yts-capability.h"
 #include "yts-contact-internal.h"
-#include "yts-debug.h"
 #include "yts-enum-types.h"
 #include "yts-error.h"
 #include "yts-marshal.h"
@@ -41,6 +40,9 @@ G_DEFINE_TYPE (YtsContact, yts_contact, G_TYPE_OBJECT);
 
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_CONTACT, YtsContactPrivate))
+
+#undef G_LOG_DOMAIN
+#define G_LOG_DOMAIN PACKAGE"\0contact"
 
 /**
  * SECTION: yts-contact
@@ -556,7 +558,7 @@ yts_contact_ft_channel_ready_cb (TpChannel       *channel,
   if (!tp_channel_is_ready (channel))
     return;
 
-  YTS_NOTE (FILE_TRANSFER, "The FT channel is ready");
+  g_message ("The FT channel is ready");
 
   yts_c_dispatch_file (file);
   yts_c_pending_file_free (file);
@@ -771,7 +773,7 @@ yts_contact_notify_tp_contact_cb (YtsContact              *contact,
                                    GParamSpec               *pspec,
                                    struct YtsContactFTData *d)
 {
-  YTS_NOTE (FILE_TRANSFER, "Contact ready");
+  g_message ("Contact ready");
   yts_contact_do_send_file (contact, d->gfile, d->atom);
 
   g_signal_handlers_disconnect_by_func (contact,
@@ -830,7 +832,7 @@ yts_contact_send_file (YtsContact  *self,
    */
   atom = (yts_error_new_atom () << 16);
 
-  YTS_NOTE (FILE_TRANSFER, "Sending file with atom %d", atom);
+  g_message ("Sending file with atom %d", atom);
 
   if (priv->tp_contact)
     {
@@ -843,8 +845,7 @@ yts_contact_send_file (YtsContact  *self,
       d->gfile = g_object_ref (file);
       d->atom  = atom;
 
-      YTS_NOTE (FILE_TRANSFER,
-                 "Contact not ready, postponing message file transfer");
+      g_message ("Contact not ready, postponing message file transfer");
 
       g_signal_connect (self, "notify::tp-contact",
                         G_CALLBACK (yts_contact_notify_tp_contact_cb),
@@ -902,9 +903,9 @@ yts_contact_add_service (YtsContact *self,
   /*
    * Emit the signal; the run-first signal closure will do the rest
    */
-  YTS_NOTE (CONTACT, "New service %s on %s",
-             yts_service_get_id (service),
-             priv->contact_id);
+  g_message ("New service %s on %s",
+             yts_service_get_service_id (service),
+             yts_contact_get_contact_id (self));
 
   g_signal_emit (self, _signals[SIG_SERVICE_ADDED], 0, service);
 }

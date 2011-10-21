@@ -197,9 +197,10 @@ main (int     argc,
   GOptionContext  *context;
   int ret;
 
+  g_type_init ();
+
   context = g_option_context_new ("- Ytstenut status test");
   g_option_context_add_main_entries (context, entries, NULL);
-  g_option_context_add_group (context, yts_get_option_group ());
   g_option_context_parse (context, &argc, &argv, &error);
   if (error) {
     g_warning ("%s : %s", G_STRLOC, error->message);

@@ -6,9 +6,9 @@ INCLUDES_FOR_GIR=-I..
 
 AM_CPPFLAGS = \
   -I$(top_srcdir) \
-	-DG_DISABLE_DEPRECATED \
-	-DG_LOG_DOMAIN=\"YtstenutGlib\" \
-	$(NULL)
+  -DG_LOG_DOMAIN=\"$(PACKAGE)\0unspecified\" \
+  -DG_DISABLE_DEPRECATED \
+  $(NULL)
 
 AM_CFLAGS = $(YTS_CFLAGS)
 
@@ -16,7 +16,6 @@ source_h =						\
 		$(srcdir)/yts-capability.h			\
 		$(srcdir)/yts-client.h			\
 		$(srcdir)/yts-contact.h		\
-		$(srcdir)/yts-main.h			\
 		$(srcdir)/yts-roster.h			\
 		$(srcdir)/yts-service.h		\
 		$(srcdir)/yts-version.h		\
@@ -34,13 +33,14 @@ source_h =						\
 		$(NULL)
 
 source_c =						\
+		$(srcdir)/ytstenut.c \
+		\
 		$(srcdir)/empathy-tp-file.c		\
 		$(srcdir)/yts-capability.c			\
 		$(srcdir)/yts-client.c			\
 		$(srcdir)/yts-contact.c		\
 		$(srcdir)/yts-enum-types.c		\
 		$(srcdir)/yts-error.c			\
-		$(srcdir)/yts-main.c			\
 		$(srcdir)/yts-marshal.c		\
 		$(srcdir)/yts-message.c		\
 		$(srcdir)/yts-metadata.c		\
@@ -81,12 +81,13 @@ source_c =						\
 		$(NULL)
 
 private_h = \
+		$(srcdir)/ytstenut-internal.h \
+		\
 		$(srcdir)/empathy-tp-file.h		\
 		$(srcdir)/yts-adapter-factory.h \
 		$(srcdir)/yts-client-internal.h \
 		$(srcdir)/yts-contact-internal.h \
 		$(srcdir)/yts-contact-internal.h \
-		$(srcdir)/yts-debug.h \
 		$(srcdir)/yts-error.h \
 		$(srcdir)/yts-factory.h \
 		$(srcdir)/yts-metadata-internal.h \
@@ -200,7 +201,6 @@ Yts-@YTS_API_VERSION@.gir: $(G_IR_SCANNER) libytstenut-@YTS_API_VERSION@.la
 		$(INCLUDES_FOR_GIR) \
 		$(YTS_CFLAGS) \
 		$(AM_CPPFLAGS) \
-		--add-init-section="yts_init(0,NULL);"\
 		--c-include='ytstenut/ytstenut.h' \
 		--include=GObject-2.0 \
 		--include=TelepathyGLib-0.12 \

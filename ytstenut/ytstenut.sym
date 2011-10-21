@@ -25,8 +25,6 @@ yts_contact_get_type
 yts_contact_send_file
 yts_event_message_get_type
 yts_event_message_new
-yts_get_option_group
-yts_init
 yts_invocation_message_get_type
 yts_invocation_message_new
 yts_message_get_type

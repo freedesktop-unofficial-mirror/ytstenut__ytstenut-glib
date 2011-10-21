@@ -330,7 +330,6 @@ main (int     argc,
   g_option_group_add_entries (group, player_entries);
   g_option_context_set_main_group (context, group);
 
-  g_option_context_add_group (context, yts_get_option_group ());
   g_option_context_parse (context, &argc, &argv, &error);
   if (error) {
     g_warning ("%s : %s", G_STRLOC, error->message);

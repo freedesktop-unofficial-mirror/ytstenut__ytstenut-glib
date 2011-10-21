@@ -34,6 +34,9 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (YtsProxy,
                                   G_IMPLEMENT_INTERFACE (YTS_TYPE_CAPABILITY,
                                                          _capability_interface_init))
 
+#undef G_LOG_DOMAIN
+#define G_LOG_DOMAIN PACKAGE"\0proxy"
+
 /**
  * SECTION: yts-proxy
  * @title: YtsProxy
