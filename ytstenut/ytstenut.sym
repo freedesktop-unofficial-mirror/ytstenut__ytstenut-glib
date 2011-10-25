@@ -23,10 +23,6 @@ yts_contact_get_name
 yts_contact_get_tp_contact
 yts_contact_get_type
 yts_contact_send_file
-yts_event_message_get_type
-yts_event_message_new
-yts_invocation_message_get_type
-yts_invocation_message_new
 yts_message_get_type
 yts_message_new
 yts_metadata_add_attribute
@@ -45,8 +41,6 @@ yts_proxy_invoke
 yts_proxy_service_create_proxy
 yts_proxy_service_get_type
 yts_proxy_service_new
-yts_response_message_get_type
-yts_response_message_new
 yts_roster_find_contact_by_id
 yts_roster_foreach_contact
 yts_roster_get_type
