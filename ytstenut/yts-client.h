@@ -127,10 +127,10 @@ char const *
 yts_client_get_incoming_file_directory (YtsClient const *self);
 
 char const *
-yts_client_get_jid (YtsClient const *self);
+yts_client_get_contact_id (YtsClient const *self);
 
 char const *
-yts_client_get_uid (YtsClient const *self);
+yts_client_get_service_id (YtsClient const *self);
 
 void
 yts_client_set_status_by_capability (YtsClient *self,

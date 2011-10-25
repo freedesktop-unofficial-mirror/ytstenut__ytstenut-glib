@@ -6,11 +6,11 @@ yts_capability_status_new
 yts_client_connect
 yts_client_disconnect
 yts_client_foreach_service
+yts_client_get_contact_id
 yts_client_get_incoming_file_directory
-yts_client_get_jid
 yts_client_get_roster
+yts_client_get_service_id
 yts_client_get_type
-yts_client_get_uid
 yts_client_new
 yts_client_add_capability
 yts_client_publish_service
@@ -20,7 +20,6 @@ yts_contact_cancel_file
 yts_contact_foreach_service
 yts_contact_get_contact_id
 yts_contact_get_name
-yts_contact_get_tp_contact
 yts_contact_get_type
 yts_contact_send_file
 yts_message_get_type

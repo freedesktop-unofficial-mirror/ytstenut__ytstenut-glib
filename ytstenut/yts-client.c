@@ -148,7 +148,8 @@ enum
 enum
 {
   PROP_0,
-  PROP_UID,
+  PROP_CONTACT_ID,
+  PROP_SERVICE_ID,
   PROP_PROTOCOL,
   PROP_ICON_TOKEN,
 };
@@ -1327,7 +1328,11 @@ yts_client_get_property (GObject    *object,
 
   switch (property_id)
     {
-    case PROP_UID:
+    case PROP_CONTACT_ID:
+      g_value_set_string (value,
+                          yts_client_get_contact_id (YTS_CLIENT (object)));
+      break;
+    case PROP_SERVICE_ID:
       g_value_set_string (value, priv->uid);
       break;
     case PROP_ICON_TOKEN:
@@ -1352,9 +1357,10 @@ yts_client_set_property (GObject      *object,
 
   switch (property_id)
     {
-    case PROP_UID:
+    case PROP_SERVICE_ID:
       {
-        g_free (priv->uid);
+        /* Construct-only */
+        g_return_if_fail (NULL == priv->uid);
         priv->uid = g_value_dup_string (value);
       }
       break;
@@ -1486,18 +1492,29 @@ yts_client_class_init (YtsClientClass *klass)
   klass->raw_message         = yts_client_raw_message;
 
   /**
-   * YtsClient:uid:
+   * YtsClient:contact-id:
    *
-   * The uid of this service
+   * The contact ID of this service.
    *
-   * Since: 0.1
+   * Since: 0.4
    */
-  pspec = g_param_spec_string ("uid",
-                               "Service UID",
-                               "Service UID",
+  pspec = g_param_spec_string ("contact-id", "", "",
                                NULL,
-                               G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
-  g_object_class_install_property (object_class, PROP_UID, pspec);
+                               G_PARAM_READABLE);
+  g_object_class_install_property (object_class, PROP_CONTACT_ID, pspec);
+
+  /**
+   * YtsClient:service-id:
+   *
+   * The unique ID of this service.
+   *
+   * Since: 0.4
+   */
+  pspec = g_param_spec_string ("service-id", "", "",
+                               NULL,
+                               G_PARAM_READWRITE |
+                               G_PARAM_CONSTRUCT_ONLY);
+  g_object_class_install_property (object_class, PROP_SERVICE_ID, pspec);
 
   /**
    * YtsClient:protocol:
@@ -1765,8 +1782,8 @@ yts_client_new (YtsProtocol  protocol,
   g_return_val_if_fail (service_id, NULL);
 
   return g_object_new (YTS_TYPE_CLIENT,
-                       "protocol", protocol,
-                       "uid",      service_id,
+                       "protocol",    protocol,
+                       "service-id",  service_id,
                        NULL);
 }
 
@@ -2991,15 +3008,15 @@ yts_client_get_incoming_file_directory (YtsClient const *self)
 }
 
 /**
- * yts_client_get_jid:
+ * yts_client_get_contact_id:
  * @self: object on which to invoke this method.
  *
- * Returns the jabber id associated with the current client.
+ * Getter for #YtsClient.#YtsClient:contact-id.
  *
  * Returns: (transfer none): the jabber id.
  */
 char const *
-yts_client_get_jid (const YtsClient *self)
+yts_client_get_contact_id (const YtsClient *self)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
 
@@ -3010,15 +3027,15 @@ yts_client_get_jid (const YtsClient *self)
 }
 
 /**
- * yts_client_get_uid:
+ * yts_client_get_service_id:
  * @self: object on which to invoke this method.
  *
- * Returns uid of the service this client represents.
+ * Getter for #YtsClient.#YtsClient:service-id.
  *
- * Returns: (transfer none): the service uid.
+ * Returns: (transfer none): the service ID.
  */
 char const *
-yts_client_get_uid (const YtsClient *self)
+yts_client_get_service_id (const YtsClient *self)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
 
