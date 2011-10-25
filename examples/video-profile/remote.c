@@ -317,6 +317,8 @@ main (int     argc,
     { NULL }
   };
 
+  g_type_init ();
+
   memset (&remote, 0, sizeof (remote));
   remote.player_volume = -1.0;
 

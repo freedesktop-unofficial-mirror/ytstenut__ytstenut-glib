@@ -28,7 +28,7 @@
 #include <ytstenut/yts-roster.h>
 
 YtsRoster *
-yts_roster_new (YtsClient *client);
+yts_roster_new (void);
 
 void
 yts_roster_add_contact (YtsRoster   *roster,

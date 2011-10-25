@@ -21,9 +21,9 @@
 
 #include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
 
-#include "yts-client-internal.h"
 #include "yts-contact-internal.h"
 #include "yts-marshal.h"
+#include "yts-metadata.h"
 #include "yts-roster-internal.h"
 #include "yts-service-factory.h"
 #include "config.h"
@@ -46,13 +46,14 @@ G_DEFINE_TYPE (YtsRoster, yts_roster, G_TYPE_OBJECT);
  */
 
 enum {
-  PROP_0,
-  PROP_CLIENT
+  PROP_0
 };
 
 enum {
   SIG_CONTACT_ADDED,
   SIG_CONTACT_REMOVED,
+
+  SIG_SEND_MESSAGE,
 
   SIG_SERVICE_ADDED,
   SIG_SERVICE_REMOVED,
@@ -63,7 +64,6 @@ enum {
 typedef struct {
 
   GHashTable *contacts; /* hash of YtsContact this roster holds */
-  YtsClient *client;   /* back-reference to the client object that owns us */
 
 } YtsRosterPrivate;
 
@@ -76,12 +76,9 @@ _contact_send_message (YtsContact   *contact,
                        YtsRoster    *self)
 {
   YtsRosterPrivate *priv = GET_PRIVATE (self);
-  char const *service_id = yts_service_get_service_id (service);
 
-  yts_client_send_message (priv->client,
-                           contact,
-                           service_id,
-                           message);
+  g_signal_emit (self, _signals[SIG_SEND_MESSAGE], 0,
+                 contact, service, message);
 }
 
 static void
@@ -105,9 +102,6 @@ _set_property (GObject      *object,
   YtsRosterPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
-    case PROP_CLIENT:
-      priv->client = g_value_get_object (value);
-      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
@@ -132,17 +126,10 @@ _dispose (GObject *object)
       g_signal_handlers_disconnect_by_func (contact,
                                             _contact_send_message,
                                             object);
-
-      yts_client_cleanup_contact (priv->client, contact);
     }
 
     g_hash_table_destroy (priv->contacts);
     priv->contacts = NULL;
-  }
-
-  if (priv->client) {
-    /* no ownership */
-    priv->client = NULL;
   }
 
   G_OBJECT_CLASS (yts_roster_parent_class)->dispose (object);
@@ -159,16 +146,6 @@ yts_roster_class_init (YtsRosterClass *klass)
   object_class->get_property = _get_property;
   object_class->set_property = _set_property;
   object_class->dispose = _dispose;
-
-  /**
-   * YtsRoster:client:
-   *
-   * #YtsClient this roster represents.
-   */
-  pspec = g_param_spec_object ("client", "", "",
-                               YTS_TYPE_CLIENT,
-                               G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY);
-  g_object_class_install_property (object_class, PROP_CLIENT, pspec);
 
   /**
    * YtsRoster::contact-added:
@@ -205,6 +182,22 @@ yts_roster_class_init (YtsRosterClass *klass)
                                                 yts_marshal_VOID__OBJECT,
                                                 G_TYPE_NONE, 1,
                                                 YTS_TYPE_CONTACT);
+
+  /**
+   * YtsContact::send-message:
+   *
+   * <note>Internal signal, should not be considered by users at this time.
+   * Maybe in the future when we allow for custom contact subclasses.</note>
+   */
+  _signals[SIG_SEND_MESSAGE] = g_signal_new ("send-message",
+                                         G_TYPE_FROM_CLASS (object_class),
+                                         G_SIGNAL_RUN_LAST,
+                                         0, NULL, NULL,
+                                         yts_marshal_VOID__OBJECT_OBJECT_OBJECT,
+                                         G_TYPE_NONE, 3,
+                                         YTS_TYPE_CONTACT,
+                                         YTS_TYPE_SERVICE,
+                                         YTS_TYPE_METADATA);
 
   /**
    * YtsRoster::service-added:
@@ -261,8 +254,6 @@ yts_roster_init (YtsRoster *self)
  * @service_id: the service UID.
  *
  * Removes service from a roster and emits YtsRoster::service-removed signal.
- *
- * For use by #YtsClient.
  */
 void
 yts_roster_remove_service_by_id (YtsRoster  *self,
@@ -288,7 +279,6 @@ yts_roster_remove_service_by_id (YtsRoster  *self,
     g_signal_handlers_disconnect_by_func (contact,
                                           _contact_send_message,
                                           self);
-    yts_client_cleanup_contact (priv->client, contact);
     g_object_ref (contact);
     g_hash_table_remove (priv->contacts, contact_id);
     g_signal_emit (self, _signals[SIG_CONTACT_REMOVED], 0, contact);
@@ -382,8 +372,6 @@ yts_roster_clear (YtsRoster *self)
                                             _contact_send_message,
                                             self);
 
-      yts_client_cleanup_contact (priv->client, contact);
-
       g_object_ref (contact);
 
       g_hash_table_iter_remove (&iter);
@@ -396,11 +384,9 @@ yts_roster_clear (YtsRoster *self)
 }
 
 YtsRoster *
-yts_roster_new (YtsClient *client)
+yts_roster_new (void)
 {
-  return g_object_new (YTS_TYPE_ROSTER,
-                       "client", client,
-                       NULL);
+  return g_object_new (YTS_TYPE_ROSTER, NULL);
 }
 
 static void

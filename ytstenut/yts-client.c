@@ -1199,6 +1199,75 @@ yts_client_account_cb (GObject *object, GAsyncResult *res, gpointer self)
 }
 
 static void
+_roster_send_message (YtsRoster    *roster,
+                      YtsContact   *contact,
+                      YtsService   *service,
+                      YtsMetadata  *message,
+                      YtsClient    *self)
+{
+  char const *service_id;
+
+  service_id = yts_service_get_service_id (service);
+
+  yts_client_send_message (self, contact, service_id, message);
+}
+
+static void
+_roster_contact_removed (YtsRoster  *roster,
+                         YtsContact *contact,
+                         YtsClient  *self)
+{
+  YtsClientPrivate *priv = GET_PRIVATE (self);
+  GHashTableIter   iter;
+  bool             start_over;
+
+  /*
+   * Clear pending responses.
+   */
+
+  // FIXME this would be better solved using g_hash_table_foreach_remove().
+  do {
+    char const *invocation_id;
+    InvocationData *data;
+    start_over = false;
+    g_hash_table_iter_init (&iter, priv->invocations);
+    while (g_hash_table_iter_next (&iter,
+                                   (void **) &invocation_id,
+                                   (void **) &data)) {
+
+      if (data->contact == contact) {
+        g_hash_table_remove (priv->invocations, invocation_id);
+        start_over = true;
+        break;
+      }
+    }
+  } while (start_over);
+
+  /*
+   * Unregister proxies
+   */
+
+  // FIXME this would be better solved using g_hash_table_foreach_remove().
+  do {
+    char const *capability;
+    ProxyList *proxy_list;
+    start_over = false;
+    g_hash_table_iter_init (&iter, priv->proxies);
+    while (g_hash_table_iter_next (&iter,
+                                   (void **) &capability,
+                                   (void **) &proxy_list)) {
+
+      proxy_list_purge_contact (proxy_list, contact);
+      if (proxy_list_is_empty (proxy_list)) {
+        g_hash_table_remove (priv->proxies, capability);
+        start_over = true;
+        break;
+      }
+    }
+  } while (start_over);
+}
+
+static void
 yts_client_constructed (GObject *object)
 {
   YtsClientPrivate *priv = GET_PRIVATE (object);
@@ -1207,8 +1276,17 @@ yts_client_constructed (GObject *object)
   if (G_OBJECT_CLASS (yts_client_parent_class)->constructed)
     G_OBJECT_CLASS (yts_client_parent_class)->constructed (object);
 
-  priv->roster   = yts_roster_new (YTS_CLIENT (object));
-  priv->unwanted = yts_roster_new (YTS_CLIENT (object));
+  priv->roster   = yts_roster_new ();
+  g_signal_connect (priv->roster, "send-message",
+                    G_CALLBACK (_roster_send_message), object);
+  g_signal_connect (priv->roster, "contact-removed",
+                    G_CALLBACK (_roster_contact_removed), object);
+
+  priv->unwanted = yts_roster_new ();
+  g_signal_connect (priv->unwanted, "send-message",
+                    G_CALLBACK (_roster_send_message), object);
+  g_signal_connect (priv->unwanted, "contact-removed",
+                    G_CALLBACK (_roster_contact_removed), object);
 
   if (!priv->uid || !*priv->uid)
     g_error ("UID must be set at construction time.");
@@ -2759,6 +2837,7 @@ yts_client_has_capability (YtsClient *self, YtsCaps cap)
   return FALSE;
 }
 
+// TODO get rid of this, it invalidates the proxies
 static void
 yts_client_refresh_roster (YtsClient *self)
 {
@@ -3509,60 +3588,6 @@ yts_client_publish_service (YtsClient     *self,
   g_strfreev (fqc_ids);
 
   return TRUE;
-}
-
-void
-yts_client_cleanup_contact (YtsClient         *self,
-                             YtsContact const  *contact)
-{
-  YtsClientPrivate *priv = GET_PRIVATE (self);
-  GHashTableIter   iter;
-  bool             start_over;
-
-  /*
-   * Clear pending responses.
-   */
-
-  // FIXME this would be better solved using g_hash_table_foreach_remove().
-  do {
-    char const *invocation_id;
-    InvocationData *data;
-    start_over = false;
-    g_hash_table_iter_init (&iter, priv->invocations);
-    while (g_hash_table_iter_next (&iter,
-                                   (void **) &invocation_id,
-                                   (void **) &data)) {
-
-      if (data->contact == contact) {
-        g_hash_table_remove (priv->invocations, invocation_id);
-        start_over = true;
-        break;
-      }
-    }
-  } while (start_over);
-
-  /*
-   * Unregister proxies
-   */
-
-  // FIXME this would be better solved using g_hash_table_foreach_remove().
-  do {
-    char const *capability;
-    ProxyList *proxy_list;
-    start_over = false;
-    g_hash_table_iter_init (&iter, priv->proxies);
-    while (g_hash_table_iter_next (&iter,
-                                   (void **) &capability,
-                                   (void **) &proxy_list)) {
-
-      proxy_list_purge_contact (proxy_list, contact);
-      if (proxy_list_is_empty (proxy_list)) {
-        g_hash_table_remove (priv->proxies, capability);
-        start_over = true;
-        break;
-      }
-    }
-  } while (start_over);
 }
 
 bool

@@ -411,13 +411,13 @@ yts_contact_class_init (YtsContactClass *klass)
    * Maybe in the future when we allow for custom contact subclasses.</note>
    */
   _signals[SIG_SEND_MESSAGE] = g_signal_new ("send-message",
-                                        G_TYPE_FROM_CLASS (object_class),
-                                        G_SIGNAL_RUN_LAST,
-                                        0, NULL, NULL,
-                                        yts_marshal_VOID__OBJECT_OBJECT,
-                                        G_TYPE_NONE, 2,
-                                        YTS_TYPE_SERVICE,
-                                        YTS_TYPE_METADATA);
+                                             G_TYPE_FROM_CLASS (object_class),
+                                             G_SIGNAL_RUN_LAST,
+                                             0, NULL, NULL,
+                                             yts_marshal_VOID__OBJECT_OBJECT,
+                                             G_TYPE_NONE, 2,
+                                             YTS_TYPE_SERVICE,
+                                             YTS_TYPE_METADATA);
 
   /**
    * YtsContact::service-added:

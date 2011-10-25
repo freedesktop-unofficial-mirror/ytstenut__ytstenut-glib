@@ -131,6 +131,8 @@ main (int     argc,
     { NULL, }
   };
 
+  g_type_init ();
+
   /* Initialisation and command-line argument handling. */
   context = g_option_context_new ("- mock player");
   g_option_context_add_main_entries (context, entries, NULL);

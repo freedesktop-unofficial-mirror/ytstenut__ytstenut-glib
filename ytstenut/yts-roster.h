@@ -16,6 +16,7 @@
  * <http://www.gnu.org/licenses/>.
  *
  * Authored by: Tomas Frydrych <tf@linux.intel.com>
+ *              Rob Staudinger <robsta@linux.intel.com>
  */
 
 #ifndef YTS_ROSTER_H
@@ -69,7 +70,7 @@ yts_roster_find_contact_by_id (YtsRoster const  *self,
  * @self: object owning @service.
  * @contact_id: contact JID.
  * @contact: contact object.
- * @user_data: data passed to yts_client_foreach_service().
+ * @user_data: data passed to yts_roster_foreach_contact().
  *
  * Callback signature for iterating a an #YtsRoster's published services.
  *

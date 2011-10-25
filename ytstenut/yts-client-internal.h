@@ -38,11 +38,6 @@ yts_client_send_message (YtsClient    *client,
                          char const   *uid,
                          YtsMetadata  *message);
 
-
-void
-yts_client_cleanup_contact (YtsClient         *self,
-                             YtsContact const  *contact);
-
 void
 yts_client_emit_error (YtsClient  *self,
                        YtsError    error);
