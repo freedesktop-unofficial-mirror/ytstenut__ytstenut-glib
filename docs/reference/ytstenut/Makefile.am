@@ -72,11 +72,14 @@ IGNORE_HFILES = \
   yts-profile-proxy.h \
   yts-proxy-factory.h \
   yts-proxy-internal.h \
+  yts-proxy-service-impl.h \
   yts-proxy-service-internal.h \
   yts-response-message.h \
   yts-roster-internal.h \
   yts-service-adapter.h \
+  yts-service-emitter.h \
   yts-service-factory.h \
+  yts-service-impl.h \
   yts-service-internal.h \
   yts-status.h \
   yts-vp-playable-proxy.h \

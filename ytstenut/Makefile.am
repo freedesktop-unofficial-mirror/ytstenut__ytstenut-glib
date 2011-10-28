@@ -46,6 +46,7 @@ source_c =						\
 		$(srcdir)/yts-metadata.c		\
 		$(srcdir)/yts-roster.c			\
 		$(srcdir)/yts-service.c		\
+		$(srcdir)/yts-service-impl.c \
 		$(srcdir)/yts-status.c			\
 		\
 		$(srcdir)/yts-adapter-factory.c \
@@ -54,9 +55,11 @@ source_c =						\
 		$(srcdir)/yts-event-message.c \
 		$(srcdir)/yts-factory.c \
 		$(srcdir)/yts-invocation-message.c \
+		$(srcdir)/yts-service-emitter.c \
 		$(srcdir)/yts-proxy.c \
 		$(srcdir)/yts-proxy-factory.c \
 		$(srcdir)/yts-proxy-service.c \
+		$(srcdir)/yts-proxy-service-impl.c \
 		$(srcdir)/yts-response-message.c \
 		$(srcdir)/yts-service-adapter.c \
 		$(srcdir)/yts-service-factory.c \
@@ -93,10 +96,13 @@ private_h = \
 		$(srcdir)/yts-metadata-internal.h \
 		$(srcdir)/yts-proxy-factory.h \
 		$(srcdir)/yts-proxy-internal.h \
+		$(srcdir)/yts-proxy-service-impl.h \
 		$(srcdir)/yts-proxy-service-internal.h \
 		$(srcdir)/yts-roster-internal.h \
 		$(srcdir)/yts-service-adapter.h \
+		$(srcdir)/yts-service-emitter.h \
 		$(srcdir)/yts-service-factory.h \
+		$(srcdir)/yts-service-impl.h \
 		$(srcdir)/yts-service-internal.h \
 		\
 		$(srcdir)/yts-capability-status.h \

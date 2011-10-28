@@ -23,13 +23,6 @@
 
 #include <ytstenut/yts-proxy-service.h>
 
-YtsService *
-yts_proxy_service_new (char const         *service_id,
-                       char const         *type,
-                       char const *const  *fqc_ids,
-                       GHashTable         *names,
-                       GHashTable         *statuses);
-
 bool
 yts_proxy_service_dispatch_event (YtsProxyService *self,
                                   char const      *capability,

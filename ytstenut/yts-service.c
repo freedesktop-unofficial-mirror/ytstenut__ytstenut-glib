@@ -23,17 +23,19 @@
 #include "yts-invocation-message.h"
 #include "yts-marshal.h"
 #include "yts-message.h"
+#include "yts-service-emitter.h"
 #include "yts-service-internal.h"
 #include "config.h"
 
 static void
 _capability_interface_init (YtsCapability *interface);
 
-G_DEFINE_TYPE_WITH_CODE (YtsService,
-                         yts_service,
-                         G_TYPE_OBJECT,
-                         G_IMPLEMENT_INTERFACE (YTS_TYPE_CAPABILITY,
-                                                _capability_interface_init))
+G_DEFINE_ABSTRACT_TYPE_WITH_CODE (
+                           YtsService,
+                           yts_service,
+                           G_TYPE_OBJECT,
+                           G_IMPLEMENT_INTERFACE (YTS_TYPE_CAPABILITY,
+                                                  _capability_interface_init))
 
 /**
  * SECTION:yts-service
@@ -63,7 +65,6 @@ enum {
 };
 
 enum {
-  SIG_SEND_MESSAGE,
   SIG_STATUS_CHANGED,
   N_SIGNALS
 };
@@ -97,6 +98,14 @@ _capability_interface_init (YtsCapability *interface)
 /*
  * YtsService
  */
+
+static void
+_constructed (GObject *object)
+{
+  /* This is a bit of a hack, we require the non-abstract subclass to
+   * implement this interface. */
+  g_assert (YTS_IS_SERVICE_EMITTER (object));
+}
 
 static void
 _get_property (GObject    *object,
@@ -203,6 +212,7 @@ yts_service_class_init (YtsServiceClass *klass)
 
   g_type_class_add_private (klass, sizeof (YtsServicePrivate));
 
+  object_class->dispose = _constructed;
   object_class->dispose = _dispose;
   object_class->get_property = _get_property;
   object_class->set_property = _set_property;
@@ -263,20 +273,6 @@ yts_service_class_init (YtsServiceClass *klass)
                               G_PARAM_CONSTRUCT_ONLY |
                               G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_STATUSES, pspec);
-
-  /**
-   * YtsService::send-message:
-   *
-   * Internal signal, should not be considered by language bindings at this
-   * time. Maybe in the future when we allow for custom service subclasses.
-   */
-  _signals[SIG_SEND_MESSAGE] = g_signal_new ("send-message",
-                                              G_TYPE_FROM_CLASS (object_class),
-                                              G_SIGNAL_RUN_LAST,
-                                              0, NULL, NULL,
-                                              yts_marshal_VOID__OBJECT,
-                                              G_TYPE_NONE, 1,
-                                              YTS_TYPE_METADATA);
 
   /**
    * YtsService::status-changed:
@@ -448,7 +444,7 @@ yts_service_send_text (YtsService *self,
   g_return_if_fail (YTS_IS_SERVICE (self));
 
   message = create_message ("text", g_variant_new_string (text));
-  yts_service_send_message (self, message);
+  yts_service_emitter_send_message (YTS_SERVICE_EMITTER (self), message);
   g_object_unref (message);
 }
 
@@ -472,7 +468,7 @@ yts_service_send_list (YtsService         *self,
   g_return_if_fail (YTS_IS_SERVICE (self));
 
   message = create_message ("list", g_variant_new_strv (texts, length));
-  yts_service_send_message (self, message);
+  yts_service_emitter_send_message (YTS_SERVICE_EMITTER (self), message);
   g_object_unref (message);
 }
 
@@ -511,32 +507,7 @@ yts_service_send_dictionary (YtsService         *self,
   }
 
   message = create_message ("dictionary", g_variant_builder_end (&builder));
-  yts_service_send_message (self, message);
+  yts_service_emitter_send_message (YTS_SERVICE_EMITTER (self), message);
   g_object_unref (message);
-}
-
-void
-yts_service_send_message (YtsService  *self,
-                          YtsMetadata *message)
-{
-  g_signal_emit (self, _signals[SIG_SEND_MESSAGE], 0, message);
-}
-
-YtsService *
-yts_service_new (char const *service_id,
-                 char const *type,
-                 char const *const *fqc_ids,
-                 GHashTable *names,
-                 GHashTable *statuses)
-{
-  g_return_val_if_fail (service_id && *service_id, NULL);
-
-  return g_object_new (YTS_TYPE_SERVICE,
-                       "fqc-ids", fqc_ids,
-                       "service-id", service_id,
-                       "type", type,
-                       "names", names,
-                       "statuses", statuses,
-                       NULL);
 }
 

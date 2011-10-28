@@ -18,9 +18,9 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
-#include "yts-service-internal.h"
-#include "yts-proxy-service-internal.h"
+#include "yts-proxy-service-impl.h"
 #include "yts-service-factory.h"
+#include "yts-service-impl.h"
 #include "config.h"
 
 G_DEFINE_TYPE (YtsServiceFactory, yts_service_factory, YTS_TYPE_FACTORY)
@@ -89,14 +89,14 @@ yts_service_factory_create_service (YtsServiceFactory *self,
                             YTS_FACTORY (self),
                             fqc_ids[i]);
     if (proxy_gtype != G_TYPE_INVALID) {
-      return yts_proxy_service_new (service_id,
-                                    type, 
-                                    fqc_ids,
-                                    names,
-                                    statuses);
+      return yts_proxy_service_impl_new (service_id,
+                                         type,
+                                         fqc_ids,
+                                         names,
+                                         statuses);
     }
   }
 
-  return yts_service_new (service_id, type, fqc_ids, names, statuses);
+  return yts_service_impl_new (service_id, type, fqc_ids, names, statuses);
 }
 

@@ -26,13 +26,14 @@
 #include "yts-proxy-factory.h"
 #include "yts-proxy-internal.h"
 #include "yts-proxy-service-internal.h"
+#include "yts-service-emitter.h"
 #include "yts-service-internal.h"
 
 #include "profile/yts-profile.h"
 #include "profile/yts-profile-proxy.h"
 #include "config.h"
 
-G_DEFINE_TYPE (YtsProxyService, yts_proxy_service, YTS_TYPE_SERVICE)
+G_DEFINE_ABSTRACT_TYPE (YtsProxyService, yts_proxy_service, YTS_TYPE_SERVICE)
 
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_PROXY_SERVICE, YtsProxyServicePrivate))
@@ -58,6 +59,14 @@ typedef struct {
 } YtsProxyServicePrivate;
 
 static unsigned _signals[N_SIGNALS] = { 0, };
+
+static void
+_constructed (GObject *object)
+{
+  /* This is a bit of a hack, we require the non-abstract subclass to
+   * implement this interface. */
+  g_assert (YTS_IS_SERVICE_EMITTER (object));
+}
 
 static void
 _get_property (GObject      *object,
@@ -134,6 +143,7 @@ yts_proxy_service_class_init (YtsProxyServiceClass *klass)
 
   g_type_class_add_private (klass, sizeof (YtsProxyServicePrivate));
 
+  object_class->dispose = _constructed;
   object_class->get_property = _get_property;
   object_class->set_property = _set_property;
   object_class->dispose = _dispose;
@@ -176,22 +186,6 @@ yts_proxy_service_init (YtsProxyService *self)
                                                  g_free);
 }
 
-YtsService *
-yts_proxy_service_new (char const         *service_id,
-                       char const         *type,
-                       char const *const  *fqc_ids,
-                       GHashTable         *names,
-                       GHashTable         *statuses)
-{
-  return g_object_new (YTS_TYPE_PROXY_SERVICE,
-                       "fqc-ids",     fqc_ids,
-                       "service-id",  service_id,
-                       "type",        type,
-                       "names",       names,
-                       "statuses",    statuses,
-                       NULL);
-}
-
 static void
 _profile_invoke_service (YtsProfile      *profile,
                          char const       *invocation_id,
@@ -208,7 +202,7 @@ _profile_invoke_service (YtsProfile      *profile,
                                         aspect,
                                         arguments);
 
-  yts_service_send_message (YTS_SERVICE (self), message);
+  yts_service_emitter_send_message (YTS_SERVICE_EMITTER (self), message);
 
   g_object_unref (message);
   g_free (fqc_id);
@@ -230,7 +224,7 @@ _proxy_invoke_service (YtsProxy        *proxy,
                                         aspect,
                                         arguments);
 
-  yts_service_send_message (YTS_SERVICE (self), message);
+  yts_service_emitter_send_message (YTS_SERVICE_EMITTER (self), message);
 
   g_object_unref (message);
   g_free (fqc_id);

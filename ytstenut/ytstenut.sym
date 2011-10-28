@@ -39,7 +39,6 @@ yts_proxy_get_type
 yts_proxy_invoke
 yts_proxy_service_create_proxy
 yts_proxy_service_get_type
-yts_proxy_service_new
 yts_roster_find_contact_by_id
 yts_roster_foreach_contact
 yts_roster_get_type
