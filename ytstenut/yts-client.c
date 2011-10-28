@@ -67,7 +67,7 @@ G_DEFINE_TYPE (YtsClient, yts_client, G_TYPE_OBJECT)
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_CLIENT, YtsClientPrivate))
 
 #undef G_LOG_DOMAIN
-#define G_LOG_DOMAIN PACKAGE"\0client"
+#define G_LOG_DOMAIN PACKAGE"\0client\0"G_STRLOC
 
 /**
  * SECTION: yts-client
@@ -944,25 +944,31 @@ yts_client_debug_msg_cb (TpProxy    *proxy,
                           gpointer    data,
                           GObject    *weak_object)
 {
-  switch (level)
-    {
+  char            *log_domain;
+  GLogLevelFlags   log_level;
+
+  log_domain = g_strdup_printf ("%s%c%s%c%s",
+                                PACKAGE, '\0', "telepathy", '\0', domain);
+
+  switch (level) {
     case 0:
-      g_error ("%s: %s", domain, msg);
+      log_level = G_LOG_LEVEL_ERROR;
       break;
     case 1:
-      g_critical ("%s: %s", domain, msg);
+      log_level = G_LOG_LEVEL_CRITICAL;
       break;
     case 2:
-      g_warning ("%s: %s", domain, msg);
+      log_level = G_LOG_LEVEL_WARNING;
+      break;
+    case 3:
+      log_level = G_LOG_LEVEL_MESSAGE;
       break;
     default:
-    case 3:
-    case 4:
-      g_message ("%s: %s", domain, msg);
-      break;
-    case 5:
-      g_message ("%s: %s", domain, msg);
-    }
+      log_level = G_LOG_LEVEL_INFO;
+  }
+
+  g_log (log_domain, log_level, "%s", msg);
+  g_free (log_domain);
 }
 
 /*
@@ -1187,11 +1193,9 @@ yts_client_account_cb (GObject *object, GAsyncResult *res, gpointer self)
 
   g_message ("Got account");
 
-  if (YTS_DEBUG_TELEPATHY & ytstenut_get_debug_flags ())
-    tp_debug_set_flags ("all");
-
-  if (YTS_DEBUG_CLIENT & ytstenut_get_debug_flags ())
+  if (YTS_DEBUG_TELEPATHY & ytstenut_get_debug_flags ()) {
     yts_client_setup_debug (self);
+  }
 
   tp_account_prepare_async (priv->account,
                             &features[0],

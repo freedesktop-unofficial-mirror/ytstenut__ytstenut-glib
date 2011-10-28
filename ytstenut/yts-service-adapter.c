@@ -26,7 +26,7 @@
 G_DEFINE_TYPE (YtsServiceAdapter, yts_service_adapter, G_TYPE_OBJECT)
 
 #undef G_LOG_DOMAIN
-#define G_LOG_DOMAIN PACKAGE"\0service-adapter"
+#define G_LOG_DOMAIN PACKAGE"\0service-adapter\0"G_STRLOC
 
 enum {
   PROP_0,

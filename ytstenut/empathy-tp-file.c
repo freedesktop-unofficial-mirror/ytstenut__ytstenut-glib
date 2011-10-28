@@ -57,7 +57,7 @@
 #include "yts-marshal.h"
 
 #undef G_LOG_DOMAIN
-#define G_LOG_DOMAIN PACKAGE"\0file-transfer"
+#define G_LOG_DOMAIN PACKAGE"\0file-transfer\0"G_STRLOC
 
 #if 0
 #include "empathy-time.h"

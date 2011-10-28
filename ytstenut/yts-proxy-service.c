@@ -38,7 +38,7 @@ G_DEFINE_TYPE (YtsProxyService, yts_proxy_service, YTS_TYPE_SERVICE)
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_PROXY_SERVICE, YtsProxyServicePrivate))
 
 #undef G_LOG_DOMAIN
-#define G_LOG_DOMAIN PACKAGE"\0proxy-service"
+#define G_LOG_DOMAIN PACKAGE"\0proxy-service\0"G_STRLOC
 
 /**
  * SECTION: yts-proxy-service

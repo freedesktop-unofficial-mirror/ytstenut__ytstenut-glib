@@ -24,17 +24,18 @@
 #include <stdbool.h>
 
 typedef enum {
-  YTS_DEBUG_CLIENT            = 1 << 0,
-  YTS_DEBUG_CONTACT           = 1 << 1,
-  YTS_DEBUG_FILE_TRANSFER     = 1 << 2,
-  YTS_DEBUG_MAIN              = 1 << 3,
-  YTS_DEBUG_PROXY             = 1 << 4,
-  YTS_DEBUG_PROXY_SERVICE     = 1 << 5,
-  YTS_DEBUG_ROSTER            = 1 << 6,
-  YTS_DEBUG_SERVICE_ADAPTER   = 1 << 7,
-  YTS_DEBUG_SERVICE           = 1 << 8,
-  YTS_DEBUG_TELEPATHY         = 1 << 9,
-  YTS_DEBUG_UNSPECIFIED       = 1 << 10
+  YTS_DEBUG_BRIEF             = 1 << 0, /* Brief debug output. */
+  YTS_DEBUG_CLIENT            = 1 << 1,
+  YTS_DEBUG_CONTACT           = 1 << 2,
+  YTS_DEBUG_FILE_TRANSFER     = 1 << 3,
+  YTS_DEBUG_MAIN              = 1 << 4,
+  YTS_DEBUG_PROXY             = 1 << 5,
+  YTS_DEBUG_PROXY_SERVICE     = 1 << 6,
+  YTS_DEBUG_ROSTER            = 1 << 7,
+  YTS_DEBUG_SERVICE_ADAPTER   = 1 << 8,
+  YTS_DEBUG_SERVICE           = 1 << 9,
+  YTS_DEBUG_TELEPATHY         = 1 << 10,
+  YTS_DEBUG_UNSPECIFIED       = 1 << 11
 } YtsDebugFlags;
 
 bool

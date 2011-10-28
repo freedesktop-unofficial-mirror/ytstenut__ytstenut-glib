@@ -42,7 +42,7 @@ G_DEFINE_TYPE (YtsContact, yts_contact, G_TYPE_OBJECT);
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_CONTACT, YtsContactPrivate))
 
 #undef G_LOG_DOMAIN
-#define G_LOG_DOMAIN PACKAGE"\0contact"
+#define G_LOG_DOMAIN PACKAGE"\0contact\0"G_STRLOC
 
 /**
  * SECTION: yts-contact

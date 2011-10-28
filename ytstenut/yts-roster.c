@@ -34,7 +34,7 @@ G_DEFINE_TYPE (YtsRoster, yts_roster, G_TYPE_OBJECT);
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_ROSTER, YtsRosterPrivate))
 
 #undef G_LOG_DOMAIN
-#define G_LOG_DOMAIN PACKAGE"\0roster"
+#define G_LOG_DOMAIN PACKAGE"\0roster\0"G_STRLOC
 
 /**
  * SECTION: yts-roster

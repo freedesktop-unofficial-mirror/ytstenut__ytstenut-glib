@@ -47,7 +47,7 @@ G_DEFINE_TYPE_WITH_CODE (YtsService,
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_SERVICE, YtsServicePrivate))
 
 #undef G_LOG_DOMAIN
-#define G_LOG_DOMAIN PACKAGE"\0service"
+#define G_LOG_DOMAIN PACKAGE"\0service\0"G_STRLOC
 
 enum {
   PROP_0,
