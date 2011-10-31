@@ -22,7 +22,7 @@
 #define YTS_SERVICE_IMPL_H
 
 #include <glib-object.h>
-#include <ytstenut/yts-service.h>
+#include <ytstenut/yts-service-internal.h>
 
 G_BEGIN_DECLS
 
@@ -44,12 +44,10 @@ G_BEGIN_DECLS
   (G_TYPE_INSTANCE_GET_CLASS ((obj), YTS_TYPE_SERVICE_IMPL, YtsServiceImplClass))
 
 typedef struct {
-  /*< private >*/
   YtsService parent;
 } YtsServiceImpl;
 
 typedef struct {
-  /*< private >*/
   YtsServiceClass parent;
 } YtsServiceImplClass;
 

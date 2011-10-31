@@ -22,7 +22,7 @@
 #define YTS_PROXY_SERVICE_IMPL_H
 
 #include <glib-object.h>
-#include <ytstenut/yts-proxy-service.h>
+#include <ytstenut/yts-proxy-service-internal.h>
 
 G_BEGIN_DECLS
 

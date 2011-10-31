@@ -22,6 +22,15 @@
 #define YTS_PROXY_SERVICE_INTERNAL_H
 
 #include <ytstenut/yts-proxy-service.h>
+#include <ytstenut/yts-service-internal.h>
+
+struct YtsProxyService {
+  YtsService parent;
+};
+
+struct YtsProxyServiceClass {
+  YtsServiceClass parent;
+};
 
 bool
 yts_proxy_service_dispatch_event (YtsProxyService *self,

@@ -24,6 +24,14 @@
 #include <ytstenut/yts-metadata.h>
 #include <ytstenut/yts-service.h>
 
+struct YtsService {
+  GObject parent;
+};
+
+struct YtsServiceClass {
+  GObjectClass parent;
+};
+
 void
 yts_service_send_message (YtsService  *self,
                           YtsMetadata *message);

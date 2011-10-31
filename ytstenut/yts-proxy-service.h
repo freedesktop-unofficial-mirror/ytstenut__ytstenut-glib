@@ -44,13 +44,8 @@ G_BEGIN_DECLS
 #define YTS_PROXY_SERVICE_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), YTS_TYPE_PROXY_SERVICE, YtsProxyServiceClass))
 
-typedef struct {
-  YtsService parent;
-} YtsProxyService;
-
-typedef struct {
-  YtsServiceClass parent;
-} YtsProxyServiceClass;
+typedef struct YtsProxyService YtsProxyService;
+typedef struct YtsProxyServiceClass YtsProxyServiceClass;
 
 GType
 yts_proxy_service_get_type (void) G_GNUC_CONST;

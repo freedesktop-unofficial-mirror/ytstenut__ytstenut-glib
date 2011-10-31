@@ -45,22 +45,8 @@ G_BEGIN_DECLS
 #define YTS_SERVICE_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), YTS_TYPE_SERVICE, YtsServiceClass))
 
-typedef struct {
-  /*< private >*/
-  GObject parent;
-} YtsService;
-
-typedef struct {
-  /*< private >*/
-  GObjectClass parent;
-
-  /*< public >*/
-  void
-  (*status_changed) (YtsService *self,
-                     char const *fqc_id,
-                     char const *status_xml);
-
-} YtsServiceClass;
+typedef struct YtsService YtsService;
+typedef struct YtsServiceClass YtsServiceClass;
 
 GType
 yts_service_get_type (void) G_GNUC_CONST;
