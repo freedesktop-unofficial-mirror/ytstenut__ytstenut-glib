@@ -24,13 +24,22 @@
 #include <ytstenut/yts-metadata.h>
 #include <ytstenut/yts-service.h>
 
+#define YTS_SERVICE_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST ((klass), YTS_TYPE_SERVICE, YtsServiceClass))
+
+#define YTS_IS_SERVICE_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), YTS_TYPE_SERVICE))
+
+#define YTS_SERVICE_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), YTS_TYPE_SERVICE, YtsServiceClass))
+
 struct YtsService {
   GObject parent;
 };
 
-struct YtsServiceClass {
+typedef struct {
   GObjectClass parent;
-};
+} YtsServiceClass;
 
 void
 yts_service_send_message (YtsService  *self,

@@ -32,20 +32,10 @@ G_BEGIN_DECLS
 #define YTS_ROSTER(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTS_TYPE_ROSTER, YtsRoster))
 
-#define YTS_ROSTER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST ((klass), YTS_TYPE_ROSTER, YtsRosterClass))
-
 #define YTS_IS_ROSTER(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTS_TYPE_ROSTER))
 
-#define YTS_IS_ROSTER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE ((klass), YTS_TYPE_ROSTER))
-
-#define YTS_ROSTER_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), YTS_TYPE_ROSTER, YtsRosterClass))
-
 typedef struct YtsRoster YtsRoster;
-typedef struct YtsRosterClass YtsRosterClass;
 
 GType
 yts_roster_get_type (void) G_GNUC_CONST;

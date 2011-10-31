@@ -33,20 +33,10 @@ G_BEGIN_DECLS
 #define YTS_SERVICE(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTS_TYPE_SERVICE, YtsService))
 
-#define YTS_SERVICE_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST ((klass), YTS_TYPE_SERVICE, YtsServiceClass))
-
 #define YTS_IS_SERVICE(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTS_TYPE_SERVICE))
 
-#define YTS_IS_SERVICE_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE ((klass), YTS_TYPE_SERVICE))
-
-#define YTS_SERVICE_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), YTS_TYPE_SERVICE, YtsServiceClass))
-
 typedef struct YtsService YtsService;
-typedef struct YtsServiceClass YtsServiceClass;
 
 GType
 yts_service_get_type (void) G_GNUC_CONST;

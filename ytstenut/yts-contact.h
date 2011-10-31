@@ -34,20 +34,10 @@ G_BEGIN_DECLS
 #define YTS_CONTACT(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTS_TYPE_CONTACT, YtsContact))
 
-#define YTS_CONTACT_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST ((klass), YTS_TYPE_CONTACT, YtsContactClass))
-
 #define YTS_IS_CONTACT(obj) \
    (G_TYPE_CHECK_INSTANCE_TYPE ((obj), YTS_TYPE_CONTACT))
 
-#define YTS_IS_CONTACT_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE ((klass), YTS_TYPE_CONTACT))
-
-#define YTS_CONTACT_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), YTS_TYPE_CONTACT, YtsContactClass))
-
 typedef struct YtsContact YtsContact;
-typedef struct YtsContactClass YtsContactClass;
 
 GType
 yts_contact_get_type (void) G_GNUC_CONST;

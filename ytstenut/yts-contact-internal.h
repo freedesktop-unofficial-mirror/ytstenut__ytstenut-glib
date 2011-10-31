@@ -26,13 +26,22 @@
 #include <telepathy-glib/contact.h>
 #include <ytstenut/yts-contact.h>
 
+#define YTS_CONTACT_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST ((klass), YTS_TYPE_CONTACT, YtsContactClass))
+
+#define YTS_IS_CONTACT_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), YTS_TYPE_CONTACT))
+
+#define YTS_CONTACT_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), YTS_TYPE_CONTACT, YtsContactClass))
+
 struct YtsContact {
   GObject parent;
 };
 
-struct YtsContactClass {
+typedef struct {
   GObjectClass parent;
-};
+} YtsContactClass;
 
 bool
 yts_contact_dispatch_event (YtsContact  *self,

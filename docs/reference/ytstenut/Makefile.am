@@ -75,6 +75,7 @@ IGNORE_HFILES = \
   yts-proxy-service-impl.h \
   yts-proxy-service-internal.h \
   yts-response-message.h \
+  yts-roster-impl.h \
   yts-roster-internal.h \
   yts-service-adapter.h \
   yts-service-emitter.h \

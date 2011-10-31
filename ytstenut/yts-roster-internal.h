@@ -22,18 +22,26 @@
 #define YTS_ROSTER_INTERNAL_H
 
 #include <stdbool.h>
-#include <glib.h>
 #include <telepathy-glib/connection.h>
 #include <ytstenut/yts-contact.h>
 #include <ytstenut/yts-roster.h>
+
+#define YTS_ROSTER_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST ((klass), YTS_TYPE_ROSTER, YtsRosterClass))
+
+#define YTS_IS_ROSTER_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), YTS_TYPE_ROSTER))
+
+#define YTS_ROSTER_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), YTS_TYPE_ROSTER, YtsRosterClass))
 
 struct YtsRoster {
   GObject parent;
 };
 
-struct YtsRosterClass {
+typedef struct {
   GObjectClass parent;
-};
+} YtsRosterClass;
 
 void
 yts_roster_add_contact (YtsRoster   *roster,
