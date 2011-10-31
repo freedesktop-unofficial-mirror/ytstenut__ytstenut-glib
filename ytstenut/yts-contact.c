@@ -16,6 +16,7 @@
  * <http://www.gnu.org/licenses/>.
  *
  * Authored by: Tomas Frydrych <tf@linux.intel.com>
+ *              Rob Staudinger <robsta@linux.intel.com>
  */
 
 #include <telepathy-glib/gtypes.h>
@@ -28,6 +29,7 @@
 
 #include "empathy-tp-file.h"
 #include "yts-capability.h"
+#include "yts-contact-impl.h"
 #include "yts-contact-internal.h"
 #include "yts-enum-types.h"
 #include "yts-error.h"
@@ -36,7 +38,7 @@
 #include "yts-service-internal.h"
 #include "config.h"
 
-G_DEFINE_TYPE (YtsContact, yts_contact, G_TYPE_OBJECT);
+G_DEFINE_ABSTRACT_TYPE (YtsContact, yts_contact, G_TYPE_OBJECT)
 
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_CONTACT, YtsContactPrivate))
@@ -62,7 +64,6 @@ typedef struct {
 } YtsContactPrivate;
 
 enum {
-  SIG_SEND_MESSAGE,
   SIG_SERVICE_ADDED,
   SIG_SERVICE_REMOVED,
 
@@ -241,13 +242,15 @@ _service_send_message (YtsService   *service,
                        YtsMetadata  *message,
                        YtsContact   *self)
 {
-  g_signal_emit (self, _signals[SIG_SEND_MESSAGE], 0,
-                 service, message);
+  /* This is a bit of a hack, we require the non-abstract subclass to
+   * implement this interface. */
+  yts_contact_impl_send_message (YTS_CONTACT_IMPL (self), service, message);
 }
 
 static void
-yts_contact_service_added (YtsContact *self,
-                           YtsService *service)
+_service_added (YtsContact  *self,
+                YtsService  *service,
+                void        *data)
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
   const char         *uid  = yts_service_get_service_id (service);
@@ -264,8 +267,9 @@ yts_contact_service_added (YtsContact *self,
 }
 
 static void
-yts_contact_service_removed (YtsContact *self,
-                             YtsService *service)
+_service_removed (YtsContact  *self,
+                  YtsService  *service,
+                  void        *data)
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
   const char         *uid  = yts_service_get_service_id (service);
@@ -286,7 +290,6 @@ _get_property (GObject    *object,
                GValue     *value,
                GParamSpec *pspec)
 {
-  YtsContact        *self = YTS_CONTACT (object);
   YtsContactPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
@@ -370,9 +373,6 @@ yts_contact_class_init (YtsContactClass *klass)
   object_class->get_property = _get_property;
   object_class->set_property = _set_property;
 
-  klass->service_added       = yts_contact_service_added;
-  klass->service_removed     = yts_contact_service_removed;
-
   /**
    * YtsContact:contact-id:
    *
@@ -405,21 +405,6 @@ yts_contact_class_init (YtsContactClass *klass)
   g_object_class_install_property (object_class, PROP_TP_CONTACT, pspec);
 
   /**
-   * YtsContact::send-message:
-   *
-   * <note>Internal signal, should not be considered by users at this time.
-   * Maybe in the future when we allow for custom contact subclasses.</note>
-   */
-  _signals[SIG_SEND_MESSAGE] = g_signal_new ("send-message",
-                                             G_TYPE_FROM_CLASS (object_class),
-                                             G_SIGNAL_RUN_LAST,
-                                             0, NULL, NULL,
-                                             yts_marshal_VOID__OBJECT_OBJECT,
-                                             G_TYPE_NONE, 2,
-                                             YTS_TYPE_SERVICE,
-                                             YTS_TYPE_METADATA);
-
-  /**
    * YtsContact::service-added:
    * @self: object which emitted the signal.
    * @service: the service
@@ -429,15 +414,13 @@ yts_contact_class_init (YtsContactClass *klass)
    *
    * Since: 0.1
    */
-  _signals[SIG_SERVICE_ADDED] =
-    g_signal_new ("service-added",
-                  G_TYPE_FROM_CLASS (object_class),
-                  G_SIGNAL_RUN_FIRST,
-                  G_STRUCT_OFFSET (YtsContactClass, service_added),
-                  NULL, NULL,
-                  yts_marshal_VOID__OBJECT,
-                  G_TYPE_NONE, 1,
-                  YTS_TYPE_SERVICE);
+  _signals[SIG_SERVICE_ADDED] = g_signal_new ("service-added",
+                                              G_TYPE_FROM_CLASS (object_class),
+                                              G_SIGNAL_RUN_FIRST,
+                                              0, NULL, NULL,
+                                              yts_marshal_VOID__OBJECT,
+                                              G_TYPE_NONE, 1,
+                                              YTS_TYPE_SERVICE);
 
   /**
    * YtsContact::service-removed:
@@ -449,21 +432,25 @@ yts_contact_class_init (YtsContactClass *klass)
    *
    * Since: 0.1
    */
-  _signals[SIG_SERVICE_REMOVED] =
-    g_signal_new ("service-removed",
-                  G_TYPE_FROM_CLASS (object_class),
-                  G_SIGNAL_RUN_LAST,
-                  G_STRUCT_OFFSET (YtsContactClass, service_removed),
-                  NULL, NULL,
-                  yts_marshal_VOID__OBJECT,
-                  G_TYPE_NONE, 1,
-                  YTS_TYPE_SERVICE);
+  _signals[SIG_SERVICE_REMOVED] = g_signal_new (
+                                              "service-removed",
+                                              G_TYPE_FROM_CLASS (object_class),
+                                              G_SIGNAL_RUN_LAST,
+                                              0, NULL, NULL,
+                                              yts_marshal_VOID__OBJECT,
+                                              G_TYPE_NONE, 1,
+                                              YTS_TYPE_SERVICE);
 }
 
 static void
 yts_contact_init (YtsContact *self)
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
+
+  g_signal_connect (self, "service-added",
+                    G_CALLBACK (_service_added), NULL);
+  g_signal_connect (self, "service-removed",
+                    G_CALLBACK (_service_removed), NULL);
 
   priv->services = g_hash_table_new_full (g_str_hash,
                                           g_str_equal,
@@ -476,14 +463,6 @@ yts_contact_init (YtsContact *self)
                                                   g_str_equal,
                                                   g_free,
                                                   g_object_unref);
-}
-
-YtsContact *
-yts_contact_new (TpContact *tp_contact)
-{
-  return g_object_new (YTS_TYPE_CONTACT,
-                       "tp-contact", tp_contact,
-                       NULL);
 }
 
 /**
@@ -669,9 +648,6 @@ yts_contact_create_ft_channel_cb (TpConnection *proxy,
                                    gpointer      data,
                                    GObject      *weak_object)
 {
-  YtsContact        *self = YTS_CONTACT (weak_object);
-  YtsContactPrivate *priv = GET_PRIVATE (self);
-
   if (error)
     {
       YtsCPendingFile *pending_file = data;
@@ -898,8 +874,6 @@ void
 yts_contact_add_service (YtsContact *self,
                          YtsService *service)
 {
-  YtsContactPrivate *priv = GET_PRIVATE (self);
-
   /*
    * Emit the signal; the run-first signal closure will do the rest
    */

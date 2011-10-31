@@ -83,7 +83,7 @@ if test "$GCC" = "yes"; then
                 -Wcast-to-as -Wdefault-bitfield-sign -Wdo-while -Wparen-string \
                 -Wptr-subtraction-blows -Wreturn-void -Wtypesign \
                 -Wclobbered -Wempty-body -Woverride-init -Wsign-compare \
-                -Wtype-limits -Wuninitialized; do
+                -Wtype-limits -Wuninitialized -Wall; do
     SAVE_CFLAGS="$CFLAGS"
     CFLAGS="$CFLAGS $option"
     AC_MSG_CHECKING([whether gcc understands $option])

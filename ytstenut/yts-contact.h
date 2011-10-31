@@ -29,7 +29,7 @@
 
 G_BEGIN_DECLS
 
-#define YTS_TYPE_CONTACT (yts_contact_get_type())
+#define YTS_TYPE_CONTACT (yts_contact_get_type ())
 
 #define YTS_CONTACT(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), YTS_TYPE_CONTACT, YtsContact))
@@ -46,36 +46,8 @@ G_BEGIN_DECLS
 #define YTS_CONTACT_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), YTS_TYPE_CONTACT, YtsContactClass))
 
-typedef struct {
-
-  /*< private >*/
-  GObject parent;
-
-} YtsContact;
-
-/**
- * YtsContactClass:
- * @service_added: virtual function for the #YtsContact::service-added signal.
- * @service_removed: virtual function for the #YtsContact::service-removed signal.
- *
- * Deprecated: the class handlers for signals are deprecated and will be
- *             removed in 0.4.
- */
-typedef struct {
-
-  /*< private >*/
-  GObjectClass parent;
-
-  /*< public >*/
-  void
-  (*service_added) (YtsContact *self,
-                    YtsService *service);
-
-  void
-  (*service_removed) (YtsContact *self,
-                      YtsService *service);
-
-} YtsContactClass;
+typedef struct YtsContact YtsContact;
+typedef struct YtsContactClass YtsContactClass;
 
 GType
 yts_contact_get_type (void) G_GNUC_CONST;

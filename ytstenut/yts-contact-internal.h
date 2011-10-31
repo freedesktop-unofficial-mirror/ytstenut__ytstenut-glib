@@ -26,8 +26,13 @@
 #include <telepathy-glib/contact.h>
 #include <ytstenut/yts-contact.h>
 
-YtsContact *
-yts_contact_new (TpContact *tp_contact);
+struct YtsContact {
+  GObject parent;
+};
+
+struct YtsContactClass {
+  GObjectClass parent;
+};
 
 bool
 yts_contact_dispatch_event (YtsContact  *self,

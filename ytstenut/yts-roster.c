@@ -21,7 +21,7 @@
 
 #include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
 
-#include "yts-contact-internal.h"
+#include "yts-contact-impl.h"
 #include "yts-marshal.h"
 #include "yts-metadata.h"
 #include "yts-roster-internal.h"
@@ -437,7 +437,7 @@ _connection_get_contacts (TpConnection        *connection,
 
     g_message ("Creating new contact for %s", contact_id);
 
-    contact = yts_contact_new (tp_contact);
+    contact = yts_contact_impl_new (tp_contact);
 
     g_signal_connect (contact, "service-added",
                       G_CALLBACK (yts_roster_contact_service_added_cb),

@@ -29,6 +29,7 @@ G_DEFINE_INTERFACE (YtsServiceEmitter, yts_service_emitter, YTS_TYPE_SERVICE)
 
 enum {
   SIG_SEND_MESSAGE,
+
   N_SIGNALS
 };
 

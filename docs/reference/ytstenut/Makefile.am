@@ -57,7 +57,7 @@ IGNORE_HFILES = \
   yts-capability-status.h \
   yts-caps.h \
   yts-client-internal.h \
-  yts-contact-internal.h \
+  yts-contact-impl.h \
   yts-contact-internal.h \
   yts-error-message.h \
   yts-event-message.h \

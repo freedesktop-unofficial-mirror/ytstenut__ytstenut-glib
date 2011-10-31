@@ -39,6 +39,7 @@ source_c =						\
 		$(srcdir)/yts-capability.c			\
 		$(srcdir)/yts-client.c			\
 		$(srcdir)/yts-contact.c		\
+		$(srcdir)/yts-contact-impl.c		\
 		$(srcdir)/yts-enum-types.c		\
 		$(srcdir)/yts-error.c			\
 		$(srcdir)/yts-marshal.c		\
@@ -89,7 +90,7 @@ private_h = \
 		$(srcdir)/empathy-tp-file.h		\
 		$(srcdir)/yts-adapter-factory.h \
 		$(srcdir)/yts-client-internal.h \
-		$(srcdir)/yts-contact-internal.h \
+		$(srcdir)/yts-contact-impl.h \
 		$(srcdir)/yts-contact-internal.h \
 		$(srcdir)/yts-error.h \
 		$(srcdir)/yts-factory.h \
