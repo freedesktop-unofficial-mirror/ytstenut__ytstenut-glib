@@ -24,11 +24,12 @@
 #include "yts-contact-impl.h"
 #include "yts-marshal.h"
 #include "yts-metadata.h"
+#include "yts-roster-impl.h"
 #include "yts-roster-internal.h"
 #include "yts-service-factory.h"
 #include "config.h"
 
-G_DEFINE_TYPE (YtsRoster, yts_roster, G_TYPE_OBJECT);
+G_DEFINE_ABSTRACT_TYPE (YtsRoster, yts_roster, G_TYPE_OBJECT)
 
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), YTS_TYPE_ROSTER, YtsRosterPrivate))
@@ -53,8 +54,6 @@ enum {
   SIG_CONTACT_ADDED,
   SIG_CONTACT_REMOVED,
 
-  SIG_SEND_MESSAGE,
-
   SIG_SERVICE_ADDED,
   SIG_SERVICE_REMOVED,
 
@@ -75,10 +74,12 @@ _contact_send_message (YtsContact   *contact,
                        YtsMetadata  *message,
                        YtsRoster    *self)
 {
-  YtsRosterPrivate *priv = GET_PRIVATE (self);
-
-  g_signal_emit (self, _signals[SIG_SEND_MESSAGE], 0,
-                 contact, service, message);
+  /* This is a bit of a hack, we require the non-abstract subclass to
+   * implement this interface. */
+  yts_roster_impl_send_message (YTS_ROSTER_IMPL (self),
+                                contact,
+                                service,
+                                message);
 }
 
 static void
@@ -99,8 +100,6 @@ _set_property (GObject      *object,
                const GValue *value,
                GParamSpec   *pspec)
 {
-  YtsRosterPrivate *priv = GET_PRIVATE (object);
-
   switch (property_id) {
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -139,7 +138,6 @@ static void
 yts_roster_class_init (YtsRosterClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  GParamSpec   *pspec;
 
   g_type_class_add_private (klass, sizeof (YtsRosterPrivate));
 
@@ -182,22 +180,6 @@ yts_roster_class_init (YtsRosterClass *klass)
                                                 yts_marshal_VOID__OBJECT,
                                                 G_TYPE_NONE, 1,
                                                 YTS_TYPE_CONTACT);
-
-  /**
-   * YtsContact::send-message:
-   *
-   * <note>Internal signal, should not be considered by users at this time.
-   * Maybe in the future when we allow for custom contact subclasses.</note>
-   */
-  _signals[SIG_SEND_MESSAGE] = g_signal_new ("send-message",
-                                         G_TYPE_FROM_CLASS (object_class),
-                                         G_SIGNAL_RUN_LAST,
-                                         0, NULL, NULL,
-                                         yts_marshal_VOID__OBJECT_OBJECT_OBJECT,
-                                         G_TYPE_NONE, 3,
-                                         YTS_TYPE_CONTACT,
-                                         YTS_TYPE_SERVICE,
-                                         YTS_TYPE_METADATA);
 
   /**
    * YtsRoster::service-added:
@@ -383,12 +365,6 @@ yts_roster_clear (YtsRoster *self)
     }
 }
 
-YtsRoster *
-yts_roster_new (void)
-{
-  return g_object_new (YTS_TYPE_ROSTER, NULL);
-}
-
 static void
 yts_roster_contact_service_removed_cb (YtsContact *contact,
                                         YtsService *service,
@@ -469,7 +445,6 @@ yts_roster_add_service (YtsRoster         *self,
                         GHashTable        *names,
                         GHashTable        *statuses)
 {
-  YtsRosterPrivate *priv = GET_PRIVATE (self);
   YtsContact        *contact;
   YtsService        *service;
   YtsServiceFactory *factory = yts_service_factory_get_default ();

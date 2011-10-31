@@ -46,6 +46,7 @@ source_c =						\
 		$(srcdir)/yts-message.c		\
 		$(srcdir)/yts-metadata.c		\
 		$(srcdir)/yts-roster.c			\
+		$(srcdir)/yts-roster-impl.c			\
 		$(srcdir)/yts-service.c		\
 		$(srcdir)/yts-service-impl.c \
 		$(srcdir)/yts-status.c			\
@@ -99,6 +100,7 @@ private_h = \
 		$(srcdir)/yts-proxy-internal.h \
 		$(srcdir)/yts-proxy-service-impl.h \
 		$(srcdir)/yts-proxy-service-internal.h \
+		$(srcdir)/yts-roster-impl.h \
 		$(srcdir)/yts-roster-internal.h \
 		$(srcdir)/yts-service-adapter.h \
 		$(srcdir)/yts-service-emitter.h \

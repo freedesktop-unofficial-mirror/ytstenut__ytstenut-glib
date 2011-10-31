@@ -27,8 +27,13 @@
 #include <ytstenut/yts-contact.h>
 #include <ytstenut/yts-roster.h>
 
-YtsRoster *
-yts_roster_new (void);
+struct YtsRoster {
+  GObject parent;
+};
+
+struct YtsRosterClass {
+  GObjectClass parent;
+};
 
 void
 yts_roster_add_contact (YtsRoster   *roster,

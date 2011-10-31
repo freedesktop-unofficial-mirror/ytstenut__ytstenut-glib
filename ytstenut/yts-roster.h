@@ -44,19 +44,8 @@ G_BEGIN_DECLS
 #define YTS_ROSTER_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), YTS_TYPE_ROSTER, YtsRosterClass))
 
-typedef struct {
-
-  /*< private >*/
-  GObject parent;
-
-} YtsRoster;
-
-typedef struct {
-
-  /*< private >*/
-  GObjectClass parent;
-
-} YtsRosterClass;
+typedef struct YtsRoster YtsRoster;
+typedef struct YtsRosterClass YtsRosterClass;
 
 GType
 yts_roster_get_type (void) G_GNUC_CONST;

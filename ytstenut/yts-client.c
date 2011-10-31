@@ -46,7 +46,7 @@
 #include "yts-marshal.h"
 #include "yts-metadata-internal.h"
 #include "yts-response-message.h"
-#include "yts-roster-internal.h"
+#include "yts-roster-impl.h"
 #include "yts-service.h"
 #include "yts-service-adapter.h"
 #include "yts-status.h"
@@ -1281,13 +1281,13 @@ yts_client_constructed (GObject *object)
   if (G_OBJECT_CLASS (yts_client_parent_class)->constructed)
     G_OBJECT_CLASS (yts_client_parent_class)->constructed (object);
 
-  priv->roster   = yts_roster_new ();
+  priv->roster   = yts_roster_impl_new ();
   g_signal_connect (priv->roster, "send-message",
                     G_CALLBACK (_roster_send_message), object);
   g_signal_connect (priv->roster, "contact-removed",
                     G_CALLBACK (_roster_contact_removed), object);
 
-  priv->unwanted = yts_roster_new ();
+  priv->unwanted = yts_roster_impl_new ();
   g_signal_connect (priv->unwanted, "send-message",
                     G_CALLBACK (_roster_send_message), object);
   g_signal_connect (priv->unwanted, "contact-removed",
