@@ -18,7 +18,7 @@ yts_client_set_incoming_file_directory
 yts_client_set_status_by_capability
 yts_contact_cancel_file
 yts_contact_foreach_service
-yts_contact_get_contact_id
+yts_contact_get_id
 yts_contact_get_name
 yts_contact_get_type
 yts_contact_send_file

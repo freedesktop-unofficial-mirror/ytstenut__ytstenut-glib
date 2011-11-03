@@ -43,7 +43,7 @@ GType
 yts_contact_get_type (void) G_GNUC_CONST;
 
 char const *
-yts_contact_get_contact_id (YtsContact const *self);
+yts_contact_get_id (YtsContact const *self);
 
 char const *
 yts_contact_get_name (YtsContact const *self);

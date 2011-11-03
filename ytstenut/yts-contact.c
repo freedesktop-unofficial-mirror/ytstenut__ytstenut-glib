@@ -72,7 +72,7 @@ enum {
 
 enum {
   PROP_0,
-  PROP_CONTACT_ID,
+  PROP_ID,
   PROP_NAME,
   PROP_TP_CONTACT,
 
@@ -138,7 +138,7 @@ yts_contact_ft_op_cb (EmpathyTpFile *tp_file,
     {
       e = (atom | YTS_ERROR_UNKNOWN);
       g_warning ("File transfer to %s failed: %s",
-                 yts_contact_get_contact_id (self), error->message);
+                 yts_contact_get_id (self), error->message);
     }
   else
     e = (atom | YTS_ERROR_SUCCESS);
@@ -293,9 +293,9 @@ _get_property (GObject    *object,
   YtsContactPrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
-    case PROP_CONTACT_ID:
+    case PROP_ID:
       g_value_set_string (value,
-                          yts_contact_get_contact_id (YTS_CONTACT (object)));
+                          yts_contact_get_id (YTS_CONTACT (object)));
       break;
     case PROP_NAME:
       g_value_set_string (value,
@@ -374,14 +374,14 @@ yts_contact_class_init (YtsContactClass *klass)
   object_class->set_property = _set_property;
 
   /**
-   * YtsContact:contact-id:
+   * YtsContact:id:
    *
    * The JID of this contact.
    */
-  pspec = g_param_spec_string ("contact-id", "", "",
+  pspec = g_param_spec_string ("id", "", "",
                                NULL,
                                G_PARAM_READABLE);
-  g_object_class_install_property (object_class, PROP_CONTACT_ID, pspec);
+  g_object_class_install_property (object_class, PROP_ID, pspec);
 
   /**
    * YtsContact:name:
@@ -466,7 +466,7 @@ yts_contact_init (YtsContact *self)
 }
 
 /**
- * yts_contact_get_contact_id:
+ * yts_contact_get_id:
  * @self: object on which to invoke this method.
  *
  * Retrieves the jabber identifier of this contact.
@@ -474,7 +474,7 @@ yts_contact_init (YtsContact *self)
  * Returns: (transfer none): The JID of this contact.
  */
 const char *
-yts_contact_get_contact_id (YtsContact const *self)
+yts_contact_get_id (YtsContact const *self)
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
 
@@ -879,7 +879,7 @@ yts_contact_add_service (YtsContact *self,
    */
   g_message ("New service %s on %s",
              yts_service_get_service_id (service),
-             yts_contact_get_contact_id (self));
+             yts_contact_get_id (self));
 
   g_signal_emit (self, _signals[SIG_SERVICE_ADDED], 0, service);
 }
