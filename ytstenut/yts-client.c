@@ -1212,7 +1212,7 @@ _roster_send_message (YtsRoster    *roster,
 {
   char const *service_id;
 
-  service_id = yts_service_get_service_id (service);
+  service_id = yts_service_get_id (service);
 
   yts_client_send_message (self, contact, service_id, message);
 }

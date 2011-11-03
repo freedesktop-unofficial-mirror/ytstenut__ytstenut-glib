@@ -78,7 +78,7 @@ _client_roster_service_added (YtsRoster  *roster,
 {
   char const *uid;
 
-  uid = yts_service_get_service_id (service);
+  uid = yts_service_get_id (service);
 
   if (0 == g_strcmp0 (uid, SERVER_UID)) {
 

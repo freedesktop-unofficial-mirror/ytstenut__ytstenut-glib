@@ -81,7 +81,7 @@ _dictionary_message (YtsClient          *client,
 static void
 service_added_cb (YtsRoster *roster, YtsService *service, YtsClient *client)
 {
-  const char  *sid     = yts_service_get_service_id (service);
+  const char  *sid     = yts_service_get_id (service);
   gboolean     our     = FALSE;
 
   static YtsService *service2 = NULL;

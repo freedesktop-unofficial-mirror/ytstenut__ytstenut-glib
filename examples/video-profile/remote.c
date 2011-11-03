@@ -265,7 +265,7 @@ _roster_service_added (YtsRoster   *roster,
 {
   char const *uid;
 
-  uid = yts_service_get_service_id (service);
+  uid = yts_service_get_id (service);
 
   g_debug ("%s() %s", __FUNCTION__, uid);
 

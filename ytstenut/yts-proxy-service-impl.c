@@ -70,7 +70,7 @@ yts_proxy_service_impl_new (char const        *service_id,
 
   return g_object_new (YTS_TYPE_PROXY_SERVICE_IMPL,
                        "fqc-ids", fqc_ids,
-                       "service-id", service_id,
+                       "id", service_id,
                        "type", type,
                        "names", names,
                        "statuses", statuses,

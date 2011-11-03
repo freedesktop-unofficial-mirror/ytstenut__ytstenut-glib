@@ -42,7 +42,7 @@ yts_proxy_service_get_type
 yts_roster_find_contact_by_id
 yts_roster_foreach_contact
 yts_roster_get_type
-yts_service_get_service_id
+yts_service_get_id
 yts_service_get_names
 yts_service_get_service_type
 yts_service_get_statuses

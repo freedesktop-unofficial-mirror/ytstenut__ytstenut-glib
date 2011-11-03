@@ -224,11 +224,11 @@ yts_service_class_init (YtsServiceClass *klass)
                                     "fqc-ids");
 
   /**
-   * YtsService:service-id:
+   * YtsService:id:
    *
    * The unique identifier of this service.
    */
-  pspec = g_param_spec_string ("service-id", "", "",
+  pspec = g_param_spec_string ("id", "", "",
                                NULL,
                                G_PARAM_READWRITE |
                                G_PARAM_CONSTRUCT_ONLY |
@@ -303,7 +303,7 @@ yts_service_init (YtsService *self)
 }
 
 /**
- * yts_service_get_service_id:
+ * yts_service_get_id:
  * @service: #YtsService
  *
  * Returns the unique id of the the given service.
@@ -311,7 +311,7 @@ yts_service_init (YtsService *self)
  * Return value: (transfer none): the service-id.
  */
 char const *
-yts_service_get_service_id (YtsService *self)
+yts_service_get_id (YtsService *self)
 {
   YtsServicePrivate *priv = GET_PRIVATE (self);
 

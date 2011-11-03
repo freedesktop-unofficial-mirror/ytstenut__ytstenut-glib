@@ -253,7 +253,7 @@ _service_added (YtsContact  *self,
                 void        *data)
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
-  const char         *uid  = yts_service_get_service_id (service);
+  const char         *uid  = yts_service_get_id (service);
 
   g_return_if_fail (uid && *uid);
   g_return_if_fail (!g_hash_table_lookup (priv->services, uid));
@@ -272,7 +272,7 @@ _service_removed (YtsContact  *self,
                   void        *data)
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
-  const char         *uid  = yts_service_get_service_id (service);
+  const char         *uid  = yts_service_get_id (service);
 
   g_return_if_fail (uid && *uid);
 
@@ -878,7 +878,7 @@ yts_contact_add_service (YtsContact *self,
    * Emit the signal; the run-first signal closure will do the rest
    */
   g_message ("New service %s on %s",
-             yts_service_get_service_id (service),
+             yts_service_get_id (service),
              yts_contact_get_id (self));
 
   g_signal_emit (self, _signals[SIG_SERVICE_ADDED], 0, service);
