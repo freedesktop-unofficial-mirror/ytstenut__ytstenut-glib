@@ -57,7 +57,27 @@ AC_SUBST(GLIB_PREFIX)
 TELEPATHY_VERSION=">= 0.11.7"
 AC_SUBST(TELEPATHY_VERSION)
 
-YTS_PC_MODULES="$YTS_PC_MODULES telepathy-glib $TELEPATHY_VERSION telepathy-ytstenut-glib >= 0.2.0 gio-unix-2.0 rest-0.7 >= 0.7 glib-2.0 gobject-2.0"
+AC_MSG_CHECKING([for operating system])
+case "$host" in
+  *-*-*mingw*|*-*-*cygwin*)
+    platform=win32
+    ;;
+  *)
+    platform=generic
+    ;;
+esac
+
+AC_MSG_RESULT($platform)
+
+AM_CONDITIONAL([OS_WINDOWS], [test "$platform" = "win32"])
+
+YTS_PC_MODULES="$YTS_PC_MODULES telepathy-glib $TELEPATHY_VERSION telepathy-ytstenut-glib >= 0.2.0 rest-0.7 >= 0.7 glib-2.0 gobject-2.0"
+
+if test "$platform" = "win32"; then
+YTS_PC_MODULES="$YTS_PC_MODULES gio-windows-2.0"
+else
+YTS_PC_MODULES="$YTS_PC_MODULES gio-unix-2.0"
+fi
 
 AC_ARG_ENABLE([debug],
               [AC_HELP_STRING([--enable-debug],
@@ -172,6 +192,7 @@ echo "
         Debug            :    ${enable_debug}
         API Reference    :    ${enable_gtk_doc}
         Introspection    :    ${have_introspection}
+        Platform         :    ${platform}
 
         CFLAGS: ${CFLAGS}
 

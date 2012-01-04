@@ -32,11 +32,25 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <glib.h>
+#include <gio/gio.h>
+#include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/proxy-subclass.h>
+
+#ifdef G_OS_WIN32
+#include <windows.h>
+#include <ws2tcpip.h>
+#include <gio/gwin32inputstream.h>
+#include <gio/gwin32outputstream.h>
+#else
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <netinet/in.h>
+#include <gio/gunixinputstream.h>
+#include <gio/gunixoutputstream.h>
+#endif
 
 #if 0
 #include <glib/gi18n-lib.h>
@@ -44,12 +58,6 @@
 #define _(x) (x)
 #endif
 
-#include <gio/gio.h>
-#include <gio/gunixinputstream.h>
-#include <gio/gunixoutputstream.h>
-
-#include <telepathy-glib/gtypes.h>
-#include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/interfaces.h>
 
@@ -317,7 +325,7 @@ tp_file_start_transfer (EmpathyTpFile *tp_file)
 
       return;
     }
-
+#ifdef G_OS_UNIX
   if (priv->socket_address_type == TP_SOCKET_ADDRESS_TYPE_UNIX)
     {
       struct sockaddr_un addr;
@@ -330,13 +338,18 @@ tp_file_start_transfer (EmpathyTpFile *tp_file)
       my_addr = (struct sockaddr *) &addr;
       my_size = sizeof (addr);
     }
-  else if (priv->socket_address_type == TP_SOCKET_ADDRESS_TYPE_IPV4)
+#endif 
+  if (priv->socket_address_type == TP_SOCKET_ADDRESS_TYPE_IPV4)
     {
       struct sockaddr_in addr;
 
       memset (&addr, 0, sizeof (addr));
       addr.sin_family = domain;
+#ifdef G_OS_WIN32
+      addr.sin_addr.s_addr = inet_addr ((const char * ) priv->socket_address->data);
+#else
       inet_pton (AF_INET, priv->socket_address->data, &addr.sin_addr);
+#endif
       addr.sin_port = htons (priv->port);
 
       my_addr = (struct sockaddr *) &addr;
@@ -374,9 +387,11 @@ tp_file_start_transfer (EmpathyTpFile *tp_file)
   if (priv->incoming)
     {
       GInputStream *socket_stream;
-
+#ifdef G_OS_WIN32
+      socket_stream = g_win32_input_stream_new (fd, TRUE);
+#else
       socket_stream = g_unix_input_stream_new (fd, TRUE);
-
+#endif
       g_output_stream_splice_async (priv->out_stream, socket_stream,
           G_OUTPUT_STREAM_SPLICE_CLOSE_SOURCE |
           G_OUTPUT_STREAM_SPLICE_CLOSE_TARGET,
@@ -388,8 +403,11 @@ tp_file_start_transfer (EmpathyTpFile *tp_file)
   else
     {
       GOutputStream *socket_stream;
-
+#ifdef G_OS_WIN32
+      socket_stream = g_win32_output_stream_new (fd, TRUE);
+#else
       socket_stream = g_unix_output_stream_new (fd, TRUE);
+#endif
 
       g_output_stream_splice_async (socket_stream, priv->in_stream,
           G_OUTPUT_STREAM_SPLICE_CLOSE_SOURCE |
