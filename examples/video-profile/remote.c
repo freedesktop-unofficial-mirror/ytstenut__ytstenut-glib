@@ -357,8 +357,7 @@ main (int     argc,
     g_debug ("No command given, use --help to display commands.");
   }
 
-  client = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP,
-                            "org.freedesktop.ytstenut.MockPlayerRemote");
+  client = yts_client_new_p2p ("org.freedesktop.ytstenut.MockPlayerRemote");
   g_signal_connect (client, "authenticated",
                     G_CALLBACK (_client_authenticated), &remote);
   g_signal_connect (client, "ready",

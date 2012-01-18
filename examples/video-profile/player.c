@@ -144,8 +144,7 @@ main (int     argc,
   }
 
   /* The client object represents an ytstenut application. */
-  client = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP,
-                            "org.freedesktop.ytstenut.MockPlayer");
+  client = yts_client_new_p2p ("org.freedesktop.ytstenut.MockPlayer");
   g_signal_connect (client, "authenticated",
                     G_CALLBACK (_client_authenticated), NULL);
   g_signal_connect (client, "ready",

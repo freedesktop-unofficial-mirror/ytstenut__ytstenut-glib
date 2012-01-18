@@ -111,8 +111,7 @@ main (int argc, char **argv)
 
   loop = g_main_loop_new (NULL, FALSE);
 
-  client1 = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP,
-                             "org.freedesktop.ytstenut.SetStatusTest1");
+  client1 = yts_client_new_p2p ("org.freedesktop.ytstenut.SetStatusTest1");
   yts_client_add_capability (client1, "yts-caps-video");
   g_signal_connect (client1, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);
@@ -121,8 +120,7 @@ main (int argc, char **argv)
                     G_CALLBACK (service_added_cb), client1);
   yts_client_connect (client1);
 
-  client2 = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP,
-                             "org.freedesktop.ytstenut.SetStatusTest2");
+  client2 = yts_client_new_p2p ("org.freedesktop.ytstenut.SetStatusTest2");
   yts_client_add_capability (client1, "yts-caps-video");
   g_signal_connect (client2, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);

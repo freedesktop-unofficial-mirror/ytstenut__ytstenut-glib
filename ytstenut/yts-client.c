@@ -1771,10 +1771,9 @@ yts_client_init (YtsClient *self)
 }
 
 /**
- * yts_client_new:
- * @protocol: #YtsProtocol
- * @service_id: Unique ID for this service; Service IDs must follow the dbus
-                convention for unique names.
+ * yts_client_new_p2p:
+ * @service_id: Unique ID for this service; UIDs must follow the dbus
+ *              convention for unique names.
  *
  * Creates a new #YtsClient object.
  *
@@ -1783,13 +1782,12 @@ yts_client_init (YtsClient *self)
  * Since: 0.1
  */
 YtsClient *
-yts_client_new (YtsProtocol  protocol,
-                char const  *service_id)
+yts_client_new_p2p (char const *service_id)
 {
   g_return_val_if_fail (service_id, NULL);
 
   return g_object_new (YTS_TYPE_CLIENT,
-                       "protocol",    protocol,
+                       "protocol",    YTS_PROTOCOL_LOCAL_XMPP,
                        "service-id",  service_id,
                        NULL);
 }

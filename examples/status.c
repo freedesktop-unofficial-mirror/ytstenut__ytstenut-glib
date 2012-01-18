@@ -103,7 +103,7 @@ run_client (void)
   YtsRoster  *roster;
   GMainLoop   *mainloop;
 
-  client = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP, CLIENT_UID);
+  client = yts_client_new_p2p (CLIENT_UID);
   g_signal_connect (client, "authenticated",
                     G_CALLBACK (_client_authenticated), NULL);
   g_signal_connect (client, "ready",
@@ -174,7 +174,7 @@ run_server (void)
   YtsClient    *client;
   GMainLoop     *mainloop;
 
-  client = yts_client_new (YTS_PROTOCOL_LOCAL_XMPP, SERVER_UID);
+  client = yts_client_new_p2p (SERVER_UID);
   yts_client_add_capability (client, CAPABILITY);
   g_signal_connect (client, "authenticated",
                     G_CALLBACK (_server_authenticated), NULL);

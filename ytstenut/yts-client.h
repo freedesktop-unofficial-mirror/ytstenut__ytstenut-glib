@@ -103,8 +103,7 @@ typedef enum { /*< prefix=YTS_PROTOCOL >*/
 } YtsProtocol;
 
 YtsClient *
-yts_client_new (YtsProtocol  protocol,
-                char const  *service_id);
+yts_client_new_p2p (char const *service_id);
 
 void
 yts_client_disconnect (YtsClient *self);
