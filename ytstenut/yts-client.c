@@ -86,8 +86,9 @@ typedef struct {
   GArray       *caps;
 
   /* connection parameters */
-  char         *service_id;
-  YtsProtocol   protocol;
+  char        *account_id;
+  char        *service_id;
+  YtsProtocol  protocol;
 
   char         *incoming_dir; /* destination directory for incoming files */
 
@@ -97,7 +98,6 @@ typedef struct {
   GArray       *icon_data;
 
   /* Telepathy bits */
-  TpDBusDaemon         *dbus;
   TpYtsAccountManager  *mgr;
   TpAccount            *account;
   TpConnection         *connection;
@@ -147,6 +147,7 @@ enum
 enum
 {
   PROP_0,
+  PROP_ACCOUNT_ID,
   PROP_CONTACT_ID,
   PROP_SERVICE_ID,
   PROP_PROTOCOL,
@@ -1140,30 +1141,20 @@ yts_client_setup_debug  (YtsClient *self)
   g_free (busname);
 }
 
-/*
- * Callback from the async tp_account_prepare_async() call
- *
- * This function is ready for the New World Order according to Ytstenut ...
- */
 static void
-yts_client_account_prepared_cb (GObject       *acc,
-                                 GAsyncResult *res,
-                                 gpointer      self)
+setup_tp_client (YtsClient  *self,
+                 TpAccount  *account)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
-  GError            *error   = NULL;
-  TpAccount         *account = (TpAccount*)acc;
 
-  if (!tp_account_prepare_finish (account, res, &error))
-    {
-      g_error ("Account unprepared: %s", error->message);
-    }
+  g_return_if_fail (TP_IS_ACCOUNT (account));
 
   priv->account = account;
-
-  g_message ("Account successfully opened");
-
   priv->tp_client = tp_yts_client_new (priv->service_id, account);
+
+  if (YTS_DEBUG_TELEPATHY & ytstenut_get_debug_flags ()) {
+    yts_client_setup_debug (self);
+  }
 
   if (priv->caps)
     {
@@ -1183,30 +1174,55 @@ yts_client_account_prepared_cb (GObject       *acc,
     yts_client_make_connection (self);
 }
 
+/*
+ * Callback from the async tp_account_prepare_async() call
+ *
+ * This function is ready for the New World Order according to Ytstenut ...
+ */
 static void
-yts_client_account_cb (GObject *object, GAsyncResult *res, gpointer self)
+yts_client_account_prepared_cb (GObject       *source_object,
+                                GAsyncResult  *res,
+                                gpointer       self)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
-  GError            *error      = NULL;
-  const GQuark       features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
+  TpAccount *account = TP_ACCOUNT (source_object);
+  GError    *error   = NULL;
 
-  g_assert (TP_IS_YTS_ACCOUNT_MANAGER (object));
-  g_assert (G_IS_ASYNC_RESULT (res));
+  if (!tp_account_prepare_finish (account, res, &error)) {
+    g_critical ("Account unprepared: %s", error->message);
+    g_clear_error (&error);
+    return;
+  }
 
-  priv->account =
-    tp_yts_account_manager_get_account_finish (TP_YTS_ACCOUNT_MANAGER (object),
-                                               res, &error);
+  g_message ("Account successfully opened");
 
-  if (error)
-    g_error ("Could not access account: %s", error->message);
+  setup_tp_client (YTS_CLIENT (self), account);
+}
+
+static void
+yts_client_account_cb (GObject      *source_object,
+                       GAsyncResult *res,
+                       gpointer      self)
+{
+  TpYtsAccountManager *yts_am = TP_YTS_ACCOUNT_MANAGER (source_object);
+  TpAccount           *account;
+  GError              *error = NULL;
+  const GQuark         features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
+
+  g_return_if_fail (TP_IS_YTS_ACCOUNT_MANAGER (yts_am));
+
+  account = tp_yts_account_manager_get_account_finish (yts_am,
+                                                       res,
+                                                       &error);
+  if (error) {
+    g_critical ("Could not access account: %s", error->message);
+    g_clear_error (&error);
+    return;
+  }
 
   g_message ("Got account");
 
-  if (YTS_DEBUG_TELEPATHY & ytstenut_get_debug_flags ()) {
-    yts_client_setup_debug (self);
-  }
-
-  tp_account_prepare_async (priv->account,
+  tp_account_prepare_async (account,
                             &features[0],
                             yts_client_account_prepared_cb,
                             self);
@@ -1281,6 +1297,30 @@ _roster_contact_removed (YtsRoster  *roster,
   } while (start_over);
 }
 
+/*
+ * C2S Setup
+ */
+
+static void
+_account_prepared (GObject      *source_object,
+                   GAsyncResult *result,
+                   gpointer      user_data)
+{
+  YtsClient *self = YTS_CLIENT (user_data);
+  TpAccount *account = TP_ACCOUNT (source_object);
+  GError    *error = NULL;
+
+  if (!tp_proxy_prepare_finish (account, result, &error)) {
+    g_critical ("Failed to prepare account: %s\n", error->message);
+    g_clear_error (&error);
+    return;
+  }
+
+  setup_tp_client (self, account);
+}
+
+/**/
+
 static void
 yts_client_constructed (GObject *object)
 {
@@ -1305,25 +1345,52 @@ yts_client_constructed (GObject *object)
   if (!priv->service_id || !*priv->service_id)
     g_error ("Service-ID must be set at construction time.");
 
-  priv->dbus = tp_dbus_daemon_dup (&error);
+  priv->mgr = tp_yts_account_manager_dup ();
+  if (!TP_IS_YTS_ACCOUNT_MANAGER (priv->mgr))
+    g_error ("Missing Account Manager");
+  tp_yts_account_manager_hold (priv->mgr);
 
-  if (error)
-    {
-      g_error ("Can't connect to dbus: %s", error->message);
+  if (priv->protocol == YTS_PROTOCOL_LOCAL_XMPP) {
+    tp_yts_account_manager_get_account_async (priv->mgr, NULL,
+                                              yts_client_account_cb,
+                                              object);
+  } else {
+
+    TpAccount *account;
+    char      *escaped_account_id;
+    char      *path;
+
+    if (NULL == priv->account_id) {
+      g_critical ("Missing account ID");
       return;
     }
 
-  priv->mgr = tp_yts_account_manager_dup ();
+    /* TODO iterate account manager to find matching account, rather than
+     * relying on escaping and path -- those are not guaranteed to stay
+     * compatible. */
 
+    escaped_account_id = tp_escape_as_identifier (priv->account_id);
+    path = g_strdup_printf ("%s%s%s",
+                            TP_ACCOUNT_OBJECT_PATH_BASE,
+                            "gabble/jabber/",
+                            escaped_account_id);
 
-  if (!TP_IS_YTS_ACCOUNT_MANAGER (priv->mgr))
-    g_error ("Missing Account Manager");
+    g_message ("account path: %s", path);
 
-  tp_yts_account_manager_hold (priv->mgr);
+    account = tp_yts_account_manager_ensure_account (priv->mgr, path, &error);
+    if (error) {
+      g_critical ("Could not access account %s: %s",
+                  priv->account_id,
+                  error->message);
+      g_clear_error (&error);
+      return;
+    }
 
-  tp_yts_account_manager_get_account_async (priv->mgr, NULL,
-                                            yts_client_account_cb,
-                                            object);
+    tp_proxy_prepare_async (account, NULL, _account_prepared, object);
+
+    g_free (path);
+    g_free (escaped_account_id);
+  }
 }
 
 static void
@@ -1336,6 +1403,9 @@ yts_client_get_property (GObject    *object,
 
   switch (property_id)
     {
+    case PROP_ACCOUNT_ID:
+      g_value_set_string (value, priv->account_id);
+      break;
     case PROP_CONTACT_ID:
       g_value_set_string (value,
                           yts_client_get_contact_id (YTS_CLIENT (object)));
@@ -1365,6 +1435,10 @@ yts_client_set_property (GObject      *object,
 
   switch (property_id)
     {
+    case PROP_ACCOUNT_ID:
+      /* Construct-only */
+      priv->account_id = g_value_dup_string (value);
+      break;
     case PROP_SERVICE_ID:
       {
         /* Construct-only */
@@ -1458,6 +1532,7 @@ yts_client_finalize (GObject *object)
 {
   YtsClientPrivate *priv = GET_PRIVATE (object);
 
+  g_free (priv->account_id);
   g_free (priv->service_id);
   g_free (priv->icon_token);
   g_free (priv->icon_mime_type);
@@ -1497,6 +1572,21 @@ yts_client_class_init (YtsClientClass *klass)
   klass->ready               = yts_client_ready;
   klass->disconnected        = yts_client_disconnected;
   klass->raw_message         = yts_client_raw_message;
+
+  /**
+   * YtsClient:account-id:
+   *
+   * The account ID used by this client instance when running in C2S
+   * (client-to-server) mode. This is the non-normalized JID as passed when
+   * the client was instantiated. Might be %NULL when in P2P mode.
+   *
+   * Since: 0.4
+   */
+  pspec = g_param_spec_string ("account-id", "", "",
+                               NULL,
+                               G_PARAM_READWRITE |
+                               G_PARAM_CONSTRUCT_ONLY);
+  g_object_class_install_property (object_class, PROP_ACCOUNT_ID, pspec);
 
   /**
    * YtsClient:contact-id:
@@ -1768,6 +1858,20 @@ yts_client_init (YtsClient *self)
 
   g_signal_connect (self, "incoming-file",
                     G_CALLBACK (yts_client_incoming_file), self);
+}
+
+YtsClient *
+yts_client_new_c2s (char const *account_id,
+                    char const *service_id)
+{
+  g_return_val_if_fail (account_id, NULL);
+  g_return_val_if_fail (service_id, NULL);
+
+  return g_object_new (YTS_TYPE_CLIENT,
+                       "protocol",    YTS_PROTOCOL_XMPP,
+                       "account-id",  account_id,
+                       "service-id",  service_id,
+                       NULL);
 }
 
 /**

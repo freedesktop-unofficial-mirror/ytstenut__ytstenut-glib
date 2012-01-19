@@ -25,7 +25,10 @@
 #include <ytstenut/ytstenut.h>
 
 #define CLIENT_UID "org.freedesktop.ytstenut.EchoExampleClient"
+#define CLIENT_JID "ytstenut2@test.collabora.co.uk0"
+
 #define SERVER_UID "org.freedesktop.ytstenut.EchoExampleServer"
+#define SERVER_JID "ytstenut1@test.collabora.co.uk0"
 
 /*
  * Client
@@ -80,13 +83,17 @@ _client_roster_service_added (YtsRoster  *roster,
 }
 
 static int
-run_client (void)
+run_client (bool p2p)
 {
   YtsClient  *client;
   YtsRoster  *roster;
   GMainLoop   *mainloop;
 
-  client = yts_client_new_p2p (CLIENT_UID);
+  if (p2p)
+    client = yts_client_new_p2p (CLIENT_UID);
+  else
+    client = yts_client_new_c2s (CLIENT_JID, CLIENT_UID);
+
   g_signal_connect (client, "authenticated",
                     G_CALLBACK (_client_authenticated), NULL);
   g_signal_connect (client, "ready",
@@ -172,14 +179,18 @@ _server_roster_service_added (YtsRoster  *roster,
 }
 
 static int
-run_server (void)
+run_server (bool p2p)
 {
   YtsClient  *client;
   YtsRoster  *roster;
   GMainLoop   *mainloop;
   ServerData   self = { NULL, };
 
-  client = yts_client_new_p2p (SERVER_UID);
+  if (p2p)
+    client = yts_client_new_p2p (SERVER_UID);
+  else
+    client = yts_client_new_c2s (SERVER_JID, SERVER_UID);
+
   g_signal_connect (client, "authenticated",
                     G_CALLBACK (_server_authenticated), NULL);
   g_signal_connect (client, "ready",
@@ -208,9 +219,11 @@ main (int     argc,
 {
   bool client = false;
   bool server = true;
+  bool p2p = false;
   GOptionEntry entries[] = {
     { "client", 'c', 0, G_OPTION_ARG_NONE, &client, "Run as client", NULL },
     { "server", 's', 0, G_OPTION_ARG_NONE, &server, "Run as server (default)", NULL },
+    { "p2p", 'p', 0, G_OPTION_ARG_NONE, &p2p, "Run in p2p mode", NULL },
     { NULL, }
   };
 
@@ -230,10 +243,10 @@ main (int     argc,
 
   if (client) {
     g_message ("Running as client ...");
-    ret = run_client ();
+    ret = run_client (p2p);
   } else if (server) {
     g_message ("Running as server ...");
-    ret = run_server ();
+    ret = run_server (p2p);
   } else {
     g_warning ("%s : Not running as server or client, quitting", G_STRLOC);
     ret = -1;

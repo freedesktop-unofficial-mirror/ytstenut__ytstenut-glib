@@ -103,6 +103,10 @@ typedef enum { /*< prefix=YTS_PROTOCOL >*/
 } YtsProtocol;
 
 YtsClient *
+yts_client_new_c2s (char const *account_id,
+                    char const *service_id);
+
+YtsClient *
 yts_client_new_p2p (char const *service_id);
 
 void
