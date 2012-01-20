@@ -86,8 +86,8 @@ typedef struct {
   GArray       *caps;
 
   /* connection parameters */
-  char         *uid;
-  YtsProtocol  protocol;
+  char         *service_id;
+  YtsProtocol   protocol;
 
   char         *incoming_dir; /* destination directory for incoming files */
 
@@ -760,7 +760,7 @@ yts_client_ready (YtsClient *self)
 
           tp_yts_status_advertise_status_async (priv->tp_status,
                                                 c,
-                                                priv->uid,
+                                                priv->service_id,
                                                 xml,
                                                 NULL,
                                                 NULL,
@@ -1163,7 +1163,7 @@ yts_client_account_prepared_cb (GObject       *acc,
 
   g_message ("Account successfully opened");
 
-  priv->tp_client = tp_yts_client_new (priv->uid, account);
+  priv->tp_client = tp_yts_client_new (priv->service_id, account);
 
   if (priv->caps)
     {
@@ -1302,7 +1302,7 @@ yts_client_constructed (GObject *object)
   g_signal_connect (priv->unwanted, "contact-removed",
                     G_CALLBACK (_roster_contact_removed), object);
 
-  if (!priv->uid || !*priv->uid)
+  if (!priv->service_id || !*priv->service_id)
     g_error ("UID must be set at construction time.");
 
   priv->dbus = tp_dbus_daemon_dup (&error);
@@ -1341,7 +1341,7 @@ yts_client_get_property (GObject    *object,
                           yts_client_get_contact_id (YTS_CLIENT (object)));
       break;
     case PROP_SERVICE_ID:
-      g_value_set_string (value, priv->uid);
+      g_value_set_string (value, priv->service_id);
       break;
     case PROP_ICON_TOKEN:
       g_value_set_string (value, priv->icon_token);
@@ -1368,8 +1368,8 @@ yts_client_set_property (GObject      *object,
     case PROP_SERVICE_ID:
       {
         /* Construct-only */
-        g_return_if_fail (NULL == priv->uid);
-        priv->uid = g_value_dup_string (value);
+        g_return_if_fail (NULL == priv->service_id);
+        priv->service_id = g_value_dup_string (value);
       }
       break;
     case PROP_PROTOCOL:
@@ -1458,7 +1458,7 @@ yts_client_finalize (GObject *object)
 {
   YtsClientPrivate *priv = GET_PRIVATE (object);
 
-  g_free (priv->uid);
+  g_free (priv->service_id);
   g_free (priv->icon_token);
   g_free (priv->icon_mime_type);
   g_free (priv->incoming_dir);
@@ -2401,7 +2401,7 @@ yts_client_dispatch_status (YtsClient *self)
 
       tp_yts_status_advertise_status_async (priv->tp_status,
                                             c,
-                                            priv->uid,
+                                            priv->service_id,
                                             xml,
                                             NULL,
                                             yts_client_advertise_status_cb,
@@ -3048,7 +3048,7 @@ yts_client_get_service_id (const YtsClient *self)
 
   g_return_val_if_fail (YTS_IS_CLIENT (self), NULL);
 
-  return priv->uid;
+  return priv->service_id;
 }
 
 TpConnection *
@@ -3132,12 +3132,12 @@ yts_client_set_status_by_capability (YtsClient *self,
         {
           "capability",   capability,
           "activity",     activity,
-          "from-service", priv->uid,
+          "from-service", priv->service_id,
           NULL
         };
 
       g_message ("Constructing status for %s, %s, %s",
-                 capability, activity, priv->uid);
+                 capability, activity, priv->service_id);
 
       status = yts_status_new ((char const**)&attributes);
     }
