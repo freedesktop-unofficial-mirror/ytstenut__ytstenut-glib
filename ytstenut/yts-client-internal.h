@@ -35,7 +35,7 @@ yts_client_get_tp_status (YtsClient *client);
 YtsError
 yts_client_send_message (YtsClient    *client,
                          YtsContact   *contact,
-                         char const   *uid,
+                         char const   *service_id,
                          YtsMetadata  *message);
 
 void

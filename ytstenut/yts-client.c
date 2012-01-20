@@ -1303,7 +1303,7 @@ yts_client_constructed (GObject *object)
                     G_CALLBACK (_roster_contact_removed), object);
 
   if (!priv->service_id || !*priv->service_id)
-    g_error ("UID must be set at construction time.");
+    g_error ("Service-ID must be set at construction time.");
 
   priv->dbus = tp_dbus_daemon_dup (&error);
 
@@ -1773,7 +1773,7 @@ yts_client_init (YtsClient *self)
 /**
  * yts_client_new:
  * @protocol: #YtsProtocol
- * @service_id: Unique ID for this service; UIDs must follow the dbus
+ * @service_id: Unique ID for this service; Service IDs must follow the dbus
                 convention for unique names.
  *
  * Creates a new #YtsClient object.
@@ -2183,7 +2183,7 @@ yts_client_caps_overlap (GArray *mycaps, char **caps)
 static gboolean
 yts_client_process_one_service (YtsClient         *self,
                                 char const        *jid,
-                                char const        *sid,
+                                char const        *service_id,
                                 const GValueArray *service_info)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
@@ -2200,7 +2200,7 @@ yts_client_process_one_service (YtsClient         *self,
       return FALSE;
     }
 
-  g_message ("Processing service %s:%s", jid, sid);
+  g_message ("Processing service %s:%s", jid, service_id);
 
   type  = g_value_get_string (&service_info->values[0]);
   names = g_value_get_boxed (&service_info->values[1]);
@@ -2232,7 +2232,7 @@ yts_client_process_one_service (YtsClient         *self,
                                                                  caps[i]);
           if (capability_statuses) {
             char const *status_xml = g_hash_table_lookup (capability_statuses,
-                                                          sid);
+                                                          service_id);
             if (status_xml) {
               g_hash_table_insert (service_statuses,
                                    g_strdup (caps[i]),
@@ -2247,7 +2247,7 @@ yts_client_process_one_service (YtsClient         *self,
   yts_roster_add_service (roster,
                           priv->connection,
                           jid,
-                          sid,
+                          service_id,
                           type,
                           (char const **)caps,
                           names,
@@ -2261,11 +2261,11 @@ yts_client_process_one_service (YtsClient         *self,
 static void
 yts_client_service_added_cb (TpYtsStatus        *tp_status,
                              char const         *jid,
-                             char const         *sid,
+                             char const         *service_id,
                              const GValueArray  *service_info,
                              YtsClient          *self)
 {
-  yts_client_process_one_service (self, jid, sid, service_info);
+  yts_client_process_one_service (self, jid, service_id, service_info);
 }
 
 static void
@@ -2344,14 +2344,14 @@ yts_client_process_status (YtsClient *self)
       g_hash_table_iter_init (&iter, services);
       while (g_hash_table_iter_next (&iter, (void**)&jid, (void**)&service))
         {
-          char           *sid;
+          char           *service_id;
           GValueArray    *service_info;
           GHashTableIter  iter2;
 
           g_hash_table_iter_init (&iter2, service);
-          while (g_hash_table_iter_next (&iter2, (void**)&sid, (void**)&service_info))
+          while (g_hash_table_iter_next (&iter2, (void**)&service_id, (void**)&service_info))
             {
-              yts_client_process_one_service (self, jid, sid, service_info);
+              yts_client_process_one_service (self, jid, service_id, service_info);
             }
         }
     }
@@ -3151,7 +3151,7 @@ struct YtsCLChannelData
   YtsContact *contact;
   GHashTable  *attrs;
   char        *xml;
-  char        *uid;
+  char        *service_id;
   YtsError    error;
   gboolean     status_done;
   int          ref_count;
@@ -3166,7 +3166,7 @@ yts_cl_channel_data_unref (struct YtsCLChannelData *d)
     {
       g_hash_table_unref (d->attrs);
       g_free (d->xml);
-      g_free (d->uid);
+      g_free (d->service_id);
       g_free (d);
     }
 }
@@ -3340,14 +3340,14 @@ yts_client_dispatch_message (struct YtsCLChannelData *d)
   TpContact         *tp_contact;
   YtsClientPrivate *priv = GET_PRIVATE (d->client);
 
-  g_message ("Dispatching delayed message to %s", d->uid);
+  g_message ("Dispatching delayed message to %s", d->service_id);
 
   tp_contact = yts_contact_get_tp_contact (d->contact);
   g_assert (tp_contact);
 
   tp_yts_client_request_channel_async (priv->tp_client,
                                        tp_contact,
-                                       d->uid,
+                                       d->service_id,
                                        TP_YTS_REQUEST_TYPE_GET,
                                        d->attrs,
                                        d->xml,
@@ -3373,7 +3373,7 @@ yts_client_notify_tp_contact_cb (YtsContact              *contact,
 YtsError
 yts_client_send_message (YtsClient   *client,
                            YtsContact  *contact,
-                           char const   *uid,
+                           char const   *service_id,
                            YtsMetadata *message)
 {
   GHashTable               *attrs;
@@ -3400,7 +3400,7 @@ yts_client_send_message (YtsClient   *client,
   d->ref_count   = 1;
   d->attrs       = attrs;
   d->xml         = xml;
-  d->uid         = g_strdup (uid);
+  d->service_id  = g_strdup (service_id);
 
   if (yts_contact_get_tp_contact (contact))
     {
