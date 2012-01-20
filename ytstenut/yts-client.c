@@ -87,7 +87,6 @@ typedef struct {
 
   /* connection parameters */
   char         *uid;
-  char         *mgr_name;
   YtsProtocol  protocol;
 
   char         *incoming_dir; /* destination directory for incoming files */
@@ -1093,9 +1092,10 @@ yts_client_setup_debug  (YtsClient *self)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
   TpDBusDaemon      *dbus;
-  GError            *error = NULL;
   TpProxy           *proxy;
   char              *busname;
+  char const        *mgr_name = NULL;
+  GError            *error = NULL;
 
   dbus = tp_dbus_daemon_dup (&error);
 
@@ -1106,8 +1106,17 @@ yts_client_setup_debug  (YtsClient *self)
       return;
     }
 
+  switch (priv->protocol) {
+    case YTS_PROTOCOL_XMPP:
+      mgr_name = "gabble";
+      break;
+    case YTS_PROTOCOL_LOCAL_XMPP:
+      mgr_name = "salut";
+      break;
+  }
+
   busname = g_strdup_printf ("org.freedesktop.Telepathy.ConnectionManager.%s",
-                             priv->mgr_name);
+                             mgr_name);
   proxy =
     g_object_new (TP_TYPE_PROXY,
                   "bus-name", busname,
@@ -1296,11 +1305,6 @@ yts_client_constructed (GObject *object)
   if (!priv->uid || !*priv->uid)
     g_error ("UID must be set at construction time.");
 
-  if (priv->protocol == YTS_PROTOCOL_LOCAL_XMPP)
-    priv->mgr_name = g_strdup ("salut");
-  else
-    g_error ("Unknown protocol requested");
-
   priv->dbus = tp_dbus_daemon_dup (&error);
 
   if (error)
@@ -1457,7 +1461,6 @@ yts_client_finalize (GObject *object)
   g_free (priv->uid);
   g_free (priv->icon_token);
   g_free (priv->icon_mime_type);
-  g_free (priv->mgr_name);
   g_free (priv->incoming_dir);
 
   if (priv->caps)
