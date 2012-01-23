@@ -93,11 +93,6 @@ typedef struct {
 
   char         *incoming_dir; /* destination directory for incoming files */
 
-  /* avatar-related stuff */
-  char         *icon_token;
-  char         *icon_mime_type;
-  GArray       *icon_data;
-
   /* Telepathy bits */
   TpYtsAccountManager  *tp_am;
   TpAccount            *tp_account;
@@ -151,7 +146,8 @@ enum
   PROP_CONTACT_ID,
   PROP_SERVICE_ID,
   PROP_PROTOCOL,
-  PROP_ICON_TOKEN,
+
+  PROP_TP_ACCOUNT
 };
 
 static guint signals[N_SIGNALS] = {0};
@@ -1184,7 +1180,6 @@ yts_client_account_prepared_cb (GObject       *source_object,
                                 GAsyncResult  *res,
                                 gpointer       self)
 {
-  YtsClientPrivate *priv = GET_PRIVATE (self);
   TpAccount *account = TP_ACCOUNT (source_object);
   GError    *error   = NULL;
 
@@ -1417,13 +1412,12 @@ yts_client_get_property (GObject    *object,
     case PROP_SERVICE_ID:
       g_value_set_string (value, priv->service_id);
       break;
-    case PROP_ICON_TOKEN:
-      g_value_set_string (value, priv->icon_token);
-      break;
     case PROP_PROTOCOL:
       g_value_set_enum (value, priv->protocol);
       break;
-
+    case PROP_TP_ACCOUNT:
+      g_value_set_object (value, priv->tp_account);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -1538,15 +1532,10 @@ yts_client_finalize (GObject *object)
 
   g_free (priv->account_id);
   g_free (priv->service_id);
-  g_free (priv->icon_token);
-  g_free (priv->icon_mime_type);
   g_free (priv->incoming_dir);
 
   if (priv->caps)
     g_array_free (priv->caps, TRUE);
-
-  if (priv->icon_data)
-    g_array_free (priv->icon_data, TRUE);
 
   G_OBJECT_CLASS (yts_client_parent_class)->finalize (object);
 }
@@ -1631,6 +1620,20 @@ yts_client_class_init (YtsClientClass *klass)
                              0,
                              G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
   g_object_class_install_property (object_class, PROP_PROTOCOL, pspec);
+
+  /**
+   * YtsClient:tp-account:
+   *
+   * Telepathies #TpAccount object used by this instance.
+   *
+   * Since: 0.4
+   *
+   * <note>There is no API guarantee for this and other fields that expose telepathy.</note>
+   */
+  pspec = g_param_spec_object ("tp-account", "", "",
+                               TP_TYPE_ACCOUNT,
+                               G_PARAM_READABLE);
+  g_object_class_install_property (object_class, PROP_TP_ACCOUNT, pspec);
 
   /**
    * YtsClient::authenticated:
@@ -2606,82 +2609,6 @@ yts_client_connection_ready_cb (TpConnection *conn,
 }
 
 static void
-yts_client_set_avatar_cb (TpConnection *proxy,
-                           char const   *token,
-                           const GError *error,
-                           YtsClient    *self,
-                           GObject      *weak_object)
-{
-  YtsClientPrivate *priv = GET_PRIVATE (self);
-
-  if (error)
-    {
-      g_warning ("Failed to set avatar: %s", error->message);
-      return;
-    }
-
-  g_free (priv->icon_token);
-  priv->icon_token = g_strdup (token);
-}
-
-/*
- * check whether the given avatar mime type is supported.
- */
-static gboolean
-yts_client_is_avatar_type_supported (YtsClient *self,
-                                      char const *mime_type,
-                                      guint       bytes)
-{
-  YtsClientPrivate *priv = GET_PRIVATE (self);
-  char                 **p;
-  char const            *alt_type = NULL;
-  TpAvatarRequirements  *req;
-
-  req = tp_connection_get_avatar_requirements (priv->tp_conn);
-
-  if (!req || !req->supported_mime_types)
-    {
-      g_warning ("Icon functionality is not supported by backend");
-      return FALSE;
-    }
-
-  if (bytes > req->maximum_bytes)
-    {
-      g_warning ("Icon can be at most %d bytes in size (requested %d)",
-                 req->maximum_bytes, bytes);
-      return FALSE;
-    }
-
-  if (!mime_type)
-    {
-      g_warning ("Icon mime type not specified, ignoring icon");
-      return FALSE;
-    }
-
-  /*
-   * This is really annoying, but TP internally uses both image/jpg and
-   * image/jpeg (we get the former when querying existing avatars, and the
-   * latter when quering avatar requirements), so we need to handle both.
-   */
-  if (!g_strcmp0 (mime_type, "image/jpg"))
-    alt_type = "image/jpeg";
-  else if (!g_strcmp0 (mime_type, "image/jpeg"))
-    alt_type = "image/jpg";
-
-  for (p = req->supported_mime_types; *p; ++p)
-    {
-      if (!g_strcmp0 (*p, mime_type) || (alt_type && !g_strcmp0 (*p, alt_type)))
-        {
-          return TRUE;
-        }
-    }
-
-  g_warning ("Icon uses unsupported mime type %s", mime_type);
-
-  return FALSE;
-}
-
-static void
 yts_client_connection_prepare_cb (GObject       *connection,
                                   GAsyncResult  *res,
                                   YtsClient     *self)
@@ -2705,28 +2632,6 @@ yts_client_connection_prepare_cb (GObject       *connection,
       tp_g_signal_connect_object (priv->tp_client, "received-channels",
                               G_CALLBACK (yts_client_yts_channels_received_cb),
                               self, 0);
-
-      if (priv->icon_data &&
-          yts_client_is_avatar_type_supported (self,
-                                              priv->icon_mime_type,
-                                              priv->icon_data->len))
-        {
-          tp_cli_connection_interface_avatars_call_set_avatar (
-                                                          priv->tp_conn,
-                                                          -1,
-                                                          priv->icon_data,
-                                                          priv->icon_mime_type,
-  (tp_cli_connection_interface_avatars_callback_for_set_avatar) yts_client_set_avatar_cb,
-                                                          self,
-                                                          NULL,
-                                                          (GObject*)self);
-
-          g_array_free (priv->icon_data, TRUE);
-          priv->icon_data = NULL;
-          g_free (priv->icon_mime_type);
-          priv->icon_mime_type = NULL;
-        }
-
 #if 0
       /* TODO -- */
       /*
@@ -2749,7 +2654,6 @@ yts_client_setup_account_connection (YtsClient *self)
   YtsClientPrivate *priv = GET_PRIVATE (self);
   GError            *error = NULL;
   GQuark             features[] = { TP_CONNECTION_FEATURE_CONTACT_INFO,
-                                    TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS,
                                     TP_CONNECTION_FEATURE_CAPABILITIES,
                                     TP_CONNECTION_FEATURE_CONNECTED,
                                     0 };

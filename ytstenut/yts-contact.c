@@ -397,6 +397,8 @@ yts_contact_class_init (YtsContactClass *klass)
    * YtsContact:tp-contact:
    *
    * #TpContact of this item.
+   *
+   * <note>There is no API guarantee for this and other fields that expose telepathy.</note>
    */
   pspec = g_param_spec_object ("tp-contact", "", "",
                                TP_TYPE_CONTACT,
