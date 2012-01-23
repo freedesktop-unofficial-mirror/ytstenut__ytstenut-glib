@@ -1,6 +1,10 @@
 ACLOCAL_AMFLAGS = -I build
 
-DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --enable-docs --disable-silent-rules
+DISTCHECK_CONFIGURE_FLAGS = \
+  --disable-silent-rules \
+  --enable-gtk-doc \
+  --enable-integration-tests \
+  $(NULL)
 
 SUBDIRS = ytstenut docs tests examples
 

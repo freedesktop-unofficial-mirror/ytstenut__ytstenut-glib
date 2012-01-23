@@ -2,9 +2,14 @@
 TESTS = \
   message \
   status \
+  $(NULL)
+
+if ENABLE_INTEGRATION_TESTS
+TESTS += \
   message-send \
   status-set \
   $(NULL)
+endif
 
 AM_CPPFLAGS = \
   -I$(top_srcdir) \

@@ -11,7 +11,6 @@ AC_INIT(ytstenut, [yts_version],
 AC_CONFIG_SRCDIR(ytstenut/ytstenut.h)
 AC_CONFIG_AUX_DIR([build])
 AC_CONFIG_MACRO_DIR([build])
-AC_SUBST(ACLOCAL_AMFLAGS, "$ACLOCAL_FLAGS -I build")
 
 AC_SUBST(YTS_MAJOR_VERSION, yts_major_version)
 AC_SUBST(YTS_MINOR_VERSION, yts_minor_version)
@@ -137,6 +136,18 @@ GLIB_GENMARSHAL=`$PKG_CONFIG --variable=glib_genmarshal glib-2.0`
 AC_SUBST(GLIB_GENMARSHAL)
 GLIB_MKENUMS=`$PKG_CONFIG --variable=glib_mkenums glib-2.0`
 AC_SUBST(GLIB_MKENUMS)
+
+AC_ARG_ENABLE([integration-tests],
+              [AC_HELP_STRING([--enable-integration-tests],
+                              [Requires salut and gabble running, and accounts configured])],
+[
+],[
+  enable_integration_tests="no"
+])
+
+AC_MSG_CHECKING(whether to enable integration tests)
+AC_MSG_RESULT($enable_integration_tests)
+AM_CONDITIONAL(ENABLE_INTEGRATION_TESTS, test "$enable_integration_tests" = "yes")
 
 AC_OUTPUT([
   Makefile
