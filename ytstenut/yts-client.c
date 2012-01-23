@@ -83,6 +83,7 @@ G_DEFINE_TYPE (YtsClient, yts_client, G_TYPE_OBJECT)
 typedef struct {
   YtsRoster   *roster;    /* the roster of this client */
   YtsRoster   *unwanted;  /* roster of unwanted items */
+  YtsStatus   *status;
   GArray       *caps;
 
   /* connection parameters */
@@ -98,12 +99,11 @@ typedef struct {
   GArray       *icon_data;
 
   /* Telepathy bits */
-  TpYtsAccountManager  *mgr;
-  TpAccount            *account;
-  TpConnection         *connection;
-  TpProxy              *debug_proxy;
+  TpYtsAccountManager  *tp_am;
+  TpAccount            *tp_account;
+  TpConnection         *tp_conn;
+  TpProxy              *tp_debug_proxy;
   TpYtsStatus          *tp_status;
-  YtsStatus           *status;
   TpYtsClient          *tp_client;
 
   /* Implemented services */
@@ -790,10 +790,10 @@ yts_client_cleanup_connection_resources (YtsClient *self)
   if (priv->roster)
     yts_roster_clear (priv->roster);
 
-  if (priv->connection)
+  if (priv->tp_conn)
     {
-      g_object_unref (priv->connection);
-      priv->connection = NULL;
+      g_object_unref (priv->tp_conn);
+      priv->tp_conn = NULL;
     }
 }
 
@@ -1125,7 +1125,7 @@ yts_client_setup_debug  (YtsClient *self)
                   "object-path", "/org/freedesktop/Telepathy/debug",
                   NULL);
 
-  priv->debug_proxy = proxy;
+  priv->tp_debug_proxy = proxy;
 
   g_signal_connect (proxy, "interface-added",
                     G_CALLBACK (yts_client_debug_iface_added_cb), self);
@@ -1149,7 +1149,7 @@ setup_tp_client (YtsClient  *self,
 
   g_return_if_fail (TP_IS_ACCOUNT (account));
 
-  priv->account = account;
+  priv->tp_account = account;
   priv->tp_client = tp_yts_client_new (priv->service_id, account);
 
   if (YTS_DEBUG_TELEPATHY & ytstenut_get_debug_flags ()) {
@@ -1342,16 +1342,20 @@ yts_client_constructed (GObject *object)
   g_signal_connect (priv->unwanted, "contact-removed",
                     G_CALLBACK (_roster_contact_removed), object);
 
-  if (!priv->service_id || !*priv->service_id)
-    g_error ("Service-ID must be set at construction time.");
+  if (!priv->service_id || !*priv->service_id) {
+    g_critical ("Service-ID must be set at construction time.");
+    return;
+  }
 
-  priv->mgr = tp_yts_account_manager_dup ();
-  if (!TP_IS_YTS_ACCOUNT_MANAGER (priv->mgr))
+  priv->tp_am = tp_yts_account_manager_dup ();
+  if (!TP_IS_YTS_ACCOUNT_MANAGER (priv->tp_am)) {
     g_error ("Missing Account Manager");
-  tp_yts_account_manager_hold (priv->mgr);
+    return;
+  }
+  tp_yts_account_manager_hold (priv->tp_am);
 
   if (priv->protocol == YTS_PROTOCOL_LOCAL_XMPP) {
-    tp_yts_account_manager_get_account_async (priv->mgr, NULL,
+    tp_yts_account_manager_get_account_async (priv->tp_am, NULL,
                                               yts_client_account_cb,
                                               object);
   } else {
@@ -1377,7 +1381,7 @@ yts_client_constructed (GObject *object)
 
     g_message ("account path: %s", path);
 
-    account = tp_yts_account_manager_ensure_account (priv->mgr, path, &error);
+    account = tp_yts_account_manager_ensure_account (priv->tp_am, path, &error);
     if (error) {
       g_critical ("Could not access account %s: %s",
                   priv->account_id,
@@ -1477,27 +1481,27 @@ yts_client_dispose (GObject *object)
       priv->unwanted = NULL;
     }
 
-  if (priv->connection)
+  if (priv->tp_conn)
     {
-      tp_cli_connection_call_disconnect  (priv->connection,
+      tp_cli_connection_call_disconnect  (priv->tp_conn,
                                           -1,
                                           NULL, NULL, NULL, NULL);
-      g_object_unref (priv->connection);
-      priv->connection = NULL;
+      g_object_unref (priv->tp_conn);
+      priv->tp_conn = NULL;
     }
 
-  if (priv->mgr)
+  if (priv->tp_am)
     {
-      tp_yts_account_manager_release (priv->mgr);
+      tp_yts_account_manager_release (priv->tp_am);
 
-      g_object_unref (priv->mgr);
-      priv->mgr = NULL;
+      g_object_unref (priv->tp_am);
+      priv->tp_am = NULL;
     }
 
-  if (priv->debug_proxy)
+  if (priv->tp_debug_proxy)
     {
-      g_object_unref (priv->debug_proxy);
-      priv->debug_proxy = NULL;
+      g_object_unref (priv->tp_debug_proxy);
+      priv->tp_debug_proxy = NULL;
     }
 
   if (priv->status)
@@ -2185,8 +2189,8 @@ yts_client_disconnect (YtsClient *self)
    */
   priv->reconnect = FALSE;
 
-  if (priv->connection)
-    tp_cli_connection_call_disconnect  (priv->connection,
+  if (priv->tp_conn)
+    tp_cli_connection_call_disconnect  (priv->tp_conn,
                                         -1, NULL, NULL, NULL, NULL);
 }
 
@@ -2347,7 +2351,7 @@ yts_client_process_one_service (YtsClient         *self,
   }
 
   yts_roster_add_service (roster,
-                          priv->connection,
+                          priv->tp_conn,
                           jid,
                           service_id,
                           type,
@@ -2586,7 +2590,7 @@ yts_client_connection_ready_cb (TpConnection *conn,
 
       cancellable = g_cancellable_new ();
 
-      tp_yts_status_ensure_async (priv->account,
+      tp_yts_status_ensure_async (priv->tp_account,
                                   cancellable,
                                   (GAsyncReadyCallback) yts_client_yts_status_cb,
                                   self);
@@ -2633,7 +2637,7 @@ yts_client_is_avatar_type_supported (YtsClient *self,
   char const            *alt_type = NULL;
   TpAvatarRequirements  *req;
 
-  req = tp_connection_get_avatar_requirements (priv->connection);
+  req = tp_connection_get_avatar_requirements (priv->tp_conn);
 
   if (!req || !req->supported_mime_types)
     {
@@ -2708,7 +2712,7 @@ yts_client_connection_prepare_cb (GObject       *connection,
                                               priv->icon_data->len))
         {
           tp_cli_connection_interface_avatars_call_set_avatar (
-                                                          priv->connection,
+                                                          priv->tp_conn,
                                                           -1,
                                                           priv->icon_data,
                                                           priv->icon_mime_type,
@@ -2750,20 +2754,20 @@ yts_client_setup_account_connection (YtsClient *self)
                                     TP_CONNECTION_FEATURE_CONNECTED,
                                     0 };
 
-  priv->connection = tp_account_get_connection (priv->account);
+  priv->tp_conn = tp_account_get_connection (priv->tp_account);
 
-  g_assert (priv->connection);
+  g_assert (priv->tp_conn);
 
   priv->dialing = FALSE;
 
   g_message ("Connection ready ?: %d",
-             tp_connection_is_ready (priv->connection));
+             tp_connection_is_ready (priv->tp_conn));
 
-  tp_g_signal_connect_object (priv->connection, "notify::connection-ready",
+  tp_g_signal_connect_object (priv->tp_conn, "notify::connection-ready",
                               G_CALLBACK (yts_client_connection_ready_cb),
                               self, 0);
 
-  tp_cli_connection_connect_to_connection_error (priv->connection,
+  tp_cli_connection_connect_to_connection_error (priv->tp_conn,
                                                  yts_client_error_cb,
                                                  self,
                                                  NULL,
@@ -2778,7 +2782,7 @@ yts_client_setup_account_connection (YtsClient *self)
       return;
     }
 
-  tp_cli_connection_connect_to_status_changed (priv->connection,
+  tp_cli_connection_connect_to_status_changed (priv->tp_conn,
       (tp_cli_connection_signal_callback_status_changed) yts_client_status_cb,
                                                self,
                                                NULL,
@@ -2793,7 +2797,7 @@ yts_client_setup_account_connection (YtsClient *self)
       return;
     }
 
-  tp_cli_connection_connect_to_new_channel (priv->connection,
+  tp_cli_connection_connect_to_new_channel (priv->tp_conn,
                                             yts_client_channel_cb,
                                             self,
                                             NULL,
@@ -2808,7 +2812,7 @@ yts_client_setup_account_connection (YtsClient *self)
       return;
     }
 
-  tp_proxy_prepare_async (priv->connection,
+  tp_proxy_prepare_async (priv->tp_conn,
                           features,
                           (GAsyncReadyCallback) yts_client_connection_prepare_cb,
                           self);
@@ -2869,7 +2873,7 @@ yts_client_make_connection (YtsClient *self)
    * If we don't have an account yet, we do nothing and will make call to this
    * function when the account is ready.
    */
-  if (!priv->account)
+  if (!priv->tp_account)
     {
       g_message ("Account not yet available");
       return;
@@ -2881,15 +2885,15 @@ yts_client_make_connection (YtsClient *self)
    * have a connection, we request that the presence changes to 'on line' and
    * listen for when the :connection property changes.
    */
-  if (!tp_account_get_connection (priv->account))
+  if (!tp_account_get_connection (priv->tp_account))
     {
       g_message ("Currently off line, changing ...");
 
-      g_signal_connect (priv->account, "notify::connection",
+      g_signal_connect (priv->tp_account, "notify::connection",
                         G_CALLBACK (yts_client_account_connection_notify_cb),
                         self);
 
-      tp_account_request_presence_async (priv->account,
+      tp_account_request_presence_async (priv->tp_account,
                                          TP_CONNECTION_PRESENCE_TYPE_AVAILABLE,
                                          "online",
                                          "online",
@@ -2927,12 +2931,12 @@ yts_client_connect (YtsClient *self)
 
   priv->connect = TRUE;
 
-  if (priv->connection)
+  if (priv->tp_conn)
     {
       /*
        * We already have the connection, so just connect.
        */
-      tp_cli_connection_call_connect (priv->connection,
+      tp_cli_connection_call_connect (priv->tp_conn,
                                       -1,
 (tp_cli_connection_callback_for_connect) yts_client_connected_cb,
                                       self,
@@ -3130,9 +3134,9 @@ yts_client_get_contact_id (const YtsClient *self)
   YtsClientPrivate *priv = GET_PRIVATE (self);
 
   g_return_val_if_fail (YTS_IS_CLIENT (self), NULL);
-  g_return_val_if_fail (priv->account, NULL);
+  g_return_val_if_fail (priv->tp_account, NULL);
 
-  return tp_account_get_normalized_name (priv->account);
+  return tp_account_get_normalized_name (priv->tp_account);
 }
 
 /**
@@ -3160,7 +3164,7 @@ yts_client_get_connection (YtsClient *self)
 
   g_return_val_if_fail (YTS_IS_CLIENT (self), NULL);
 
-  return priv->connection;
+  return priv->tp_conn;
 }
 
 TpYtsStatus *
