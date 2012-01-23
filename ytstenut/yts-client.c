@@ -2495,18 +2495,23 @@ yts_client_dispatch_status (YtsClient *self)
   char *xml = NULL;
   unsigned i;
 
+  // TODO something is fishy here, why are we setting the same status to all the caps?
+
   g_return_if_fail (priv->caps && priv->caps->len);
 
-  if (priv->status)
+  if (priv->status) {
     xml = yts_metadata_to_string ((YtsMetadata*)priv->status);
-
-  g_message ("Setting status to\n%s", xml);
+  }
 
   for (i = 0; i < priv->caps->len; ++i)
     {
       char const *c;
 
       c = g_quark_to_string (g_array_index (priv->caps, YtsCaps, i));
+
+      g_message ("Setting status of capability '%s' to\n  %s",
+                 c,
+                 xml);
 
       tp_yts_status_advertise_status_async (priv->tp_status,
                                             c,
@@ -2900,15 +2905,21 @@ yts_client_refresh_roster (YtsClient *self)
  */
 void
 yts_client_add_capability (YtsClient  *self,
-                           char const *capability)
+                           char const *c)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
   GQuark cap_quark;
+  char *capability;
 
   /* FIXME check that there's no collision with service owned capabilities. */
 
   g_return_if_fail (YTS_IS_CLIENT (self));
+  g_return_if_fail (c);
 
+  // TODO error reporting
+  // TODO make sure c doesn't have prefix already
+
+  capability = g_strdup_printf ("urn:ytstenut:capabilities:%s", c);
   cap_quark = g_quark_from_string (capability);
 
   if (yts_client_has_capability (self, cap_quark))
@@ -2926,6 +2937,8 @@ yts_client_add_capability (YtsClient  *self,
   g_array_append_val (priv->caps, cap_quark);
 
   yts_client_refresh_roster (self);
+
+  g_free (capability);
 }
 
 /**
@@ -3126,18 +3139,20 @@ yts_client_set_status (YtsClient *self, YtsStatus *status)
  */
 void
 yts_client_set_status_by_capability (YtsClient *self,
-                                      char const *capability,
+                                      char const *c,
                                       char const *activity)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
   YtsStatus        *status = NULL;
 
-  g_return_if_fail (YTS_IS_CLIENT (self) && capability);
+  g_return_if_fail (YTS_IS_CLIENT (self) && c);
+  g_return_if_fail (c);
 
   g_return_if_fail (priv->caps && priv->caps->len);
 
   if (activity)
     {
+      char *capability = g_strdup_printf ("urn:ytstenut:capabilities:%s", c);
       char const   *attributes[] =
         {
           "capability",   capability,
@@ -3150,6 +3165,7 @@ yts_client_set_status_by_capability (YtsClient *self,
                  capability, activity, priv->service_id);
 
       status = yts_status_new ((char const**)&attributes);
+      g_free (capability);
     }
 
   yts_client_set_status (self, status);
