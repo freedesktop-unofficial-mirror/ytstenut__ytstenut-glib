@@ -1171,7 +1171,7 @@ setup_tp_client (YtsClient  *self,
 }
 
 /*
- * Callback from the async tp_account_prepare_async() call
+ * Callback from the async tp_proxy_prepare_async() call
  *
  * This function is ready for the New World Order according to Ytstenut ...
  */
@@ -1183,7 +1183,7 @@ yts_client_account_prepared_cb (GObject       *source_object,
   TpAccount *account = TP_ACCOUNT (source_object);
   GError    *error   = NULL;
 
-  if (!tp_account_prepare_finish (account, res, &error)) {
+  if (!tp_proxy_prepare_finish (account, res, &error)) {
     g_critical ("Account unprepared: %s", error->message);
     g_clear_error (&error);
     return;
@@ -1217,10 +1217,10 @@ yts_client_account_cb (GObject      *source_object,
 
   g_message ("Got account");
 
-  tp_account_prepare_async (account,
-                            &features[0],
-                            yts_client_account_prepared_cb,
-                            self);
+  tp_proxy_prepare_async (account,
+                          features,
+                          yts_client_account_prepared_cb,
+                          self);
 }
 
 static void
