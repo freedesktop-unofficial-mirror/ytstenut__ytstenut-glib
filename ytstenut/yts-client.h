@@ -151,9 +151,10 @@ char const *
 yts_client_get_service_id (YtsClient const *self);
 
 void
-yts_client_set_status_by_capability (YtsClient *self,
-                                     char const *capability,
-                                     char const *activity);
+yts_client_set_status_by_capability (YtsClient    *self,
+                                      char const  *capability,
+                                      char const  *activity,
+                                      char const  *status_xml);
 
 bool
 yts_client_publish_service (YtsClient     *self,

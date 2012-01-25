@@ -39,6 +39,7 @@ enum {
 typedef struct {
   char        *service_id;
   GHashTable  *status;
+  GList       *interests;
 } YtsClientStatusPrivate;
 
 static void
@@ -128,25 +129,117 @@ yts_client_status_new (char const *service_id)
                        NULL);
 }
 
-void
+bool
 yts_client_status_add_capability (YtsClientStatus *self,
                                   char const      *capability)
 {
   YtsClientStatusPrivate *priv = GET_PRIVATE (self);
+  bool have_capability;
 
-  g_return_if_fail (YTS_IS_CLIENT_STATUS (self));
-  g_return_if_fail (capability);
-  g_return_if_fail (g_str_has_prefix (capability,
-                    YTS_XML_CAPABILITY_NAMESPACE));
+  g_return_val_if_fail (YTS_IS_CLIENT_STATUS (self), false);
+  g_return_val_if_fail (capability, false);
+  g_return_val_if_fail (g_str_has_prefix (capability,
+                                          YTS_XML_CAPABILITY_NAMESPACE),
+                        false);
 
-  g_hash_table_insert (priv->status, g_strdup (capability), NULL);
+  have_capability = g_hash_table_lookup_extended (priv->status,
+                                                  capability,
+                                                  NULL, NULL);
+  if (!have_capability) {
+    g_hash_table_insert (priv->status, g_strdup (capability), NULL);
+    return true;
+  }
+
+  return false;
 }
 
-void
+bool
 yts_client_status_revoke_capability (YtsClientStatus  *self,
                                      char const       *capability)
 {
-  g_warning ("It is not yet possible to revoke capabilities");
+  YtsClientStatusPrivate *priv = GET_PRIVATE (self);
+
+  g_return_val_if_fail (YTS_IS_CLIENT_STATUS (self), false);
+  g_return_val_if_fail (capability, false);
+  g_return_val_if_fail (g_str_has_prefix (capability,
+                                          YTS_XML_CAPABILITY_NAMESPACE),
+                        false);
+
+  return g_hash_table_remove (priv->status, capability);
+}
+
+bool
+yts_client_status_add_interest (YtsClientStatus *self,
+                                char const      *interest)
+{
+  YtsClientStatusPrivate *priv = GET_PRIVATE (self);
+  GList *element;
+
+  g_return_val_if_fail (YTS_IS_CLIENT_STATUS (self), false);
+  g_return_val_if_fail (interest, false);
+  g_return_val_if_fail (g_str_has_prefix (interest,
+                                          YTS_XML_CAPABILITY_NAMESPACE),
+                        false);
+
+  /* We could do better with something else but a list, but list is small. */
+  element = g_list_find_custom (priv->interests,
+                                interest,
+                                (GCompareFunc) g_strcmp0);
+  if (!element) {
+    priv->interests = g_list_prepend (priv->interests, g_strdup (interest));
+    return true;
+  }
+
+  return false;
+}
+
+bool
+yts_client_status_revoke_interest (YtsClientStatus  *self,
+                                   char const       *interest)
+{
+  YtsClientStatusPrivate *priv = GET_PRIVATE (self);
+  GList *element;
+
+  g_return_val_if_fail (YTS_IS_CLIENT_STATUS (self), false);
+  g_return_val_if_fail (interest, false);
+  g_return_val_if_fail (g_str_has_prefix (interest,
+                                          YTS_XML_CAPABILITY_NAMESPACE),
+                        false);
+
+  /* We could do better with something else but a list, but list is small. */
+  element = g_list_find_custom (priv->interests,
+                                interest,
+                                (GCompareFunc) g_strcmp0);
+  if (element) {
+    g_free (element->data);
+    priv->interests = g_list_delete_link (priv->interests, element);
+    return true;
+  } else {
+    g_warning ("Interest '%s' not set in the first place, can not be revoked.",
+               interest);
+  }
+
+  return false;
+}
+
+bool
+yts_client_status_foreach_interest (YtsClientStatus                 *self,
+                                    YtsClientStatusInterestIterator  iterator,
+                                    void                            *user_data)
+{
+  YtsClientStatusPrivate *priv = GET_PRIVATE (self);
+  GList *iter;
+  bool   ret = true;
+
+  g_return_val_if_fail (YTS_IS_CLIENT_STATUS (self), false);
+
+  for (iter = priv->interests;
+       iter && ret;
+       iter = iter->next) {
+    ret = iterator (self, (char const *) iter->data, user_data);
+  }
+
+  return ret;
 }
 
 char const *
@@ -205,9 +298,9 @@ yts_client_status_clear (YtsClientStatus  *self,
 }
 
 bool
-yts_client_status_foreach (YtsClientStatus          *self,
-                           YtsClientStatusIterator   iterator,
-                           void                     *user_data)
+yts_client_status_foreach_capability (YtsClientStatus                   *self,
+                                      YtsClientStatusCapabilityIterator  iterator,
+                                      void                              *user_data)
 {
   YtsClientStatusPrivate *priv = GET_PRIVATE (self);
   GHashTableIter iter;

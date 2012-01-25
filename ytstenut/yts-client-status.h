@@ -57,13 +57,31 @@ yts_client_status_get_type (void);
 YtsClientStatus *
 yts_client_status_new (char const *service_id);
 
-void
+bool
 yts_client_status_add_capability (YtsClientStatus *self,
                                   char const      *capability);
 
-void
+bool
 yts_client_status_revoke_capability (YtsClientStatus  *self,
                                      char const       *capability);
+
+bool
+yts_client_status_add_interest (YtsClientStatus *self,
+                                char const      *interest);
+
+bool
+yts_client_status_revoke_interest (YtsClientStatus  *self,
+                                   char const       *interest);
+
+typedef bool
+(*YtsClientStatusInterestIterator) (YtsClientStatus const *self,
+                                    char const            *interest,
+                                    void                  *user_data);
+
+bool
+yts_client_status_foreach_interest (YtsClientStatus                 *self,
+                                    YtsClientStatusInterestIterator  iterator,
+                                    void                            *user_data);
 
 char const *
 yts_client_status_set (YtsClientStatus    *self,
@@ -75,16 +93,16 @@ bool
 yts_client_status_clear (YtsClientStatus  *self,
                          char const       *capability);
 
-typedef bool 
-(*YtsClientStatusIterator) (YtsClientStatus const *self,
-                            char const            *capability,
-                            char const            *status_xml,
-                            void                  *data);
+typedef bool
+(*YtsClientStatusCapabilityIterator) (YtsClientStatus const *self,
+                                      char const            *capability,
+                                      char const            *status_xml,
+                                      void                  *data);
 
 bool
-yts_client_status_foreach (YtsClientStatus          *self,
-                           YtsClientStatusIterator   iterator,
-                           void                     *user_data);
+yts_client_status_foreach_capability (YtsClientStatus                   *self,
+                                      YtsClientStatusCapabilityIterator  iterator,
+                                      void                              *user_data);
 
 G_END_DECLS
 
