@@ -21,6 +21,7 @@
 #ifndef YTS_CLIENT_STATUS_H
 #define YTS_CLIENT_STATUS_H
 
+#include <stdbool.h>
 #include <glib-object.h>
 
 G_BEGIN_DECLS
@@ -64,19 +65,26 @@ void
 yts_client_status_revoke_capability (YtsClientStatus  *self,
                                      char const       *capability);
 
-void
+char const *
 yts_client_status_set (YtsClientStatus    *self,
                        char const         *capability,
                        char const *const  *attribs,
                        char const         *xml_payload);
 
-void
-yts_client_status_clear (YtsClientStatus    *self,
-                         char const         *capability);
+bool
+yts_client_status_clear (YtsClientStatus  *self,
+                         char const       *capability);
 
-char *
-yts_client_status_print (YtsClientStatus    *self,
-                         char const         *capability);
+typedef bool 
+(*YtsClientStatusIterator) (YtsClientStatus const *self,
+                            char const            *capability,
+                            char const            *status_xml,
+                            void                  *data);
+
+bool
+yts_client_status_foreach (YtsClientStatus          *self,
+                           YtsClientStatusIterator   iterator,
+                           void                     *user_data);
 
 G_END_DECLS
 

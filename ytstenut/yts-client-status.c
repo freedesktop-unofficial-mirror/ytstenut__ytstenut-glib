@@ -19,6 +19,7 @@
  */
 
 #include "yts-client-status.h"
+#include "yts-xml.h"
 
 #include "config.h"
 
@@ -36,7 +37,8 @@ enum {
 };
 
 typedef struct {
-  char *service_id;
+  char        *service_id;
+  GHashTable  *status;
 } YtsClientStatusPrivate;
 
 static void
@@ -82,6 +84,9 @@ _finalize (GObject *object)
   g_free (priv->service_id);
   priv->service_id = NULL;
 
+  g_hash_table_destroy (priv->status);
+  priv->status = NULL;
+
   G_OBJECT_CLASS (yts_client_status_parent_class)->finalize (object);
 }
 
@@ -89,6 +94,7 @@ static void
 yts_client_status_class_init (YtsClientStatusClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  GParamSpec *pspec;
 
   g_type_class_add_private (klass, sizeof (YtsClientStatusPrivate));
 
@@ -106,6 +112,12 @@ yts_client_status_class_init (YtsClientStatusClass *klass)
 static void
 yts_client_status_init (YtsClientStatus *self)
 {
+  YtsClientStatusPrivate *priv = GET_PRIVATE (self);
+
+  priv->status = g_hash_table_new_full (g_str_hash,
+                                        g_str_equal,
+                                        g_free,
+                                        g_free);
 }
 
 YtsClientStatus *
@@ -120,33 +132,101 @@ void
 yts_client_status_add_capability (YtsClientStatus *self,
                                   char const      *capability)
 {
+  YtsClientStatusPrivate *priv = GET_PRIVATE (self);
+
   g_return_if_fail (YTS_IS_CLIENT_STATUS (self));
-  g_return
+  g_return_if_fail (capability);
+  g_return_if_fail (g_str_has_prefix (capability,
+                    YTS_XML_CAPABILITY_NAMESPACE));
+
+  g_hash_table_insert (priv->status, g_strdup (capability), NULL);
 }
-void
-yts_client_status_revoke_capability (YtsClientStatus  *self,
-                                     char const       *capability);
 
 void
+yts_client_status_revoke_capability (YtsClientStatus  *self,
+                                     char const       *capability)
+{
+  g_warning ("It is not yet possible to revoke capabilities");
+}
+
+char const *
 yts_client_status_set (YtsClientStatus    *self,
                        char const         *capability,
                        char const *const  *attribs,
-                       char const         *xml_payload);
+                       char const         *xml_payload)
+{
+  YtsClientStatusPrivate *priv = GET_PRIVATE (self);
+  GString *attribs_str;
+  char *status_xml;
 
-void
-yts_client_status_clear (YtsClientStatus    *self,
-                         char const         *capability);
+  g_return_val_if_fail (YTS_IS_CLIENT_STATUS (self), NULL);
+  g_return_val_if_fail (capability, NULL);
+  g_return_val_if_fail (g_str_has_prefix (capability,
+                                          YTS_XML_CAPABILITY_NAMESPACE),
+                        NULL);
 
-char *
-yts_client_status_print (YtsClientStatus    *self,
-                         char const         *capability);
+  attribs_str = g_string_new ("");
+  for (unsigned i = 0; attribs && attribs[i] && attribs[i+1]; i += 2) {
+    g_string_append_printf (attribs_str, "%s='%s' ", attribs[i], attribs[i+1]);
+  }
 
+  status_xml = g_strdup_printf ("<status xmlns='%s' "
+                                "from-service='%s' "
+                                "capability='%s' "
+                                "%s>"
+                                "%s"
+                                "</status>",
+                                YTS_XML_STATUS_NAMESPACE,
+                                priv->service_id,
+                                capability,
+                                attribs_str->str,
+                                xml_payload ? xml_payload : "");
 
+  g_string_free (attribs_str, true);
 
+  g_hash_table_replace (priv->status, g_strdup (capability), status_xml);
 
+  return status_xml;
+}
 
-          "<status xmlns='urn:ytstenut:status' from-service='service.name' "
-          "capability='urn:ytstenut:capabilities:yts-caps-cats' "
-          "activity='looking-at-cats-ooooooh'><look>at how cute they "
-          "are!</look></status>",
+bool
+yts_client_status_clear (YtsClientStatus  *self,
+                         char const       *capability)
+{
+  YtsClientStatusPrivate *priv = GET_PRIVATE (self);
+
+  g_return_val_if_fail (YTS_IS_CLIENT_STATUS (self), false);
+  g_return_val_if_fail (capability, false);
+  g_return_val_if_fail (g_str_has_prefix (capability,
+                                          YTS_XML_CAPABILITY_NAMESPACE),
+                        false);
+
+  return g_hash_table_remove (priv->status, capability);
+}
+
+bool
+yts_client_status_foreach (YtsClientStatus          *self,
+                           YtsClientStatusIterator   iterator,
+                           void                     *user_data)
+{
+  YtsClientStatusPrivate *priv = GET_PRIVATE (self);
+  GHashTableIter iter;
+  char const      *capability;
+  char const      *status_xml;
+  bool             ret = true;
+
+  g_return_val_if_fail (YTS_IS_CLIENT_STATUS (self), false);
+  g_return_val_if_fail (iterator, false);
+
+  g_hash_table_iter_init (&iter, priv->status);
+  while (ret &&
+         g_hash_table_iter_next (&iter,
+                                 (gpointer *) &capability,
+                                 (gpointer *) &status_xml)) {
+
+    ret = iterator (self, capability, status_xml, user_data);
+  }
+
+  return ret;
+}
 
