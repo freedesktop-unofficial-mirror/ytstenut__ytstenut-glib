@@ -162,7 +162,7 @@ run_server (void)
   GMainLoop     *mainloop;
 
   client = yts_client_new_p2p (SERVER_UID);
-  yts_client_add_capability (client, CAPABILITY);
+  yts_client_add_capability (client, CAPABILITY, YTS_CAPABILITY_MODE_PROVIDED);
   g_signal_connect (client, "authenticated",
                     G_CALLBACK (_server_authenticated), NULL);
   g_signal_connect (client, "ready",

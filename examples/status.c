@@ -111,6 +111,7 @@ run_client (bool p2p)
   else
     client = yts_client_new_c2s (CLIENT_JID, CLIENT_UID);
 
+  yts_client_add_capability (client, CAPABILITY, YTS_CAPABILITY_MODE_CONSUMED);
   g_signal_connect (client, "authenticated",
                     G_CALLBACK (_client_authenticated), NULL);
   g_signal_connect (client, "ready",
@@ -163,11 +164,18 @@ _server_text_message (YtsClient   *client,
                       char const  *text,
                       void        *data)
 {
-  g_debug ("%s()", __FUNCTION__);
+  GTimeVal  time;
+  char       *date;
 
-  /* Got pinged, set some status */
+  /* Got pinged, set current date as status, that should be random enough. */
 
-  yts_client_set_status_by_capability (client, CAPABILITY, "Foo");
+  g_get_current_time (&time);
+  date = g_time_val_to_iso8601 (&time);
+
+  g_debug ("%s() setting %s", __FUNCTION__, date);
+  
+  yts_client_set_status_by_capability (client, CAPABILITY, date);
+  g_free (date);
 }
 
 static int
@@ -181,7 +189,7 @@ run_server (bool p2p)
   else
     client = yts_client_new_c2s (SERVER_JID, SERVER_UID);
 
-  yts_client_add_capability (client, CAPABILITY);
+  yts_client_add_capability (client, CAPABILITY, YTS_CAPABILITY_MODE_PROVIDED);
   g_signal_connect (client, "authenticated",
                     G_CALLBACK (_server_authenticated), NULL);
   g_signal_connect (client, "ready",

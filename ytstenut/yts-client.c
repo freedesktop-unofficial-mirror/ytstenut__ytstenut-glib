@@ -2904,8 +2904,9 @@ yts_client_refresh_roster (YtsClient *self)
  * Since: 0.3
  */
 void
-yts_client_add_capability (YtsClient  *self,
-                           char const *c)
+yts_client_add_capability (YtsClient          *self,
+                           char const         *c,
+                           YtsCapabilityMode   mode)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
   GQuark cap_quark;
@@ -2917,26 +2918,40 @@ yts_client_add_capability (YtsClient  *self,
   g_return_if_fail (c);
 
   // TODO error reporting
+  if (NULL == priv->tp_client) {
+    g_warning ("tp_client == NULL, could not add capability, ytstenut not ready yet.");
+    return;
+  }
+
   // TODO make sure c doesn't have prefix already
-
   capability = g_strdup_printf ("urn:ytstenut:capabilities:%s", c);
-  cap_quark = g_quark_from_string (capability);
 
-  if (yts_client_has_capability (self, cap_quark))
-    {
+  if (YTS_CAPABILITY_MODE_PROVIDED == mode) {
+  
+    cap_quark = g_quark_from_string (capability);
+
+    if (yts_client_has_capability (self, cap_quark)) {
       g_message ("Capablity '%s' already set", capability);
       return;
     }
 
-  if (priv->tp_client)
+    // FIXME maybe queue up?
     tp_yts_client_add_capability (priv->tp_client, capability);
 
-  if (!priv->caps)
-    priv->caps = g_array_sized_new (FALSE, FALSE, sizeof (YtsCaps), 1);
+    if (!priv->caps)
+      priv->caps = g_array_sized_new (FALSE, FALSE, sizeof (YtsCaps), 1);
 
-  g_array_append_val (priv->caps, cap_quark);
+    g_array_append_val (priv->caps, cap_quark);
 
-  yts_client_refresh_roster (self);
+    yts_client_refresh_roster (self);
+
+  } else if (YTS_CAPABILITY_MODE_CONSUMED == mode) {
+
+    tp_yts_client_add_interest (priv->tp_client, capability);
+
+  } else {
+    g_critical ("Invalid capability mode %d", mode);
+  }
 
   g_free (capability);
 }
@@ -3145,7 +3160,7 @@ yts_client_set_status_by_capability (YtsClient *self,
   YtsClientPrivate *priv = GET_PRIVATE (self);
   YtsStatus        *status = NULL;
 
-  g_return_if_fail (YTS_IS_CLIENT (self) && c);
+  g_return_if_fail (YTS_IS_CLIENT (self));
   g_return_if_fail (c);
 
   g_return_if_fail (priv->caps && priv->caps->len);
@@ -3605,7 +3620,7 @@ yts_client_publish_service (YtsClient     *self,
     g_hash_table_insert (priv->services,
                          g_strdup (fqc_ids[i]),
                          adapter);
-    yts_client_add_capability (self, fqc_ids[i]);
+    yts_client_add_capability (self, fqc_ids[i], YTS_CAPABILITY_MODE_PROVIDED);
 
     /* Keep the proxy management service up to date. */
     adapter = g_hash_table_lookup (priv->services, YTS_PROFILE_FQC_ID);

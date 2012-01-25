@@ -3,6 +3,7 @@ yts_capability_get_fqc_ids
 yts_capability_has_fqc_id
 yts_capability_status_get_type
 yts_capability_status_new
+yts_capability_mode_get_type
 yts_client_connect
 yts_client_disconnect
 yts_client_foreach_service
