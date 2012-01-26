@@ -55,8 +55,8 @@ IGNORE_HFILES = \
   empathy-tp-file.h \
   yts-adapter-factory.h \
   yts-capability-status.h \
-  yts-caps.h \
   yts-client-internal.h \
+  yts-client-status.h \
   yts-contact-impl.h \
   yts-contact-internal.h \
   yts-error-message.h \
