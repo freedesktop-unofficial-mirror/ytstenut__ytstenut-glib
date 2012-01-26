@@ -95,7 +95,7 @@ yts_client_get_type (void) G_GNUC_CONST;
  * @YTS_PROTOCOL_XMPP: Jabber
  * @YTS_PROTOCOL_LOCAL_XMPP: XEP-0174 serverless messaging.
  *
- * YtsProtocol represents the xmpp protocol to use
+ * YtsProtocol represents the XMPP variant to use.
  */
 typedef enum { /*< prefix=YTS_PROTOCOL >*/
   YTS_PROTOCOL_XMPP = 0,
@@ -115,9 +115,24 @@ yts_client_disconnect (YtsClient *self);
 void
 yts_client_connect (YtsClient *self);
 
+/**
+ * YtsCapabilityMode:
+ * @YTS_CAPABILITY_MODE_PROVIDED: @capability is provided by this client.
+ * @YTS_CAPABILITY_MODE_CONSUMED: @capability is going to be consumed by this
+ *                                client so track other services providing it.
+ *
+ * YtsCapabilityMode is used to determine whether a capability is provided or
+ * sought after.
+ */
+typedef enum { /*< prefix=YTS_CAPABILITY_MODE >*/
+  YTS_CAPABILITY_MODE_PROVIDED = 0,
+  YTS_CAPABILITY_MODE_CONSUMED
+} YtsCapabilityMode;  /* FIXME better naming? */
+
 void
-yts_client_add_capability (YtsClient  *self,
-                           char const *capability);
+yts_client_add_capability (YtsClient          *self,
+                           char const         *capability,
+                           YtsCapabilityMode   mode);
 
 YtsRoster *const
 yts_client_get_roster (YtsClient const *self);
@@ -136,9 +151,10 @@ char const *
 yts_client_get_service_id (YtsClient const *self);
 
 void
-yts_client_set_status_by_capability (YtsClient *self,
-                                     char const *capability,
-                                     char const *activity);
+yts_client_set_status_by_capability (YtsClient    *self,
+                                      char const  *capability,
+                                      char const  *activity,
+                                      char const  *status_xml);
 
 bool
 yts_client_publish_service (YtsClient     *self,

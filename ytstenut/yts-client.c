@@ -36,8 +36,8 @@
 #include "empathy-tp-file.h"
 #include "ytstenut-internal.h"
 #include "yts-adapter-factory.h"
-#include "yts-caps.h"
 #include "yts-client-internal.h"
+#include "yts-client-status.h"
 #include "yts-contact-internal.h"
 #include "yts-enum-types.h"
 #include "yts-error-message.h"
@@ -49,7 +49,7 @@
 #include "yts-roster-impl.h"
 #include "yts-service.h"
 #include "yts-service-adapter.h"
-#include "yts-status.h"
+#include "yts-xml.h"
 
 #include "profile/yts-profile.h"
 #include "profile/yts-profile-adapter.h"
@@ -81,10 +81,9 @@ G_DEFINE_TYPE (YtsClient, yts_client, G_TYPE_OBJECT)
  */
 
 typedef struct {
-  YtsRoster   *roster;    /* the roster of this client */
-  YtsRoster   *unwanted;  /* roster of unwanted items */
-  YtsStatus   *status;
-  GArray       *caps;
+  YtsRoster       *roster;    /* the roster of this client */
+  YtsRoster       *unwanted;  /* roster of unwanted items */
+  YtsClientStatus *client_status;
 
   /* connection parameters */
   char        *account_id;
@@ -736,36 +735,56 @@ yts_client_authenticated (YtsClient *self)
 }
 
 static void
+_tp_yts_status_advertise_status_cb (GObject       *source_object,
+                                    GAsyncResult  *result,
+                                    gpointer       user_data)
+{
+  TpYtsStatus *status = TP_YTS_STATUS (source_object);
+  GError      *error = NULL;
+
+  if (!tp_yts_status_advertise_status_finish (status, result, &error)) {
+      g_critical ("Failed to advertise status: %s", error->message);
+  } else {
+    g_message ("Advertising of status succeeded");
+  }
+
+  g_clear_error (&error);
+}
+
+static bool
+_client_status_foreach_capability_advertise_status (YtsClientStatus const *client_status,
+                                                    char const            *capability,
+                                                    char const            *status_xml,
+                                                    YtsClient             *self)
+{
+  YtsClientPrivate *priv = GET_PRIVATE (self);
+
+  tp_yts_status_advertise_status_async (priv->tp_status,
+                                        capability,
+                                        priv->service_id,
+                                        status_xml,
+                                        NULL,
+                                        _tp_yts_status_advertise_status_cb,
+                                        self);
+
+  return true;
+}
+
+static void
 yts_client_ready (YtsClient *self)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
+
+  g_return_if_fail (priv->tp_status);
 
   priv->ready = TRUE;
 
   g_message ("YtsClient is ready");
 
-  if (priv->tp_status && priv->status)
-    {
-      char *xml = yts_metadata_to_string ((YtsMetadata*)priv->status);
-      unsigned   i;
-
-      for (i = 0; i < priv->caps->len; ++i)
-        {
-          char const *c;
-
-          c = g_quark_to_string (g_array_index (priv->caps, YtsCaps, i));
-
-          tp_yts_status_advertise_status_async (priv->tp_status,
-                                                c,
-                                                priv->service_id,
-                                                xml,
-                                                NULL,
-                                                NULL,
-                                                NULL);
-        }
-
-      g_free (xml);
-    }
+  yts_client_status_foreach_capability (
+    priv->client_status,
+    (YtsClientStatusCapabilityIterator) _client_status_foreach_capability_advertise_status,
+    self);
 }
 
 static void
@@ -1137,6 +1156,31 @@ yts_client_setup_debug  (YtsClient *self)
   g_free (busname);
 }
 
+static bool
+_client_status_foreach_interest_add (YtsClientStatus const  *client_status,
+                                     char const             *capability,
+                                     YtsClient              *self)
+{
+  YtsClientPrivate *priv = GET_PRIVATE (self);
+
+  tp_yts_client_add_interest (priv->tp_client, capability);
+
+  return true;
+}
+
+static bool
+_client_status_foreach_capability_add (YtsClientStatus const  *client_status,
+                                       char const             *capability,
+                                       char const             *status_xml,
+                                       YtsClient              *self)
+{
+  YtsClientPrivate *priv = GET_PRIVATE (self);
+
+  tp_yts_client_add_capability (priv->tp_client, capability);
+
+  return true;
+}
+
 static void
 setup_tp_client (YtsClient  *self,
                  TpAccount  *account)
@@ -1152,16 +1196,17 @@ setup_tp_client (YtsClient  *self,
     yts_client_setup_debug (self);
   }
 
-  if (priv->caps)
-    {
-      unsigned int i;
-      for (i = 0; i < priv->caps->len; i++)
-        {
-          GQuark cap = g_array_index (priv->caps, GQuark, i);
-          tp_yts_client_add_capability (priv->tp_client,
-                                        g_quark_to_string (cap));
-        }
-    }
+  /* Publish capabilities */
+  yts_client_status_foreach_capability (
+    priv->client_status,
+    (YtsClientStatusCapabilityIterator) _client_status_foreach_capability_add,
+    self);
+
+  /* Publish interests */
+  yts_client_status_foreach_interest (
+    priv->client_status,
+    (YtsClientStatusInterestIterator) _client_status_foreach_interest_add,
+    self);
 
   /*
    * If connection has been requested already, make one
@@ -1342,6 +1387,8 @@ yts_client_constructed (GObject *object)
     return;
   }
 
+  priv->client_status = yts_client_status_new (priv->service_id);
+
   priv->tp_am = tp_yts_account_manager_dup ();
   if (!TP_IS_YTS_ACCOUNT_MANAGER (priv->tp_am)) {
     g_error ("Missing Account Manager");
@@ -1498,12 +1545,6 @@ yts_client_dispose (GObject *object)
       priv->tp_debug_proxy = NULL;
     }
 
-  if (priv->status)
-    {
-      g_object_unref (priv->status);
-      priv->status = NULL;
-    }
-
   if (priv->services)
     {
       g_hash_table_destroy (priv->services);
@@ -1533,9 +1574,7 @@ yts_client_finalize (GObject *object)
   g_free (priv->account_id);
   g_free (priv->service_id);
   g_free (priv->incoming_dir);
-
-  if (priv->caps)
-    g_array_free (priv->caps, TRUE);
+  g_object_unref (priv->client_status);
 
   G_OBJECT_CLASS (yts_client_parent_class)->finalize (object);
 }
@@ -2265,31 +2304,6 @@ yts_client_status_cb (TpConnection  *proxy,
 }
 
 static gboolean
-yts_client_caps_overlap (GArray *mycaps, char **caps)
-{
-  unsigned i;
-
-  /* TODO -- this is not nice, maybe YtsClient:caps should also be just a
-   *         char**
-   */
-  for (i = 0; i < mycaps->len; ++i)
-    {
-      char **p;
-
-      for (p = caps; *p; ++p)
-        {
-          if (!g_strcmp0 (g_quark_to_string (g_array_index (mycaps, YtsCaps, i)),
-                       *p))
-            {
-              return TRUE;
-            }
-        }
-    }
-
-  return FALSE;
-}
-
-static gboolean
 yts_client_process_one_service (YtsClient         *self,
                                 char const        *jid,
                                 char const        *service_id,
@@ -2300,7 +2314,6 @@ yts_client_process_one_service (YtsClient         *self,
   GHashTable        *names;
   char             **caps;
   GHashTable        *service_statuses;
-  YtsRoster        *roster;
 
   if (service_info->n_values != 3)
     {
@@ -2314,15 +2327,6 @@ yts_client_process_one_service (YtsClient         *self,
   type  = g_value_get_string (&service_info->values[0]);
   names = g_value_get_boxed (&service_info->values[1]);
   caps  = g_value_get_boxed (&service_info->values[2]);
-
-  if (!priv->caps || !caps || !*caps ||
-      yts_client_caps_overlap (priv->caps, caps))
-    roster = priv->roster;
-  else
-    roster = priv->unwanted;
-
-  g_message ("Using roster %s",
-             roster == priv->roster ? "wanted" : "unwanted");
 
   service_statuses = g_hash_table_new_full (g_str_hash,
                                             g_str_equal,
@@ -2353,7 +2357,7 @@ yts_client_process_one_service (YtsClient         *self,
     }
   }
 
-  yts_roster_add_service (roster,
+  yts_roster_add_service (priv->roster,
                           priv->tp_conn,
                           jid,
                           service_id,
@@ -2468,61 +2472,17 @@ yts_client_process_status (YtsClient *self)
     g_message ("No discovered services");
 }
 
-static void
-yts_client_advertise_status_cb (GObject      *source_object,
-                                 GAsyncResult *result,
-                                 gpointer      data)
-{
-  TpYtsStatus *status = TP_YTS_STATUS (source_object);
-  GError      *error = NULL;
-
-  if (!tp_yts_status_advertise_status_finish (status, result, &error))
-    {
-      g_critical ("Failed to advertise status: %s", error->message);
-    }
-  else
-    {
-      g_message ("Advertising of status succeeded");
-    }
-
-  g_clear_error (&error);
-}
-
+/* FIXME is this really needed or can we just advertise the new
+ * per-capability status on any change? */
 static void
 yts_client_dispatch_status (YtsClient *self)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
-  char *xml = NULL;
-  unsigned i;
 
-  // TODO something is fishy here, why are we setting the same status to all the caps?
-
-  g_return_if_fail (priv->caps && priv->caps->len);
-
-  if (priv->status) {
-    xml = yts_metadata_to_string ((YtsMetadata*)priv->status);
-  }
-
-  for (i = 0; i < priv->caps->len; ++i)
-    {
-      char const *c;
-
-      c = g_quark_to_string (g_array_index (priv->caps, YtsCaps, i));
-
-      g_message ("Setting status of capability '%s' to\n  %s",
-                 c,
-                 xml);
-
-      tp_yts_status_advertise_status_async (priv->tp_status,
-                                            c,
-                                            priv->service_id,
-                                            xml,
-                                            NULL,
-                                            yts_client_advertise_status_cb,
-                                            self);
-    }
-
-  g_free (xml);
+  yts_client_status_foreach_capability (
+    priv->client_status,
+    (YtsClientStatusCapabilityIterator) _client_status_foreach_capability_advertise_status,
+    self);
 }
 
 static void
@@ -2572,9 +2532,7 @@ yts_client_yts_status_cb (GObject       *obj,
                               self, 0);
 
 
-  if (priv->status)
-    yts_client_dispatch_status (self);
-
+  yts_client_dispatch_status (self);
   yts_client_process_status (self);
 
   if (!priv->ready)
@@ -2856,26 +2814,6 @@ yts_client_connect (YtsClient *self)
     yts_client_make_connection (self);
 }
 
-static gboolean
-yts_client_has_capability (YtsClient *self, YtsCaps cap)
-{
-  YtsClientPrivate *priv = GET_PRIVATE (self);
-  unsigned i;
-
-  if (!priv->caps)
-    return FALSE;
-
-  for (i = 0; i < priv->caps->len; ++i)
-    {
-      YtsCaps c = g_array_index (priv->caps, YtsCaps, i);
-
-      if (c == cap || c == YTS_CAPS_CONTROL)
-        return TRUE;
-    }
-
-  return FALSE;
-}
-
 // TODO get rid of this, it invalidates the proxies
 static void
 yts_client_refresh_roster (YtsClient *self)
@@ -2904,11 +2842,11 @@ yts_client_refresh_roster (YtsClient *self)
  * Since: 0.3
  */
 void
-yts_client_add_capability (YtsClient  *self,
-                           char const *c)
+yts_client_add_capability (YtsClient          *self,
+                           char const         *c,
+                           YtsCapabilityMode   mode)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
-  GQuark cap_quark;
   char *capability;
 
   /* FIXME check that there's no collision with service owned capabilities. */
@@ -2916,27 +2854,40 @@ yts_client_add_capability (YtsClient  *self,
   g_return_if_fail (YTS_IS_CLIENT (self));
   g_return_if_fail (c);
 
-  // TODO error reporting
   // TODO make sure c doesn't have prefix already
-
   capability = g_strdup_printf ("urn:ytstenut:capabilities:%s", c);
-  cap_quark = g_quark_from_string (capability);
 
-  if (yts_client_has_capability (self, cap_quark))
-    {
+  if (YTS_CAPABILITY_MODE_PROVIDED == mode) {
+
+    if (yts_client_status_add_capability (priv->client_status, capability)) {
+      /* Advertise right away if possible, otherwise the advertising will
+       * happen when the tp_client is ready. */
+      if (priv->tp_client) {
+        tp_yts_client_add_capability (priv->tp_client, capability);
+      }
+    } else {
       g_message ("Capablity '%s' already set", capability);
       return;
     }
 
-  if (priv->tp_client)
-    tp_yts_client_add_capability (priv->tp_client, capability);
+    yts_client_refresh_roster (self);
 
-  if (!priv->caps)
-    priv->caps = g_array_sized_new (FALSE, FALSE, sizeof (YtsCaps), 1);
+  } else if (YTS_CAPABILITY_MODE_CONSUMED == mode) {
 
-  g_array_append_val (priv->caps, cap_quark);
+    if (yts_client_status_add_interest (priv->client_status, capability)) {
+      /* Advertise right away if possible, otherwise the advertising will
+       * happen when the tp_client is ready. */
+      if (priv->tp_client) {
+        tp_yts_client_add_interest (priv->tp_client, capability);
+      }
+    } else {
+      g_message ("Interest '%s' already set", capability);
+      return;
+    }
 
-  yts_client_refresh_roster (self);
+  } else {
+    g_critical ("Invalid capability mode %d", mode);
+  }
 
   g_free (capability);
 }
@@ -3095,40 +3046,6 @@ yts_client_get_tp_status (YtsClient *self)
 }
 
 /**
- * yts_client_set_status:
- * @self: object on which to invoke this method.
- * @status: new #YtsStatus
- *
- * Changes the status of the service represented by this client to status;
- */
-static void
-yts_client_set_status (YtsClient *self, YtsStatus *status)
-{
-  YtsClientPrivate *priv = GET_PRIVATE (self);
-
-  g_return_if_fail (YTS_IS_CLIENT (self));
-  g_return_if_fail (YTS_IS_STATUS (status));
-
-  g_return_if_fail (priv->caps && priv->caps->len);
-
-  if (status)
-    g_object_ref (status);
-
-  if (priv->status)
-    {
-      g_object_unref (priv->status);
-      priv->status = NULL;
-    }
-
-  priv->status = status;
-
-  if (priv->tp_status)
-    {
-      yts_client_dispatch_status (self);
-    }
-}
-
-/**
  * yts_client_set_status_by_capability:
  * @self: object on which to invoke this method.
  * @capability: the capability to set status for
@@ -3136,39 +3053,61 @@ yts_client_set_status (YtsClient *self, YtsStatus *status)
  *
  * Set the status of the service represented by this client to @activity for
  * @capability.
+ *
+ * FIXME: Maybe this should be named yts_client_set_status_on_capability() or
+ *        yts_client_set_status_for_capability() ?
+ *        Also maybe the "activity" should not be exposed any more because we're
+ *        kinda moving away from it, instead allow setting the xml payload?
+ *        Will things work at all without the activity attribut -- to to check
+ *        the spec.
  */
 void
-yts_client_set_status_by_capability (YtsClient *self,
-                                      char const *c,
-                                      char const *activity)
+yts_client_set_status_by_capability (YtsClient    *self,
+                                      char const  *cap_value,
+                                      char const  *activity,
+                                      char const  *status_xml)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
-  YtsStatus        *status = NULL;
+  char        *capability;
+  char const  *capability_status_xml;
+  char const  *attribs[] = {
+    "activity", activity,
+    NULL
+  };
 
-  g_return_if_fail (YTS_IS_CLIENT (self) && c);
-  g_return_if_fail (c);
+  g_return_if_fail (YTS_IS_CLIENT (self));
+  g_return_if_fail (cap_value);
+  g_return_if_fail (activity);
 
-  g_return_if_fail (priv->caps && priv->caps->len);
+  capability = g_strdup_printf ("%s%s",
+                                YTS_XML_CAPABILITY_NAMESPACE,
+                                cap_value);
 
-  if (activity)
-    {
-      char *capability = g_strdup_printf ("urn:ytstenut:capabilities:%s", c);
-      char const   *attributes[] =
-        {
-          "capability",   capability,
-          "activity",     activity,
-          "from-service", priv->service_id,
-          NULL
-        };
-
-      g_message ("Constructing status for %s, %s, %s",
-                 capability, activity, priv->service_id);
-
-      status = yts_status_new ((char const**)&attributes);
-      g_free (capability);
+  /* Check if the capability is already advertised. */
+  if (yts_client_status_add_capability (priv->client_status, capability)) {
+    /* Add capability if we already have a tp_client,
+     * otherwise that's done when it's ready. */
+    if (priv->tp_client) {
+      tp_yts_client_add_capability (priv->tp_client, capability);
     }
+  }
 
-  yts_client_set_status (self, status);
+  capability_status_xml = yts_client_status_set (priv->client_status,
+                                                 capability,
+                                                 attribs,
+                                                 status_xml);
+
+  /* Advertise if we already have a tp_status,
+   * otherwise that's done when it's ready. */
+  if (priv->client_status) {
+    tp_yts_status_advertise_status_async (priv->tp_status,
+                                          capability,
+                                          priv->service_id,
+                                          capability_status_xml,
+                                          NULL,
+                                          _tp_yts_status_advertise_status_cb,
+                                          self);
+  }
 }
 
 struct YtsCLChannelData
@@ -3605,7 +3544,7 @@ yts_client_publish_service (YtsClient     *self,
     g_hash_table_insert (priv->services,
                          g_strdup (fqc_ids[i]),
                          adapter);
-    yts_client_add_capability (self, fqc_ids[i]);
+    yts_client_add_capability (self, fqc_ids[i], YTS_CAPABILITY_MODE_PROVIDED);
 
     /* Keep the proxy management service up to date. */
     adapter = g_hash_table_lookup (priv->services, YTS_PROFILE_FQC_ID);
