@@ -257,9 +257,9 @@ BUILT_GIRSOURCES =
 INCLUDES_FOR_GIR = -I..
 
 if WITH_INTROSPECTION
-Yts-@YTS_API_VERSION@.gir: $(G_IR_SCANNER) libytstenut-@YTS_API_VERSION@.la
+Ytstenut-@YTS_API_VERSION@.gir: $(G_IR_SCANNER) libytstenut-@YTS_API_VERSION@.la
 	$(QUIET_GEN) $(G_IR_SCANNER) -v \
-		--namespace=Yts --nsversion=@YTS_API_VERSION@ \
+		--namespace=Ytstenut --nsversion=@YTS_API_VERSION@ \
 		--strip-prefix=Yts \
 		$(INCLUDES_FOR_GIR) \
 		$(YTS_CFLAGS) \
@@ -274,7 +274,7 @@ Yts-@YTS_API_VERSION@.gir: $(G_IR_SCANNER) libytstenut-@YTS_API_VERSION@.la
 		$(libhdr_la_SOURCES) \
 		$(libsrc_la_SOURCES)
 
-BUILT_GIRSOURCES += Yts-@YTS_API_VERSION@.gir
+BUILT_GIRSOURCES += Ytstenut-@YTS_API_VERSION@.gir
 
 # G_IR_GIRDIR/G_IR_TYPELIBDIR aren't the right place to
 # install anything - we need to install inside our prefix.
