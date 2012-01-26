@@ -1,8 +1,3 @@
-SUBDIRS=
-BUILT_SOURCES=
-CLEANFILES=
-BUILT_GIRSOURCES=
-INCLUDES_FOR_GIR=-I..
 
 AM_CPPFLAGS = \
   -I$(top_srcdir) \
@@ -12,177 +7,151 @@ AM_CPPFLAGS = \
 
 AM_CFLAGS = $(YTS_CFLAGS)
 
-source_h =						\
-		$(srcdir)/yts-capability.h			\
-		$(srcdir)/yts-client.h			\
-		$(srcdir)/yts-contact.h		\
-		$(srcdir)/yts-roster.h			\
-		$(srcdir)/yts-service.h		\
-		$(srcdir)/yts-version.h		\
-		\
-		$(srcdir)/yts-proxy.h \
-		$(srcdir)/yts-proxy-service.h \
-		\
-		$(srcdir)/video-profile/yts-vp-content.h \
-		$(srcdir)/video-profile/yts-vp-playable.h \
-		$(srcdir)/video-profile/yts-vp-player.h \
-		$(srcdir)/video-profile/yts-vp-query.h \
-		$(srcdir)/video-profile/yts-vp-transcript.h \
-		$(srcdir)/video-profile/yts-vp-transfer.h \
-		$(srcdir)/video-profile/yts-vp-transmission.h \
-		$(NULL)
+#
+# Use automake names for headers and sources variables, since external tools
+# like anjuta understand them.
+#
 
-source_c =						\
-		$(srcdir)/ytstenut.c \
-		\
-		$(srcdir)/empathy-tp-file.c		\
-		$(srcdir)/yts-capability.c			\
-		$(srcdir)/yts-client.c			\
-		$(srcdir)/yts-client-status.c \
-		$(srcdir)/yts-contact.c		\
-		$(srcdir)/yts-contact-impl.c		\
-		$(srcdir)/yts-enum-types.c		\
-		$(srcdir)/yts-error.c			\
-		$(srcdir)/yts-marshal.c		\
-		$(srcdir)/yts-message.c		\
-		$(srcdir)/yts-metadata.c		\
-		$(srcdir)/yts-roster.c			\
-		$(srcdir)/yts-roster-impl.c			\
-		$(srcdir)/yts-service.c		\
-		$(srcdir)/yts-service-impl.c \
-		$(srcdir)/yts-status.c			\
-		\
-		$(srcdir)/yts-adapter-factory.c \
-		$(srcdir)/yts-capability-status.c \
-		$(srcdir)/yts-error-message.c \
-		$(srcdir)/yts-event-message.c \
-		$(srcdir)/yts-factory.c \
-		$(srcdir)/yts-invocation-message.c \
-		$(srcdir)/yts-service-emitter.c \
-		$(srcdir)/yts-proxy.c \
-		$(srcdir)/yts-proxy-factory.c \
-		$(srcdir)/yts-proxy-service.c \
-		$(srcdir)/yts-proxy-service-impl.c \
-		$(srcdir)/yts-response-message.c \
-		$(srcdir)/yts-service-adapter.c \
-		$(srcdir)/yts-service-factory.c \
-		\
-		$(srcdir)/profile/yts-profile.c \
-		$(srcdir)/profile/yts-profile-impl.c \
-		$(srcdir)/profile/yts-profile-proxy.c \
-		$(srcdir)/profile/yts-profile-adapter.c \
-		\
-		$(srcdir)/video-profile/yts-vp-content.c \
-		$(srcdir)/video-profile/yts-vp-playable.c \
-		$(srcdir)/video-profile/yts-vp-playable-proxy.c \
-		$(srcdir)/video-profile/yts-vp-player.c \
-		$(srcdir)/video-profile/yts-vp-player-adapter.c \
-		$(srcdir)/video-profile/yts-vp-player-proxy.c \
-		$(srcdir)/video-profile/yts-vp-query.c \
-		$(srcdir)/video-profile/yts-vp-transcript.c \
-		$(srcdir)/video-profile/yts-vp-transcript-adapter.c \
-		$(srcdir)/video-profile/yts-vp-transcript-proxy.c \
-		$(srcdir)/video-profile/yts-vp-transfer.c \
-		$(srcdir)/video-profile/yts-vp-transmission.c \
-		$(NULL)
+EXTRA_LTLIBRARIES = libsrc.la libhdr.la libprv.la
 
-private_h = \
-		$(srcdir)/ytstenut-internal.h \
-		\
-		$(srcdir)/empathy-tp-file.h		\
-		$(srcdir)/yts-adapter-factory.h \
-		$(srcdir)/yts-client-internal.h \
-		$(srcdir)/yts-client-status.h \
-		$(srcdir)/yts-contact-impl.h \
-		$(srcdir)/yts-contact-internal.h \
-		$(srcdir)/yts-error.h \
-		$(srcdir)/yts-factory.h \
-		$(srcdir)/yts-metadata-internal.h \
-		$(srcdir)/yts-proxy-factory.h \
-		$(srcdir)/yts-proxy-internal.h \
-		$(srcdir)/yts-proxy-service-impl.h \
-		$(srcdir)/yts-proxy-service-internal.h \
-		$(srcdir)/yts-roster-impl.h \
-		$(srcdir)/yts-roster-internal.h \
-		$(srcdir)/yts-service-adapter.h \
-		$(srcdir)/yts-service-emitter.h \
-		$(srcdir)/yts-service-factory.h \
-		$(srcdir)/yts-service-impl.h \
-		$(srcdir)/yts-service-internal.h \
-		$(srcdir)/yts-xml.h \
-		\
-		$(srcdir)/yts-capability-status.h \
-		$(srcdir)/yts-message.h		\
-		$(srcdir)/yts-metadata.h		\
-		$(srcdir)/yts-error-message.h \
-		$(srcdir)/yts-event-message.h \
-		$(srcdir)/yts-invocation-message.h \
-		$(srcdir)/yts-response-message.h \
-		$(srcdir)/yts-status.h			\
-		\
-		$(srcdir)/profile/yts-profile.h \
-		$(srcdir)/profile/yts-profile-impl.h \
-		$(srcdir)/profile/yts-profile-proxy.h \
-		$(srcdir)/profile/yts-profile-adapter.h \
-		\
-		$(srcdir)/video-profile/yts-vp-playable-proxy.h \
-		$(srcdir)/video-profile/yts-vp-player-adapter.h \
-		$(srcdir)/video-profile/yts-vp-player-proxy.h \
-		$(srcdir)/video-profile/yts-vp-transcript-adapter.h \
-		$(srcdir)/video-profile/yts-vp-transcript-proxy.h \
-		$(NULL)
+# Public headers
+libhdr_la_SOURCES = \
+  $(srcdir)/yts-capability.h \
+  $(srcdir)/yts-client.h \
+  $(srcdir)/yts-contact.h \
+  $(srcdir)/yts-roster.h \
+  $(srcdir)/yts-service.h \
+  $(srcdir)/yts-version.h \
+  \
+  $(srcdir)/yts-proxy.h \
+  $(srcdir)/yts-proxy-service.h \
+  \
+  $(srcdir)/video-profile/yts-vp-content.h \
+  $(srcdir)/video-profile/yts-vp-playable.h \
+  $(srcdir)/video-profile/yts-vp-player.h \
+  $(srcdir)/video-profile/yts-vp-query.h \
+  $(srcdir)/video-profile/yts-vp-transcript.h \
+  $(srcdir)/video-profile/yts-vp-transfer.h \
+  $(srcdir)/video-profile/yts-vp-transmission.h \
+  $(NULL)
 
-libytstenut_@YTS_API_VERSION@_la_SOURCES  = 	$(source_h) 	\
-							$(private_h)	\
-							$(source_c)
+# Sources
+libsrc_la_SOURCES = \
+  $(srcdir)/ytstenut.c \
+  \
+  $(srcdir)/empathy-tp-file.c \
+  $(srcdir)/yts-capability.c \
+  $(srcdir)/yts-client.c \
+  $(srcdir)/yts-client-status.c \
+  $(srcdir)/yts-contact.c \
+  $(srcdir)/yts-contact-impl.c \
+  $(srcdir)/yts-enum-types.c \
+  $(srcdir)/yts-error.c \
+  $(srcdir)/yts-marshal.c \
+  $(srcdir)/yts-message.c \
+  $(srcdir)/yts-metadata.c \
+  $(srcdir)/yts-roster.c \
+  $(srcdir)/yts-roster-impl.c \
+  $(srcdir)/yts-service.c \
+  $(srcdir)/yts-service-impl.c \
+  $(srcdir)/yts-status.c \
+  \
+  $(srcdir)/yts-adapter-factory.c \
+  $(srcdir)/yts-capability-status.c \
+  $(srcdir)/yts-error-message.c \
+  $(srcdir)/yts-event-message.c \
+  $(srcdir)/yts-factory.c \
+  $(srcdir)/yts-invocation-message.c \
+  $(srcdir)/yts-service-emitter.c \
+  $(srcdir)/yts-proxy.c \
+  $(srcdir)/yts-proxy-factory.c \
+  $(srcdir)/yts-proxy-service.c \
+  $(srcdir)/yts-proxy-service-impl.c \
+  $(srcdir)/yts-response-message.c \
+  $(srcdir)/yts-service-adapter.c \
+  $(srcdir)/yts-service-factory.c \
+  \
+  $(srcdir)/profile/yts-profile.c \
+  $(srcdir)/profile/yts-profile-impl.c \
+  $(srcdir)/profile/yts-profile-proxy.c \
+  $(srcdir)/profile/yts-profile-adapter.c \
+  \
+  $(srcdir)/video-profile/yts-vp-content.c \
+  $(srcdir)/video-profile/yts-vp-playable.c \
+  $(srcdir)/video-profile/yts-vp-playable-proxy.c \
+  $(srcdir)/video-profile/yts-vp-player.c \
+  $(srcdir)/video-profile/yts-vp-player-adapter.c \
+  $(srcdir)/video-profile/yts-vp-player-proxy.c \
+  $(srcdir)/video-profile/yts-vp-query.c \
+  $(srcdir)/video-profile/yts-vp-transcript.c \
+  $(srcdir)/video-profile/yts-vp-transcript-adapter.c \
+  $(srcdir)/video-profile/yts-vp-transcript-proxy.c \
+  $(srcdir)/video-profile/yts-vp-transfer.c \
+  $(srcdir)/video-profile/yts-vp-transmission.c \
+  $(NULL)
+
+# Private headers
+libprv_la_SOURCES = \
+  $(srcdir)/ytstenut-internal.h \
+  \
+  $(srcdir)/empathy-tp-file.h \
+  $(srcdir)/yts-adapter-factory.h \
+  $(srcdir)/yts-client-internal.h \
+  $(srcdir)/yts-client-status.h \
+  $(srcdir)/yts-contact-impl.h \
+  $(srcdir)/yts-contact-internal.h \
+  $(srcdir)/yts-error.h \
+  $(srcdir)/yts-factory.h \
+  $(srcdir)/yts-metadata-internal.h \
+  $(srcdir)/yts-proxy-factory.h \
+  $(srcdir)/yts-proxy-internal.h \
+  $(srcdir)/yts-proxy-service-impl.h \
+  $(srcdir)/yts-proxy-service-internal.h \
+  $(srcdir)/yts-roster-impl.h \
+  $(srcdir)/yts-roster-internal.h \
+  $(srcdir)/yts-service-adapter.h \
+  $(srcdir)/yts-service-emitter.h \
+  $(srcdir)/yts-service-factory.h \
+  $(srcdir)/yts-service-impl.h \
+  $(srcdir)/yts-service-internal.h \
+  $(srcdir)/yts-xml.h \
+  \
+  $(srcdir)/yts-capability-status.h \
+  $(srcdir)/yts-message.h \
+  $(srcdir)/yts-metadata.h \
+  $(srcdir)/yts-error-message.h \
+  $(srcdir)/yts-event-message.h \
+  $(srcdir)/yts-invocation-message.h \
+  $(srcdir)/yts-response-message.h \
+  $(srcdir)/yts-status.h \
+  \
+  $(srcdir)/profile/yts-profile.h \
+  $(srcdir)/profile/yts-profile-impl.h \
+  $(srcdir)/profile/yts-profile-proxy.h \
+  $(srcdir)/profile/yts-profile-adapter.h \
+  \
+  $(srcdir)/video-profile/yts-vp-playable-proxy.h \
+  $(srcdir)/video-profile/yts-vp-player-adapter.h \
+  $(srcdir)/video-profile/yts-vp-player-proxy.h \
+  $(srcdir)/video-profile/yts-vp-transcript-adapter.h \
+  $(srcdir)/video-profile/yts-vp-transcript-proxy.h \
+  $(NULL)
+
+#
+# Libytstenut
+#
+
+lib_LTLIBRARIES = libytstenut-@YTS_API_VERSION@.la
+
+libytstenut_@YTS_API_VERSION@_la_SOURCES = \
+  $(libhdr_la_SOURCES) \
+  $(libprv_la_SOURCES) \
+  $(libsrc_la_SOURCES) \
+  $(NULL)
 
 libytstenut_@YTS_API_VERSION@_la_DEPENDENCIES = \
   ytstenut.sym \
   $(NULL)
-
-STAMPS = stamp-marshal.h stamp-yts-enum-types.h
-
-ENUMS = yts-enum-types.h \
-	yts-enum-types.c
-
-yts-enum-types.h: stamp-yts-enum-types.h
-	@true
-stamp-yts-enum-types.h: $(source_h) Makefile
-	$(QUIET_GEN)( $(GLIB_MKENUMS) \
-	  	--template $(srcdir)/yts-enum-types.h.in \
-	  $(source_h) ) >> xgen-ceth && \
-	(cmp -s xgen-ceth yts-enum-types.h || cp xgen-ceth yts-enum-types.h) && \
-	rm -f xgen-ceth && \
-	echo timestamp > $(@F)
-
-yts-enum-types.c: yts-enum-types.h
-	$(QUIET_GEN)( $(GLIB_MKENUMS) \
-	  	--template $(srcdir)/yts-enum-types.c.in \
-	  $(source_h) ) >> xgen-cetc && \
-	cp xgen-cetc yts-enum-types.c && \
-	rm -f xgen-cetc
-
-MARSHALS = yts-marshal.c yts-marshal.h
-
-yts-marshal.h: stamp-marshal.h
-	@true
-stamp-marshal.h: marshal.list
-	$(QUIET_GEN)$(GLIB_GENMARSHAL) \
-		--prefix=yts_marshal \
-		--header \
-	  $(srcdir)/marshal.list > xgen-cmh \
-	&& (cmp -s xgen-cmh yts-marshal.h || cp xgen-cmh yts-marshal.h ) \
-	&& rm -f xgen-cmh \
-	&& echo timestamp > $(@F)
-
-yts-marshal.c: yts-marshal.h Makefile
-	$(QUIET_GEN)( echo "#include \"yts-marshal.h\"" ; \
-	  $(GLIB_GENMARSHAL) \
-	  	--prefix=yts_marshal \
-		--body \
-	  $(srcdir)/marshal.list --body ) >> xgen-cmc \
-	&& cp xgen-cmc yts-marshal.c \
-	&& rm -f xgen-cmc
 
 libytstenut_@YTS_API_VERSION@_la_LDFLAGS = \
   -version-info $(VERSION_INFO) \
@@ -194,15 +163,98 @@ libytstenut_@YTS_API_VERSION@_la_LIBADD = \
   $(YTS_LIBS) \
   $(NULL)
 
-lib_LTLIBRARIES = libytstenut-@YTS_API_VERSION@.la
+libytstenut_@YTS_API_VERSION@_ladir = $(includedir)/ytstenut-$(YTS_API_VERSION)/ytstenut
+libytstenut_@YTS_API_VERSION@_la_HEADERS = \
+  $(libhdr_la_SOURCES) \
+  $(srcdir)/yts-enum-types.h \
+  $(srcdir)/yts-marshal.h \
+  $(srcdir)/ytstenut.h \
+  $(NULL)
 
-ytstenutheadersdir = $(includedir)/ytstenut-$(YTS_API_VERSION)/ytstenut
-nobase_ytstenutheaders_HEADERS =		\
-	$(source_h)			\
-	$(srcdir)/yts-enum-types.h	\
-	$(srcdir)/yts-marshal.h	\
-	$(srcdir)/ytstenut.h	\
-	$(NULL)
+BUILT_SOURCES = \
+  $(ENUMS) \
+  $(MARSHALS) \
+  $(NULL)
+
+CLEANFILES = \
+  $(BUILT_SOURCES) \
+  $(STAMPS) \
+  $(NULL)
+
+EXTRA_DIST = \
+  marshal.list \
+  yts-enum-types.h.in \
+  yts-enum-types.c.in \
+  yts-version.h.in \
+  ytstenut.sym \
+  $(NULL)
+
+DISTCLEANFILES = \
+  yts-version.h \
+  $(NULL)
+
+# Glib infrastructure
+
+ENUMS = \
+  yts-enum-types.h \
+  yts-enum-types.c \
+  $(NULL)
+
+MARSHALS = \
+  yts-marshal.c \
+  yts-marshal.h \
+  $(NULL)
+
+STAMPS = \
+  stamp-marshal.h \
+  stamp-yts-enum-types.h \
+  $(NULL)
+
+yts-enum-types.h: stamp-yts-enum-types.h
+	@true
+
+stamp-yts-enum-types.h: $(libhdr_la_SOURCES) Makefile
+	$(QUIET_GEN)( $(GLIB_MKENUMS) \
+			--template $(srcdir)/yts-enum-types.h.in \
+		$(libhdr_la_SOURCES) ) >> xgen-ceth && \
+	(cmp -s xgen-ceth yts-enum-types.h || cp xgen-ceth yts-enum-types.h) && \
+	rm -f xgen-ceth && \
+	echo timestamp > $(@F)
+
+yts-enum-types.c: yts-enum-types.h
+	$(QUIET_GEN)( $(GLIB_MKENUMS) \
+			--template $(srcdir)/yts-enum-types.c.in \
+	  $(libhdr_la_SOURCES) ) >> xgen-cetc && \
+	cp xgen-cetc yts-enum-types.c && \
+	rm -f xgen-cetc
+
+yts-marshal.h: stamp-marshal.h
+	@true
+
+stamp-marshal.h: marshal.list
+	$(QUIET_GEN)$(GLIB_GENMARSHAL) \
+		--prefix=yts_marshal \
+		--header \
+	  $(srcdir)/marshal.list > xgen-cmh \
+	&& (cmp -s xgen-cmh yts-marshal.h || cp xgen-cmh yts-marshal.h ) \
+	&& rm -f xgen-cmh \
+	&& echo timestamp > $(@F)
+
+yts-marshal.c: yts-marshal.h Makefile
+	$(QUIET_GEN)( echo "#include \"yts-marshal.h\"" ; \
+		$(GLIB_GENMARSHAL) \
+			--prefix=yts_marshal \
+		--body \
+		$(srcdir)/marshal.list --body ) >> xgen-cmc \
+	&& cp xgen-cmc yts-marshal.c \
+	&& rm -f xgen-cmc
+
+#
+# GObject Introspection
+#
+
+BUILT_GIRSOURCES =
+INCLUDES_FOR_GIR = -I..
 
 if WITH_INTROSPECTION
 Yts-@YTS_API_VERSION@.gir: $(G_IR_SCANNER) libytstenut-@YTS_API_VERSION@.la
@@ -219,8 +271,8 @@ Yts-@YTS_API_VERSION@.gir: $(G_IR_SCANNER) libytstenut-@YTS_API_VERSION@.la
 		--libtool="$(top_builddir)/libtool" \
 	        --pkg gobject-2.0 \
 	        --output $@ \
-		$(nobase_ytstenutheaders_HEADERS) \
-		$(source_c)
+		$(libhdr_la_SOURCES) \
+		$(libsrc_la_SOURCES)
 
 BUILT_GIRSOURCES += Yts-@YTS_API_VERSION@.gir
 
@@ -242,21 +294,7 @@ typelibs_DATA = $(BUILT_GIRSOURCES:.gir=.typelib)
 		$(G_IR_COMPILER_OPTS) $< -o $(@F)
 
 CLEANFILES += $(BUILT_GIRSOURCES) $(typelibs_DATA)
-endif # HAVE_INTROSPECTION
-
-BUILT_SOURCES += $(MARSHALS) $(ENUMS)
-
-CLEANFILES += $(BUILT_SOURCES) $(STAMPS)
-
-EXTRA_DIST =	marshal.list 		\
-		yts-enum-types.h.in	\
-		yts-enum-types.c.in	\
-		yts-version.h.in	\
-		ytstenut.sym \
-		$(NULL)
-
-DISTCLEANFILES= yts-version.h		\
-		$(NULL)
+endif # WITH_INTROSPECTION
 
 # PONDERING should only run on platforms we know it works.
 # Use "nm" to get the public symbols from libytstenut, and then
@@ -273,8 +311,6 @@ all-local:
 		fi \
 	done
 
--include $(top_srcdir)/git.mk
-		
 Android.mk: Makefile.am $(BUILT_SOURCES)
 		androgenizer -:PROJECT ytstenut-glib \
 		-:SHARED ytstenut -:TAGS eng debug \
@@ -287,3 +323,5 @@ Android.mk: Makefile.am $(BUILT_SOURCES)
 		$(libytstenut_@YTS_API_VERSION@_la_LIBADD) \
 		-ltelepathy-ytstenut -lxml2 -lrest -lglib-2.0\
 		> $@
+
+-include $(top_srcdir)/git.mk
