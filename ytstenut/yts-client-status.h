@@ -52,7 +52,7 @@ typedef struct {
 } YtsClientStatusClass;
 
 GType
-yts_client_status_get_type (void);
+yts_client_status_get_type (void) G_GNUC_CONST;
 
 YtsClientStatus *
 yts_client_status_new (char const *service_id);
