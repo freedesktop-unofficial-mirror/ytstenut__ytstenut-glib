@@ -253,13 +253,13 @@ _service_added (YtsContact  *self,
                 void        *data)
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
-  const char         *uid  = yts_service_get_id (service);
+  const char        *service_id  = yts_service_get_id (service);
 
-  g_return_if_fail (uid && *uid);
-  g_return_if_fail (!g_hash_table_lookup (priv->services, uid));
+  g_return_if_fail (service_id && *service_id);
+  g_return_if_fail (!g_hash_table_lookup (priv->services, service_id));
 
   g_hash_table_insert (priv->services,
-                       g_strdup (uid),
+                       g_strdup (service_id),
                        g_object_ref (service));
 
   g_signal_connect (service, "send-message",
@@ -272,12 +272,12 @@ _service_removed (YtsContact  *self,
                   void        *data)
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
-  const char         *uid  = yts_service_get_id (service);
+  const char        *service_id  = yts_service_get_id (service);
 
-  g_return_if_fail (uid && *uid);
+  g_return_if_fail (service_id && *service_id);
 
-  if (!g_hash_table_remove (priv->services, uid))
-    g_warning (G_STRLOC ": unknown service with uid %s", uid);
+  if (!g_hash_table_remove (priv->services, service_id))
+    g_warning (G_STRLOC ": unknown service with service-id %s", service_id);
 
   g_signal_handlers_disconnect_by_func (service,
                                         _service_send_message,

@@ -501,7 +501,7 @@ yts_client_ft_accept_cb (TpProxy      *proxy,
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
   char const        *name;
-  char const        *jid;
+  char const        *contact_id;
   uint64_t            offset;
   uint64_t            size;
   GHashTable        *iprops;
@@ -516,7 +516,7 @@ yts_client_ft_accept_cb (TpProxy      *proxy,
 
   if ((item = yts_roster_find_contact_by_handle (priv->roster, ihandle)))
     {
-      jid = yts_contact_get_id (item);
+      contact_id = yts_contact_get_id (item);
     }
   else
     {
@@ -553,7 +553,7 @@ yts_client_ft_accept_cb (TpProxy      *proxy,
     }
 
   g_signal_emit (self, signals[INCOMING_FILE], 0,
-                 jid, name, size, offset, proxy);
+                 contact_id, name, size, offset, proxy);
 }
 
 static void
@@ -610,16 +610,16 @@ yts_client_ft_handle_state (YtsClient *self, TpChannel *proxy, guint state)
                      state == 4 ? "completed" : "cancelled");
           {
             char const *name;
-            char const *jid;
+            char const *contact_id;
 
             if (item)
               {
-                jid = yts_contact_get_id (item);
+                contact_id = yts_contact_get_id (item);
 
                 name   = tp_asv_get_string (props, "Filename");
 
                 g_signal_emit (self, signals[INCOMING_FILE_FINISHED], 0,
-                               jid, name, state == 4 ? TRUE : FALSE);
+                               contact_id, name, state == 4 ? TRUE : FALSE);
               }
           }
           break;
@@ -1828,7 +1828,7 @@ yts_client_class_init (YtsClientClass *klass)
   /**
    * YtsClient::incoming-file:
    * @self: object which emitted the signal.
-   * @from: jid of the originator
+   * @from: contact_id of the originator
    * @name: name of the file
    * @size: size of the file
    * @offset: offset into the file,
@@ -1858,7 +1858,7 @@ yts_client_class_init (YtsClientClass *klass)
   /**
    * YtsClient::incoming-file-finished:
    * @self: object which emitted the signal.
-   * @from: jid of the originator
+   * @from: contact_id of the originator
    * @name: name of the file
    * @success: %TRUE if the transfer was completed successfully.
    *
@@ -1957,7 +1957,7 @@ variant_new_from_escaped_literal (char const *string)
 
 static gboolean
 dispatch_to_service (YtsClient  *self,
-                     char const *sender_jid,
+                     char const *sender_contact_id,
                      char const *xml)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
@@ -2004,12 +2004,12 @@ dispatch_to_service (YtsClient  *self,
     return false;
   }
 
-  contact = yts_roster_find_contact_by_id (priv->roster, sender_jid);
+  contact = yts_roster_find_contact_by_id (priv->roster, sender_contact_id);
   if (NULL == contact) {
     // FIXME report error
     g_critical ("%s : Contact for '%s' not found",
                 G_STRLOC,
-                sender_jid);
+                sender_contact_id);
     return false;
   }
 
@@ -2305,7 +2305,7 @@ yts_client_status_cb (TpConnection  *proxy,
 
 static gboolean
 yts_client_process_one_service (YtsClient         *self,
-                                char const        *jid,
+                                char const        *contact_id,
                                 char const        *service_id,
                                 const GValueArray *service_info)
 {
@@ -2322,7 +2322,7 @@ yts_client_process_one_service (YtsClient         *self,
       return FALSE;
     }
 
-  g_message ("Processing service %s:%s", jid, service_id);
+  g_message ("Processing service %s:%s", contact_id, service_id);
 
   type  = g_value_get_string (&service_info->values[0]);
   names = g_value_get_boxed (&service_info->values[1]);
@@ -2337,7 +2337,7 @@ yts_client_process_one_service (YtsClient         *self,
                                                               priv->tp_status);
     if (discovered_statuses) {
       GHashTable *contact_statuses = g_hash_table_lookup (discovered_statuses,
-                                                          jid);
+                                                          contact_id);
       if (contact_statuses) {
         unsigned i;
         for (i = 0; caps && caps[i]; i++) {
@@ -2359,7 +2359,7 @@ yts_client_process_one_service (YtsClient         *self,
 
   yts_roster_add_service (priv->roster,
                           priv->tp_conn,
-                          jid,
+                          contact_id,
                           service_id,
                           type,
                           (char const **)caps,
@@ -2373,17 +2373,17 @@ yts_client_process_one_service (YtsClient         *self,
 
 static void
 yts_client_service_added_cb (TpYtsStatus        *tp_status,
-                             char const         *jid,
+                             char const         *contact_id,
                              char const         *service_id,
                              const GValueArray  *service_info,
                              YtsClient          *self)
 {
-  yts_client_process_one_service (self, jid, service_id, service_info);
+  yts_client_process_one_service (self, contact_id, service_id, service_info);
 }
 
 static void
 yts_client_service_removed_cb (TpYtsStatus  *tp_status,
-                               char const   *jid,
+                               char const   *contact_id,
                                char const   *service_id,
                                YtsClient    *self)
 {
@@ -2391,7 +2391,7 @@ yts_client_service_removed_cb (TpYtsStatus  *tp_status,
   GHashTableIter   iter;
   bool             start_over;
 
-  yts_roster_remove_service_by_id (priv->roster, jid, service_id);
+  yts_roster_remove_service_by_id (priv->roster, contact_id, service_id);
 
   /*
    * Clear pending responses.
@@ -2447,7 +2447,7 @@ yts_client_process_status (YtsClient *self)
 
   if ((services = tp_yts_status_get_discovered_services (priv->tp_status)))
     {
-      char           *jid;
+      char           *contact_id;
       GHashTable     *service;
       GHashTableIter  iter;
 
@@ -2455,16 +2455,23 @@ yts_client_process_status (YtsClient *self)
         g_message ("No services discovered so far");
 
       g_hash_table_iter_init (&iter, services);
-      while (g_hash_table_iter_next (&iter, (void**)&jid, (void**)&service))
+      while (g_hash_table_iter_next (&iter,
+                                     (void **) &contact_id,
+                                     (void **) &service))
         {
           char           *service_id;
           GValueArray    *service_info;
           GHashTableIter  iter2;
 
           g_hash_table_iter_init (&iter2, service);
-          while (g_hash_table_iter_next (&iter2, (void**)&service_id, (void**)&service_info))
+          while (g_hash_table_iter_next (&iter2,
+                                         (void **) &service_id,
+                                         (void **) &service_info))
             {
-              yts_client_process_one_service (self, jid, service_id, service_info);
+              yts_client_process_one_service (self,
+                                              contact_id,
+                                              service_id,
+                                              service_info);
             }
         }
     }
