@@ -44,10 +44,6 @@ typedef struct {
 } YtsRosterClass;
 
 void
-yts_roster_add_contact (YtsRoster   *roster,
-                        YtsContact  *contact);
-
-void
 yts_roster_remove_contact (YtsRoster  *roster,
                            YtsContact *contact,
                            bool        dispose);
