@@ -38,7 +38,8 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (
                                                   _capability_interface_init))
 
 /**
- * SECTION:yts-service
+ * SECTION: yts-service
+ * @title: YtsService
  * @short_description: Represents a service connected to the Ytstenut
  * application mesh.
  *

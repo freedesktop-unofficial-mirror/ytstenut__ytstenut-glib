@@ -24,7 +24,8 @@
 G_DEFINE_INTERFACE (YtsCapability, yts_capability, G_TYPE_OBJECT)
 
 /**
- * SECTION:yts-capability
+ * SECTION: yts-capability
+ * @title: YtsCapability
  * @short_description: Common interface for service implementations and their
  *                     proxies.
  *

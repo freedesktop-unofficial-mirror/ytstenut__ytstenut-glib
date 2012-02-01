@@ -39,6 +39,7 @@ G_DEFINE_ABSTRACT_TYPE (YtsRoster, yts_roster, G_TYPE_OBJECT)
 
 /**
  * SECTION: yts-roster
+ * @title: YtsRoster
  * @short_description: Represents a roster of devices and services
  * connected to the Ytstenut application mesh.
  *
