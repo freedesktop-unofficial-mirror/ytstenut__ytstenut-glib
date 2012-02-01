@@ -1,7 +1,6 @@
 
 TESTS = \
   message \
-  status \
   $(NULL)
 
 if ENABLE_INTEGRATION_TESTS
@@ -25,9 +24,6 @@ check_PROGRAMS = $(TESTS)
 
 message_SOURCES          = message.c
 message_LDADD            = $(YTS_LIBS)
-
-status_SOURCES           = status.c
-status_LDADD             = $(YTS_LIBS)
 
 ## File transfer can't be tested this way, because it is not possible to do
 ## FT to self (i.e., there would need to be two separate contacts, but as we

@@ -54,10 +54,8 @@ libsrc_la_SOURCES = \
   $(srcdir)/yts-roster-impl.c \
   $(srcdir)/yts-service.c \
   $(srcdir)/yts-service-impl.c \
-  $(srcdir)/yts-status.c \
   \
   $(srcdir)/yts-adapter-factory.c \
-  $(srcdir)/yts-capability-status.c \
   $(srcdir)/yts-error-message.c \
   $(srcdir)/yts-event-message.c \
   $(srcdir)/yts-factory.c \
@@ -116,14 +114,12 @@ libprv_la_SOURCES = \
   $(srcdir)/yts-service-internal.h \
   $(srcdir)/yts-xml.h \
   \
-  $(srcdir)/yts-capability-status.h \
   $(srcdir)/yts-message.h \
   $(srcdir)/yts-metadata.h \
   $(srcdir)/yts-error-message.h \
   $(srcdir)/yts-event-message.h \
   $(srcdir)/yts-invocation-message.h \
   $(srcdir)/yts-response-message.h \
-  $(srcdir)/yts-status.h \
   \
   $(srcdir)/profile/yts-profile.h \
   $(srcdir)/profile/yts-profile-impl.h \

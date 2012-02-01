@@ -48,15 +48,12 @@
 
       <xi:include href="xml/yts-capability-status.xml"/>
       <xi:include href="xml/yts-capability.xml"/>
-      <xi:include href="xml/yts-caps.xml"/>
       <xi:include href="xml/yts-client.xml"/>
       <xi:include href="xml/yts-contact.xml"/>
-      <xi:include href="xml/yts-debug.xml"/>
       <xi:include href="xml/yts-error-message.xml"/>
       <xi:include href="xml/yts-error.xml"/>
       <xi:include href="xml/yts-event-message.xml"/>
       <xi:include href="xml/yts-invocation-message.xml"/>
-      <xi:include href="xml/yts-main.xml"/>
       <xi:include href="xml/yts-message.xml"/>
       <xi:include href="xml/yts-metadata-service.xml"/>
       <xi:include href="xml/yts-metadata.xml"/>
@@ -66,8 +63,6 @@
       <xi:include href="xml/yts-roster.xml"/>
       <xi:include href="xml/yts-service-adapter.xml"/>
       <xi:include href="xml/yts-service.xml"/>
-      <xi:include href="xml/yts-status.xml"/>
-      <xi:include href="xml/yts-types.xml"/>
       <xi:include href="xml/yts-version.xml"/>
       <xi:include href="xml/yts-vp-content.xml"/>
       <xi:include href="xml/yts-vp-playable.xml"/>

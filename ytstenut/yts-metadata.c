@@ -20,7 +20,7 @@
 
 /**
  * SECTION:yts-metadata
- * @short_description: Base class for #YtsStatus and #YtsMessage.
+ * @short_description: Base class for #YtsMessage.
  *
  * #YtsMetadata is a base class for Ytstenut metadata classes.
  */
@@ -30,7 +30,6 @@
 
 #include "yts-metadata-internal.h"
 #include "yts-message.h"
-#include "yts-status.h"
 #include "config.h"
 
 static void yts_metadata_dispose (GObject *object);
@@ -273,8 +272,7 @@ yts_metadata_get_root_node (YtsMetadata *self)
  * yts_metadata_new_from_xml:
  * @xml: the xml the metatdata object is to represent
  *
- * Constructs a new #YtsMetadata object from the xml snippet; depending on the
- * xml, this is either #YtsMessage or #YtsStatus.
+ * Constructs a new #YtsMetadata object from the xml snippet.
  */
 YtsMetadata *
 yts_metadata_new_from_xml (const char *xml)
@@ -307,8 +305,7 @@ yts_metadata_new_from_xml (const char *xml)
  *
  * Private constructor.
  *
- * Return value: (transfer full): newly allocated #YtsMetadata subclass, either
- * #YtsMessage or #YtsStatus, depending on the top level node.
+ * Return value: (transfer full): newly allocated #YtsMetadata subclass.
  */
 YtsMetadata *
 yts_metadata_new_from_node (RestXmlNode       *node,
@@ -327,52 +324,6 @@ yts_metadata_new_from_node (RestXmlNode       *node,
                               NULL);
       else
         mdata = g_object_new (YTS_TYPE_MESSAGE, "top-level-node", node, NULL);
-    }
-  else if (!g_strcmp0 (node->name, "status"))
-    {
-      if (attributes)
-        {
-          char const *const *p;
-          gboolean     have_caps     = FALSE;
-          gboolean     have_activity = FALSE;
-          gboolean     have_xmlns    = FALSE;
-          gboolean     have_from     = FALSE;
-
-          for (p = attributes; *p; ++p)
-            {
-              if (!g_strcmp0 (*p, "capability"))
-                have_caps = TRUE;
-              else if (!g_strcmp0 (*p, "activity"))
-                have_activity = TRUE;
-              else if (!g_strcmp0 (*p, "xmlns"))
-                have_xmlns = TRUE;
-              else if (!g_strcmp0 (*p, "from-service"))
-                have_from = TRUE;
-            }
-
-          if (!have_caps || !have_activity || !have_from)
-            {
-              g_warning ("Cannot construct YtsStatus without capability, "
-                         "activity and from-service attributes.");
-              return NULL;
-            }
-
-          if (have_xmlns)
-            {
-              g_warning ("xmlns attribute is not allowed when constructing "
-                         "YtsStatus");
-              return NULL;
-            }
-
-          mdata = g_object_new (YTS_TYPE_STATUS,
-                                "top-level-node", node,
-                                "attributes",     attributes,
-                                NULL);
-
-          yts_metadata_add_attribute (mdata, "xmlns", "urn:ytstenut:status");
-        }
-      else
-        mdata = g_object_new (YTS_TYPE_STATUS, "top-level-node", node, NULL);
     }
   else
     g_warning ("Unknown top level node '%s'", node->name);
@@ -608,8 +559,8 @@ yts_rest_xml_node_check_children (RestXmlNode *node0, RestXmlNode *node1)
  * @other: #YtsMetadata
  *
  * Compares two metadata instances and returns %TRUE if they are equal.
- * NB: equality implies identity of type, i.e., #YtsMessage and #YtsStatus
- * can be compared, but will always be unequal.
+ * NB: equality implies identity of type, i.e., different subclasses will
+ * always be unequal.
  *
  * Return value: %TRUE if equal, %FALSE otherwise.
  */

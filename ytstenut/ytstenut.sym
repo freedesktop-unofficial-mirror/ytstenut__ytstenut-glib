@@ -1,8 +1,6 @@
 yts_capability_get_type
 yts_capability_get_fqc_ids
 yts_capability_has_fqc_id
-yts_capability_status_get_type
-yts_capability_status_new
 yts_capability_mode_get_type
 yts_client_connect
 yts_client_disconnect
@@ -52,7 +50,6 @@ yts_service_get_type
 yts_service_send_text
 yts_service_send_list
 yts_service_send_dictionary
-yts_status_new
 yts_vp_content_get_type
 yts_vp_query_get_max_results
 yts_vp_query_get_progress
