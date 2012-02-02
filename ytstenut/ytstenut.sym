@@ -22,6 +22,9 @@ yts_contact_get_id
 yts_contact_get_name
 yts_contact_get_type
 yts_contact_send_file
+yts_file_transfer_get_progress
+yts_file_transfer_get_type
+yts_outgoing_file_get_type
 yts_message_get_type
 yts_message_new
 yts_metadata_add_attribute
@@ -47,6 +50,7 @@ yts_service_get_names
 yts_service_get_service_type
 yts_service_get_statuses
 yts_service_get_type
+yts_service_send_file
 yts_service_send_text
 yts_service_send_list
 yts_service_send_dictionary

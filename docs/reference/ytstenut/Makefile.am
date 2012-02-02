@@ -65,6 +65,7 @@ IGNORE_HFILES = \
   yts-message.h \
   yts-metadata.h \
   yts-metadata-internal.h \
+  yts-outgoing-file-internal.h \
   yts-profile-adapter.h \
   yts-profile.h \
   yts-profile-impl.h \

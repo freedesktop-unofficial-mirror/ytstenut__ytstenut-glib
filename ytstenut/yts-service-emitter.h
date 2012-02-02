@@ -22,7 +22,9 @@
 #define YTS_SERVICE_EMITTER_H
 
 #include <glib-object.h>
+#include <gio/gio.h>
 #include <ytstenut/yts-metadata.h>
+#include <ytstenut/yts-outgoing-file.h>
 
 G_BEGIN_DECLS
 
@@ -52,6 +54,12 @@ yts_service_emitter_get_type (void) G_GNUC_CONST;
 void
 yts_service_emitter_send_message (YtsServiceEmitter *self,
                                   YtsMetadata       *message);
+
+YtsOutgoingFile *
+yts_service_emitter_send_file (YtsServiceEmitter   *self,
+                               GFile               *file,
+                               char const          *description,
+                               GError             **error_out);
 
 G_END_DECLS
 

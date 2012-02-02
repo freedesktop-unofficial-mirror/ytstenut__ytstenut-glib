@@ -1,7 +1,7 @@
 
 AM_CPPFLAGS = \
   -I$(top_srcdir) \
-  -DG_LOG_DOMAIN=\"$(PACKAGE)\0unspecified\" \
+  -DG_LOG_DOMAIN=\"$(PACKAGE)\\0unspecified\" \
   -DG_DISABLE_DEPRECATED \
   $(NULL)
 
@@ -19,6 +19,8 @@ libhdr_la_SOURCES = \
   $(srcdir)/yts-capability.h \
   $(srcdir)/yts-client.h \
   $(srcdir)/yts-contact.h \
+  $(srcdir)/yts-file-transfer.h \
+  $(srcdir)/yts-outgoing-file.h \
   $(srcdir)/yts-roster.h \
   $(srcdir)/yts-service.h \
   $(srcdir)/yts-version.h \
@@ -61,6 +63,8 @@ libsrc_la_SOURCES = \
   $(srcdir)/yts-factory.c \
   $(srcdir)/yts-invocation-message.c \
   $(srcdir)/yts-service-emitter.c \
+  $(srcdir)/yts-file-transfer.c \
+  $(srcdir)/yts-outgoing-file.c \
   $(srcdir)/yts-proxy.c \
   $(srcdir)/yts-proxy-factory.c \
   $(srcdir)/yts-proxy-service.c \
@@ -101,6 +105,7 @@ libprv_la_SOURCES = \
   $(srcdir)/yts-error.h \
   $(srcdir)/yts-factory.h \
   $(srcdir)/yts-metadata-internal.h \
+  $(srcdir)/yts-outgoing-file-internal.h \
   $(srcdir)/yts-proxy-factory.h \
   $(srcdir)/yts-proxy-internal.h \
   $(srcdir)/yts-proxy-service-impl.h \

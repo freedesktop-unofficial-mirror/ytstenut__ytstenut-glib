@@ -29,6 +29,7 @@ G_DEFINE_TYPE (YtsRosterImpl, yts_roster_impl, YTS_TYPE_ROSTER)
 
 enum {
   SIG_SEND_MESSAGE,
+  SIG_SEND_FILE,
 
   N_SIGNALS
 };
@@ -55,6 +56,18 @@ yts_roster_impl_class_init (YtsRosterImplClass *klass)
                                          YTS_TYPE_CONTACT,
                                          YTS_TYPE_SERVICE,
                                          YTS_TYPE_METADATA);
+
+  _signals[SIG_SEND_FILE] = g_signal_new ("send-file",
+                                          G_TYPE_FROM_CLASS (object_class),
+                                          G_SIGNAL_RUN_LAST,
+                                          0, NULL, NULL,
+                                          yts_marshal_OBJECT__OBJECT_OBJECT_OBJECT_STRING_POINTER,
+                                          YTS_TYPE_OUTGOING_FILE, 5,
+                                          YTS_TYPE_CONTACT,
+                                          YTS_TYPE_SERVICE,
+                                          G_TYPE_FILE,
+                                          G_TYPE_STRING,
+                                          G_TYPE_POINTER);
 }
 
 static void
@@ -81,5 +94,23 @@ yts_roster_impl_send_message (YtsRosterImpl *self,
 
   g_signal_emit (self, _signals[SIG_SEND_MESSAGE], 0,
                  contact, service, message);
+}
+
+YtsOutgoingFile *
+yts_roster_impl_send_file (YtsRosterImpl   *self,
+                           YtsContact      *contact,
+                           YtsService      *service,
+                           GFile           *file,
+                           char const      *description,
+                           GError         **error_out)
+{
+  YtsOutgoingFile *transfer;
+
+  transfer = NULL;
+  g_signal_emit (self, _signals[SIG_SEND_FILE], 0,
+                 contact, service, file, description, error_out,
+                 &transfer);
+
+  return transfer;
 }
 

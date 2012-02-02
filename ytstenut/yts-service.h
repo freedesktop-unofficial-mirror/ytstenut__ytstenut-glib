@@ -23,6 +23,8 @@
 #define YTS_SERVICE_H
 
 #include <glib-object.h>
+#include <gio/gio.h>
+#include <ytstenut/yts-outgoing-file.h>
 
 G_BEGIN_DECLS
 
@@ -66,6 +68,12 @@ void
 yts_service_send_dictionary (YtsService         *self,
                              char const *const  *dictionary,
                              int                 length);
+
+YtsOutgoingFile *
+yts_service_send_file (YtsService  *self,
+                      GFile        *file,
+                      char const   *description,
+                      GError      **error_out);
 
 G_END_DECLS
 

@@ -25,6 +25,8 @@
 #include <ytstenut/yts-capability.h>
 #include <ytstenut/yts-client.h>
 #include <ytstenut/yts-contact.h>
+#include <ytstenut/yts-outgoing-file.h>
+#include <ytstenut/yts-file-transfer.h>
 #include <ytstenut/yts-roster.h>
 #include <ytstenut/yts-service.h>
 #include <ytstenut/yts-version.h>

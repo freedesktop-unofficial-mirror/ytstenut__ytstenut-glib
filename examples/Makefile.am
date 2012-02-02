@@ -15,6 +15,7 @@ LDADD = $(YTS_LIBS)
 noinst_PROGRAMS = \
   dictionary-message \
   echo \
+  file-transfer \
   status \
   $(NULL)
 
@@ -24,6 +25,10 @@ dictionary_message_SOURCES = \
 
 echo_SOURCES = \
   echo.c \
+  $(NULL)
+
+file_transfer_SOURCES = \
+  file-transfer.c \
   $(NULL)
 
 status_SOURCES = \

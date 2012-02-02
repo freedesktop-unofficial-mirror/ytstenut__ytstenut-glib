@@ -106,7 +106,8 @@ yts_client_status_class_init (YtsClientStatusClass *klass)
   pspec = g_param_spec_string ("service-id", "", "",
                                NULL,
                                G_PARAM_READWRITE |
-                               G_PARAM_CONSTRUCT_ONLY);
+                               G_PARAM_CONSTRUCT_ONLY |
+                               G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SERVICE_ID, pspec);
 }
 

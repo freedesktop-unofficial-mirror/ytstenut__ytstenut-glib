@@ -19,11 +19,13 @@
  *              Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include <gio/gio.h>
 #include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
 
 #include "yts-contact-impl.h"
 #include "yts-marshal.h"
 #include "yts-metadata.h"
+#include "yts-outgoing-file.h"
 #include "yts-roster-impl.h"
 #include "yts-roster-internal.h"
 #include "yts-service-factory.h"
@@ -83,6 +85,24 @@ _contact_send_message (YtsContact   *contact,
                                 message);
 }
 
+static YtsOutgoingFile *
+_contact_send_file (YtsContact   *contact,
+                    YtsService   *service,
+                    GFile        *file,
+                    char const   *description,
+                    GError      **error_out,
+                    YtsRoster    *self)
+{
+  /* This is a bit of a hack, we require the non-abstract subclass to
+   * implement this interface. */
+  return yts_roster_impl_send_file (YTS_ROSTER_IMPL (self),
+                                    contact,
+                                    service,
+                                    file,
+                                    description,
+                                    error_out);
+}
+
 static void
 _get_property (GObject    *object,
                unsigned    property_id,
@@ -125,6 +145,9 @@ _dispose (GObject *object)
 
       g_signal_handlers_disconnect_by_func (contact,
                                             _contact_send_message,
+                                            object);
+      g_signal_handlers_disconnect_by_func (contact,
+                                            _contact_send_file,
                                             object);
     }
 
@@ -262,6 +285,9 @@ yts_roster_remove_service_by_id (YtsRoster  *self,
     g_signal_handlers_disconnect_by_func (contact,
                                           _contact_send_message,
                                           self);
+    g_signal_handlers_disconnect_by_func (contact,
+                                          _contact_send_file,
+                                          self);
     g_object_ref (contact);
     g_hash_table_remove (priv->contacts, contact_id);
     g_signal_emit (self, _signals[SIG_CONTACT_REMOVED], 0, contact);
@@ -354,6 +380,9 @@ yts_roster_clear (YtsRoster *self)
       g_signal_handlers_disconnect_by_func (contact,
                                             _contact_send_message,
                                             self);
+      g_signal_handlers_disconnect_by_func (contact,
+                                            _contact_send_file,
+                                            self);
 
       g_object_ref (contact);
 
@@ -430,6 +459,8 @@ _connection_get_contacts (TpConnection        *connection,
 
     g_signal_connect (contact, "send-message",
                       G_CALLBACK (_contact_send_message), self);
+    g_signal_connect (contact, "send-file",
+                      G_CALLBACK (_contact_send_file), self);
 
     yts_contact_add_service (contact, service);
     g_object_unref (service);

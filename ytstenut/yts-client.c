@@ -45,6 +45,7 @@
 #include "yts-invocation-message.h"
 #include "yts-marshal.h"
 #include "yts-metadata-internal.h"
+#include "yts-outgoing-file-internal.h"
 #include "yts-response-message.h"
 #include "yts-roster-impl.h"
 #include "yts-service.h"
@@ -1282,6 +1283,42 @@ _roster_send_message (YtsRoster    *roster,
   yts_client_send_message (self, contact, service_id, message);
 }
 
+static YtsOutgoingFile *
+_roster_send_file (YtsRoster   *roster,
+                   YtsContact  *contact,
+                   YtsService  *service,
+                   GFile       *file,
+                   char const  *description,
+                   GError     **error_out,
+                   YtsClient   *self)
+{
+  YtsClientPrivate  *priv = GET_PRIVATE (self);
+  YtsOutgoingFile   *outgoing;
+  char const        *recipient_contact_id;
+  char const        *recipient_service_id;
+  GError            *error = NULL;
+
+  g_return_val_if_fail (YTS_IS_CLIENT (self), NULL);
+
+  recipient_contact_id = yts_contact_get_id (contact);
+  recipient_service_id = yts_service_get_id (service);
+  outgoing = yts_outgoing_file_new (priv->tp_account,
+                                    file,
+                                    recipient_contact_id,
+                                    recipient_service_id,
+                                    description);
+
+  g_initable_init (G_INITABLE (outgoing), NULL, &error);
+  if (error) {
+    g_object_unref (outgoing);
+    g_propagate_error (error_out, error);
+    g_clear_error (&error);
+    return NULL;
+  }
+
+  return outgoing;
+}
+
 static void
 _roster_contact_removed (YtsRoster  *roster,
                          YtsContact *contact,
@@ -1373,14 +1410,20 @@ yts_client_constructed (GObject *object)
   priv->roster   = yts_roster_impl_new ();
   g_signal_connect (priv->roster, "send-message",
                     G_CALLBACK (_roster_send_message), object);
+  g_signal_connect (priv->roster, "send-file",
+                    G_CALLBACK (_roster_send_file), object);
   g_signal_connect (priv->roster, "contact-removed",
                     G_CALLBACK (_roster_contact_removed), object);
 
   priv->unwanted = yts_roster_impl_new ();
+#if 0 /* TODO */
   g_signal_connect (priv->unwanted, "send-message",
                     G_CALLBACK (_roster_send_message), object);
+  g_signal_connect (priv->roster, "send-file",
+                    G_CALLBACK (_roster_send_file), object);
   g_signal_connect (priv->unwanted, "contact-removed",
                     G_CALLBACK (_roster_contact_removed), object);
+#endif
 
   if (!priv->service_id || !*priv->service_id) {
     g_critical ("Service-ID must be set at construction time.");

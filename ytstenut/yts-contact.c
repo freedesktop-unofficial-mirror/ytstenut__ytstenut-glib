@@ -247,6 +247,22 @@ _service_send_message (YtsService   *service,
   yts_contact_impl_send_message (YTS_CONTACT_IMPL (self), service, message);
 }
 
+static YtsOutgoingFile *
+_service_send_file (YtsService   *service,
+                    GFile        *file,
+                    char const   *description,
+                    GError      **error_out,
+                    YtsContact   *self)
+{
+  /* This is a bit of a hack, we require the non-abstract subclass to
+   * implement this interface. */
+  return yts_contact_impl_send_file (YTS_CONTACT_IMPL (self),
+                                     service,
+                                     file,
+                                     description,
+                                     error_out);
+}
+
 static void
 _service_added (YtsContact  *self,
                 YtsService  *service,
@@ -264,6 +280,8 @@ _service_added (YtsContact  *self,
 
   g_signal_connect (service, "send-message",
                     G_CALLBACK (_service_send_message), self);
+  g_signal_connect (service, "send-file",
+                    G_CALLBACK (_service_send_file), self);
 }
 
 static void
@@ -281,6 +299,9 @@ _service_removed (YtsContact  *self,
 
   g_signal_handlers_disconnect_by_func (service,
                                         _service_send_message,
+                                        self);
+  g_signal_handlers_disconnect_by_func (service,
+                                        _service_send_file,
                                         self);
 }
 

@@ -29,6 +29,7 @@ G_DEFINE_INTERFACE (YtsServiceEmitter, yts_service_emitter, YTS_TYPE_SERVICE)
 
 enum {
   SIG_SEND_MESSAGE,
+  SIG_SEND_FILE,
 
   N_SIGNALS
 };
@@ -42,12 +43,6 @@ yts_service_emitter_default_init (YtsServiceEmitterInterface *interface)
 
   if (!_initialized) {
 
-    /**
-     * YtsServiceImpl::send-message:
-     *
-     * Internal signal, should not be considered by language bindings at this
-     * time. Maybe in the future when we allow for custom service subclasses.
-     */
     _signals[SIG_SEND_MESSAGE] = g_signal_new ("send-message",
                                                G_TYPE_FROM_INTERFACE (interface),
                                                G_SIGNAL_RUN_LAST,
@@ -56,6 +51,15 @@ yts_service_emitter_default_init (YtsServiceEmitterInterface *interface)
                                                G_TYPE_NONE, 1,
                                                YTS_TYPE_METADATA);
 
+    _signals[SIG_SEND_FILE] = g_signal_new ("send-file",
+                                            G_TYPE_FROM_INTERFACE (interface),
+                                            G_SIGNAL_RUN_LAST,
+                                            0, NULL, NULL,
+                                            yts_marshal_OBJECT__OBJECT_STRING_POINTER,
+                                            YTS_TYPE_OUTGOING_FILE, 3,
+                                            G_TYPE_FILE,
+                                            G_TYPE_STRING,
+                                            G_TYPE_POINTER);
     _initialized = true;
   }
 }
@@ -65,5 +69,21 @@ yts_service_emitter_send_message (YtsServiceEmitter *self,
                                   YtsMetadata       *message)
 {
   g_signal_emit (self, _signals[SIG_SEND_MESSAGE], 0, message);
+}
+
+YtsOutgoingFile *
+yts_service_emitter_send_file (YtsServiceEmitter   *self,
+                               GFile               *file,
+                               char const          *description,
+                               GError             **error_out)
+{
+  YtsOutgoingFile *transfer;
+
+  transfer = NULL;
+  g_signal_emit (self, _signals[SIG_SEND_FILE], 0,
+                 file, description, error_out,
+                 &transfer);
+
+  return transfer;
 }
 

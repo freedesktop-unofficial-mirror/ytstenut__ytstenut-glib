@@ -53,10 +53,12 @@
       <xi:include href="xml/yts-error-message.xml"/>
       <xi:include href="xml/yts-error.xml"/>
       <xi:include href="xml/yts-event-message.xml"/>
+      <xi:include href="xml/yts-file-transfer.xml"/>
       <xi:include href="xml/yts-invocation-message.xml"/>
       <xi:include href="xml/yts-message.xml"/>
       <xi:include href="xml/yts-metadata-service.xml"/>
       <xi:include href="xml/yts-metadata.xml"/>
+      <xi:include href="xml/yts-outgoing-file.xml"/>
       <xi:include href="xml/yts-proxy-service.xml"/>
       <xi:include href="xml/yts-proxy.xml"/>
       <xi:include href="xml/yts-response-message.xml"/>

@@ -29,6 +29,7 @@ G_DEFINE_TYPE (YtsContactImpl, yts_contact_impl, YTS_TYPE_CONTACT)
 
 enum {
   SIG_SEND_MESSAGE,
+  SIG_SEND_FILE,
 
   N_SIGNALS
 };
@@ -54,6 +55,17 @@ yts_contact_impl_class_init (YtsContactImplClass *klass)
                                              G_TYPE_NONE, 2,
                                              YTS_TYPE_SERVICE,
                                              YTS_TYPE_METADATA);
+
+  _signals[SIG_SEND_FILE] = g_signal_new ("send-file",
+                                          G_TYPE_FROM_CLASS (object_class),
+                                          G_SIGNAL_RUN_LAST,
+                                          0, NULL, NULL,
+                                          yts_marshal_OBJECT__OBJECT_OBJECT_STRING_POINTER,
+                                          YTS_TYPE_OUTGOING_FILE, 4,
+                                          YTS_TYPE_SERVICE,
+                                          G_TYPE_FILE,
+                                          G_TYPE_STRING,
+                                          G_TYPE_POINTER);
 }
 
 static void
@@ -80,5 +92,22 @@ yts_contact_impl_send_message (YtsContactImpl *self,
 
   g_signal_emit (self, _signals[SIG_SEND_MESSAGE], 0,
                  service, message);
+}
+
+YtsOutgoingFile *
+yts_contact_impl_send_file (YtsContactImpl   *self,
+                            YtsService       *service,
+                            GFile            *file,
+                            char const       *description,
+                            GError          **error_out)
+{
+  YtsOutgoingFile *transfer;
+
+  transfer = NULL;
+  g_signal_emit (self, _signals[SIG_SEND_FILE], 0,
+                 service, file, description, error_out,
+                 &transfer);
+
+  return transfer;
 }
 

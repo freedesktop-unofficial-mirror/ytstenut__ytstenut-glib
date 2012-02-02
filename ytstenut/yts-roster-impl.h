@@ -22,8 +22,10 @@
 #define YTS_ROSTER_IMPL_H
 
 #include <glib-object.h>
+#include <gio/gio.h>
 #include <ytstenut/yts-roster-internal.h>
 #include <ytstenut/yts-metadata.h>
+#include <ytstenut/yts-outgoing-file.h>
 
 G_BEGIN_DECLS
 
@@ -63,6 +65,14 @@ yts_roster_impl_send_message (YtsRosterImpl *self,
                               YtsContact    *contact,
                               YtsService    *service,
                               YtsMetadata   *message);
+
+YtsOutgoingFile *
+yts_roster_impl_send_file (YtsRosterImpl   *self,
+                           YtsContact      *contact,
+                           YtsService      *service,
+                           GFile           *file,
+                           char const      *description,
+                           GError         **error_out);
 
 G_END_DECLS
 

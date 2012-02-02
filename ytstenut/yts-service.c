@@ -510,3 +510,31 @@ yts_service_send_dictionary (YtsService         *self,
   g_object_unref (message);
 }
 
+/**
+ * yts_service_send_file:
+ * @self: object on which to invoke this method.
+ * @file: file to send.
+ * @description: an optional text that is meant to be presented receiving user.
+ * @error_out: error out pointer. If set the error code can be any of
+ *             YTS_OUTGOING_FILE_ERROR_.
+ *
+ * Send @file to remote service @self.
+ *
+ * Returns (transfer full): an #YtsOutgoingFile instance if the transfer
+ * could be initated, or %NULL on error, in which case @error will be set if
+ * non-null.
+ *
+ * Since: 0.4
+ */
+YtsOutgoingFile *
+yts_service_send_file (YtsService  *self,
+                       GFile       *file,
+                       char const  *description,
+                       GError     **error_out)
+{
+  return yts_service_emitter_send_file (YTS_SERVICE_EMITTER (self),
+                                        file,
+                                        description,
+                                        error_out);
+}
+

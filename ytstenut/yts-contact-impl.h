@@ -22,9 +22,11 @@
 #define YTS_CONTACT_IMPL_H
 
 #include <glib-object.h>
+#include <gio/gio.h>
 #include <telepathy-glib/contact.h>
 #include <ytstenut/yts-contact-internal.h>
 #include <ytstenut/yts-metadata.h>
+#include <ytstenut/yts-outgoing-file.h>
 
 G_BEGIN_DECLS
 
@@ -63,6 +65,13 @@ void
 yts_contact_impl_send_message (YtsContactImpl *self,
                                YtsService     *service,
                                YtsMetadata    *message);
+
+YtsOutgoingFile *
+yts_contact_impl_send_file (YtsContactImpl   *self,
+                            YtsService       *service,
+                            GFile            *file,
+                            char const       *description,
+                            GError          **error_out);
 
 G_END_DECLS
 
