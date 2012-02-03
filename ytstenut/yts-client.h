@@ -57,7 +57,6 @@ typedef struct {
  * YtsClientClass:
  * @authenticated: virtual function for the #YtsClient::authenticated signal.
  * @disconnected: virtual function for the #YtsClient::disconnected signal.
- * @incoming_file: virtual function for the #YtsClient::incoming-file signal.
  * @raw_message: virtual function for the #YtsClient::raw-message signal.
  * @ready: virtual function for the #YtsClient::ready signal.
  *
@@ -136,13 +135,6 @@ yts_client_add_capability (YtsClient          *self,
 
 YtsRoster *const
 yts_client_get_roster (YtsClient const *self);
-
-void
-yts_client_set_incoming_file_directory (YtsClient   *self,
-                                        char const  *directory);
-
-char const *
-yts_client_get_incoming_file_directory (YtsClient const *self);
 
 char const *
 yts_client_get_contact_id (YtsClient const *self);

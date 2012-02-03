@@ -295,41 +295,6 @@ yts_roster_remove_service_by_id (YtsRoster  *self,
   }
 }
 
-/*
- * yts_roster_find_contact_by_handle:
- * @roster: #YtsRoster
- * @handle: handle of this contact
- *
- * Finds contact in a roster.
- *
- * Return value: (transfer none): #YtsContact if found, or %NULL.
- */
-YtsContact *
-yts_roster_find_contact_by_handle (YtsRoster  *self,
-                                   guint       handle)
-{
-  YtsRosterPrivate *priv = GET_PRIVATE (self);
-  GHashTableIter     iter;
-  gpointer           key, value;
-
-  g_return_val_if_fail (YTS_IS_ROSTER (self), NULL);
-
-  g_hash_table_iter_init (&iter, priv->contacts);
-  while (g_hash_table_iter_next (&iter, &key, &value))
-    {
-      YtsContact *contact    = value;
-      TpContact   *tp_contact = yts_contact_get_tp_contact (contact);
-      guint        h          = tp_contact_get_handle (tp_contact);
-
-      if (h == handle)
-        {
-          return contact;
-        }
-    }
-
-  return NULL;
-}
-
 /**
  * yts_roster_find_contact_by_id:
  * @self: object on which to invoke this method.

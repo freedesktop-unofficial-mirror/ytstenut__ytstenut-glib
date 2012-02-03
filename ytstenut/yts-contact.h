@@ -72,15 +72,6 @@ yts_contact_foreach_service (YtsContact                 *self,
                              YtsContactServiceIterator   iterator,
                              void                       *user_data);
 
-bool
-yts_contact_send_file (YtsContact  *self,
-                       GFile       *file,
-                       GError     **error_out);
-
-bool
-yts_contact_cancel_file (YtsContact *self,
-                         GFile      *file);
-
 G_END_DECLS
 
 #endif /* YTS_CONTACT_H */

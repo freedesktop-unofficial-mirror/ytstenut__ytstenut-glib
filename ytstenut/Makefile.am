@@ -41,7 +41,6 @@ libhdr_la_SOURCES = \
 libsrc_la_SOURCES = \
   $(srcdir)/ytstenut.c \
   \
-  $(srcdir)/empathy-tp-file.c \
   $(srcdir)/yts-capability.c \
   $(srcdir)/yts-client.c \
   $(srcdir)/yts-client-status.c \
@@ -96,7 +95,6 @@ libsrc_la_SOURCES = \
 libprv_la_SOURCES = \
   $(srcdir)/ytstenut-internal.h \
   \
-  $(srcdir)/empathy-tp-file.h \
   $(srcdir)/yts-adapter-factory.h \
   $(srcdir)/yts-client-internal.h \
   $(srcdir)/yts-client-status.h \

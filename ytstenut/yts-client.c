@@ -33,7 +33,6 @@
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
 
-#include "empathy-tp-file.h"
 #include "ytstenut-internal.h"
 #include "yts-adapter-factory.h"
 #include "yts-client-internal.h"
@@ -91,8 +90,6 @@ typedef struct {
   char        *service_id;
   YtsProtocol  protocol;
 
-  char         *incoming_dir; /* destination directory for incoming files */
-
   /* Telepathy bits */
   TpYtsAccountManager  *tp_am;
   TpAccount            *tp_account;
@@ -135,7 +132,6 @@ enum
   DICTIONARY_MESSAGE,
   ERROR,
   INCOMING_FILE,
-  INCOMING_FILE_FINISHED,
   N_SIGNALS,
 };
 
@@ -469,262 +465,6 @@ proxy_list_destroy (ProxyList *self)
  * YtsClient
  */
 
-static gboolean
-yts_client_channel_requested (TpChannel *proxy)
-{
-  GHashTable *props;
-  gboolean    requested;
-
-  props = tp_channel_borrow_immutable_properties ((TpChannel*)proxy);
-
-  requested = tp_asv_get_boolean (props, TP_PROP_CHANNEL_REQUESTED, NULL);
-
-  return requested;
-}
-
-static void
-yts_client_ft_op_cb (EmpathyTpFile *tp_file,
-                      const GError  *error,
-                      gpointer       data)
-{
-  if (error)
-    {
-      g_warning ("Incoming file transfer failed: %s", error->message);
-    }
-}
-
-static void
-yts_client_ft_accept_cb (TpProxy      *proxy,
-                          GHashTable   *props,
-                          const GError *error,
-                          gpointer      self,
-                          GObject      *weak_object)
-{
-  YtsClientPrivate *priv = GET_PRIVATE (self);
-  char const        *name;
-  char const        *contact_id;
-  uint64_t            offset;
-  uint64_t            size;
-  GHashTable        *iprops;
-  YtsContact       *item;
-  guint32            ihandle;
-
-  iprops = tp_channel_borrow_immutable_properties ((TpChannel*)proxy);
-
-  ihandle = tp_asv_get_uint32 (iprops,
-                               TP_PROP_CHANNEL_INITIATOR_HANDLE,
-                               NULL);
-
-  if ((item = yts_roster_find_contact_by_handle (priv->roster, ihandle)))
-    {
-      contact_id = yts_contact_get_id (item);
-    }
-  else
-    {
-      g_warning ("Unknown originator with handle %d", ihandle);
-
-      tp_cli_channel_call_close ((TpChannel*)proxy,
-                                 -1,
-                                 NULL,
-                                 NULL,
-                                 NULL,
-                                 NULL);
-
-      return;
-    }
-
-  tp_asv_dump (props);
-
-  name   = tp_asv_get_string (props, "Filename");
-  offset = tp_asv_get_uint64 (props, "InitialOffset", NULL);
-  size   = tp_asv_get_uint64 (props, "Size", NULL);
-
-  if (!size || size < offset)
-    {
-      g_warning ("Meaningless file size");
-
-      tp_cli_channel_call_close ((TpChannel*)proxy,
-                                 -1,
-                                 NULL,
-                                 NULL,
-                                 NULL,
-                                 NULL);
-
-      return;
-    }
-
-  g_signal_emit (self, signals[INCOMING_FILE], 0,
-                 contact_id, name, size, offset, proxy);
-}
-
-static void
-yts_client_ft_handle_state (YtsClient *self, TpChannel *proxy, guint state)
-{
-  YtsClientPrivate *priv = GET_PRIVATE (self);
-  GHashTable        *props;
-  gboolean           requested;
-
-  props = tp_channel_borrow_immutable_properties ((TpChannel*)proxy);
-  if (!(requested = tp_asv_get_boolean (props, TP_PROP_CHANNEL_REQUESTED,NULL)))
-    {
-      YtsContact *item;
-      guint32      ihandle;
-
-      ihandle = tp_asv_get_uint32 (props,
-                                   TP_PROP_CHANNEL_INITIATOR_HANDLE,
-                                   NULL);
-      item = yts_roster_find_contact_by_handle (priv->roster, ihandle);
-
-      switch (state)
-        {
-        case 1:
-          {
-            if (item)
-              g_message ("Got request for FT channel from %s (%s)",
-                         yts_contact_get_id (item),
-                         tp_proxy_get_bus_name (proxy));
-            else
-              g_message ("Got request for FT channel from handle %d",
-                         ihandle);
-
-            tp_cli_dbus_properties_call_get_all (proxy,
-                                           -1,
-                                           TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
-                                           yts_client_ft_accept_cb,
-                                           self,
-                                           NULL,
-                                           (GObject*) self);
-          }
-          break;
-        case 2:
-          g_message ("Incoming stream state (%s) --> 'accepted'",
-                     tp_proxy_get_bus_name (proxy));
-          break;
-        case 3:
-          g_message ("Incoming stream state (%s) --> 'open'",
-                     tp_proxy_get_bus_name (proxy));
-          break;
-        case 4:
-        case 5:
-          g_message ("Incoming stream state (%s) --> '%s'",
-                     tp_proxy_get_bus_name (proxy),
-                     state == 4 ? "completed" : "cancelled");
-          {
-            char const *name;
-            char const *contact_id;
-
-            if (item)
-              {
-                contact_id = yts_contact_get_id (item);
-
-                name   = tp_asv_get_string (props, "Filename");
-
-                g_signal_emit (self, signals[INCOMING_FILE_FINISHED], 0,
-                               contact_id, name, state == 4 ? TRUE : FALSE);
-              }
-          }
-          break;
-        default:
-          g_message ("Invalid value of stream state: %d", state);
-        }
-    }
-  else
-    g_message ("The FT channel was requested by us ... (%s)",
-             tp_proxy_get_bus_name (proxy));
-}
-
-static void
-yts_client_ft_state_cb (TpChannel *proxy,
-                         guint      state,
-                         guint      reason,
-                         gpointer   data,
-                         GObject   *object)
-{
-  YtsClient *client = data;
-
-  g_message ("FT channel changed status to %d (reason %d)", state, reason);
-
-  yts_client_ft_handle_state (client, proxy, state);
-}
-
-static void
-yts_client_ft_core_cb (GObject *proxy, GAsyncResult *res, gpointer data)
-{
-  YtsClient *client  = data;
-  TpChannel  *channel = (TpChannel*) proxy;
-  GError     *error   = NULL;
-
-  g_message ("FT channel ready");
-
-  tp_cli_channel_type_file_transfer_connect_to_file_transfer_state_changed
-    (channel,
-     yts_client_ft_state_cb,
-     client,
-     NULL,
-     (GObject*)client,
-     &error);
-
-  if (!yts_client_channel_requested (channel))
-    yts_client_ft_handle_state (client, channel, 1);
-}
-
-static void
-yts_client_channel_cb (TpConnection *proxy,
-                        char const   *path,
-                        char const   *type,
-                        guint         handle_type,
-                        guint         handle,
-                        gboolean      suppress_handle,
-                        gpointer      self,
-                        GObject      *weak_object)
-{
-  YtsClientPrivate *priv = GET_PRIVATE (self);
-
-  if (!path)
-    {
-      g_warning (G_STRLOC ":%s: no path!", __FUNCTION__);
-      return;
-    }
-
-  g_message ("New channel: %s: %s: h type %d, h %d",
-             path, type, handle_type, handle);
-
-  switch (handle_type)
-    {
-    case TP_HANDLE_TYPE_CONTACT:
-      /* FIXME -- this is where the messaging channel will go */
-      if (!g_strcmp0 (type, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER))
-        {
-          GError      *error = NULL;
-          TpChannel   *ch;
-          GQuark       features[] = { TP_CHANNEL_FEATURE_CORE, 0};
-          YtsContact *item;
-
-          ch = tp_channel_new (proxy, path, type, handle_type, handle, &error);
-
-          if ((item = yts_roster_find_contact_by_handle (priv->roster,
-                                                           handle)))
-            {
-              yts_contact_set_ft_channel (item, ch);
-
-              tp_proxy_prepare_async (ch, features,
-                                      yts_client_ft_core_cb, self);
-            }
-          else
-            {
-              g_warning (G_STRLOC ": orphaned channel ?");
-              g_object_unref (ch);
-            }
-        }
-      break;
-    case TP_HANDLE_TYPE_LIST:
-      break;
-    case TP_HANDLE_TYPE_GROUP:
-      break;
-    default:;
-    }
-}
-
 static void
 yts_client_authenticated (YtsClient *self)
 {
@@ -856,59 +596,6 @@ static void
 yts_client_raw_message (YtsClient   *self,
                         char const  *xml_payload)
 {
-}
-
-static bool
-yts_client_incoming_file (YtsClient   *self,
-                          char const  *from,
-                          char const  *name,
-                          uint64_t     size,
-                          uint64_t     offset,
-                          TpChannel   *proxy,
-                          void        *data)
-{
-  YtsClientPrivate *priv = GET_PRIVATE (self);
-  char              *path;
-  GFile             *gfile;
-  EmpathyTpFile     *tp_file;
-  GCancellable      *cancellable;
-
-  g_message ("Incoming file from %s", from);
-
-  if (g_mkdir_with_parents (priv->incoming_dir, 0700))
-    {
-      g_warning ("Unable to create directory %s", priv->incoming_dir);
-
-      tp_cli_channel_call_close (proxy,
-                                 -1,
-                                 NULL,
-                                 NULL,
-                                 NULL,
-                                 NULL);
-
-      return FALSE;
-    }
-
-  path = g_build_filename (priv->incoming_dir, name, NULL);
-
-  gfile = g_file_new_for_path (path);
-
-  tp_file = empathy_tp_file_new ((TpChannel*)proxy, TRUE);
-
-  cancellable = g_cancellable_new ();
-
-  empathy_tp_file_accept (tp_file, offset, gfile,
-                          cancellable,
-                          NULL /*progress_callback*/,
-                          NULL /*progress_user_data*/,
-                          yts_client_ft_op_cb,
-                          self);
-
-  g_free (path);
-  g_object_unref (gfile);
-  g_object_unref (cancellable);
-
-  return TRUE;
 }
 
 static gboolean
@@ -1196,6 +883,8 @@ setup_tp_client (YtsClient  *self,
   if (YTS_DEBUG_TELEPATHY & ytstenut_get_debug_flags ()) {
     yts_client_setup_debug (self);
   }
+
+  /* TODO receive files */
 
   /* Publish capabilities */
   yts_client_status_foreach_capability (
@@ -1616,7 +1305,6 @@ yts_client_finalize (GObject *object)
 
   g_free (priv->account_id);
   g_free (priv->service_id);
-  g_free (priv->incoming_dir);
   g_object_unref (priv->client_status);
 
   G_OBJECT_CLASS (yts_client_parent_class)->finalize (object);
@@ -1897,38 +1585,12 @@ yts_client_class_init (YtsClientClass *klass)
                   G_TYPE_UINT64,
                   G_TYPE_UINT64,
                   TP_TYPE_CHANNEL);
-
-  /**
-   * YtsClient::incoming-file-finished:
-   * @self: object which emitted the signal.
-   * @from: contact_id of the originator
-   * @name: name of the file
-   * @success: %TRUE if the transfer was completed successfully.
-   *
-   * The #YtsClient::incoming-file-finished signal is emitted when a file
-   * transfer is completed.
-   *
-   * Since: 0.1
-   */
-  signals[INCOMING_FILE_FINISHED] =
-    g_signal_new ("incoming-file-finished",
-                  G_TYPE_FROM_CLASS (object_class),
-                  G_SIGNAL_RUN_LAST,
-                  0,
-                  NULL, NULL,
-                  yts_marshal_VOID__STRING_STRING_BOOLEAN,
-                  G_TYPE_NONE, 3,
-                  G_TYPE_STRING,
-                  G_TYPE_STRING,
-                  G_TYPE_BOOLEAN);
 }
 
 static void
 yts_client_init (YtsClient *self)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
-
-  yts_client_set_incoming_file_directory (self, NULL);
 
   priv->services = g_hash_table_new_full (g_str_hash,
                                           g_str_equal,
@@ -1944,9 +1606,6 @@ yts_client_init (YtsClient *self)
                                          g_str_equal,
                                          g_free,
                                          (GDestroyNotify) proxy_list_destroy);
-
-  g_signal_connect (self, "incoming-file",
-                    G_CALLBACK (yts_client_incoming_file), self);
 }
 
 YtsClient *
@@ -2714,13 +2373,6 @@ yts_client_setup_account_connection (YtsClient *self)
       return;
     }
 
-  tp_cli_connection_connect_to_new_channel (priv->tp_conn,
-                                            yts_client_channel_cb,
-                                            self,
-                                            NULL,
-                                            (GObject*)self,
-                                            &error);
-
   if (error)
     {
       g_critical (G_STRLOC ": %s: %s; no Ytstenut functionality will be "
@@ -2988,54 +2640,6 @@ yts_client_emit_error (YtsClient *self, YtsError error)
   g_return_if_fail (yts_error_get_atom (error));
 
   g_signal_emit (self, signals[ERROR], 0, error);
-}
-
-/**
- * yts_client_set_incoming_file_directory:
- * @self: object on which to invoke this method.
- * @directory: path to a directory or %NULL.
- *
- * Sets the directory where incoming files will be stored; if the provided path
- * is %NULL, the directory will be reset to the default (~/.Ytstenut/). This
- * function does not do any checks regarding validity of the path provided,
- * though an attempt to create the directory before it is used, with permissions
- * of 0700.
- *
- * To change the directory for a specific file call this function from a
- * callback to the #YtsClient::incoming-file signal.
- */
-void
-yts_client_set_incoming_file_directory (YtsClient *self,
-                                         char const *directory)
-{
-  YtsClientPrivate *priv = GET_PRIVATE (self);
-
-  g_return_if_fail (YTS_IS_CLIENT (self));
-
-  if (!directory || !*directory)
-    priv->incoming_dir =
-      g_build_filename (g_get_home_dir (), ".ytstenut", NULL);
-  else
-    priv->incoming_dir = g_strdup (directory);
-}
-
-/**
- * yts_client_get_incoming_file_directory:
- * @self: object on which to invoke this method.
- *
- * Returns the directory into which any files from incoming file transfers will
- * be placed.
- *
- * Returns: (transfer none): directory where incoming files are stored.
- */
-char const *
-yts_client_get_incoming_file_directory (YtsClient const *self)
-{
-  YtsClientPrivate *priv = GET_PRIVATE (self);
-
-  g_return_val_if_fail (YTS_IS_CLIENT (self), NULL);
-
-  return priv->incoming_dir;
 }
 
 /**
