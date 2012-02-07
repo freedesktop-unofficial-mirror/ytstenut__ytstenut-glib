@@ -23,12 +23,17 @@
 #include "yts-file-transfer.h"
 #include "yts-marshal.h"
 
+/* HACK, include known implementers headers for type checks. */
+#include "yts-incoming-file-internal.h"
+#include "yts-outgoing-file-internal.h"
+
 #include "config.h"
 
 G_DEFINE_INTERFACE (YtsFileTransfer, yts_file_transfer, G_TYPE_OBJECT)
 
 /**
- * SECTION:yts-file-transfer
+ * SECTION: yts-file-transfer
+ * @title: YtsFileTransfer
  * @short_description: Common interface for file transfers between Ytstenut
  * services.
  *
@@ -37,21 +42,13 @@ G_DEFINE_INTERFACE (YtsFileTransfer, yts_file_transfer, G_TYPE_OBJECT)
  */
 
 enum {
-  SIG_ERROR = 0,
+  SIG_CANCELLED = 0,
+  SIG_ERROR,
 
   LAST_SIGNAL
 };
 
 static unsigned _signals[LAST_SIGNAL] = { 0, };
-
-/**
- * SECTION:yts-file_transfer
- * @short_description: Common interface for file up- and downloads.
- *
- * #YtsFileTransfer is an common interface for the #YtsIncomingFile and
- * #YtsOutgoingFile file transmission classes. A value smaller than 0.0
- * denotes error state.
- */
 
 static void
 yts_file_transfer_default_init (YtsFileTransferInterface *interface)
@@ -63,19 +60,30 @@ yts_file_transfer_default_init (YtsFileTransferInterface *interface)
     GParamSpec *pspec;
 
     /**
+     * YtsFileTransfer:file:
+     *
+     * The #GFile instance backing the transfer.
+     *
+     * Since: 0.4
+     */
+    pspec = g_param_spec_object ("file", "", "",
+                                 G_TYPE_FILE,
+                                 G_PARAM_READWRITE |
+                                 G_PARAM_CONSTRUCT_ONLY |
+                                 G_PARAM_STATIC_STRINGS);
+    g_object_interface_install_property (interface, pspec);
+
+    /**
      * YtsFileTransfer:progress:
      *
      * Read-only property that holds the file transmission progress. Values range
      * from 0.0 at the start of the transfer, to 1.0 upon completion.
+     * Error or cancellation leaves the progress with a value smaller than zero.
      */
     pspec = g_param_spec_float ("progress", "", "",
                                 -0.1, 1.1, 0.0,
                                 G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
     g_object_interface_install_property (interface, pspec);
-
-    /*
-     * Signals
-     */
 
     /**
      * YtsFileTransfer::error:
@@ -94,7 +102,53 @@ yts_file_transfer_default_init (YtsFileTransferInterface *interface)
                                         yts_marshal_VOID__BOXED,
                                         G_TYPE_NONE, 1,
                                         G_TYPE_ERROR);
+
+    /**
+     * YtsFileTransfer::cancelled:
+     * @self: object which emitted the signal.
+     *
+     * This signal is emitted when remote peer cancelled the file transmission.
+     *
+     * Since: 0.4
+     */
+    _signals[SIG_CANCELLED] = g_signal_new ("cancelled",
+                                            G_TYPE_FROM_INTERFACE (interface),
+                                            G_SIGNAL_RUN_LAST,
+                                            0, NULL, NULL,
+                                            yts_marshal_VOID__VOID,
+                                            G_TYPE_NONE, 0);
   }
+}
+
+/**
+ * yts_file_transfer_get_file:
+ * @self: object on which to invoke this method.
+ *
+ * See YtsFileTransfer:file property for details.
+ *
+ * Returns: #GFile instance backing the transfer.
+ */
+GFile *const
+yts_file_transfer_get_file (YtsFileTransfer *self)
+{
+  /* Known subclasses, so hack it up for const return. */
+
+  if (YTS_IS_INCOMING_FILE (self)) {
+
+    return yts_incoming_file_get_file (YTS_INCOMING_FILE (self));
+
+  } else if (YTS_IS_OUTGOING_FILE (self)) {
+
+    return yts_outgoing_file_get_file (YTS_OUTGOING_FILE (self));
+
+  } else {
+
+    g_warning ("Unhandled YtsFileTransfer instance %s in %s",
+               G_OBJECT_TYPE_NAME (self),
+               __FUNCTION__);
+  }
+
+  return NULL;
 }
 
 /**

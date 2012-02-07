@@ -41,6 +41,8 @@
 #include "yts-enum-types.h"
 #include "yts-error-message.h"
 #include "yts-event-message.h"
+#include "yts-file-transfer.h"
+#include "yts-incoming-file-internal.h"
 #include "yts-invocation-message.h"
 #include "yts-marshal.h"
 #include "yts-metadata-internal.h"
@@ -97,6 +99,7 @@ typedef struct {
   TpProxy              *tp_debug_proxy;
   TpYtsStatus          *tp_status;
   TpYtsClient          *tp_client;
+  TpBaseClient         *tp_file_handler;
 
   /* Implemented services */
   GHashTable  *services;
@@ -598,19 +601,6 @@ yts_client_raw_message (YtsClient   *self,
 {
 }
 
-static gboolean
-yts_client_stop_accumulator (GSignalInvocationHint *ihint,
-                              GValue                *accumulated,
-                              const GValue          *returned,
-                              gpointer               data)
-{
-  gboolean cont = g_value_get_boolean (returned);
-
-  g_value_set_boolean (accumulated, cont);
-
-  return cont;
-}
-
 /*
  * Callback for #TpProxy::interface-added: we need to add the signals we
  * care for here.
@@ -844,6 +834,55 @@ yts_client_setup_debug  (YtsClient *self)
   g_free (busname);
 }
 
+static void
+_file_handler_handle_channels (TpSimpleHandler          *handler,
+                               TpAccount                *account,
+                               TpConnection             *connection,
+                               GList                    *channels,
+                               GList                    *requests_satisfied,
+                               gint64                    user_action_time,
+                               TpHandleChannelsContext  *context,
+                               void                     *data)
+{
+  YtsClient         *self = YTS_CLIENT (data);
+  YtsClientPrivate  *priv = GET_PRIVATE (self);
+  GList             *iter;
+
+  for (iter = channels;
+       iter && TP_IS_FILE_TRANSFER_CHANNEL (iter->data);
+       iter = iter->next) {
+
+    TpFileTransferChannel *channel = iter->data;
+    char const *remote_contact_id = tp_channel_get_initiator_identifier (TP_CHANNEL (channel));
+    GHashTable *props = tp_channel_borrow_immutable_properties (TP_CHANNEL (channel));
+    char const *const key = "org.freedesktop.Telepathy.Channel.Interface.FileTransfer.Metadata.ServiceName";
+    char const *remote_service_id = tp_asv_get_string (props, key);
+
+    YtsService *service = yts_roster_find_service_by_id (priv->roster,
+                                                         remote_contact_id,
+                                                         remote_service_id);
+
+    YtsIncomingFile *incoming = yts_incoming_file_new (channel);
+
+    GError *error = NULL;
+
+    if (g_initable_init (G_INITABLE (incoming), NULL, &error)) {
+
+      g_signal_emit (self, signals[INCOMING_FILE], 0,
+                     service, props, incoming);
+
+    } else {
+
+      // TODO if (error) {}
+      g_critical ("Handling incoming file failed");
+    }
+
+    g_object_unref (incoming);
+  }
+
+  tp_handle_channels_context_accept (context);
+}
+
 static bool
 _client_status_foreach_interest_add (YtsClientStatus const  *client_status,
                                      char const             *capability,
@@ -874,6 +913,8 @@ setup_tp_client (YtsClient  *self,
                  TpAccount  *account)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
+  GHashTable  *filter;
+  GError      *error = NULL;
 
   g_return_if_fail (TP_IS_ACCOUNT (account));
 
@@ -884,7 +925,37 @@ setup_tp_client (YtsClient  *self,
     yts_client_setup_debug (self);
   }
 
-  /* TODO receive files */
+  /* Incoming file machinery. */
+  priv->tp_file_handler = tp_simple_handler_new_with_factory (
+                            tp_proxy_get_factory (priv->tp_am),
+                            TRUE, FALSE, priv->service_id,
+                            TRUE, _file_handler_handle_channels, self, NULL);
+
+  filter = tp_asv_new (
+                TP_PROP_CHANNEL_CHANNEL_TYPE,
+                G_TYPE_STRING,
+                TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
+
+                TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
+                G_TYPE_UINT,
+                TP_HANDLE_TYPE_CONTACT,
+
+                TP_PROP_CHANNEL_REQUESTED,
+                G_TYPE_BOOLEAN,
+                FALSE,
+
+                TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_SERVICE_NAME,
+                G_TYPE_STRING,
+                priv->service_id,
+
+                NULL);
+
+  tp_base_client_take_handler_filter (priv->tp_file_handler, filter);
+  tp_base_client_register (priv->tp_file_handler, &error);
+  if (error) {
+    g_critical ("%s", error->message);
+    g_clear_error (&error);
+  }
 
   /* Publish capabilities */
   yts_client_status_foreach_capability (
@@ -1254,6 +1325,13 @@ yts_client_dispose (GObject *object)
       priv->unwanted = NULL;
     }
 
+  if (priv->tp_file_handler)
+    {
+      tp_base_client_unregister (priv->tp_file_handler);
+      g_object_unref (priv->tp_file_handler);
+      priv->tp_file_handler = NULL;
+    }
+
   if (priv->tp_conn)
     {
       tp_cli_connection_call_disconnect  (priv->tp_conn,
@@ -1550,8 +1628,7 @@ yts_client_class_init (YtsClientClass *klass)
     g_signal_new ("error",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST,
-                  0,
-                  NULL, NULL,
+                  0, NULL, NULL,
                   yts_marshal_VOID__UINT,
                   G_TYPE_NONE, 1,
                   G_TYPE_UINT);
@@ -1559,16 +1636,14 @@ yts_client_class_init (YtsClientClass *klass)
   /**
    * YtsClient::incoming-file:
    * @self: object which emitted the signal.
-   * @from: contact_id of the originator
-   * @name: name of the file
-   * @size: size of the file
-   * @offset: offset into the file,
-   * @channel: #TpChannel
+   * @service: #YtsService sending the file.
+   * @properties: an a{sv} #GHashTable containing file properties, see telepathy channel properties.
+   * @incoming: the #YtsIncomingFile that is being sent.
    *
    * The #YtsClient::incoming-file signal is emitted when the client receives
-   * incoming request for a file transfer. The signal closure will
-   * kickstart the transfer -- this can be prevented by a connected handler
-   * returning %FALSE.
+   * incoming request for a file transfer. To accept the file, the signal
+   * handler needs to call #yts_incoming_file_accept(), otherwise the transfer
+   * will be cancelled.
    *
    * Since: 0.1
    */
@@ -1576,15 +1651,12 @@ yts_client_class_init (YtsClientClass *klass)
     g_signal_new ("incoming-file",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST,
-                  0,
-                  yts_client_stop_accumulator, NULL,
-                  yts_marshal_BOOLEAN__STRING_STRING_UINT64_UINT64_OBJECT,
-                  G_TYPE_BOOLEAN, 5,
-                  G_TYPE_STRING,
-                  G_TYPE_STRING,
-                  G_TYPE_UINT64,
-                  G_TYPE_UINT64,
-                  TP_TYPE_CHANNEL);
+                  0, NULL, NULL,
+                  yts_marshal_VOID__OBJECT_BOXED_OBJECT,
+                  G_TYPE_NONE, 3,
+                  YTS_TYPE_SERVICE,
+                  G_TYPE_HASH_TABLE,
+                  YTS_TYPE_INCOMING_FILE);
 }
 
 static void

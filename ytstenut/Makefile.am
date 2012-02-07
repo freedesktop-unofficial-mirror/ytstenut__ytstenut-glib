@@ -20,6 +20,7 @@ libhdr_la_SOURCES = \
   $(srcdir)/yts-client.h \
   $(srcdir)/yts-contact.h \
   $(srcdir)/yts-file-transfer.h \
+  $(srcdir)/yts-incoming-file.h \
   $(srcdir)/yts-outgoing-file.h \
   $(srcdir)/yts-roster.h \
   $(srcdir)/yts-service.h \
@@ -60,6 +61,7 @@ libsrc_la_SOURCES = \
   $(srcdir)/yts-error-message.c \
   $(srcdir)/yts-event-message.c \
   $(srcdir)/yts-factory.c \
+  $(srcdir)/yts-incoming-file.c \
   $(srcdir)/yts-invocation-message.c \
   $(srcdir)/yts-service-emitter.c \
   $(srcdir)/yts-file-transfer.c \
@@ -102,6 +104,7 @@ libprv_la_SOURCES = \
   $(srcdir)/yts-contact-internal.h \
   $(srcdir)/yts-error.h \
   $(srcdir)/yts-factory.h \
+  $(srcdir)/yts-incoming-file-internal.h \
   $(srcdir)/yts-metadata-internal.h \
   $(srcdir)/yts-outgoing-file-internal.h \
   $(srcdir)/yts-proxy-factory.h \

@@ -58,6 +58,11 @@ yts_roster_add_service (YtsRoster         *roster,
                         GHashTable        *names,
                         GHashTable        *statuses);
 
+YtsService *const
+yts_roster_find_service_by_id (YtsRoster  *self,
+                               char const *contact_id,
+                               char const *service_id);
+
 void
 yts_roster_remove_service_by_id (YtsRoster  *roster,
                                  char const *contact_id,

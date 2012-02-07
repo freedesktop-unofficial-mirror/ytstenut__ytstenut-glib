@@ -20,6 +20,7 @@
  */
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <telepathy-glib/telepathy-glib.h>
 
 #include "yts-file-transfer.h"
@@ -42,13 +43,14 @@ G_DEFINE_TYPE_WITH_CODE (YtsOutgoingFile,
                                                 _file_transfer_interface_init))
 
 /**
- * SECTION:yts-outgoing-file
+ * SECTION: yts-outgoing-file
+ * @title: YtsOutgoingFile
  * @short_description: File upload implementation.
  *
  * #YtsOutgoingFile represents an ongoing file upload operation to another
  * Ytstenut service.
  *
- * TODO add cancellation in finalize(), and cancel API. Take care not to touch
+ * TODO add cancellation in dispose(), and cancel API. Take care not to touch
  * self any more after cancellation.
  */
 
@@ -60,13 +62,13 @@ enum {
 
   /* YtsFileTransfer */
   PROP_FILE_TRANSFER_PROGRESS,
+  PROP_FILE_TRANSFER_FILE,
 
   /* YtsOutgoingFile */
   PROP_TP_ACCOUNT,
-  PROP_FILE,
+  PROP_DESCRIPTION,
   PROP_RECIPIENT_CONTACT_ID,
-  PROP_RECIPIENT_SERVICE_ID,
-  PROP_DESCRIPTION
+  PROP_RECIPIENT_SERVICE_ID
 };
 
 typedef struct {
@@ -77,8 +79,9 @@ typedef struct {
   char      *recipient_service_id;
   char      *description;
   float      progress;
-  /* Data*/
-  goffset    file_size;
+  /* Data */
+  TpFileTransferChannel *tp_channel;
+  uint64_t               size;
 } YtsOutgoingFilePrivate;
 
 static gboolean
@@ -185,15 +188,32 @@ set_and_emit_error (YtsOutgoingFile  *self,
 }
 
 static void
+_channel_close (GObject       *source,
+                GAsyncResult  *result,
+                void          *data)
+{
+  /* Object might be in dispose() already, do not touch self/priv any more. */
+  GError *error_in = NULL;
+
+  tp_channel_close_finish (TP_CHANNEL (source), result, &error_in);
+  if (error_in) {
+    g_critical ("Failed to close the file-transfer channel");
+    g_clear_error (&error_in);
+  }
+}
+
+static void
 _channel_provide_file (GObject          *object,
                        GAsyncResult     *result,
                        gpointer          data)
 {
-  YtsOutgoingFile       *self = YTS_OUTGOING_FILE (data);
-  TpFileTransferChannel *channel = TP_FILE_TRANSFER_CHANNEL (object);
-  GError                *error_in = NULL;
+  YtsOutgoingFile         *self = YTS_OUTGOING_FILE (data);
+  YtsOutgoingFilePrivate  *priv = GET_PRIVATE (self);
+  GError                  *error_in = NULL;
 
-  tp_file_transfer_channel_provide_file_finish (channel, result, &error_in);
+  tp_file_transfer_channel_provide_file_finish (priv->tp_channel,
+                                                result,
+                                                &error_in);
   if (error_in) {
     GError *error_out = g_error_new (YTS_OUTGOING_FILE_ERROR,
                                      YTS_OUTGOING_FILE_ERROR_TRANSFER_FAILED,
@@ -212,12 +232,16 @@ _channel_notify_state (TpFileTransferChannel  *channel,
                        YtsOutgoingFile        *self)
 {
   YtsOutgoingFilePrivate *priv = GET_PRIVATE (self);
-  TpFileTransferState state = tp_file_transfer_channel_get_state (channel, NULL);
+  TpFileTransferState             state;
+  TpFileTransferStateChangeReason reason;
+  bool                            close_channel = false;
+
+  state = tp_file_transfer_channel_get_state (priv->tp_channel, &reason);
 
   if (state == TP_FILE_TRANSFER_STATE_ACCEPTED
       && tp_channel_get_requested (TP_CHANNEL (channel))) {
 
-    tp_file_transfer_channel_provide_file_async (channel,
+    tp_file_transfer_channel_provide_file_async (priv->tp_channel,
                                                  priv->file,
                                                  _channel_provide_file,
                                                  self);
@@ -226,9 +250,40 @@ _channel_notify_state (TpFileTransferChannel  *channel,
 
     priv->progress = 1.1;
     g_object_notify (G_OBJECT (self), "progress");
+    close_channel = true;
 
-    /* PONDERING hope that's correct. */
-    g_object_unref (channel);
+  } else if (reason == TP_FILE_TRANSFER_STATE_CHANGE_REASON_REMOTE_STOPPED) {
+
+    g_signal_emit_by_name (self, "cancelled");
+    priv->progress = -0.1;
+    g_object_notify (G_OBJECT (self), "progress");
+    close_channel = true;
+
+  } else if (reason == TP_FILE_TRANSFER_STATE_CHANGE_REASON_LOCAL_ERROR) {
+
+    GError *error = g_error_new (YTS_OUTGOING_FILE_ERROR,
+                                 YTS_OUTGOING_FILE_ERROR_LOCAL,
+                                 "Transmission failed because of a local error");
+    set_and_emit_error (self, error);
+    g_error_free (error);
+    close_channel = true;
+
+  } else if (reason == TP_FILE_TRANSFER_STATE_CHANGE_REASON_REMOTE_ERROR) {
+
+    GError *error = g_error_new (YTS_OUTGOING_FILE_ERROR,
+                                 YTS_OUTGOING_FILE_ERROR_REMOTE,
+                                 "Transmission failed because of a remote error");
+    set_and_emit_error (self, error);
+    g_error_free (error);
+    close_channel = true;
+  }
+
+  if (close_channel && priv->tp_channel) {
+    tp_channel_close_async (TP_CHANNEL (priv->tp_channel),
+                            _channel_close,
+                            self);
+    g_object_unref (priv->tp_channel);
+    priv->tp_channel = NULL;
   }
 }
 
@@ -241,7 +296,7 @@ _channel_notify_transferred_bytes (TpFileTransferChannel  *channel,
   float transferred_bytes;
 
   transferred_bytes = tp_file_transfer_channel_get_transferred_bytes (channel);
-  priv->progress = transferred_bytes / priv->file_size;
+  priv->progress = transferred_bytes / priv->size;
   g_object_notify (G_OBJECT (self), "progress");
 }
 
@@ -251,15 +306,16 @@ _account_channel_request_create (GObject      *source,
                                  gpointer      data)
 {
   YtsOutgoingFile         *self = YTS_OUTGOING_FILE (data);
+  YtsOutgoingFilePrivate  *priv = GET_PRIVATE (self);
   TpAccountChannelRequest *channel_request = TP_ACCOUNT_CHANNEL_REQUEST (source);
-  TpChannel               *channel;
   GError                  *error_in = NULL;
 
-  channel = tp_account_channel_request_create_and_handle_channel_finish (
+  priv->tp_channel = TP_FILE_TRANSFER_CHANNEL (
+      tp_account_channel_request_create_and_handle_channel_finish (
                                                               channel_request,
                                                               result,
                                                               NULL,
-                                                              &error_in);
+                                                              &error_in));
   if (error_in) {
     GError *error_out = g_error_new (YTS_OUTGOING_FILE_ERROR,
                                      YTS_OUTGOING_FILE_ERROR_CHANNEL_FAILED,
@@ -272,9 +328,9 @@ _account_channel_request_create (GObject      *source,
     return;
   }
 
-  g_signal_connect (channel, "notify::state",
+  g_signal_connect (priv->tp_channel, "notify::state",
                     G_CALLBACK (_channel_notify_state), self);
-  g_signal_connect (channel, "notify::transferred-bytes",
+  g_signal_connect (priv->tp_channel, "notify::transferred-bytes",
                     G_CALLBACK (_channel_notify_transferred_bytes), self);
 }
 
@@ -316,7 +372,7 @@ _initable_init (GInitable      *initable,
   name = g_file_info_get_name (info);
   mimetype = g_file_info_get_content_type (info);
   g_file_info_get_modification_time (info, &mtime);
-  priv->file_size = g_file_info_get_size (info);
+  priv->size = g_file_info_get_size (info);
 
   /* Now we have everything prepared to continue, let's create the
    * Ytstenut channel handler with service name specified. */
@@ -329,7 +385,7 @@ _initable_init (GInitable      *initable,
       TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DESCRIPTION, G_TYPE_STRING, priv->description,
       TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_FILENAME, G_TYPE_STRING, name,
       TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_INITIAL_OFFSET, G_TYPE_UINT64, (guint64) 0,
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE, G_TYPE_UINT64, (guint64) priv->file_size,
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE, G_TYPE_UINT64, (guint64) priv->size,
       /* here is the remote service */
       TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_SERVICE_NAME, G_TYPE_STRING, priv->recipient_service_id,
       NULL);
@@ -363,23 +419,23 @@ _get_property (GObject    *object,
 
     /* YtsFileTransfer */
 
+    case PROP_FILE_TRANSFER_FILE:
+      g_value_set_object (value, priv->file);
+      break;
     case PROP_FILE_TRANSFER_PROGRESS:
       g_value_set_float (value, priv->progress);
       break;
 
     /* YtsOutgoingFile */
 
-    case PROP_FILE:
-      g_value_set_object (value, priv->file);
+    case PROP_DESCRIPTION:
+      g_value_set_string (value, priv->description);
       break;
     case PROP_RECIPIENT_CONTACT_ID:
       g_value_set_string (value, priv->recipient_contact_id);
       break;
     case PROP_RECIPIENT_SERVICE_ID:
       g_value_set_string (value, priv->recipient_service_id);
-      break;
-    case PROP_DESCRIPTION:
-      g_value_set_string (value, priv->description);
       break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -395,25 +451,31 @@ _set_property (GObject      *object,
   YtsOutgoingFilePrivate *priv = GET_PRIVATE (object);
 
   switch (property_id) {
+
+    /* YtsFileTransfer */
+
+    case PROP_FILE_TRANSFER_FILE:
+      /* Construct-only */
+      priv->file = g_value_dup_object (value);
+      break;
+
+    /* YtsOutgoingFile */
+
     case PROP_TP_ACCOUNT:
       /* Construct-only */
       priv->tp_account = g_value_dup_object (value);
       break;
-    case PROP_FILE:
-      /* Construct-only */
-      priv->file = g_value_dup_object (value);
-    break;
-    case PROP_RECIPIENT_CONTACT_ID:
-      /* Construct-only */
-      priv->recipient_contact_id = g_value_dup_string (value);
-    break;
-    case PROP_RECIPIENT_SERVICE_ID:
-      /* Construct-only */
-      priv->recipient_service_id = g_value_dup_string (value);
-    break;
     case PROP_DESCRIPTION:
       /* Construct-only */
       priv->description = g_value_dup_string (value);
+      break;
+    case PROP_RECIPIENT_CONTACT_ID:
+      /* Construct-only */
+      priv->recipient_contact_id = g_value_dup_string (value);
+      break;
+    case PROP_RECIPIENT_SERVICE_ID:
+      /* Construct-only */
+      priv->recipient_service_id = g_value_dup_string (value);
     break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -421,11 +483,24 @@ _set_property (GObject      *object,
 }
 
 static void
-_finalize (GObject *object)
+_dispose (GObject *object)
 {
   YtsOutgoingFilePrivate *priv = GET_PRIVATE (object);
 
-  g_debug ("%s() %s", __FILE__, __FUNCTION__);
+  if (priv->tp_channel) {
+    tp_channel_close_async (TP_CHANNEL (priv->tp_channel),
+                            _channel_close,
+                            object);
+    priv->tp_channel = NULL;
+  }
+
+  G_OBJECT_CLASS (yts_outgoing_file_parent_class)->finalize (object);
+}
+
+static void
+_finalize (GObject *object)
+{
+  YtsOutgoingFilePrivate *priv = GET_PRIVATE (object);
 
   if (priv->tp_account) {
     g_object_unref (priv->tp_account);
@@ -465,15 +540,33 @@ yts_outgoing_file_class_init (YtsOutgoingFileClass *klass)
 
   object_class->get_property = _get_property;
   object_class->set_property = _set_property;
+  object_class->dispose = _dispose;
   object_class->finalize = _finalize;
 
   /* YtsFileTransfer properties */
 
   g_object_class_override_property (object_class,
+                                    PROP_FILE_TRANSFER_FILE,
+                                    "file");
+  g_object_class_override_property (object_class,
                                     PROP_FILE_TRANSFER_PROGRESS,
                                     "progress");
 
   /* YtsOutgoingFile properties */
+
+  /**
+   * YtsOutgoingFile:description:
+   *
+   * Describes the purpose of the file transfer. May be %NULL.
+   *
+   * Since: 0.4
+   */
+  pspec = g_param_spec_string ("description", "", "",
+                               NULL,
+                               G_PARAM_READWRITE |
+                               G_PARAM_CONSTRUCT_ONLY |
+                               G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_DESCRIPTION, pspec);
 
   /**
    * YtsOutgoingFile:tp-account:
@@ -486,20 +579,6 @@ yts_outgoing_file_class_init (YtsOutgoingFileClass *klass)
                                G_PARAM_CONSTRUCT_ONLY |
                                G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_TP_ACCOUNT, pspec);
-
-  /**
-   * YtsOutgoingFile:file:
-   *
-   * The #GFile that is going to be transmitted.
-   *
-   * Since: 0.4
-   */
-  pspec = g_param_spec_object ("file", "", "",
-                               G_TYPE_FILE,
-                               G_PARAM_READWRITE |
-                               G_PARAM_CONSTRUCT_ONLY |
-                               G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_FILE, pspec);
 
   /**
    * YtsOutgoingFile:recipient-contact-id:
@@ -532,24 +611,6 @@ yts_outgoing_file_class_init (YtsOutgoingFileClass *klass)
   g_object_class_install_property (object_class,
                                    PROP_RECIPIENT_SERVICE_ID,
                                    pspec);
-
-  /**
-   * YtsOutgoingFile:description:
-   *
-   * Describes the purpose of the file transfer. Optional, may be %NULL.
-   *
-   * Since: 0.4
-   */
-  pspec = g_param_spec_string ("description", "", "",
-                               NULL,
-                               G_PARAM_READWRITE |
-                               G_PARAM_CONSTRUCT_ONLY |
-                               G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class,
-                                   PROP_DESCRIPTION,
-                                   pspec);
-
-  /* Signals */
 }
 
 static void
@@ -571,5 +632,25 @@ yts_outgoing_file_new (TpAccount  *tp_account,
                        "recipient-service-id", recipient_service_id,
                        "description", description,
                        NULL);
+}
+
+char const *
+yts_outgoing_file_get_description (YtsOutgoingFile *self)
+{
+  YtsOutgoingFilePrivate *priv = GET_PRIVATE (self);
+
+  g_return_val_if_fail (YTS_IS_OUTGOING_FILE (self), NULL);
+
+  return priv->description;
+}
+
+GFile *const
+yts_outgoing_file_get_file (YtsOutgoingFile *self)
+{
+  YtsOutgoingFilePrivate *priv = GET_PRIVATE (self);
+
+  g_return_val_if_fail (YTS_IS_OUTGOING_FILE (self), NULL);
+
+  return priv->file;
 }
 

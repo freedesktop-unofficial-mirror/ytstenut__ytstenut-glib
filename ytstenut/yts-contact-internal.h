@@ -59,6 +59,10 @@ void
 yts_contact_add_service (YtsContact *contact,
                          YtsService *service);
 
+YtsService *const
+yts_contact_find_service_by_id (YtsContact  *self,
+                                char const  *service_id);
+
 TpContact *const
 yts_contact_get_tp_contact (YtsContact const *self);
 

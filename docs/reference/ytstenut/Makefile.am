@@ -61,6 +61,7 @@ IGNORE_HFILES = \
   yts-error-message.h \
   yts-event-message.h \
   yts-factory.h \
+  yts-incoming-file-internal.h \
   yts-invocation-message.h \
   yts-message.h \
   yts-metadata.h \

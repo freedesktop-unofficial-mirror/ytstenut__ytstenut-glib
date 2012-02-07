@@ -20,6 +20,10 @@ yts_contact_get_name
 yts_contact_get_type
 yts_file_transfer_get_progress
 yts_file_transfer_get_type
+yts_incoming_file_accept
+yts_incoming_file_get_type
+yts_incoming_file_reject
+yts_outgoing_file_get_description
 yts_outgoing_file_get_type
 yts_message_get_type
 yts_message_new

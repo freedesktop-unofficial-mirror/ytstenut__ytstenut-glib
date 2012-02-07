@@ -23,6 +23,7 @@
 #include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
 
 #include "yts-contact-impl.h"
+#include "yts-contact-internal.h"
 #include "yts-marshal.h"
 #include "yts-metadata.h"
 #include "yts-outgoing-file.h"
@@ -251,6 +252,22 @@ yts_roster_init (YtsRoster *self)
                                           g_str_equal,
                                           g_free,
                                           g_object_unref);
+}
+
+YtsService *const
+yts_roster_find_service_by_id (YtsRoster  *self,
+                               char const *contact_id,
+                               char const *service_id)
+{
+  YtsContact  *contact;
+  YtsService  *service = NULL;
+
+  contact = yts_roster_find_contact_by_id (self, contact_id);
+  if (contact) {
+    service = yts_contact_find_service_by_id (contact, service_id);
+  }
+
+  return service;
 }
 
 /*

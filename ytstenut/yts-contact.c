@@ -399,6 +399,15 @@ yts_contact_add_service (YtsContact *self,
   g_signal_emit (self, _signals[SIG_SERVICE_ADDED], 0, service);
 }
 
+YtsService *const
+yts_contact_find_service_by_id (YtsContact  *self,
+                                char const  *service_id)
+{
+  YtsContactPrivate *priv = GET_PRIVATE (self);
+
+  return g_hash_table_lookup (priv->services, service_id);
+}
+
 void
 yts_contact_remove_service_by_id (YtsContact  *self,
                                   const char  *service_id)

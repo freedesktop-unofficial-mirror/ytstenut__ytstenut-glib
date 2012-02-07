@@ -22,6 +22,7 @@
 #define YTS_FILE_TRANSFER_H
 
 #include <glib-object.h>
+#include <gio/gio.h>
 
 G_BEGIN_DECLS
 
@@ -47,6 +48,9 @@ typedef struct {
 
 GType
 yts_file_transfer_get_type (void) G_GNUC_CONST;
+
+GFile *const
+yts_file_transfer_get_file (YtsFileTransfer *self);
 
 float
 yts_file_transfer_get_progress (YtsFileTransfer *self);

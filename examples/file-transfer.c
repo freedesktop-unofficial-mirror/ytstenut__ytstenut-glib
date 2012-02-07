@@ -31,6 +31,42 @@
 #define SERVER_UID "org.freedesktop.ytstenut.FileTransferServer"
 #define SERVER_JID "ytstenut1@test.collabora.co.uk0"
 
+static void
+_transfer_error (YtsFileTransfer  *transfer,
+                 GError           *error,
+                 void             *data)
+{
+  g_debug ("%s()", __FUNCTION__);
+
+  g_critical ("%s", error->message);
+  g_object_unref (transfer);
+}
+
+static void
+_transfer_notify_progress (YtsFileTransfer  *transfer,
+                           GParamSpec       *pspec,
+                           void             *data)
+{
+  float progress;
+
+  progress = yts_file_transfer_get_progress (transfer);
+
+  if (progress < 0) {
+
+    /* Error, handled above. */
+
+  } else if (progress <= 1.0) {
+
+    printf ("%.2f .. ", progress);
+    fflush (stdout);
+
+  } else {
+
+    printf ("done\n");
+    g_object_unref (transfer);
+  }
+}
+
 /*
  * Client
  */
@@ -66,42 +102,6 @@ _client_text_message (YtsClient   *client,
 }
 
 static void
-_outgoing_error (YtsOutgoingFile  *outgoing,
-                 GError           *error,
-                 void             *data)
-{
-  g_debug ("%s()", __FUNCTION__);
-
-  g_critical ("%s", error->message);
-  g_object_unref (outgoing);
-}
-
-static void
-_outgoing_notify_progress (YtsOutgoingFile  *outgoing,
-                           GParamSpec       *pspec,
-                           void             *data)
-{
-  float progress;
-
-  progress = yts_file_transfer_get_progress (YTS_FILE_TRANSFER (outgoing));
-
-  if (progress < 0) {
-
-    /* Error, handled above. */
-
-  } else if (progress <= 1.0) {
-
-    printf ("%.2f .. ", progress);
-    fflush (stdout);
-
-  } else {
-
-    printf ("done\n");
-    g_object_unref (outgoing);
-  }
-}
-
-static void
 _client_roster_service_added (YtsRoster   *roster,
                               YtsService  *service,
                               char const  *path)
@@ -127,9 +127,9 @@ _client_roster_service_added (YtsRoster   *roster,
     }
 
     g_signal_connect (outgoing, "error",
-                      G_CALLBACK (_outgoing_error), NULL);
+                      G_CALLBACK (_transfer_error), NULL);
     g_signal_connect (outgoing, "notify::progress",
-                      G_CALLBACK (_outgoing_notify_progress), NULL);
+                      G_CALLBACK (_transfer_notify_progress), NULL);
 
     g_object_unref (file);
     _is_sent = true;
@@ -175,10 +175,6 @@ run_client (bool         p2p,
  * Server
  */
 
-typedef struct {
-  YtsService *service;
-} ServerData;
-
 static void
 _server_authenticated (YtsClient *client,
                        void       *data)
@@ -201,45 +197,44 @@ _server_disconnected (YtsClient  *client,
 }
 
 static void
-_server_text_message (YtsClient   *client,
-                      char const  *text,
-                      ServerData   *self)
+_server_incoming_file (YtsClient        *client,
+                       YtsService       *from_service,
+                       GHashTable       *properties,
+                       YtsIncomingFile  *incoming,
+                       char const       *path)
 {
-  g_debug ("%s() know client: %s", __FUNCTION__,
-                                  self->service ? "yes" : "no");
+  GFile       *file;
+  char const  *service_id;
+  GError      *error = NULL;
 
-  if (self->service) {
-    g_debug ("%s() echoing \"%s\"", __FUNCTION__, text);
-    yts_service_send_text (YTS_SERVICE (self->service), text);
-  }
-}
+  service_id = yts_service_get_id (from_service);
 
-static void
-_server_roster_service_added (YtsRoster  *roster,
-                              YtsService *service,
-                              ServerData  *self)
-{
-  char const *uid;
+  g_debug ("%s() %s", __FUNCTION__, service_id);
 
-  uid = yts_service_get_id (service);
+  file = g_file_new_for_commandline_arg (path);
+  if (yts_incoming_file_accept (incoming, file, &error)) {
 
-  g_debug ("%s() %s", __FUNCTION__, uid);
+    g_object_ref (incoming);
 
-  /* FIXME, possible race condition when client sends message before
-   * it shows up in our roster? */
-  if (0 == g_strcmp0 (uid, CLIENT_UID)) {
-    /* Should probably take a weak ref here. */
-    self->service = service;
+    g_signal_connect (incoming, "error",
+                      G_CALLBACK (_transfer_error), NULL);
+    g_signal_connect (incoming, "notify::progress",
+                      G_CALLBACK (_transfer_notify_progress), NULL);
+
+  } else {
+
+    g_critical ("%s", error->message);
+    g_clear_error (&error);
+    return;
   }
 }
 
 static int
-run_server (bool p2p)
+run_server (bool         p2p,
+            char const  *path)
 {
-  YtsClient  *client;
-  YtsRoster  *roster;
-  GMainLoop   *mainloop;
-  ServerData   self = { NULL, };
+  YtsClient *client;
+  GMainLoop *mainloop;
 
   if (p2p)
     client = yts_client_new_p2p (SERVER_UID);
@@ -252,12 +247,9 @@ run_server (bool p2p)
                     G_CALLBACK (_server_ready), NULL);
   g_signal_connect (client, "disconnected",
                     G_CALLBACK (_server_disconnected), NULL);
-  g_signal_connect (client, "text-message",
-                    G_CALLBACK (_server_text_message), &self);
+  g_signal_connect (client, "incoming-file",
+                    G_CALLBACK (_server_incoming_file), (void *) path);
 
-  roster = yts_client_get_roster (client);
-  g_signal_connect (roster, "service-added",
-                    G_CALLBACK (_server_roster_service_added), &self);
 
   yts_client_connect (client);
 
@@ -302,9 +294,8 @@ main (int     argc,
     g_message ("Running as client ...");
     ret = run_client (p2p, path);
   } else if (server) {
-    g_message ("Running as server ... not implemented yet");
-    /* ret = run_server (p2p); */
-    ret = -1;
+    g_message ("Running as server ... ");
+    ret = run_server (p2p, path);
   } else {
     g_warning ("%s : Not running as server or client, quitting", G_STRLOC);
     ret = -1;

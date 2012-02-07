@@ -51,6 +51,9 @@ yts_outgoing_file_new (TpAccount  *tp_account,
                        char const *recipient_service_id,
                        char const *description);
 
+GFile *const
+yts_outgoing_file_get_file (YtsOutgoingFile *self);
+
 G_END_DECLS
 
 #endif /* YTS_OUTGOING_FILE_INTERNAL_H */
