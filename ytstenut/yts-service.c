@@ -39,7 +39,6 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (
 
 /**
  * SECTION: yts-service
- * @title: YtsService
  * @short_description: Represents a service connected to the Ytstenut
  * application mesh.
  *
@@ -252,8 +251,8 @@ yts_service_class_init (YtsServiceClass *klass)
    * YtsService:names:
    *
    * The names of this service, as they should be shown in a user interface.
-   * Keys of the hash-table are locale names like %en_GB, pointing to the
-   * respective localised name.
+   * Keys of the hash-table are locale names like <literal>en_GB</literal>,
+   * pointing to the respective localised name.
    */
   pspec = g_param_spec_boxed ("names", "", "",
                               G_TYPE_HASH_TABLE,

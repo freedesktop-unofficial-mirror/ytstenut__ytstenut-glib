@@ -73,7 +73,6 @@ G_DEFINE_TYPE (YtsClient, yts_client, G_TYPE_OBJECT)
 
 /**
  * SECTION: yts-client
- * @title: YtsClient
  * @short_description: Represents a connection to the Ytstenut mesh.
  *
  * #YtsClient is an object that mediates connection between the current
@@ -469,16 +468,6 @@ proxy_list_destroy (ProxyList *self)
  */
 
 static void
-yts_client_authenticated (YtsClient *self)
-{
-  YtsClientPrivate *priv = GET_PRIVATE (self);
-
-  priv->authenticated = true;
-
-  g_message ("Authenticated");
-}
-
-static void
 _tp_yts_status_advertise_status_cb (GObject       *source_object,
                                     GAsyncResult  *result,
                                     gpointer       user_data)
@@ -512,23 +501,6 @@ _client_status_foreach_capability_advertise_status (YtsClientStatus const *clien
                                         self);
 
   return true;
-}
-
-static void
-yts_client_ready (YtsClient *self)
-{
-  YtsClientPrivate *priv = GET_PRIVATE (self);
-
-  g_return_if_fail (priv->tp_status);
-
-  priv->ready = TRUE;
-
-  g_message ("YtsClient is ready");
-
-  yts_client_status_foreach_capability (
-    priv->client_status,
-    (YtsClientStatusCapabilityIterator) _client_status_foreach_capability_advertise_status,
-    self);
 }
 
 static void
@@ -582,23 +554,6 @@ yts_client_reconnect_after (YtsClient *self, guint after_seconds)
     g_timeout_add_seconds (after_seconds,
                            (GSourceFunc) yts_client_reconnect_cb,
                            self);
-}
-
-static void
-yts_client_disconnected (YtsClient *self)
-{
-  YtsClientPrivate *priv = GET_PRIVATE (self);
-
-  yts_client_cleanup_connection_resources (self);
-
-  if (priv->reconnect)
-    yts_client_reconnect_after (self, RECONNECT_DELAY);
-}
-
-static void
-yts_client_raw_message (YtsClient   *self,
-                        char const  *xml_payload)
-{
 }
 
 /*
@@ -1409,11 +1364,6 @@ yts_client_class_init (YtsClientClass *klass)
   object_class->get_property = yts_client_get_property;
   object_class->set_property = yts_client_set_property;
 
-  klass->authenticated       = yts_client_authenticated;
-  klass->ready               = yts_client_ready;
-  klass->disconnected        = yts_client_disconnected;
-  klass->raw_message         = yts_client_raw_message;
-
   /**
    * YtsClient:account-id:
    *
@@ -1495,8 +1445,7 @@ yts_client_class_init (YtsClientClass *klass)
     g_signal_new ("authenticated",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_FIRST,
-                  G_STRUCT_OFFSET (YtsClientClass, authenticated),
-                  NULL, NULL,
+                  0, NULL, NULL,
                   yts_marshal_VOID__VOID,
                   G_TYPE_NONE, 0);
 
@@ -1513,8 +1462,7 @@ yts_client_class_init (YtsClientClass *klass)
     g_signal_new ("ready",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_FIRST,
-                  G_STRUCT_OFFSET (YtsClientClass, ready),
-                  NULL, NULL,
+                  0, NULL, NULL,
                   yts_marshal_VOID__VOID,
                   G_TYPE_NONE, 0);
 
@@ -1531,15 +1479,14 @@ yts_client_class_init (YtsClientClass *klass)
     g_signal_new ("disconnected",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_FIRST,
-                  G_STRUCT_OFFSET (YtsClientClass, disconnected),
-                  NULL, NULL,
+                  0, NULL, NULL,
                   yts_marshal_VOID__VOID,
                   G_TYPE_NONE, 0);
 
   /**
    * YtsClient::raw-message:
    * @self: object which emitted the signal.
-   * @message: #YtsMessage, the message
+   * @message: the message text.
    *
    * The message signal is emitted when message is received from one of the
    * contacts.
@@ -1550,8 +1497,7 @@ yts_client_class_init (YtsClientClass *klass)
     g_signal_new ("raw-message",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST,
-                  G_STRUCT_OFFSET (YtsClientClass, raw_message),
-                  NULL, NULL,
+                  0, NULL, NULL,
                   yts_marshal_VOID__STRING,
                   G_TYPE_NONE, 1,
                   G_TYPE_STRING);
@@ -1614,12 +1560,9 @@ yts_client_class_init (YtsClientClass *klass)
   /**
    * YtsClient::error:
    * @self: object which emitted the signal.
-   * @error: #YtsError
+   * @error: error code
    *
    * The error signal is emitted to indicate an error (or eventual success)
-   * during the handling of an operation for which the Ytstenut API initially
-   * returned %YTS_ERROR_PENDING. The original operation can be determined
-   * using the atom part of the #YtsError parameter.
    *
    * Since: 0.1
    */
@@ -1964,6 +1907,7 @@ yts_client_yts_channels_received_cb (TpYtsClient *tp_client,
                                                          from,
                                                          xml_payload);
 
+              // FIXME this should probably be emitted anyway, for consistency.
               if (!dispatched)
                 {
                   g_signal_emit (client, signals[RAW_MESSAGE], 0, xml_payload);
@@ -2071,9 +2015,18 @@ yts_client_status_cb (TpConnection  *proxy,
            status[arg_Status], reason[arg_Reason]);
 
   if (arg_Status == TP_CONNECTION_STATUS_CONNECTED)
-    g_signal_emit (self, signals[AUTHENTICATED], 0);
+    {
+      g_signal_emit (self, signals[AUTHENTICATED], 0);
+    }
   else if (arg_Status == TP_CONNECTION_STATUS_DISCONNECTED)
-    g_signal_emit (self, signals[DISCONNECTED], 0);
+    {
+      yts_client_cleanup_connection_resources (self);
+
+      if (priv->reconnect)
+        yts_client_reconnect_after (self, RECONNECT_DELAY);
+
+      g_signal_emit (self, signals[DISCONNECTED], 0);
+    }
 }
 
 static gboolean
@@ -2252,19 +2205,6 @@ yts_client_process_status (YtsClient *self)
     g_message ("No discovered services");
 }
 
-/* FIXME is this really needed or can we just advertise the new
- * per-capability status on any change? */
-static void
-yts_client_dispatch_status (YtsClient *self)
-{
-  YtsClientPrivate *priv = GET_PRIVATE (self);
-
-  yts_client_status_foreach_capability (
-    priv->client_status,
-    (YtsClientStatusCapabilityIterator) _client_status_foreach_capability_advertise_status,
-    self);
-}
-
 static void
 _tp_yts_status_changed (TpYtsStatus *tp_status,
                         char const  *contact_id,
@@ -2311,8 +2251,12 @@ yts_client_yts_status_cb (GObject       *obj,
                               G_CALLBACK (_tp_yts_status_changed),
                               self, 0);
 
+  /* Advertise statii that have been set before our TpStatus was ready. */
+  yts_client_status_foreach_capability (
+    priv->client_status,
+    (YtsClientStatusCapabilityIterator) _client_status_foreach_capability_advertise_status,
+    self);
 
-  yts_client_dispatch_status (self);
   yts_client_process_status (self);
 
   if (!priv->ready)
@@ -3207,7 +3151,7 @@ _service_destroyed (ServiceData *data,
  *
  * Publish a service to the Ytstenut network.
  *
- * Returns: %true if publishing succeeded.
+ * Returns: <literal>true</literal> if publishing succeeded.
  *
  * Since 0.3
  */
@@ -3401,7 +3345,7 @@ yts_client_unregister_proxy (YtsClient  *self,
  *
  * Iterate over @self's published services.
  *
- * Returns: %true if all the services have been iterated.
+ * Returns: <literal>true</literal> if all the services have been iterated.
  *
  * Since: 0.3
  */

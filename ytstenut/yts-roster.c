@@ -42,7 +42,6 @@ G_DEFINE_ABSTRACT_TYPE (YtsRoster, yts_roster, G_TYPE_OBJECT)
 
 /**
  * SECTION: yts-roster
- * @title: YtsRoster
  * @short_description: Represents a roster of devices and services
  * connected to the Ytstenut application mesh.
  *
@@ -518,7 +517,7 @@ yts_roster_update_contact_status (YtsRoster   *self,
  *
  * Iterate over @self's contacts.
  *
- * Returns: %true if all the contacts have been iterated.
+ * Returns: <literal>true</literal> if all the contacts have been iterated.
  *
  * Since: 0.4
  */

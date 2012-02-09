@@ -47,16 +47,12 @@
       <xi:include href="xml/yts-capability.xml"/>
       <xi:include href="xml/yts-client.xml"/>
       <xi:include href="xml/yts-contact.xml"/>
-      <xi:include href="xml/yts-error.xml"/>
       <xi:include href="xml/yts-file-transfer.xml"/>
       <xi:include href="xml/yts-incoming-file.xml"/>
-      <xi:include href="xml/yts-metadata-service.xml"/>
-      <xi:include href="xml/yts-metadata.xml"/>
       <xi:include href="xml/yts-outgoing-file.xml"/>
       <xi:include href="xml/yts-proxy-service.xml"/>
       <xi:include href="xml/yts-proxy.xml"/>
       <xi:include href="xml/yts-roster.xml"/>
-      <xi:include href="xml/yts-service-adapter.xml"/>
       <xi:include href="xml/yts-service.xml"/>
       <xi:include href="xml/yts-version.xml"/>
       <xi:include href="xml/yts-vp-content.xml"/>

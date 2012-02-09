@@ -53,6 +53,7 @@ EXTRA_HFILES=
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
 IGNORE_HFILES = \
   empathy-tp-file.h \
+  ytstenut-internal.h \
   yts-adapter-factory.h \
   yts-client-internal.h \
   yts-client-status.h \
@@ -64,6 +65,7 @@ IGNORE_HFILES = \
   yts-factory.h \
   yts-incoming-file-internal.h \
   yts-invocation-message.h \
+  yts-marshal.h \
   yts-message.h \
   yts-metadata.h \
   yts-metadata-internal.h \
@@ -84,6 +86,8 @@ IGNORE_HFILES = \
   yts-service-factory.h \
   yts-service-impl.h \
   yts-service-internal.h \
+  yts-xml.h \
+  \
   yts-vp-playable-proxy.h \
   yts-vp-player-adapter.h \
   yts-vp-player-proxy.h \

@@ -47,43 +47,13 @@ G_BEGIN_DECLS
   (G_TYPE_INSTANCE_GET_CLASS ((obj), YTS_TYPE_CLIENT, YtsClientClass))
 
 typedef struct {
-
   /*< private >*/
   GObject parent;
-
 } YtsClient;
 
-/**
- * YtsClientClass:
- * @authenticated: virtual function for the #YtsClient::authenticated signal.
- * @disconnected: virtual function for the #YtsClient::disconnected signal.
- * @raw_message: virtual function for the #YtsClient::raw-message signal.
- * @ready: virtual function for the #YtsClient::ready signal.
- *
- * Deprecated: the class handlers for signals are deprecated and will be
- *             removed in 0.4.
- * Since: 0.1
- */
 typedef struct {
-
   /*< private >*/
   GObjectClass parent;
-
-  /*< public >*/
-
-  void
-  (*authenticated) (YtsClient *self);
-
-  void
-  (*disconnected) (YtsClient *self);
-
-  void
-  (*raw_message) (YtsClient   *self,
-                  char const  *xml_payload);
-
-  void
-  (*ready) (YtsClient *self);
-
 } YtsClientClass;
 
 GType
@@ -161,7 +131,7 @@ yts_client_publish_service (YtsClient     *self,
  *
  * Callback signature for iterating a an #YtsClient's published services.
  *
- * Returns: %false to abort the iteration.
+ * Returns: <literal>false</literal> to abort the iteration.
  *
  * Since: 0.3
  */

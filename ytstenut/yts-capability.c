@@ -25,7 +25,6 @@ G_DEFINE_INTERFACE (YtsCapability, yts_capability, G_TYPE_OBJECT)
 
 /**
  * SECTION: yts-capability
- * @title: YtsCapability
  * @short_description: Common interface for service implementations and their
  *                     proxies.
  *
@@ -82,7 +81,7 @@ yts_capability_get_fqc_ids (YtsCapability *self)
  *
  * Query @self whether it supports the capability identified by @fqc_id.
  *
- * Returns: %true if @fqc_id is supported by @self.
+ * Returns: <literal>true</literal> if @fqc_id is supported by @self.
  *
  * Since: 0.3
  */

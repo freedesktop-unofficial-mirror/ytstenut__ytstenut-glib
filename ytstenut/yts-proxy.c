@@ -39,7 +39,6 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (YtsProxy,
 
 /**
  * SECTION: yts-proxy
- * @title: YtsProxy
  * @short_description: Represents a remote object, part of a remote service.
  *
  * A YtsProxy is a local representation of a remote object.

@@ -44,7 +44,6 @@ G_DEFINE_TYPE_WITH_CODE (YtsIncomingFile,
 
 /**
  * SECTION: yts-incoming-file
- * @title: YtsIncomingFile
  * @short_description: File download implementation.
  *
  * #YtsIncomingFile represents an incoming file downlod operation from another

@@ -47,7 +47,6 @@ G_DEFINE_ABSTRACT_TYPE (YtsContact, yts_contact, G_TYPE_OBJECT)
 
 /**
  * SECTION: yts-contact
- * @title: YtsContact
  * @short_description: Represents a device connected to the
  * Ytstenut mesh.
  *
@@ -531,7 +530,7 @@ yts_contact_update_service_status (YtsContact *self,
  *
  * Iterate over @self's services.
  *
- * Returns: %true if all the services have been iterated.
+ * Returns: <literal>true</literal> if all the services have been iterated.
  *
  * Since: 0.4
  */

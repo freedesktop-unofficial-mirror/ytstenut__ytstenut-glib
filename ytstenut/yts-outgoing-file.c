@@ -44,7 +44,6 @@ G_DEFINE_TYPE_WITH_CODE (YtsOutgoingFile,
 
 /**
  * SECTION: yts-outgoing-file
- * @title: YtsOutgoingFile
  * @short_description: File upload implementation.
  *
  * #YtsOutgoingFile represents an ongoing file upload operation to another

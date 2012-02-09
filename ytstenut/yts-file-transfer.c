@@ -33,7 +33,6 @@ G_DEFINE_INTERFACE (YtsFileTransfer, yts_file_transfer, G_TYPE_OBJECT)
 
 /**
  * SECTION: yts-file-transfer
- * @title: YtsFileTransfer
  * @short_description: Common interface for file transfers between Ytstenut
  * services.
  *
@@ -155,7 +154,7 @@ yts_file_transfer_get_file (YtsFileTransfer *self)
  * yts_file_transfer_get_progress:
  * @self: object on which to invoke this method.
  *
- * Get progress of file transfer operation, see #YtsFileTransfer.progress for
+ * Get progress of file transfer operation, see #YtsFileTransfer:progress for
  * details about the range of values.
  *
  * Returns: file transfer progress.

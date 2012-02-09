@@ -43,7 +43,6 @@ G_DEFINE_ABSTRACT_TYPE (YtsProxyService, yts_proxy_service, YTS_TYPE_SERVICE)
 
 /**
  * SECTION: yts-proxy-service
- * @title: YtsProxyService
  * @short_description: Represents a remote service with method invocation support.
  */
 
@@ -256,7 +255,7 @@ _proxy_destroyed (YtsProxyService  *self,
  *
  * Create a proxy for a remote object of service @self, specified by @capability.
  *
- * Returns: %true if the YtsProxyService::proxy-created can be expected to 
+ * Returns: <literal>true</literal> if the YtsProxyService::proxy-created can be expected to
  *          deliver.
  *
  * Since: 0.3

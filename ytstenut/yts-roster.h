@@ -53,7 +53,7 @@ yts_roster_find_contact_by_id (YtsRoster const  *self,
  *
  * Callback signature for iterating a an #YtsRoster's published services.
  *
- * Returns: %false to abort the iteration.
+ * Returns: <literal>false</literal> to abort the iteration.
  *
  * Since: 0.4
  */

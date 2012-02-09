@@ -57,7 +57,7 @@ yts_contact_get_name (YtsContact const *self);
  *
  * Callback signature for iterating a an #YtsContact's services.
  *
- * Returns: %false to abort the iteration.
+ * Returns: <literal>false</literal> to abort the iteration.
  *
  * Since: 0.4
  */

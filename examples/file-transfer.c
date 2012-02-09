@@ -106,12 +106,14 @@ _client_roster_service_added (YtsRoster   *roster,
                               YtsService  *service,
                               char const  *path)
 {
+  /* Only execute once, when testing on the same machine we get all the
+   * accounts because of TP's behind the scenes magic. */
   static bool _is_sent = false;
   char const *service_id;
 
   service_id = yts_service_get_id (service);
 
-  if (!_is_sent &&
+  if (false == _is_sent &&
       0 == g_strcmp0 (service_id, SERVER_UID)) {
 
     GError *error = NULL;

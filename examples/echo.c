@@ -69,16 +69,22 @@ _client_roster_service_added (YtsRoster  *roster,
                               YtsService *service,
                               void        *data)
 {
-  char const *uid;
+  /* Only execute once, when testing on the same machine we get all the
+   * accounts because of TP's behind the scenes magic. */
+  static bool _is_sent = false;
 
-  uid = yts_service_get_id (service);
+  char const *service_id;
 
-  if (0 == g_strcmp0 (uid, SERVER_UID)) {
+  service_id = yts_service_get_id (service);
+
+  if (false == _is_sent &&
+      0 == g_strcmp0 (service_id, SERVER_UID)) {
 
     char const text[] = "Hello World";
     g_debug ("Sending message \"%s\"", text);
 
     yts_service_send_text (service, text);
+    _is_sent = true;
   }
 }
 
@@ -164,15 +170,15 @@ _server_roster_service_added (YtsRoster  *roster,
                               YtsService *service,
                               ServerData  *self)
 {
-  char const *uid;
+  char const *service_id;
 
-  uid = yts_service_get_id (service);
+  service_id = yts_service_get_id (service);
 
-  g_debug ("%s() %s", __FUNCTION__, uid);
+  g_debug ("%s() %s", __FUNCTION__, service_id);
 
   /* FIXME, possible race condition when client sends message before
    * it shows up in our roster? */
-  if (0 == g_strcmp0 (uid, CLIENT_UID)) {
+  if (0 == g_strcmp0 (service_id, CLIENT_UID)) {
     /* Should probably take a weak ref here. */
     self->service = service;
   }
