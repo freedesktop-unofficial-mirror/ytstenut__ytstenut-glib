@@ -18,13 +18,6 @@
  * Authored by: Tomas Frydrych <tf@linux.intel.com>
  */
 
-/**
- * SECTION:yts-metadata
- * @short_description: Base class for #YtsMessage.
- *
- * #YtsMetadata is a base class for Ytstenut metadata classes.
- */
-
 #include <string.h>
 #include <rest/rest-xml-parser.h>
 
@@ -248,12 +241,12 @@ yts_metadata_finalize (GObject *object)
  * yts_metadata_get_root_node:
  * @self: #YtsMetadata
  *
- * Returns pointer to the top-level node of the metadata, that can be used
+ * Hands back pointer to the top-level node of the metadata, that can be used
  * with the #RestXmlNode API.
  *
  * NB: Any strings set directly through librest API must be in utf-8 encoding.
  *
- * Return value: (transfer none): #RestXmlNode representing the top-level node
+ * Returns: (transfer none): #RestXmlNode representing the top-level node
  * of the metadata xml.
  */
 RestXmlNode *
@@ -305,7 +298,7 @@ yts_metadata_new_from_xml (const char *xml)
  *
  * Private constructor.
  *
- * Return value: (transfer full): newly allocated #YtsMetadata subclass.
+ * Returns: (transfer full): newly allocated #YtsMetadata subclass.
  */
 YtsMetadata *
 yts_metadata_new_from_node (RestXmlNode       *node,
@@ -343,7 +336,7 @@ yts_metadata_new_from_node (RestXmlNode       *node,
  * node, you need to use yts_metadata_get_root_node() and the librest API to
  * locate and query the appropriate node).
  *
- * Return value: (transfer none): the attribute value or %NULL if attribute
+ * Returns: (transfer none): the attribute value or %NULL if attribute
  * does not exist.
  */
 const char *
@@ -396,7 +389,7 @@ yts_metadata_add_attribute (YtsMetadata *self,
  *
  * Converts the #YtsMetada object in XML representation.
  *
- * Return value: (transfer full): xml string; the caller must free the string
+ * Returns: (transfer full): xml string; the caller must free the string
  * with g_free() when no longer needed.
  */
 char *
@@ -423,7 +416,7 @@ yts_metadata_to_string (YtsMetadata *self)
  * content of any child nodes to xml string. This is intended for use by
  * #YtsClient when sending messages.
  *
- * Return value: (transfer full): top level attributes, the caller holds a
+ * Returns: (transfer full): top level attributes, the caller holds a
  * reference on the returned hash table, which it needs to release with
  * g_hash_table_unref() when no longer needed.
  */
@@ -562,7 +555,7 @@ yts_rest_xml_node_check_children (RestXmlNode *node0, RestXmlNode *node1)
  * NB: equality implies identity of type, i.e., different subclasses will
  * always be unequal.
  *
- * Return value: %TRUE if equal, %FALSE otherwise.
+ * Returns: %TRUE if equal, %FALSE otherwise.
  */
 gboolean
 yts_metadata_is_equal (YtsMetadata *self, YtsMetadata *other)

@@ -1473,10 +1473,9 @@ yts_client_class_init (YtsClientClass *klass)
    * YtsClient:tp-account:
    *
    * Telepathies #TpAccount object used by this instance.
+   * <note>There is no API guarantee for this and other fields that expose telepathy.</note>
    *
    * Since: 0.4
-   *
-   * <note>There is no API guarantee for this and other fields that expose telepathy.</note>
    */
   pspec = g_param_spec_object ("tp-account", "", "",
                                TP_TYPE_ACCOUNT,
@@ -2723,7 +2722,7 @@ yts_client_emit_error (YtsClient *self, YtsError error)
  * Returns: (transfer none): the jabber id.
  */
 char const *
-yts_client_get_contact_id (const YtsClient *self)
+yts_client_get_contact_id (YtsClient const *self)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
 
@@ -2742,7 +2741,7 @@ yts_client_get_contact_id (const YtsClient *self)
  * Returns: (transfer none): the service ID.
  */
 char const *
-yts_client_get_service_id (const YtsClient *self)
+yts_client_get_service_id (YtsClient const *self)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
 

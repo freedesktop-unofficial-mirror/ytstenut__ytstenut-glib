@@ -222,7 +222,7 @@ yts_proxy_get_fqc_id (YtsProxy *self)
  *
  * Convenience function to create a unique string ID for
  *
- * Returns (transfer full): unique string ID.
+ * Returns: (transfer full): unique string ID.
  *
  * Since: 0.3
  */
@@ -248,7 +248,7 @@ yts_proxy_create_invocation_id (YtsProxy *self)
  * @self: object on which to invoke this method.
  * @invocation_id: a unique identifier for this invocation, this is going to
  *                 be passed back with the response, so it can be mapped.
- * @aspec: name of the method to invoce.
+ * @aspect: name of the method to invoce.
  * @arguments: arguments to pass, this must be an a{sv} that maps to argument
  *             names and types.
  *

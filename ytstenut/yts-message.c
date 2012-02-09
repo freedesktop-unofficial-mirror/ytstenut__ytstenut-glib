@@ -18,13 +18,6 @@
  * Authored by: Tomas Frydrych <tf@linux.intel.com>
  */
 
-/**
- * SECTION:yts-message
- * @short_description: Encapsulates a Ytstenut metadata message.
- *
- * #YtsMessage represents a Ytstenut metadata message.
- */
-
 #include "yts-message.h"
 #include "yts-metadata-internal.h"
 #include "config.h"
@@ -142,7 +135,7 @@ yts_message_finalize (GObject *object)
  *
  * Constructs a new #YtsMessage object, setting the top level attributes.
  *
- * Return value: (transfer full): newly allocated #YtsMessage object.
+ * Returns: (transfer full): newly allocated #YtsMessage object.
  */
 YtsMessage *
 yts_message_new (const char ** attributes)

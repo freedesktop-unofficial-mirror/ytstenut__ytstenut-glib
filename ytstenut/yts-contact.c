@@ -373,7 +373,7 @@ yts_contact_get_name (YtsContact const *self)
  * %NULL. When the #TpContact is available, the YtsContact::notify-tp-contact
  * signal will be emitted.
  *
- * Return value (transfer none): The associated #TpContact.
+ * Returns: (transfer none): The associated #TpContact.
  */
 TpContact *const
 yts_contact_get_tp_contact (YtsContact const *self)

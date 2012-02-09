@@ -319,7 +319,7 @@ yts_roster_remove_service_by_id (YtsRoster  *self,
  *
  * Finds contact in a roster.
  *
- * Return value: (transfer none): #YtsContact if found, or %NULL.
+ * Returns: (transfer none): #YtsContact if found, or %NULL.
  */
 YtsContact *const
 yts_roster_find_contact_by_id (YtsRoster const  *self,

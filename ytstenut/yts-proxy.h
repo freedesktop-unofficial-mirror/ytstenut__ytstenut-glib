@@ -47,9 +47,8 @@ typedef struct {
 } YtsProxy;
 
 typedef struct {
-  GObjectClass parent;
-
   /*< private >*/
+  GObjectClass parent;
 
   /* Signals */
 

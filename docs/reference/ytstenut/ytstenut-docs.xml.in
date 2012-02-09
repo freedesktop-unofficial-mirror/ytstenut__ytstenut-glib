@@ -37,8 +37,6 @@
     </legalnotice>
   </bookinfo>
 
-  <xi:include href="xml/overview.xml"/>
-
   <part id="yts-reference">
 
     <title>Reference</title>
@@ -46,23 +44,17 @@
     <chapter id="yts-classes">
       <title>Ytstenut Objects</title>
 
-      <xi:include href="xml/yts-capability-status.xml"/>
       <xi:include href="xml/yts-capability.xml"/>
       <xi:include href="xml/yts-client.xml"/>
       <xi:include href="xml/yts-contact.xml"/>
-      <xi:include href="xml/yts-error-message.xml"/>
       <xi:include href="xml/yts-error.xml"/>
-      <xi:include href="xml/yts-event-message.xml"/>
       <xi:include href="xml/yts-file-transfer.xml"/>
       <xi:include href="xml/yts-incoming-file.xml"/>
-      <xi:include href="xml/yts-invocation-message.xml"/>
-      <xi:include href="xml/yts-message.xml"/>
       <xi:include href="xml/yts-metadata-service.xml"/>
       <xi:include href="xml/yts-metadata.xml"/>
       <xi:include href="xml/yts-outgoing-file.xml"/>
       <xi:include href="xml/yts-proxy-service.xml"/>
       <xi:include href="xml/yts-proxy.xml"/>
-      <xi:include href="xml/yts-response-message.xml"/>
       <xi:include href="xml/yts-roster.xml"/>
       <xi:include href="xml/yts-service-adapter.xml"/>
       <xi:include href="xml/yts-service.xml"/>

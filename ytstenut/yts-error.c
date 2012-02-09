@@ -18,20 +18,6 @@
  * Authored by: Tomas Frydrych <tf@linux.intel.com>
  */
 
-/*
- * TODO -- this should probably be rewritten using the GAsync machinery.
- */
-
-/**
- * SECTION:yts-error
- * @short_description: An error object.
- * @title: YtsError
- * @section_id: yts-error
- *
- * #YtsError represents an errror in asynchronous operations. All erros consist
- * of a unique identifier and a status code.
- */
-
 #include "yts-error.h"
 #include "config.h"
 
@@ -41,7 +27,7 @@
  *
  * Retrives error code from #YtsError.
  *
- * Return value: the error code represented by this #YtsError.
+ * Returns: the error code represented by this #YtsError.
  */
 guint
 yts_error_get_code (YtsError error)
@@ -55,7 +41,7 @@ yts_error_get_code (YtsError error)
  *
  * Retrieves the atom identifying the origin of this error from #YtsError.
  *
- * Return value: the atom identifying the operation represented by this
+ * Returns: the atom identifying the operation represented by this
  * #YtsError.
  */
 guint
@@ -76,7 +62,7 @@ yts_error_get_atom (YtsError error)
  * and will have to be shifted left by 16 bits before it can be ored with an
  * error code.
  *
- * Return value: a new atom for use with #YtsError.
+ * Returns: a new atom for use with #YtsError.
  */
 guint32
 yts_error_new_atom ()

@@ -57,7 +57,7 @@ yts_capability_default_init (YtsCapabilityInterface *interface)
  *
  * Get array of supported FQC-IDs.
  *
- * Returns (array zero-terminated=1) (transfer full): Null-terminated array of
+ * Returns: (array zero-terminated=1) (transfer full): Null-terminated array of
  *         FQC-IDs.
  *
  * Since: 0.3

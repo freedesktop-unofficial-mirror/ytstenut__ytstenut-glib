@@ -305,11 +305,11 @@ yts_service_init (YtsService *self)
 
 /**
  * yts_service_get_id:
- * @service: #YtsService
+ * @self: object on which to invoke this method.
  *
- * Returns the unique id of the the given service.
+ * Gets the unique id of the the given service.
  *
- * Return value: (transfer none): the service-id.
+ * Returns: (transfer none): the service-id.
  */
 char const *
 yts_service_get_id (YtsService *self)
@@ -520,7 +520,7 @@ yts_service_send_dictionary (YtsService         *self,
  *
  * Send @file to remote service @self.
  *
- * Returns (transfer full): an #YtsOutgoingFile instance if the transfer
+ * Returns: (transfer full): an #YtsOutgoingFile instance if the transfer
  * could be initated, or %NULL on error, in which case @error will be set if
  * non-null.
  *
