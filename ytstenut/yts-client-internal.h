@@ -26,10 +26,10 @@
 #include <ytstenut/yts-error.h>
 #include <ytstenut/yts-metadata.h>
 
-TpConnection *
-yts_client_get_connection (YtsClient *client);
+TpConnection *const
+yts_client_get_tp_connection (YtsClient *client);
 
-TpYtsStatus *
+TpYtsStatus *const
 yts_client_get_tp_status (YtsClient *client);
 
 YtsError

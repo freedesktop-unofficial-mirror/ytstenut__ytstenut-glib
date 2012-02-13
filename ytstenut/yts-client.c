@@ -145,7 +145,8 @@ enum
   PROP_SERVICE_ID,
   PROP_PROTOCOL,
 
-  PROP_TP_ACCOUNT
+  PROP_TP_ACCOUNT,
+  PROP_TP_STATUS
 };
 
 static guint signals[N_SIGNALS] = {0};
@@ -1223,6 +1224,9 @@ yts_client_get_property (GObject    *object,
     case PROP_TP_ACCOUNT:
       g_value_set_object (value, priv->tp_account);
       break;
+    case PROP_TP_STATUS:
+      g_value_set_object (value, priv->tp_status);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -1431,6 +1435,19 @@ yts_client_class_init (YtsClientClass *klass)
                                TP_TYPE_ACCOUNT,
                                G_PARAM_READABLE);
   g_object_class_install_property (object_class, PROP_TP_ACCOUNT, pspec);
+
+  /**
+   * YtsClient:tp-status:
+   *
+   * Telepathies #TpYtsStatus object used by this instance.
+   * <note>There is no API guarantee for this and other fields that expose telepathy.</note>
+   *
+   * Since: 0.4
+   */
+  pspec = g_param_spec_object ("tp-status", "", "",
+                               TP_TYPE_YTS_STATUS,
+                               G_PARAM_READABLE);
+  g_object_class_install_property (object_class, PROP_TP_STATUS, pspec);
 
   /**
    * YtsClient::authenticated:
@@ -2240,6 +2257,7 @@ yts_client_yts_status_cb (GObject       *obj,
   g_message ("Processing tp_status");
 
   priv->tp_status = tp_status;
+  g_object_notify (G_OBJECT (self), "tp-status");
 
   tp_g_signal_connect_object (tp_status, "service-added",
                               G_CALLBACK (yts_client_service_added_cb),
@@ -2694,8 +2712,8 @@ yts_client_get_service_id (YtsClient const *self)
   return priv->service_id;
 }
 
-TpConnection *
-yts_client_get_connection (YtsClient *self)
+TpConnection *const
+yts_client_get_tp_connection (YtsClient *self)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
 
@@ -2704,7 +2722,7 @@ yts_client_get_connection (YtsClient *self)
   return priv->tp_conn;
 }
 
-TpYtsStatus *
+TpYtsStatus *const
 yts_client_get_tp_status (YtsClient *self)
 {
   YtsClientPrivate *priv = GET_PRIVATE (self);
