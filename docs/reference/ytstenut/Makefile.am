@@ -127,6 +127,12 @@ EXTRA_DIST +=
 # for --rebuild-sections in $(SCAN_OPTIONS) e.g. $(DOC_MODULE)-sections.txt
 #DISTCLEANFILES +=
 
+GITIGNOREFILES = \
+  ytstenut-overrides.txt \
+  ytstenut-sections.txt \
+  ytstenut.types \
+  $(NULL)
+
 # Comment this out if you want your docs-status tested during 'make check'
 if BUILD_GTK_DOC
 #TESTS_ENVIRONMENT = cd $(srcsrc) &&

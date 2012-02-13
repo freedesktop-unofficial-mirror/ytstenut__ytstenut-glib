@@ -19,6 +19,15 @@ EXTRA_DIST = \
   ytstenut.pc.in \
   $(NULL)
 
+GITIGNOREFILES = \
+  aclocal.m4 \
+  build \
+  config.h.in \
+  gtk-doc.make \
+  omf.make \
+  xmldocs.make \
+  $(NULL)
+
 ytstenut-@YTS_API_VERSION@.pc: ytstenut.pc
 	$(AM_V_GEN)cp $< $@
 
