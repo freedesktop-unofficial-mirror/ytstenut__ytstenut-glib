@@ -139,22 +139,14 @@ if BUILD_GTK_DOC
 #TESTS = $(GTKDOC_CHECK)
 endif
 
-# This is a hack to prevent the ignores list from containing stale entries.
-# Check if any of them are no more existant, and if so, bail out.
-if ENABLE_GTK_DOC
-HTML_BUILD_STAMP += check-ignores.stamp
-CLEANFILES += check-ignores.stamp
-endif
-
-check-ignores.stamp:
+check-local:
 	$(AM_V_GEN) b=`tput bold` && \
 	n=`tput sgr0` && \
 	for f in $(IGNORE_HFILES); do \
-		if [ "`find $(DOC_SOURCE_DIR) -name $${f}`" = "" ]; then \
-			echo "$${b}Error:  $${f} is ignored but not found anyway.$${n}"; \
+		if [ "`find $(srcdir)/$(DOC_SOURCE_DIR) -name $${f}`" = "" ]; then \
+			echo "$${b}Error: $${f} is ignored but not found anyway.$${n}"; \
 			exit 1; \
 		fi \
 	done
-	@touch $@
 
 -include $(top_srcdir)/git.mk
