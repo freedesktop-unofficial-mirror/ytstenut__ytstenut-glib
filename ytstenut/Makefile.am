@@ -216,7 +216,7 @@ yts-enum-types.h: stamp-yts-enum-types.h
 	@true
 
 stamp-yts-enum-types.h: $(libhdr_la_SOURCES) Makefile
-	$(QUIET_GEN)( $(GLIB_MKENUMS) \
+	$(AM_V_GEN)( $(GLIB_MKENUMS) \
 			--template $(srcdir)/yts-enum-types.h.in \
 		$(libhdr_la_SOURCES) ) >> xgen-ceth && \
 	(cmp -s xgen-ceth yts-enum-types.h || cp xgen-ceth yts-enum-types.h) && \
@@ -224,7 +224,7 @@ stamp-yts-enum-types.h: $(libhdr_la_SOURCES) Makefile
 	echo timestamp > $(@F)
 
 yts-enum-types.c: yts-enum-types.h
-	$(QUIET_GEN)( $(GLIB_MKENUMS) \
+	$(AM_V_GEN)( $(GLIB_MKENUMS) \
 			--template $(srcdir)/yts-enum-types.c.in \
 	  $(libhdr_la_SOURCES) ) >> xgen-cetc && \
 	cp xgen-cetc yts-enum-types.c && \
@@ -234,7 +234,7 @@ yts-marshal.h: stamp-marshal.h
 	@true
 
 stamp-marshal.h: marshal.list
-	$(QUIET_GEN)$(GLIB_GENMARSHAL) \
+	$(AM_V_GEN)$(GLIB_GENMARSHAL) \
 		--prefix=yts_marshal \
 		--header \
 	  $(srcdir)/marshal.list > xgen-cmh \
@@ -243,7 +243,7 @@ stamp-marshal.h: marshal.list
 	&& echo timestamp > $(@F)
 
 yts-marshal.c: yts-marshal.h Makefile
-	$(QUIET_GEN)( echo "#include \"yts-marshal.h\"" ; \
+	$(AM_V_GEN)( echo "#include \"yts-marshal.h\"" ; \
 		$(GLIB_GENMARSHAL) \
 			--prefix=yts_marshal \
 		--body \
@@ -260,7 +260,7 @@ INCLUDES_FOR_GIR = -I..
 
 if WITH_INTROSPECTION
 Ytstenut-@YTS_API_VERSION@.gir: $(G_IR_SCANNER) libytstenut-@YTS_API_VERSION@.la
-	$(QUIET_GEN) $(G_IR_SCANNER) -v \
+	$(AM_V_GEN) $(G_IR_SCANNER) -v \
 		--namespace=Ytstenut --nsversion=@YTS_API_VERSION@ \
 		--strip-prefix=Yts \
 		$(INCLUDES_FOR_GIR) \
@@ -288,7 +288,7 @@ typelibsdir = $(libdir)/girepository-1.0/
 typelibs_DATA = $(BUILT_GIRSOURCES:.gir=.typelib)
 
 %.typelib: %.gir $(G_IR_COMPILER)
-	$(QUIET_GEN) \
+	$(AM_V_GEN) \
 	LD_LIBRARY_PATH=.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH} \
 	$(G_IR_COMPILER) \
 		--includedir=$(srcdir) \
