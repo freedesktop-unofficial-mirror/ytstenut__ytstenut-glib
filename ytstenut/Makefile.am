@@ -310,7 +310,7 @@ else
   OUT_VERSION=@YTS_API_VERSION@
 endif
 
-all-local:
+check-local:
 	$(AM_V_GEN) b=`tput bold` && \
 	n=`tput sgr0` && \
 	NM_CMD="$(NM) --defined-only --extern-only" && \
