@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012 Intel Corp.
+ * Copyright © 2011 Intel Corp.
  *
  * This  library is free  software; you can  redistribute it and/or
  * modify it  under  the terms  of the  GNU Lesser  General  Public
@@ -162,7 +162,7 @@ run_client (bool         p2p,
 
   roster = yts_client_get_roster (client);
   g_signal_connect (roster, "service-added",
-                    G_CALLBACK (_client_roster_service_added), (void *) path);
+                    G_CALLBACK (_client_roster_service_added), (gpointer) path);
 
   yts_client_connect (client);
 
@@ -235,8 +235,8 @@ static int
 run_server (bool         p2p,
             char const  *path)
 {
-  YtsClient *client;
-  GMainLoop *mainloop;
+  YtsClient  *client;
+  GMainLoop   *mainloop;
 
   if (p2p)
     client = yts_client_new_p2p (SERVER_UID);
@@ -250,8 +250,7 @@ run_server (bool         p2p,
   g_signal_connect (client, "disconnected",
                     G_CALLBACK (_server_disconnected), NULL);
   g_signal_connect (client, "incoming-file",
-                    G_CALLBACK (_server_incoming_file), (void *) path);
-
+                    G_CALLBACK (_server_incoming_file), (gpointer) path);
 
   yts_client_connect (client);
 
@@ -284,7 +283,7 @@ main (int     argc,
 
   g_type_init ();
 
-  context = g_option_context_new ("- Ytstenut file-transfer example");
+  context = g_option_context_new ("- Ytstenut echo example");
   g_option_context_add_main_entries (context, entries, NULL);
   g_option_context_parse (context, &argc, &argv, &error);
   if (error) {
@@ -292,11 +291,14 @@ main (int     argc,
     g_clear_error (&error);
   }
 
-  if (client) {
+  if (NULL == path) {
+    g_critical ("No file specified, see --help");
+    ret = -1;
+  } else if (client) {
     g_message ("Running as client ...");
     ret = run_client (p2p, path);
   } else if (server) {
-    g_message ("Running as server ... ");
+    g_message ("Running as server ...");
     ret = run_server (p2p, path);
   } else {
     g_warning ("%s : Not running as server or client, quitting", G_STRLOC);

@@ -790,6 +790,27 @@ yts_client_setup_debug  (YtsClient *self)
   g_free (busname);
 }
 
+static char const *
+extract_remote_service_id (YtsClient   *self,
+                           GHashTable  *channel_properties)
+{
+    GHashTable *metadata;
+    char const *remote_service_id = NULL;
+
+    metadata = tp_asv_get_boxed (channel_properties,
+                                 TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_METADATA,
+                                 TP_HASH_TYPE_METADATA);
+
+    if (metadata) {
+      char **values = g_hash_table_lookup (metadata, (gpointer) "FromService");
+      if (values && values[0]) {
+        remote_service_id = values[0];
+      }
+    }
+
+  return remote_service_id;
+}
+
 static void
 _file_handler_handle_channels (TpSimpleHandler          *handler,
                                TpAccount                *account,
@@ -811,29 +832,36 @@ _file_handler_handle_channels (TpSimpleHandler          *handler,
     TpFileTransferChannel *channel = iter->data;
     char const *remote_contact_id = tp_channel_get_initiator_identifier (TP_CHANNEL (channel));
     GHashTable *props = tp_channel_borrow_immutable_properties (TP_CHANNEL (channel));
-    char const *const key = "org.freedesktop.Telepathy.Channel.Interface.FileTransfer.Metadata.ServiceName";
-    char const *remote_service_id = tp_asv_get_string (props, key);
+    char const *remote_service_id;
+    YtsService *service = NULL;
 
-    YtsService *service = yts_roster_find_service_by_id (priv->roster,
-                                                         remote_contact_id,
-                                                         remote_service_id);
+    remote_service_id = extract_remote_service_id (self, props);
+    service = yts_roster_find_service_by_id (priv->roster,
+                                             remote_contact_id,
+                                             remote_service_id);
+    if (service) {
 
-    YtsIncomingFile *incoming = yts_incoming_file_new (channel);
+      YtsIncomingFile *incoming = yts_incoming_file_new (channel);
+      GError *error = NULL;
 
-    GError *error = NULL;
+      if (g_initable_init (G_INITABLE (incoming), NULL, &error)) {
 
-    if (g_initable_init (G_INITABLE (incoming), NULL, &error)) {
+        g_signal_emit (self, signals[INCOMING_FILE], 0,
+                       service, props, incoming);
 
-      g_signal_emit (self, signals[INCOMING_FILE], 0,
-                     service, props, incoming);
+      } else {
+
+        // TODO if (error) {}
+        g_critical ("Handling incoming file failed -- no handler");
+      }
+
+      g_clear_error (&error);
+      g_object_unref (incoming);
 
     } else {
-
       // TODO if (error) {}
-      g_critical ("Handling incoming file failed");
+      g_critical ("Handling incoming file failed -- no recipient service");
     }
-
-    g_object_unref (incoming);
   }
 
   tp_handle_channels_context_accept (context);
@@ -1020,6 +1048,7 @@ _roster_send_file (YtsRoster   *roster,
   recipient_service_id = yts_service_get_id (service);
   outgoing = yts_outgoing_file_new (priv->tp_account,
                                     file,
+                                    priv->service_id,
                                     recipient_contact_id,
                                     recipient_service_id,
                                     description);

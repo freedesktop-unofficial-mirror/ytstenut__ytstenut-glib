@@ -47,6 +47,7 @@ typedef struct {
 YtsOutgoingFile *
 yts_outgoing_file_new (TpAccount  *tp_account,
                        GFile      *file,
+                       char const *sender_service_id,
                        char const *recipient_contact_id,
                        char const *recipient_service_id,
                        char const *description);

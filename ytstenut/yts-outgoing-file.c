@@ -67,7 +67,8 @@ enum {
   PROP_TP_ACCOUNT,
   PROP_DESCRIPTION,
   PROP_RECIPIENT_CONTACT_ID,
-  PROP_RECIPIENT_SERVICE_ID
+  PROP_RECIPIENT_SERVICE_ID,
+  PROP_SENDER_SERVICE_ID
 };
 
 typedef struct {
@@ -76,6 +77,7 @@ typedef struct {
   GFile     *file;
   char      *recipient_contact_id;
   char      *recipient_service_id;
+  char      *sender_service_id;
   char      *description;
   float      progress;
   /* Data */
@@ -168,6 +170,15 @@ validate (YtsOutgoingFile  *self,
       *error_out = g_error_new (YTS_OUTGOING_FILE_ERROR,
                                 YTS_OUTGOING_FILE_ERROR_NO_RECIPIENT_SERVICE,
                                 "No recipient service specified for file transfer");
+    }
+    return false;
+  }
+
+  if (NULL == priv->sender_service_id) {
+    if (error_out) {
+      *error_out = g_error_new (YTS_OUTGOING_FILE_ERROR,
+                                YTS_OUTGOING_FILE_ERROR_NO_SENDER_SERVICE,
+                                "No sender service specified for file transfer");
     }
     return false;
   }
@@ -343,6 +354,8 @@ _initable_init (GInitable      *initable,
   char const              *name;
   char const              *mimetype;
   GTimeVal                 mtime;
+  GHashTable              *metadata;
+  char                   **values;
   GHashTable              *request;
   TpAccountChannelRequest *channel_request;
   GError                  *error = NULL;
@@ -373,20 +386,62 @@ _initable_init (GInitable      *initable,
   g_file_info_get_modification_time (info, &mtime);
   priv->size = g_file_info_get_size (info);
 
+  metadata = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+  values = g_new0 (char *, 2);
+  values[0] = priv->sender_service_id;
+  g_hash_table_insert (metadata,
+                       g_strdup ("FromService"),
+                       values);
+
   /* Now we have everything prepared to continue, let's create the
    * Ytstenut channel handler with service name specified. */
   request = tp_asv_new (
-      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
-      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
-      TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, priv->recipient_contact_id,
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_TYPE, G_TYPE_STRING, mimetype,
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DATE, G_TYPE_INT64, (gint64) mtime.tv_sec,
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DESCRIPTION, G_TYPE_STRING, priv->description,
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_FILENAME, G_TYPE_STRING, name,
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_INITIAL_OFFSET, G_TYPE_UINT64, (guint64) 0,
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE, G_TYPE_UINT64, (guint64) priv->size,
-      /* here is the remote service */
-      TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_SERVICE_NAME, G_TYPE_STRING, priv->recipient_service_id,
+      TP_PROP_CHANNEL_CHANNEL_TYPE,
+      G_TYPE_STRING,
+      TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
+
+      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
+      G_TYPE_UINT,
+      TP_HANDLE_TYPE_CONTACT,
+
+      TP_PROP_CHANNEL_TARGET_ID,
+      G_TYPE_STRING,
+      priv->recipient_contact_id,
+
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_TYPE,
+      G_TYPE_STRING,
+      mimetype,
+
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DATE,
+      G_TYPE_INT64,
+      (gint64) mtime.tv_sec,
+
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DESCRIPTION,
+      G_TYPE_STRING,
+      priv->description,
+
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_FILENAME,
+      G_TYPE_STRING,
+      name,
+
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_INITIAL_OFFSET,
+      G_TYPE_UINT64,
+      (guint64) 0,
+
+      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE,
+      G_TYPE_UINT64,
+      (guint64) priv->size,
+
+      /* Here is the remote service */
+      TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_SERVICE_NAME,
+      G_TYPE_STRING,
+      priv->recipient_service_id,
+
+      /* And include our own service name. FIXME this should be a define. */
+      TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_METADATA,
+      TP_HASH_TYPE_METADATA,
+      metadata,
+
       NULL);
 
   channel_request = tp_account_channel_request_new (
@@ -436,6 +491,9 @@ _get_property (GObject    *object,
     case PROP_RECIPIENT_SERVICE_ID:
       g_value_set_string (value, priv->recipient_service_id);
       break;
+    case PROP_SENDER_SERVICE_ID:
+      g_value_set_string (value, priv->sender_service_id);
+      break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
@@ -475,6 +533,10 @@ _set_property (GObject      *object,
     case PROP_RECIPIENT_SERVICE_ID:
       /* Construct-only */
       priv->recipient_service_id = g_value_dup_string (value);
+    break;
+    case PROP_SENDER_SERVICE_ID:
+      /* Construct-only */
+      priv->sender_service_id = g_value_dup_string (value);
     break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -519,6 +581,11 @@ _finalize (GObject *object)
   if (priv->recipient_service_id) {
     g_free (priv->recipient_service_id);
     priv->recipient_service_id = NULL;
+  }
+
+  if (priv->sender_service_id) {
+    g_free (priv->sender_service_id);
+    priv->sender_service_id = NULL;
   }
 
   if (priv->description) {
@@ -610,6 +677,22 @@ yts_outgoing_file_class_init (YtsOutgoingFileClass *klass)
   g_object_class_install_property (object_class,
                                    PROP_RECIPIENT_SERVICE_ID,
                                    pspec);
+
+  /**
+   * YtsOutgoingFile:sender-service-id:
+   *
+   * Service ID of the file sender.
+   *
+   * Since: 0.4
+   */
+  pspec = g_param_spec_string ("sender-service-id", "", "",
+                               NULL,
+                               G_PARAM_READWRITE |
+                               G_PARAM_CONSTRUCT_ONLY |
+                               G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class,
+                                   PROP_SENDER_SERVICE_ID,
+                                   pspec);
 }
 
 static void
@@ -620,6 +703,7 @@ yts_outgoing_file_init (YtsOutgoingFile *self)
 YtsOutgoingFile *
 yts_outgoing_file_new (TpAccount  *tp_account,
                        GFile      *file,
+                       char const *sender_service_id,
                        char const *recipient_contact_id,
                        char const *recipient_service_id,
                        char const *description)
@@ -627,6 +711,7 @@ yts_outgoing_file_new (TpAccount  *tp_account,
   return g_object_new (YTS_TYPE_OUTGOING_FILE,
                        "tp-account", tp_account,
                        "file", file,
+                       "sender-service-id", sender_service_id,
                        "recipient-contact-id", recipient_contact_id,
                        "recipient-service-id", recipient_service_id,
                        "description", description,
