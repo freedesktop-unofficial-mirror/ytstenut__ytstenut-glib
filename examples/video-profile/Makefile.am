@@ -1,3 +1,4 @@
+exampleexecdir = $(libdir)/ytstenut/examples
 
 AM_CPPFLAGS = \
   -I$(top_srcdir) \
@@ -10,7 +11,7 @@ AM_LDFLAGS = ../../ytstenut/libytstenut-@YTS_API_VERSION@.la
 
 LDADD = $(YTS_LIBS)
 
-noinst_PROGRAMS = \
+exampleexec_PROGRAMS = \
   player \
   remote \
   $(NULL)

@@ -1,14 +1,13 @@
+testexecdir = $(libdir)/ytstenut/tests
 
-TESTS = \
+tests = \
   message \
   $(NULL)
 
-if ENABLE_INTEGRATION_TESTS
-TESTS += \
+integration_tests = \
   message-send \
   status-set \
   $(NULL)
-endif
 
 AM_CPPFLAGS = \
   -I$(top_srcdir) \
@@ -20,7 +19,13 @@ AM_CFLAGS = $(YTS_CFLAGS)
 
 AM_LDFLAGS = ../ytstenut/libytstenut-@YTS_API_VERSION@.la
 
-check_PROGRAMS = $(TESTS)
+testexec_PROGRAMS = $(tests) $(integration_tests)
+
+TESTS = $(tests)
+
+if ENABLE_INTEGRATION_TESTS
+TESTS += $(integration_tests)
+endif
 
 message_SOURCES          = message.c
 message_LDADD            = $(YTS_LIBS)

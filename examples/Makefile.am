@@ -1,3 +1,4 @@
+exampleexecdir = $(libdir)/ytstenut/examples
 
 SUBDIRS = video-profile
 
@@ -12,7 +13,7 @@ AM_LDFLAGS = ../ytstenut/libytstenut-@YTS_API_VERSION@.la
 
 LDADD = $(YTS_LIBS)
 
-noinst_PROGRAMS = \
+exampleexec_PROGRAMS = \
   dictionary-message \
   echo \
   file-transfer \
