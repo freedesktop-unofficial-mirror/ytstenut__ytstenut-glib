@@ -97,7 +97,8 @@ service_added_cb (YtsRoster   *roster,
     {
       yts_client_set_status_by_capability (client1,
                                            "yts-caps-video",
-                                           "yts-activity-playing");
+                                           "yts-activity-playing",
+                                           "");
     }
 }
 
@@ -112,7 +113,8 @@ main (int argc, char **argv)
   loop = g_main_loop_new (NULL, FALSE);
 
   client1 = yts_client_new_p2p ("org.freedesktop.ytstenut.SetStatusTest1");
-  yts_client_add_capability (client1, "yts-caps-video");
+  yts_client_add_capability (client1, "yts-caps-video",
+      YTS_CAPABILITY_MODE_PROVIDED);
   g_signal_connect (client1, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);
   roster1 = yts_client_get_roster (client1);
@@ -121,7 +123,8 @@ main (int argc, char **argv)
   yts_client_connect (client1);
 
   client2 = yts_client_new_p2p ("org.freedesktop.ytstenut.SetStatusTest2");
-  yts_client_add_capability (client1, "yts-caps-video");
+  yts_client_add_capability (client2, "yts-caps-video",
+      YTS_CAPABILITY_MODE_CONSUMED);
   g_signal_connect (client2, "authenticated",
                     G_CALLBACK (authenticated_cb), NULL);
   roster2 = yts_client_get_roster (client2);
