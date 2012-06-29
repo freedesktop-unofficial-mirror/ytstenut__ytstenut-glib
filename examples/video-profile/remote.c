@@ -46,10 +46,10 @@ typedef struct {
   char const  *player_playing;
   double       player_volume;
   char const  *player_playable_uri;
-  bool         player_play;
-  bool         player_pause;
-  bool         player_next;
-  bool         player_prev;
+  gboolean     player_play;
+  gboolean     player_pause;
+  gboolean     player_next;
+  gboolean     player_prev;
 
   YtsVPPlayer     *player;
   YtsVPTranscript *transcript;

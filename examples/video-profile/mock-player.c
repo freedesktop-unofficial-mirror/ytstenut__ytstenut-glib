@@ -69,7 +69,7 @@ typedef struct {
 
   char const *const *playlist;
   unsigned           current;
-  bool               playing;
+  gboolean           playing;
   double             volume;
   char              *playable_uri;
 

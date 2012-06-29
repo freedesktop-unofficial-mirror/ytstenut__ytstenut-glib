@@ -223,9 +223,9 @@ int
 main (int     argc,
       char  **argv)
 {
-  bool client = false;
-  bool server = true;
-  bool p2p = false;
+  gboolean client = false;
+  gboolean server = true;
+  gboolean p2p = false;
   GOptionEntry entries[] = {
     { "client", 'c', 0, G_OPTION_ARG_NONE, &client, "Run as client", NULL },
     { "server", 's', 0, G_OPTION_ARG_NONE, &server, "Run as server (default)", NULL },
