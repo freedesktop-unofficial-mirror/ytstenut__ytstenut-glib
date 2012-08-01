@@ -14,18 +14,18 @@ DOC_MODULE=ytstenut
 DOC_MAIN_SGML_FILE=$(DOC_MODULE)-docs.xml
 
 # Directories containing the source code, relative to $(srcdir).
-DOC_SOURCE_DIR=../../../ytstenut
+DOC_SOURCE_DIR = $(abs_top_srcdir)/ytstenut
 
 # Extra options to pass to gtkdoc-scangobj. Not normally needed.
 SCANGOBJ_OPTIONS=
 
 # Extra options to supply to gtkdoc-scan.
 # e.g. SCAN_OPTIONS=--deprecated-guards="GTK_DISABLE_DEPRECATED"
-SCAN_OPTIONS=
+SCAN_OPTIONS=--rebuild-types --rebuild-sections
 
 # Extra options to supply to gtkdoc-mkdb.
 # e.g. MKDB_OPTIONS=--sgml-mode --output-format=xml
-MKDB_OPTIONS=--sgml-mode --output-format=xml --name-space=mpl
+MKDB_OPTIONS=--sgml-mode --output-format=xml
 
 # Extra options to supply to gtkdoc-mktmpl
 # e.g. MKTMPL_OPTIONS=--only-section-tmpl
@@ -41,7 +41,7 @@ FIXXREF_OPTIONS =
 # Used for dependencies. The docs will be rebuilt if any of these change.
 # e.g. HFILE_GLOB=$(top_srcdir)/gtk/*.h
 # e.g. CFILE_GLOB=$(top_srcdir)/gtk/*.c
-HFILE_GLOB=
+HFILE_GLOB = $(top_srcdir)/ytstenut/*.h
 
 CFILE_GLOB = $(top_srcdir)/ytstenut/*.c
 
@@ -112,7 +112,7 @@ expand_content_files=
 # signals and properties.
 # e.g. GTKDOC_CFLAGS=-I$(top_srcdir) -I$(top_builddir) $(GTK_DEBUG_FLAGS)
 # e.g. GTKDOC_LIBS=$(top_builddir)/gtk/$(gtktargetlib)
-INCLUDES=-I$(top_srcdir)/ytstenut $(YTS_CFLAGS)
+GTKDOC_CFLAGS=-I$(top_srcdir)/ytstenut $(YTS_CFLAGS)
 GTKDOC_LIBS=$(top_builddir)/ytstenut/libytstenut-@YTS_API_VERSION@.la $(YTS_LIBS)
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
@@ -125,12 +125,10 @@ EXTRA_DIST +=
 # Files not to distribute
 # for --rebuild-types in $(SCAN_OPTIONS), e.g. $(DOC_MODULE).types
 # for --rebuild-sections in $(SCAN_OPTIONS) e.g. $(DOC_MODULE)-sections.txt
-#DISTCLEANFILES +=
+DISTCLEANFILES = $(DOC_MODULE).types $(DOC_MODULE)-sections.txt
 
 GITIGNOREFILES = \
   ytstenut-overrides.txt \
-  ytstenut-sections.txt \
-  ytstenut.types \
   $(NULL)
 
 # Comment this out if you want your docs-status tested during 'make check'
@@ -143,7 +141,7 @@ check-local:
 	$(AM_V_GEN) b=`tput bold` && \
 	n=`tput sgr0` && \
 	for f in $(IGNORE_HFILES); do \
-		if [ "`find $(srcdir)/$(DOC_SOURCE_DIR) -name $${f}`" = "" ]; then \
+		if [ "`find $(DOC_SOURCE_DIR) -name $${f}`" = "" ]; then \
 			echo "$${b}Error: $${f} is ignored but not found anyway.$${n}"; \
 			exit 1; \
 		fi \
