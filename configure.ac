@@ -54,7 +54,7 @@ AM_CONDITIONAL([BUILD_GTK_DOC], [test "x$enable_gtk_doc" = "xyes" || test ! -f "
 GLIB_PREFIX="`$PKG_CONFIG --variable=prefix glib-2.0`"
 AC_SUBST(GLIB_PREFIX)
 
-TELEPATHY_VERSION=">= 0.11.7"
+TELEPATHY_VERSION=">= 0.18.0"
 AC_SUBST(TELEPATHY_VERSION)
 
 AC_MSG_CHECKING([for operating system])
@@ -71,7 +71,13 @@ AC_MSG_RESULT($platform)
 
 AM_CONDITIONAL([OS_WINDOWS], [test "$platform" = "win32"])
 
-YTS_PC_MODULES="$YTS_PC_MODULES telepathy-glib $TELEPATHY_VERSION telepathy-ytstenut-glib >= 0.2.0 rest-0.7 >= 0.7 glib-2.0 gobject-2.0"
+YTS_PC_MODULES="$YTS_PC_MODULES telepathy-glib $TELEPATHY_VERSION telepathy-ytstenut-glib >= 0.2.0 rest-0.7 >= 0.7 glib-2.0 >= 2.30 gobject-2.0"
+
+AC_DEFINE([GLIB_VERSION_MIN_REQUIRED], [GLIB_VERSION_2_30], [Ignore post 2.30 deprecations])
+AC_DEFINE([GLIB_VERSION_MAX_ALLOWED], [GLIB_VERSION_2_30], [Prevent post 2.30 APIs])
+
+AC_DEFINE([TP_VERSION_MIN_REQUIRED], [TP_VERSION_0_18], [Ignore post 0.18 deprecations])
+AC_DEFINE([TP_VERSION_MAX_ALLOWED], [TP_VERSION_0_18], [Prevent post 0.18 APIs])
 
 if test "$platform" = "win32"; then
 YTS_PC_MODULES="$YTS_PC_MODULES gio-windows-2.0"
