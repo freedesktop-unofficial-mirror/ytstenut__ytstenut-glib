@@ -180,6 +180,7 @@ AC_OUTPUT([
   ytstenut/Makefile
   ytstenut/yts-version.h
   ytstenut.pc
+  ytstenut-1-uninstalled.pc
   tests/Makefile
 ])
 
