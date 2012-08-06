@@ -177,7 +177,7 @@ libytstenut_@YTS_API_VERSION@_la_LIBADD = \
   $(NULL)
 
 libytstenut_@YTS_API_VERSION@_ladir = $(includedir)/ytstenut-$(YTS_API_VERSION)/ytstenut
-libytstenut_@YTS_API_VERSION@_la_HEADERS = \
+nobase_libytstenut_@YTS_API_VERSION@_la_HEADERS = \
   $(libhdr_la_SOURCES) \
   ytstenut.h \
   $(NULL)
