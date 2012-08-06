@@ -24,7 +24,6 @@ libhdr_la_SOURCES = \
   $(srcdir)/yts-outgoing-file.h \
   $(srcdir)/yts-roster.h \
   $(srcdir)/yts-service.h \
-  $(srcdir)/yts-version.h \
   \
   $(srcdir)/yts-proxy.h \
   $(srcdir)/yts-proxy-service.h \
@@ -38,6 +37,10 @@ libhdr_la_SOURCES = \
   $(srcdir)/video-profile/yts-vp-transmission.h \
   $(NULL)
 
+nodist_libhdr_la_SOURCES = \
+  yts-version.h \
+  $(NULL)
+
 # Sources
 libsrc_la_SOURCES = \
   $(srcdir)/ytstenut.c \
@@ -47,9 +50,7 @@ libsrc_la_SOURCES = \
   $(srcdir)/yts-client-status.c \
   $(srcdir)/yts-contact.c \
   $(srcdir)/yts-contact-impl.c \
-  $(srcdir)/yts-enum-types.c \
   $(srcdir)/yts-error.c \
-  $(srcdir)/yts-marshal.c \
   $(srcdir)/yts-message.c \
   $(srcdir)/yts-metadata.c \
   $(srcdir)/yts-roster.c \
@@ -91,6 +92,11 @@ libsrc_la_SOURCES = \
   $(srcdir)/video-profile/yts-vp-transcript-proxy.c \
   $(srcdir)/video-profile/yts-vp-transfer.c \
   $(srcdir)/video-profile/yts-vp-transmission.c \
+  $(NULL)
+
+nodist_libsrc_la_SOURCES = \
+  yts-enum-types.c \
+  yts-marshal.c \
   $(NULL)
 
 # Private headers
@@ -151,6 +157,11 @@ libytstenut_@YTS_API_VERSION@_la_SOURCES = \
   $(libsrc_la_SOURCES) \
   $(NULL)
 
+nodist_libytstenut_@YTS_API_VERSION@_la_SOURCES = \
+  $(nodist_libhdr_la_SOURCES) \
+  $(nodist_libsrc_la_SOURCES) \
+  $(NULL)
+
 libytstenut_@YTS_API_VERSION@_la_DEPENDENCIES = \
   ytstenut.sym \
   $(NULL)
@@ -168,9 +179,12 @@ libytstenut_@YTS_API_VERSION@_la_LIBADD = \
 libytstenut_@YTS_API_VERSION@_ladir = $(includedir)/ytstenut-$(YTS_API_VERSION)/ytstenut
 libytstenut_@YTS_API_VERSION@_la_HEADERS = \
   $(libhdr_la_SOURCES) \
-  $(srcdir)/yts-enum-types.h \
-  $(srcdir)/yts-marshal.h \
   $(srcdir)/ytstenut.h \
+  $(NULL)
+
+nodist_libytstenut_@YTS_API_VERSION@_la_HEADERS = \
+  yts-enum-types.h \
+  yts-marshal.h \
   $(NULL)
 
 BUILT_SOURCES = \
@@ -274,7 +288,10 @@ Ytstenut-@YTS_API_VERSION@.gir: $(G_IR_SCANNER) libytstenut-@YTS_API_VERSION@.la
 	        --pkg gobject-2.0 \
 	        --output $@ \
 		$(libhdr_la_SOURCES) \
-		$(libsrc_la_SOURCES)
+		$(nodist_libhdr_la_SOURCES) \
+		$(libsrc_la_SOURCES) \
+		$(nodist_libsrc_la_SOURCES) \
+		$(NULL)
 
 BUILT_GIRSOURCES += Ytstenut-@YTS_API_VERSION@.gir
 
