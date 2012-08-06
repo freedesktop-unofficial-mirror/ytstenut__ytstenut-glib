@@ -18,6 +18,7 @@
  * Authored by: Tomas Frydrych <tf@linux.intel.com>
  *              Rob Staudinger <robsta@linux.intel.com>
  */
+#include "config.h"
 
 #include <string.h>
 #include <rest/rest-xml-parser.h>
@@ -56,8 +57,6 @@
 #include "profile/yts-profile.h"
 #include "profile/yts-profile-adapter.h"
 #include "profile/yts-profile-impl.h"
-
-#include "config.h"
 
 #define RECONNECT_DELAY 20 /* in seconds */
 

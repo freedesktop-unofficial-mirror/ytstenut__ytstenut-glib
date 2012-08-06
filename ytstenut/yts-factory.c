@@ -17,6 +17,7 @@
  *
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
+#include "config.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -27,7 +28,6 @@
 #include "video-profile/yts-vp-player-proxy.h"
 #include "video-profile/yts-vp-transcript-adapter.h"
 #include "video-profile/yts-vp-transcript-proxy.h"
-#include "config.h"
 
 G_DEFINE_ABSTRACT_TYPE (YtsFactory, yts_factory, G_TYPE_OBJECT)
 

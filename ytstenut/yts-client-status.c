@@ -17,11 +17,10 @@
  *
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
+#include "config.h"
 
 #include "yts-client-status.h"
 #include "yts-xml.h"
-
-#include "config.h"
 
 G_DEFINE_TYPE (YtsClientStatus, yts_client_status, G_TYPE_OBJECT)
 

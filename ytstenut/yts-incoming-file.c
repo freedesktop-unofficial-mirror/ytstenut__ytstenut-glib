@@ -19,14 +19,14 @@
  * Using portions from telepathy-ytstenut's server-file-transfer.c, © Intel.
  */
 
+#include "config.h"
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <telepathy-glib/telepathy-glib.h>
 
 #include "yts-file-transfer.h"
 #include "yts-incoming-file-internal.h"
-
-#include "config.h"
 
 static void
 _initable_interface_init (GInitableIface *interface);

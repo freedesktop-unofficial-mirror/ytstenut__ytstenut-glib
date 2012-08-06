@@ -17,10 +17,10 @@
  *
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
+#include "config.h"
 
 #include "yts-capability.h"
 #include "yts-vp-transcript.h"
-#include "config.h"
 
 G_DEFINE_INTERFACE (YtsVPTranscript,
                     yts_vp_transcript,

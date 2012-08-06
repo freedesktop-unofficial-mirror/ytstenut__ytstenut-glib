@@ -17,11 +17,11 @@
  *
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
+#include "config.h"
 
 #include "yts-service-adapter.h"
 #include "yts-vp-transcript.h"
 #include "yts-vp-transcript-adapter.h"
-#include "config.h"
 
 G_DEFINE_TYPE (YtsVPTranscriptAdapter,
                yts_vp_transcript_adapter,

@@ -18,9 +18,10 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include "config.h"
+
 #include "yts-service-emitter.h"
 #include "yts-proxy-service-impl.h"
-#include "config.h"
 
 static void
 _service_emitter_interface_init (YtsServiceEmitter *interface);
