@@ -252,6 +252,7 @@ yts_client_status_set (YtsClientStatus    *self,
   YtsClientStatusPrivate *priv = GET_PRIVATE (self);
   GString *attribs_str;
   char *status_xml;
+  unsigned i;
 
   g_return_val_if_fail (YTS_IS_CLIENT_STATUS (self), NULL);
   g_return_val_if_fail (capability, NULL);
@@ -260,7 +261,7 @@ yts_client_status_set (YtsClientStatus    *self,
                         NULL);
 
   attribs_str = g_string_new ("");
-  for (unsigned i = 0; attribs && attribs[i] && attribs[i+1]; i += 2) {
+  for (i = 0; attribs && attribs[i] && attribs[i+1]; i += 2) {
     g_string_append_printf (attribs_str, "%s='%s' ", attribs[i], attribs[i+1]);
   }
 
