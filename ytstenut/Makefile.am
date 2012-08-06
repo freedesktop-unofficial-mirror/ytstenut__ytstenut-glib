@@ -16,25 +16,25 @@ EXTRA_LTLIBRARIES = libsrc.la libhdr.la libprv.la
 
 # Public headers
 libhdr_la_SOURCES = \
-  $(srcdir)/yts-capability.h \
-  $(srcdir)/yts-client.h \
-  $(srcdir)/yts-contact.h \
-  $(srcdir)/yts-file-transfer.h \
-  $(srcdir)/yts-incoming-file.h \
-  $(srcdir)/yts-outgoing-file.h \
-  $(srcdir)/yts-roster.h \
-  $(srcdir)/yts-service.h \
+  yts-capability.h \
+  yts-client.h \
+  yts-contact.h \
+  yts-file-transfer.h \
+  yts-incoming-file.h \
+  yts-outgoing-file.h \
+  yts-roster.h \
+  yts-service.h \
   \
-  $(srcdir)/yts-proxy.h \
-  $(srcdir)/yts-proxy-service.h \
+  yts-proxy.h \
+  yts-proxy-service.h \
   \
-  $(srcdir)/video-profile/yts-vp-content.h \
-  $(srcdir)/video-profile/yts-vp-playable.h \
-  $(srcdir)/video-profile/yts-vp-player.h \
-  $(srcdir)/video-profile/yts-vp-query.h \
-  $(srcdir)/video-profile/yts-vp-transcript.h \
-  $(srcdir)/video-profile/yts-vp-transfer.h \
-  $(srcdir)/video-profile/yts-vp-transmission.h \
+  video-profile/yts-vp-content.h \
+  video-profile/yts-vp-playable.h \
+  video-profile/yts-vp-player.h \
+  video-profile/yts-vp-query.h \
+  video-profile/yts-vp-transcript.h \
+  video-profile/yts-vp-transfer.h \
+  video-profile/yts-vp-transmission.h \
   $(NULL)
 
 nodist_libhdr_la_SOURCES = \
@@ -43,55 +43,55 @@ nodist_libhdr_la_SOURCES = \
 
 # Sources
 libsrc_la_SOURCES = \
-  $(srcdir)/ytstenut.c \
+  ytstenut.c \
   \
-  $(srcdir)/yts-capability.c \
-  $(srcdir)/yts-client.c \
-  $(srcdir)/yts-client-status.c \
-  $(srcdir)/yts-contact.c \
-  $(srcdir)/yts-contact-impl.c \
-  $(srcdir)/yts-error.c \
-  $(srcdir)/yts-message.c \
-  $(srcdir)/yts-metadata.c \
-  $(srcdir)/yts-roster.c \
-  $(srcdir)/yts-roster-impl.c \
-  $(srcdir)/yts-service.c \
-  $(srcdir)/yts-service-impl.c \
+  yts-capability.c \
+  yts-client.c \
+  yts-client-status.c \
+  yts-contact.c \
+  yts-contact-impl.c \
+  yts-error.c \
+  yts-message.c \
+  yts-metadata.c \
+  yts-roster.c \
+  yts-roster-impl.c \
+  yts-service.c \
+  yts-service-impl.c \
   \
-  $(srcdir)/yts-adapter-factory.c \
-  $(srcdir)/yts-error-message.c \
-  $(srcdir)/yts-event-message.c \
-  $(srcdir)/yts-factory.c \
-  $(srcdir)/yts-incoming-file.c \
-  $(srcdir)/yts-invocation-message.c \
-  $(srcdir)/yts-service-emitter.c \
-  $(srcdir)/yts-file-transfer.c \
-  $(srcdir)/yts-outgoing-file.c \
-  $(srcdir)/yts-proxy.c \
-  $(srcdir)/yts-proxy-factory.c \
-  $(srcdir)/yts-proxy-service.c \
-  $(srcdir)/yts-proxy-service-impl.c \
-  $(srcdir)/yts-response-message.c \
-  $(srcdir)/yts-service-adapter.c \
-  $(srcdir)/yts-service-factory.c \
+  yts-adapter-factory.c \
+  yts-error-message.c \
+  yts-event-message.c \
+  yts-factory.c \
+  yts-incoming-file.c \
+  yts-invocation-message.c \
+  yts-service-emitter.c \
+  yts-file-transfer.c \
+  yts-outgoing-file.c \
+  yts-proxy.c \
+  yts-proxy-factory.c \
+  yts-proxy-service.c \
+  yts-proxy-service-impl.c \
+  yts-response-message.c \
+  yts-service-adapter.c \
+  yts-service-factory.c \
   \
-  $(srcdir)/profile/yts-profile.c \
-  $(srcdir)/profile/yts-profile-impl.c \
-  $(srcdir)/profile/yts-profile-proxy.c \
-  $(srcdir)/profile/yts-profile-adapter.c \
+  profile/yts-profile.c \
+  profile/yts-profile-impl.c \
+  profile/yts-profile-proxy.c \
+  profile/yts-profile-adapter.c \
   \
-  $(srcdir)/video-profile/yts-vp-content.c \
-  $(srcdir)/video-profile/yts-vp-playable.c \
-  $(srcdir)/video-profile/yts-vp-playable-proxy.c \
-  $(srcdir)/video-profile/yts-vp-player.c \
-  $(srcdir)/video-profile/yts-vp-player-adapter.c \
-  $(srcdir)/video-profile/yts-vp-player-proxy.c \
-  $(srcdir)/video-profile/yts-vp-query.c \
-  $(srcdir)/video-profile/yts-vp-transcript.c \
-  $(srcdir)/video-profile/yts-vp-transcript-adapter.c \
-  $(srcdir)/video-profile/yts-vp-transcript-proxy.c \
-  $(srcdir)/video-profile/yts-vp-transfer.c \
-  $(srcdir)/video-profile/yts-vp-transmission.c \
+  video-profile/yts-vp-content.c \
+  video-profile/yts-vp-playable.c \
+  video-profile/yts-vp-playable-proxy.c \
+  video-profile/yts-vp-player.c \
+  video-profile/yts-vp-player-adapter.c \
+  video-profile/yts-vp-player-proxy.c \
+  video-profile/yts-vp-query.c \
+  video-profile/yts-vp-transcript.c \
+  video-profile/yts-vp-transcript-adapter.c \
+  video-profile/yts-vp-transcript-proxy.c \
+  video-profile/yts-vp-transfer.c \
+  video-profile/yts-vp-transmission.c \
   $(NULL)
 
 nodist_libsrc_la_SOURCES = \
@@ -101,48 +101,48 @@ nodist_libsrc_la_SOURCES = \
 
 # Private headers
 libprv_la_SOURCES = \
-  $(srcdir)/ytstenut-internal.h \
+  ytstenut-internal.h \
   \
-  $(srcdir)/yts-adapter-factory.h \
-  $(srcdir)/yts-client-internal.h \
-  $(srcdir)/yts-client-status.h \
-  $(srcdir)/yts-contact-impl.h \
-  $(srcdir)/yts-contact-internal.h \
-  $(srcdir)/yts-error.h \
-  $(srcdir)/yts-factory.h \
-  $(srcdir)/yts-incoming-file-internal.h \
-  $(srcdir)/yts-metadata-internal.h \
-  $(srcdir)/yts-outgoing-file-internal.h \
-  $(srcdir)/yts-proxy-factory.h \
-  $(srcdir)/yts-proxy-internal.h \
-  $(srcdir)/yts-proxy-service-impl.h \
-  $(srcdir)/yts-proxy-service-internal.h \
-  $(srcdir)/yts-roster-impl.h \
-  $(srcdir)/yts-roster-internal.h \
-  $(srcdir)/yts-service-adapter.h \
-  $(srcdir)/yts-service-emitter.h \
-  $(srcdir)/yts-service-factory.h \
-  $(srcdir)/yts-service-impl.h \
-  $(srcdir)/yts-service-internal.h \
-  $(srcdir)/yts-xml.h \
+  yts-adapter-factory.h \
+  yts-client-internal.h \
+  yts-client-status.h \
+  yts-contact-impl.h \
+  yts-contact-internal.h \
+  yts-error.h \
+  yts-factory.h \
+  yts-incoming-file-internal.h \
+  yts-metadata-internal.h \
+  yts-outgoing-file-internal.h \
+  yts-proxy-factory.h \
+  yts-proxy-internal.h \
+  yts-proxy-service-impl.h \
+  yts-proxy-service-internal.h \
+  yts-roster-impl.h \
+  yts-roster-internal.h \
+  yts-service-adapter.h \
+  yts-service-emitter.h \
+  yts-service-factory.h \
+  yts-service-impl.h \
+  yts-service-internal.h \
+  yts-xml.h \
   \
-  $(srcdir)/yts-message.h \
-  $(srcdir)/yts-metadata.h \
-  $(srcdir)/yts-error-message.h \
-  $(srcdir)/yts-event-message.h \
-  $(srcdir)/yts-invocation-message.h \
-  $(srcdir)/yts-response-message.h \
+  yts-message.h \
+  yts-metadata.h \
+  yts-error-message.h \
+  yts-event-message.h \
+  yts-invocation-message.h \
+  yts-response-message.h \
   \
-  $(srcdir)/profile/yts-profile.h \
-  $(srcdir)/profile/yts-profile-impl.h \
-  $(srcdir)/profile/yts-profile-proxy.h \
-  $(srcdir)/profile/yts-profile-adapter.h \
+  profile/yts-profile.h \
+  profile/yts-profile-impl.h \
+  profile/yts-profile-proxy.h \
+  profile/yts-profile-adapter.h \
   \
-  $(srcdir)/video-profile/yts-vp-playable-proxy.h \
-  $(srcdir)/video-profile/yts-vp-player-adapter.h \
-  $(srcdir)/video-profile/yts-vp-player-proxy.h \
-  $(srcdir)/video-profile/yts-vp-transcript-adapter.h \
-  $(srcdir)/video-profile/yts-vp-transcript-proxy.h \
+  video-profile/yts-vp-playable-proxy.h \
+  video-profile/yts-vp-player-adapter.h \
+  video-profile/yts-vp-player-proxy.h \
+  video-profile/yts-vp-transcript-adapter.h \
+  video-profile/yts-vp-transcript-proxy.h \
   $(NULL)
 
 #
@@ -179,7 +179,7 @@ libytstenut_@YTS_API_VERSION@_la_LIBADD = \
 libytstenut_@YTS_API_VERSION@_ladir = $(includedir)/ytstenut-$(YTS_API_VERSION)/ytstenut
 libytstenut_@YTS_API_VERSION@_la_HEADERS = \
   $(libhdr_la_SOURCES) \
-  $(srcdir)/ytstenut.h \
+  ytstenut.h \
   $(NULL)
 
 nodist_libytstenut_@YTS_API_VERSION@_la_HEADERS = \
@@ -230,7 +230,7 @@ yts-enum-types.h: stamp-yts-enum-types.h
 	@true
 
 stamp-yts-enum-types.h: $(libhdr_la_SOURCES) Makefile
-	$(AM_V_GEN)( $(GLIB_MKENUMS) \
+	$(AM_V_GEN)( cd $(srcdir) && $(GLIB_MKENUMS) \
 			--template $(srcdir)/yts-enum-types.h.in \
 		$(libhdr_la_SOURCES) ) >> xgen-ceth && \
 	(cmp -s xgen-ceth yts-enum-types.h || cp xgen-ceth yts-enum-types.h) && \
@@ -238,7 +238,7 @@ stamp-yts-enum-types.h: $(libhdr_la_SOURCES) Makefile
 	echo timestamp > $(@F)
 
 yts-enum-types.c: yts-enum-types.h
-	$(AM_V_GEN)( $(GLIB_MKENUMS) \
+	$(AM_V_GEN)( cd $(srcdir) && $(GLIB_MKENUMS) \
 			--template $(srcdir)/yts-enum-types.c.in \
 	  $(libhdr_la_SOURCES) ) >> xgen-cetc && \
 	cp xgen-cetc yts-enum-types.c && \
@@ -287,9 +287,9 @@ Ytstenut-@YTS_API_VERSION@.gir: $(G_IR_SCANNER) libytstenut-@YTS_API_VERSION@.la
 		--libtool="$(top_builddir)/libtool" \
 	        --pkg gobject-2.0 \
 	        --output $@ \
-		$(libhdr_la_SOURCES) \
+		$(patsubst %,$(srcdir)/%,$(libhdr_la_SOURCES)) \
 		$(nodist_libhdr_la_SOURCES) \
-		$(libsrc_la_SOURCES) \
+		$(patsubst %,$(srcdir)/%,$(libsrc_la_SOURCES)) \
 		$(nodist_libsrc_la_SOURCES) \
 		$(NULL)
 
