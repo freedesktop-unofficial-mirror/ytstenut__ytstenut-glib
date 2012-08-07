@@ -28,6 +28,7 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/channel.h>
 
+#include "ytstenut-internal.h"
 #include "yts-capability.h"
 #include "yts-contact-impl.h"
 #include "yts-contact-internal.h"
@@ -119,6 +120,8 @@ _service_added (YtsContact  *self,
   YtsContactPrivate *priv = GET_PRIVATE (self);
   const char        *service_id  = yts_service_get_id (service);
 
+  DEBUG ("contact=%s service=%s", yts_contact_get_id (self), service_id);
+
   g_return_if_fail (service_id && *service_id);
   g_return_if_fail (!g_hash_table_lookup (priv->services, service_id));
 
@@ -139,6 +142,8 @@ _service_removed (YtsContact  *self,
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
   const char        *service_id  = yts_service_get_id (service);
+
+  DEBUG ("contact=%s service=%s", yts_contact_get_id (self), service_id);
 
   g_return_if_fail (service_id && *service_id);
 
@@ -414,6 +419,8 @@ yts_contact_remove_service_by_id (YtsContact  *self,
   YtsContactPrivate *priv = GET_PRIVATE (self);
   YtsService        *service;
 
+  DEBUG ("contact=%s service=%s", yts_contact_get_id (self), service_id);
+
   g_return_if_fail (service_id && *service_id);
 
   /*
@@ -516,6 +523,8 @@ yts_contact_update_service_status (YtsContact *self,
   YtsContactPrivate *priv = GET_PRIVATE (self);
   YtsService *service;
 
+  DEBUG ("contact=%s service=%s fqc=%s", yts_contact_get_id (self),
+      service_id, fqc_id);
   service = g_hash_table_lookup (priv->services, service_id);
   g_return_if_fail (service);
 
