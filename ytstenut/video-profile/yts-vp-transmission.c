@@ -18,8 +18,9 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
-#include "yts-vp-transmission.h"
 #include "config.h"
+
+#include "yts-vp-transmission.h"
 
 G_DEFINE_INTERFACE (YtsVPTransmission,
                     yts_vp_transmission,

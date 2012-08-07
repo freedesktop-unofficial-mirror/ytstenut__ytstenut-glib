@@ -18,12 +18,13 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <glib.h>
 
 #include "ytstenut-internal.h"
-#include "config.h"
 
 #undef G_LOG_DOMAIN
 #define G_LOG_DOMAIN PACKAGE"\0main\0"G_STRLOC

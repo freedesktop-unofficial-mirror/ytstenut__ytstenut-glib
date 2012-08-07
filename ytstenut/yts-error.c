@@ -17,9 +17,9 @@
  *
  * Authored by: Tomas Frydrych <tf@linux.intel.com>
  */
+#include "config.h"
 
 #include "yts-error.h"
-#include "config.h"
 
 /**
  * yts_error_get_code:

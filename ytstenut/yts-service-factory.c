@@ -18,10 +18,11 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include "config.h"
+
 #include "yts-proxy-service-impl.h"
 #include "yts-service-factory.h"
 #include "yts-service-impl.h"
-#include "config.h"
 
 G_DEFINE_TYPE (YtsServiceFactory, yts_service_factory, YTS_TYPE_FACTORY)
 

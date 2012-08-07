@@ -17,9 +17,9 @@
  *
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
+#include "config.h"
 
 #include "yts-adapter-factory.h"
-#include "config.h"
 
 G_DEFINE_TYPE (YtsAdapterFactory, yts_adapter_factory, YTS_TYPE_FACTORY)
 

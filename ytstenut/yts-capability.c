@@ -17,9 +17,9 @@
  *
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
+#include "config.h"
 
 #include "yts-capability.h"
-#include "config.h"
 
 G_DEFINE_INTERFACE (YtsCapability, yts_capability, G_TYPE_OBJECT)
 

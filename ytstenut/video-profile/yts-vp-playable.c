@@ -18,8 +18,9 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
-#include "yts-vp-playable.h"
 #include "config.h"
+
+#include "yts-vp-playable.h"
 
 G_DEFINE_INTERFACE (YtsVPPlayable,
                     yts_vp_playable,

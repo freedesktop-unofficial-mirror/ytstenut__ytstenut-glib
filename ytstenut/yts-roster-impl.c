@@ -18,9 +18,10 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include "config.h"
+
 #include "yts-roster-impl.h"
 #include "yts-marshal.h"
-#include "config.h"
 
 G_DEFINE_TYPE (YtsRosterImpl, yts_roster_impl, YTS_TYPE_ROSTER)
 

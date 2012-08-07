@@ -18,12 +18,13 @@
  * Authored by: Tomas Frydrych <tf@linux.intel.com>
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <rest/rest-xml-parser.h>
 
 #include "yts-metadata-internal.h"
 #include "yts-message.h"
-#include "config.h"
 
 static void yts_metadata_dispose (GObject *object);
 static void yts_metadata_finalize (GObject *object);

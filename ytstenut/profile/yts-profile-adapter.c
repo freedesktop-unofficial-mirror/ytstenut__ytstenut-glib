@@ -18,11 +18,12 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include "config.h"
+
 #include <stdbool.h>
 
 #include "yts-profile.h"
 #include "yts-profile-adapter.h"
-#include "config.h"
 
 G_DEFINE_TYPE (YtsProfileAdapter,
                yts_profile_adapter,

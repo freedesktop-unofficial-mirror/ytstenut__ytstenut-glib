@@ -18,12 +18,13 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include "config.h"
+
 #include "yts-capability.h"
 #include "yts-client-internal.h"
 #include "yts-profile.h"
 #include "yts-profile-impl.h"
 #include "yts-response-message.h"
-#include "config.h"
 
 static void
 _capability_interface_init (YtsCapability *interface);

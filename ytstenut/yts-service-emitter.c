@@ -18,12 +18,13 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include "config.h"
+
 #include <stdbool.h>
 
 #include "yts-marshal.h"
 #include "yts-service.h"
 #include "yts-service-emitter.h"
-#include "config.h"
 
 G_DEFINE_INTERFACE (YtsServiceEmitter, yts_service_emitter, YTS_TYPE_SERVICE)
 

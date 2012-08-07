@@ -17,12 +17,12 @@
  *
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
+#include "config.h"
 
 #include <stdbool.h>
 
 #include "yts-vp-transcript.h"
 #include "yts-vp-transcript-proxy.h"
-#include "config.h"
 
 static void
 _transcript_interface_init (YtsVPTranscriptInterface *interface);

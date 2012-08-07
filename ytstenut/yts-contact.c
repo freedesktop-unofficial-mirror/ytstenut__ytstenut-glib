@@ -18,6 +18,7 @@
  * Authored by: Tomas Frydrych <tf@linux.intel.com>
  *              Rob Staudinger <robsta@linux.intel.com>
  */
+#include "config.h"
 
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/connection.h>
@@ -35,7 +36,6 @@
 #include "yts-marshal.h"
 #include "yts-proxy-service-internal.h"
 #include "yts-service-internal.h"
-#include "config.h"
 
 G_DEFINE_ABSTRACT_TYPE (YtsContact, yts_contact, G_TYPE_OBJECT)
 

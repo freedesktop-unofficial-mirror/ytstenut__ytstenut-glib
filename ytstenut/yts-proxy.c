@@ -18,12 +18,13 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include "config.h"
+
 #include <stdbool.h>
 
 #include "yts-capability.h"
 #include "yts-marshal.h"
 #include "yts-proxy-internal.h"
-#include "config.h"
 
 static void
 _capability_interface_init (YtsCapability *interface);

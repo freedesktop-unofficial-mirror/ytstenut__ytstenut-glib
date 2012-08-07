@@ -17,6 +17,7 @@
  *
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
+#include "config.h"
 
 #include <stdbool.h>
 
@@ -26,8 +27,6 @@
 /* HACK, include known implementers headers for type checks. */
 #include "yts-incoming-file-internal.h"
 #include "yts-outgoing-file-internal.h"
-
-#include "config.h"
 
 G_DEFINE_INTERFACE (YtsFileTransfer, yts_file_transfer, G_TYPE_OBJECT)
 

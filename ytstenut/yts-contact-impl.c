@@ -17,10 +17,10 @@
  *
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
+#include "config.h"
 
 #include "yts-contact-impl.h"
 #include "yts-marshal.h"
-#include "config.h"
 
 G_DEFINE_TYPE (YtsContactImpl, yts_contact_impl, YTS_TYPE_CONTACT)
 

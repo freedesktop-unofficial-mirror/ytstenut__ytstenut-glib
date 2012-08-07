@@ -18,8 +18,9 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
-#include "yts-proxy-factory.h"
 #include "config.h"
+
+#include "yts-proxy-factory.h"
 
 G_DEFINE_TYPE (YtsProxyFactory, yts_proxy_factory, YTS_TYPE_FACTORY)
 

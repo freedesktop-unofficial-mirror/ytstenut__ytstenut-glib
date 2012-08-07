@@ -17,11 +17,11 @@
  *
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
+#include "config.h"
 
 #include <stdbool.h>
 
 #include "yts-event-message.h"
-#include "config.h"
 
 G_DEFINE_TYPE (YtsEventMessage, yts_event_message, YTS_TYPE_METADATA)
 

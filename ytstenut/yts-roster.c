@@ -19,6 +19,8 @@
  *              Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include "config.h"
+
 #include <gio/gio.h>
 #include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
 
@@ -30,7 +32,6 @@
 #include "yts-roster-impl.h"
 #include "yts-roster-internal.h"
 #include "yts-service-factory.h"
-#include "config.h"
 
 G_DEFINE_ABSTRACT_TYPE (YtsRoster, yts_roster, G_TYPE_OBJECT)
 

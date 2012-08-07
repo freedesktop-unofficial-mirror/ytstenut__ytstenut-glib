@@ -18,12 +18,13 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include "config.h"
+
 #include <stdbool.h>
 
 #include "yts-service-adapter.h"
 #include "yts-vp-player.h"
 #include "yts-vp-player-adapter.h"
-#include "config.h"
 
 G_DEFINE_TYPE (YtsVPPlayerAdapter,
                yts_vp_player_adapter,

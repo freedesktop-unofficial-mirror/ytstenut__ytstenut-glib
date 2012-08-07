@@ -18,6 +18,8 @@
  * Authored by: Rob Staudinger <robsta@linux.intel.com>
  */
 
+#include "config.h"
+
 #include <stdbool.h>
 #include <math.h>
 
@@ -25,7 +27,6 @@
 #include "yts-vp-playable-proxy.h"
 #include "yts-vp-player.h"
 #include "yts-vp-player-proxy.h"
-#include "config.h"
 
 static void
 _player_interface_init (YtsVPPlayerInterface *interface);
