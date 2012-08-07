@@ -24,6 +24,7 @@
 #include <gio/gio.h>
 #include <telepathy-ytstenut-glib/telepathy-ytstenut-glib.h>
 
+#include "ytstenut-internal.h"
 #include "yts-contact-impl.h"
 #include "yts-contact-internal.h"
 #include "yts-marshal.h"
@@ -463,6 +464,8 @@ yts_roster_add_service (YtsRoster         *self,
   YtsService        *service;
   YtsServiceFactory *factory = yts_service_factory_get_default ();
 
+  DEBUG ("contact=%s, service=%s, type=%s", contact_id, service_id, type);
+
   service = yts_service_factory_create_service (factory,
                                                 caps,
                                                 service_id,
@@ -473,6 +476,7 @@ yts_roster_add_service (YtsRoster         *self,
   contact = yts_roster_find_contact_by_id (self, contact_id);
   if (contact) {
 
+    DEBUG ("we already have that contact");
     yts_contact_add_service (contact, service);
 
   } else {
@@ -482,6 +486,7 @@ yts_roster_add_service (YtsRoster         *self,
                                           TP_CONTACT_FEATURE_AVATAR_DATA,
                                           TP_CONTACT_FEATURE_CAPABILITIES };
 
+    DEBUG ("adding that contact later, when we get a TpContact");
     tp_connection_get_contacts_by_id (tp_connection,
                                       1,
                                       &contact_id,
@@ -504,6 +509,7 @@ yts_roster_update_contact_status (YtsRoster   *self,
   YtsRosterPrivate *priv = GET_PRIVATE (self);
   YtsContact *contact;
 
+  DEBUG ("contact=%s service=%s fqc=%s", contact_id, service_id, fqc_id);
   contact = g_hash_table_lookup (priv->contacts, contact_id);
   g_return_if_fail (contact);
 
