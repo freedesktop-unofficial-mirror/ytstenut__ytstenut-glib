@@ -229,12 +229,27 @@ _set_property (GObject      *object,
 static void
 _dispose (GObject *object)
 {
+  YtsContact *self = YTS_CONTACT (object);
   YtsContactPrivate *priv = GET_PRIVATE (object);
 
-  if (priv->services) {
-    g_hash_table_destroy (priv->services);
-    priv->services = NULL;
-  }
+  if (priv->services)
+    {
+      GHashTableIter iter;
+      gpointer k, v;
+
+      g_hash_table_iter_init (&iter, priv->services);
+
+      while (g_hash_table_iter_next (&iter, &k, &v))
+        {
+          g_signal_handlers_disconnect_by_func (v, _service_send_message,
+              self);
+          g_signal_handlers_disconnect_by_func (v, _service_send_file,
+              self);
+        }
+
+      g_hash_table_destroy (priv->services);
+      priv->services = NULL;
+    }
 
   if (priv->deferred_service_statuses) {
     g_hash_table_destroy (priv->deferred_service_statuses);
@@ -242,10 +257,14 @@ _dispose (GObject *object)
   }
 
   // FIXME tie to tp_contact lifecycle
-  if (priv->tp_contact) {
-    g_object_unref (priv->tp_contact);
-    priv->tp_contact = NULL;
-  }
+  if (priv->tp_contact)
+    {
+      g_signal_handlers_disconnect_by_func (priv->tp_contact,
+          _tp_contact_notify_alias, self);
+
+      g_object_unref (priv->tp_contact);
+      priv->tp_contact = NULL;
+    }
 
   G_OBJECT_CLASS (yts_contact_parent_class)->dispose (object);
 }
