@@ -57,6 +57,8 @@ G_DEFINE_ABSTRACT_TYPE (YtsContact, yts_contact, G_TYPE_OBJECT)
 
 typedef struct {
   GHashTable   *services;   /* hash of YtsService instances */
+  /* string (service ID) => GHashTable<string fqc_id => string status_xml> */
+  GHashTable   *deferred_service_statuses;
   TpContact    *tp_contact; /* TpContact associated with YtsContact */
 } YtsContactPrivate;
 
@@ -119,6 +121,7 @@ _service_added (YtsContact  *self,
 {
   YtsContactPrivate *priv = GET_PRIVATE (self);
   const char        *service_id  = yts_service_get_id (service);
+  GHashTable        *id_status_map;
 
   DEBUG ("contact=%s service=%s", yts_contact_get_id (self), service_id);
 
@@ -133,6 +136,25 @@ _service_added (YtsContact  *self,
                     G_CALLBACK (_service_send_message), self);
   g_signal_connect (service, "send-file",
                     G_CALLBACK (_service_send_file), self);
+
+  /* Apply deferred status updates */
+
+  id_status_map = g_hash_table_lookup (priv->deferred_service_statuses,
+      service_id);
+
+  if (id_status_map != NULL)
+    {
+      GHashTableIter iter;
+      gpointer k, v;
+
+      g_hash_table_iter_init (&iter, id_status_map);
+
+      while (g_hash_table_iter_next (&iter, &k, &v))
+        yts_service_update_status (service, k, v);
+    }
+
+  g_hash_table_remove (priv->deferred_service_statuses,
+      service_id);
 }
 
 static void
@@ -212,6 +234,11 @@ _dispose (GObject *object)
   if (priv->services) {
     g_hash_table_destroy (priv->services);
     priv->services = NULL;
+  }
+
+  if (priv->deferred_service_statuses) {
+    g_hash_table_destroy (priv->deferred_service_statuses);
+    priv->deferred_service_statuses = NULL;
   }
 
   // FIXME tie to tp_contact lifecycle
@@ -327,6 +354,9 @@ yts_contact_init (YtsContact *self)
                                           g_str_equal,
                                           g_free,
                                           g_object_unref);
+
+  priv->deferred_service_statuses = g_hash_table_new_full (g_str_hash,
+      g_str_equal, g_free, (GDestroyNotify) g_hash_table_unref);
 }
 
 /**
@@ -526,9 +556,34 @@ yts_contact_update_service_status (YtsContact *self,
   DEBUG ("contact=%s service=%s fqc=%s", yts_contact_get_id (self),
       service_id, fqc_id);
   service = g_hash_table_lookup (priv->services, service_id);
-  g_return_if_fail (service);
 
-  yts_service_update_status (service, fqc_id, status_xml);
+  if (service != NULL)
+    {
+      DEBUG ("Service already exists, updating status now");
+      yts_service_update_status (service, fqc_id, status_xml);
+    }
+  else
+    {
+      /* We've hit a race condition between the service's status being
+       * discovered, and the service's capabilities being discovered.
+       * Save the status and apply it when we get the service's
+       * capabilities. */
+      GHashTable *id_status_map = g_hash_table_lookup (
+          priv->deferred_service_statuses, service_id);
+
+      DEBUG ("Service does not already exist, saving its status for later");
+
+      if (id_status_map == NULL)
+        {
+          id_status_map = g_hash_table_new_full (g_str_hash, g_str_equal,
+              g_free, g_free);
+          g_hash_table_insert (priv->deferred_service_statuses,
+              g_strdup (service_id), id_status_map);
+        }
+
+      g_hash_table_insert (id_status_map, g_strdup (fqc_id),
+          g_strdup (status_xml));
+    }
 }
 
 /**
