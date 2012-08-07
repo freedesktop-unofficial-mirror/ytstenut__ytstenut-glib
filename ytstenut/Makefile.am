@@ -183,6 +183,7 @@ nobase_libytstenut_@YTS_API_VERSION@_la_HEADERS = \
   $(NULL)
 
 nodist_libytstenut_@YTS_API_VERSION@_la_HEADERS = \
+  $(nodist_libhdr_la_SOURCES) \
   yts-enum-types.h \
   yts-marshal.h \
   $(NULL)
