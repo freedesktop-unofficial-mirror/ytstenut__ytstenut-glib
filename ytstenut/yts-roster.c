@@ -66,8 +66,63 @@ enum {
 };
 
 typedef struct {
+    gchar *contact_id;
+    gchar *service_id;
+    gchar *fqc_id;
+} StatusTuple;
+
+static StatusTuple *
+status_tuple_new (const gchar *contact_id,
+    const gchar *service_id,
+    const gchar *fqc_id)
+{
+  StatusTuple *st = g_slice_new0 (StatusTuple);
+
+  st->contact_id = g_strdup (contact_id);
+  st->service_id = g_strdup (service_id);
+  st->fqc_id = g_strdup (fqc_id);
+  return st;
+}
+
+static void
+status_tuple_free (gpointer p)
+{
+  StatusTuple *st = p;
+
+  g_free (st->contact_id);
+  g_free (st->service_id);
+  g_free (st->fqc_id);
+  g_slice_free (StatusTuple, st);
+}
+
+static guint
+status_tuple_hash (gconstpointer v)
+{
+  const StatusTuple *st = v;
+
+  return g_str_hash (st->contact_id) +
+    g_str_hash (st->service_id) * 2 +
+    g_str_hash (st->fqc_id) * 3;
+}
+
+static gboolean
+status_tuple_equal (gconstpointer a,
+    gconstpointer b)
+{
+  const StatusTuple *a_ = a;
+  const StatusTuple *b_ = b;
+
+  return g_str_equal (a_->contact_id, b_->contact_id) &&
+    g_str_equal (a_->service_id, b_->service_id) &&
+    g_str_equal (a_->fqc_id, b_->fqc_id);
+}
+
+typedef struct {
 
   GHashTable *contacts; /* hash of YtsContact this roster holds */
+
+  /* StatusTuple => status XML */
+  GHashTable *deferred_statuses;
 
 } YtsRosterPrivate;
 
@@ -156,6 +211,12 @@ _dispose (GObject *object)
     g_hash_table_destroy (priv->contacts);
     priv->contacts = NULL;
   }
+
+  if (priv->deferred_statuses)
+    {
+      g_hash_table_unref (priv->deferred_statuses);
+      priv->deferred_statuses = NULL;
+    }
 
   G_OBJECT_CLASS (yts_roster_parent_class)->dispose (object);
 }
@@ -253,6 +314,9 @@ yts_roster_init (YtsRoster *self)
                                           g_str_equal,
                                           g_free,
                                           g_object_unref);
+
+  priv->deferred_statuses = g_hash_table_new_full (status_tuple_hash,
+      status_tuple_equal, status_tuple_free, g_free);
 }
 
 YtsService *const
@@ -423,6 +487,8 @@ _connection_get_contacts (TpConnection        *connection,
     YtsContact *contact;
     char const *contact_id = requested_ids[0];
     TpContact *tp_contact = TP_CONTACT (contacts[0]);
+    GHashTableIter iter;
+    gpointer k, v;
 
     g_message ("Creating new contact for %s", contact_id);
 
@@ -447,6 +513,22 @@ _connection_get_contacts (TpConnection        *connection,
 
     yts_contact_add_service (contact, service);
     g_object_unref (service);
+
+    /* Apply deferred status updates */
+
+    g_hash_table_iter_init (&iter, priv->deferred_statuses);
+
+    while (g_hash_table_iter_next (&iter, &k, &v))
+      {
+        StatusTuple *st = k;
+
+        if (g_str_equal (st->contact_id, contact_id))
+          {
+            yts_contact_update_service_status (contact, st->service_id,
+                st->fqc_id, v);
+            g_hash_table_iter_remove (&iter);
+          }
+      }
   }
 }
 
@@ -511,9 +593,24 @@ yts_roster_update_contact_status (YtsRoster   *self,
 
   DEBUG ("contact=%s service=%s fqc=%s", contact_id, service_id, fqc_id);
   contact = g_hash_table_lookup (priv->contacts, contact_id);
-  g_return_if_fail (contact);
 
-  yts_contact_update_service_status (contact, service_id, fqc_id, status_xml);
+  if (contact != NULL)
+    {
+      DEBUG ("updating service status straight away");
+      yts_contact_update_service_status (contact, service_id, fqc_id,
+          status_xml);
+    }
+  else
+    {
+      /* We've hit a race condition between the contact's status being
+       * discovered, and the TpContact being set up.
+       * Save the status and apply it when we get the contact.
+       */
+      DEBUG ("no contact yet, will update status when we have one");
+      g_hash_table_insert (priv->deferred_statuses,
+          status_tuple_new (contact_id, service_id, fqc_id),
+          g_strdup (status_xml));
+    }
 }
 
 /**
