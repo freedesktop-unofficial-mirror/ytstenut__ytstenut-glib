@@ -44,5 +44,29 @@ ytstenut_init (void);
 YtsDebugFlags
 ytstenut_get_debug_flags (void);
 
+#define ERROR(format, ...) \
+  do \
+    { \
+      g_log (G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "%s: " format, \
+          G_STRFUNC, ##__VA_ARGS__); \
+      g_assert_not_reached (); \
+    } \
+  while (0)
+#define CRITICAL(format, ...) \
+  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "%s: " format, \
+      G_STRFUNC, ##__VA_ARGS__)
+#define WARNING(format, ...) \
+  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_WARNING, "%s: " format, \
+      G_STRFUNC, ##__VA_ARGS__)
+#define MESSAGE(format, ...) \
+  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_MESSAGE, "%s: " format, \
+      G_STRFUNC, ##__VA_ARGS__)
+#define INFO(format, ...) \
+  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "%s: " format, \
+      G_STRFUNC, ##__VA_ARGS__)
+#define DEBUG(format, ...) \
+  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "%s: " format, \
+      G_STRFUNC, ##__VA_ARGS__)
+
 #endif /* YTSTENUT_INTERNAL_H */
 
