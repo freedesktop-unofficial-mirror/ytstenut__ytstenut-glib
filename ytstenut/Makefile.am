@@ -232,7 +232,7 @@ yts-enum-types.h: stamp-yts-enum-types.h
 
 stamp-yts-enum-types.h: $(libhdr_la_SOURCES) Makefile
 	$(AM_V_GEN)( cd $(srcdir) && $(GLIB_MKENUMS) \
-			--template $(srcdir)/yts-enum-types.h.in \
+			--template yts-enum-types.h.in \
 		$(libhdr_la_SOURCES) ) >> xgen-ceth && \
 	(cmp -s xgen-ceth yts-enum-types.h || cp xgen-ceth yts-enum-types.h) && \
 	rm -f xgen-ceth && \
@@ -240,7 +240,7 @@ stamp-yts-enum-types.h: $(libhdr_la_SOURCES) Makefile
 
 yts-enum-types.c: yts-enum-types.h
 	$(AM_V_GEN)( cd $(srcdir) && $(GLIB_MKENUMS) \
-			--template $(srcdir)/yts-enum-types.c.in \
+			--template yts-enum-types.c.in \
 	  $(libhdr_la_SOURCES) ) >> xgen-cetc && \
 	cp xgen-cetc yts-enum-types.c && \
 	rm -f xgen-cetc
