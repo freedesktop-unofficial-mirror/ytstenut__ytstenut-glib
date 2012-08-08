@@ -141,7 +141,8 @@ check-local:
 	$(AM_V_GEN) b=`tput bold` && \
 	n=`tput sgr0` && \
 	for f in $(IGNORE_HFILES); do \
-		if [ "`find $(DOC_SOURCE_DIR) -name $${f}`" = "" ]; then \
+		if [ "`find $(DOC_SOURCE_DIR) -name $${f}`" = "" ] && \
+		[ "`find $(abs_top_builddir)/ytstenut -name $${f}`" = "" ]; then \
 			echo "$${b}Error: $${f} is ignored but not found anyway.$${n}"; \
 			exit 1; \
 		fi \
